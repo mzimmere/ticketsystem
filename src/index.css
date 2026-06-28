@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light;
   --bg-surface: #ffffff;
   --bg-muted: #f1f5f9;
   --border: #e2e8f0;
@@ -23,6 +24,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --bg-surface: #1e293b;
   --bg-muted: #0f172a;
   --border: #334155;
@@ -47,4 +49,8 @@
 body {
   background-color: var(--bg-muted);
   transition: background-color 0.15s ease;
+}
+
+.font-mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
 }

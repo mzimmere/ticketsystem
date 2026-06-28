@@ -142,7 +142,7 @@ export default function Zeiterfassung({
             value={beschreibung}
             onChange={(e) => setBeschreibung(e.target.value)}
             placeholder="Was wurde gemacht? (optional)"
-            className="w-full rounded border border-[var(--border-input)] px-3 py-2 text-sm"
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
           />
           <button
             onClick={timerStoppen}
@@ -175,14 +175,14 @@ export default function Zeiterfassung({
               value={manuelleMinuten}
               onChange={(e) => setManuelleMinuten(e.target.value)}
               placeholder="Min."
-              className="w-20 rounded border border-[var(--border-input)] px-2 py-2 text-sm"
+              className="w-20 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-2 py-2 text-sm"
             />
             <input
               type="text"
               value={beschreibung}
               onChange={(e) => setBeschreibung(e.target.value)}
               placeholder="Beschreibung"
-              className="flex-1 rounded border border-[var(--border-input)] px-3 py-2 text-sm"
+              className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
             />
             <button
               onClick={manuellSpeichern}

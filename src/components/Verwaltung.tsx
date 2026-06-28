@@ -181,7 +181,7 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
             {organisation.logo_url && (
               <img src={organisation.logo_url} alt={organisation.name} className="h-10 w-10 rounded" />
             )}
-            <label className="cursor-pointer rounded border border-[var(--border-input)] px-3 py-1.5 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
+            <label className="cursor-pointer rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-1.5 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
               Logo ändern
               <input
                 type="file"

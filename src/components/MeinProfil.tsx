@@ -114,7 +114,7 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
         <div className="flex items-center gap-4">
           <Avatar name={name} avatarUrl={avatarUrl} groesse="lg" />
           <div>
-            <label className="inline-block cursor-pointer rounded border border-[var(--border-input)] px-3 py-1.5 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
+            <label className="inline-block cursor-pointer rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-1.5 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
               Bild ändern
               <input
                 type="file"

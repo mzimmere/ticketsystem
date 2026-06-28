@@ -100,7 +100,7 @@ export default function NeuesTicket({ onErstellt }: NeuesTicketProps) {
           value={titel}
           onChange={(e) => setTitel(e.target.value)}
           placeholder='Kurz zusammengefasst, z.B. "Drucker im Büro offline"'
-          className="w-full rounded border border-[var(--border-input)] px-3 py-2 text-sm"
+          className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
         />
       </div>
 
@@ -111,7 +111,7 @@ export default function NeuesTicket({ onErstellt }: NeuesTicketProps) {
           onChange={(e) => setBeschreibung(e.target.value)}
           rows={4}
           placeholder="Was genau ist das Problem?"
-          className="w-full rounded border border-[var(--border-input)] px-3 py-2 text-sm"
+          className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
         />
       </div>
 
@@ -120,7 +120,7 @@ export default function NeuesTicket({ onErstellt }: NeuesTicketProps) {
         <select
           value={prioritaet}
           onChange={(e) => setPrioritaet(e.target.value as Prioritaet)}
-          className="w-full rounded border border-[var(--border-input)] px-3 py-2 text-sm"
+          className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
         >
           <option value="niedrig">Niedrig</option>
           <option value="mittel">Mittel</option>

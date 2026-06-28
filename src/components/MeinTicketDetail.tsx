@@ -107,7 +107,7 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
           onChange={(e) => setAntwort(e.target.value)}
           rows={3}
           placeholder="Antworten…"
-          className="w-full rounded border border-[var(--border-input)] px-3 py-2 text-sm"
+          className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
         />
         <button
           onClick={antwortSenden}

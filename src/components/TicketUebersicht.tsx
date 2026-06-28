@@ -23,12 +23,56 @@ const STATUS_LABEL: Record<Status, string> = {
   geschlossen: "Geschlossen",
 };
 
-const PRIORITAET_FARBE: Record<Prioritaet, string> = {
-  niedrig: "bg-[var(--bg-muted)] text-[var(--text-soft)]",
-  mittel: "bg-[var(--badge-mittel-bg)] text-[var(--badge-mittel-text)]",
-  hoch: "bg-[var(--badge-hoch-bg)] text-[var(--badge-hoch-text)]",
-  kritisch: "bg-[var(--badge-kritisch-bg)] text-[var(--badge-kritisch-text)]",
+const PRIORITAET_LABEL: Record<Prioritaet, string> = {
+  niedrig: "Niedrig",
+  mittel: "Mittel",
+  hoch: "Hoch",
+  kritisch: "Kritisch",
 };
+
+// Wiederverwendet die Badge-Textfarben aus index.css als kräftige Akzentfarbe
+// für den Prioritäts-Punkt - die sind pro Theme schon auf guten Kontrast abgestimmt.
+const PRIORITAET_AKZENT: Record<Prioritaet, string> = {
+  niedrig: "var(--text-faint)",
+  mittel: "var(--badge-mittel-text)",
+  hoch: "var(--badge-hoch-text)",
+  kritisch: "var(--badge-kritisch-text)",
+};
+
+function formatRelativ(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diffMs / 60000);
+  if (min < 1) return "gerade eben";
+  if (min < 60) return `vor ${min} Min.`;
+  const std = Math.floor(min / 60);
+  if (std < 24) return `vor ${std} Std.`;
+  const tage = Math.floor(std / 24);
+  if (tage < 7) return `vor ${tage} Tag${tage > 1 ? "en" : ""}`;
+  return new Date(iso).toLocaleDateString("de-DE");
+}
+
+function FilterChip({
+  aktiv,
+  onClick,
+  children,
+}: {
+  aktiv: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+        aktiv
+          ? "bg-amber-500 text-white"
+          : "bg-[var(--bg-muted)] text-[var(--text-soft)] hover:bg-[var(--border)]"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
 
 interface TicketUebersichtProps {
   onAuswahl: (ticketId: string) => void;
@@ -75,31 +119,53 @@ export default function TicketUebersicht({ onAuswahl }: TicketUebersichtProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as Status | "alle")}
-          className="rounded border border-[var(--border-input)] px-3 py-1.5 text-sm"
+      <div className="flex items-baseline justify-between">
+        <h2
+          className="text-lg font-semibold text-[var(--text-strong)]"
+          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
         >
-          <option value="alle">Alle Status</option>
-          {Object.entries(STATUS_LABEL).map(([wert, label]) => (
-            <option key={wert} value={wert}>
-              {label}
-            </option>
-          ))}
-        </select>
+          Tickets
+        </h2>
+        {!laedt && (
+          <span className="font-mono text-xs text-[var(--text-faint)]">
+            {tickets.length} {tickets.length === 1 ? "Eintrag" : "Einträge"}
+          </span>
+        )}
+      </div>
 
-        <select
-          value={prioritaetFilter}
-          onChange={(e) => setPrioritaetFilter(e.target.value as Prioritaet | "alle")}
-          className="rounded border border-[var(--border-input)] px-3 py-1.5 text-sm"
-        >
-          <option value="alle">Alle Prioritäten</option>
-          <option value="niedrig">Niedrig</option>
-          <option value="mittel">Mittel</option>
-          <option value="hoch">Hoch</option>
-          <option value="kritisch">Kritisch</option>
-        </select>
+      <div>
+        <p className="mb-1.5 text-[0.65rem] font-medium uppercase tracking-wide text-[var(--text-faint)]">
+          Status
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          <FilterChip aktiv={statusFilter === "alle"} onClick={() => setStatusFilter("alle")}>
+            Alle
+          </FilterChip>
+          {(Object.keys(STATUS_LABEL) as Status[]).map((s) => (
+            <FilterChip key={s} aktiv={statusFilter === s} onClick={() => setStatusFilter(s)}>
+              {STATUS_LABEL[s]}
+            </FilterChip>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="mb-1.5 text-[0.65rem] font-medium uppercase tracking-wide text-[var(--text-faint)]">
+          Priorität
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          <FilterChip
+            aktiv={prioritaetFilter === "alle"}
+            onClick={() => setPrioritaetFilter("alle")}
+          >
+            Alle
+          </FilterChip>
+          {(Object.keys(PRIORITAET_LABEL) as Prioritaet[]).map((p) => (
+            <FilterChip key={p} aktiv={prioritaetFilter === p} onClick={() => setPrioritaetFilter(p)}>
+              {PRIORITAET_LABEL[p]}
+            </FilterChip>
+          ))}
+        </div>
       </div>
 
       {laedt ? (
@@ -107,36 +173,44 @@ export default function TicketUebersicht({ onAuswahl }: TicketUebersichtProps) {
       ) : tickets.length === 0 ? (
         <p className="text-sm text-[var(--text-faint)]">Keine Tickets gefunden.</p>
       ) : (
-        <div className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)] bg-[var(--bg-surface)]">
+        <div className="overflow-hidden rounded-lg border border-[var(--border)]">
           {tickets.map((ticket) => (
             <button
               key={ticket.id}
               onClick={() => onAuswahl(ticket.id)}
-              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[var(--bg-muted)]"
+              className="flex w-full items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3 text-left last:border-b-0 hover:bg-[var(--bg-muted)]"
             >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-[var(--text-strong)]">{ticket.titel}</p>
-                <div className="flex items-center gap-1.5">
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ background: PRIORITAET_AKZENT[ticket.prioritaet] }}
+                title={PRIORITAET_LABEL[ticket.prioritaet]}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-[var(--text-strong)]">
+                  {ticket.titel}
+                </p>
+                <div className="mt-0.5 flex items-center gap-1.5">
                   <p className="truncate text-xs text-[var(--text-soft)]">
                     {ticket.kunde?.name ?? "Unbekannter Kunde"}
                   </p>
                   {ticket.zugewiesen?.name && (
                     <>
                       <span className="text-xs text-[var(--text-faint)]">·</span>
-                      <Avatar name={ticket.zugewiesen.name} avatarUrl={ticket.zugewiesen.avatar_url} groesse="sm" />
-                      <p className="truncate text-xs text-[var(--text-soft)]">{ticket.zugewiesen.name}</p>
+                      <Avatar
+                        name={ticket.zugewiesen.name}
+                        avatarUrl={ticket.zugewiesen.avatar_url}
+                        groesse="sm"
+                      />
                     </>
                   )}
                 </div>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <span
-                  className={`rounded px-2 py-0.5 text-xs font-medium ${PRIORITAET_FARBE[ticket.prioritaet]}`}
-                >
-                  {ticket.prioritaet}
-                </span>
-                <span className="rounded bg-[var(--bg-muted)] px-2 py-0.5 text-xs font-medium text-[var(--text-soft)]">
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <span className="rounded bg-[var(--bg-muted)] px-2 py-0.5 font-mono text-[0.65rem] text-[var(--text-soft)]">
                   {STATUS_LABEL[ticket.status]}
+                </span>
+                <span className="font-mono text-[0.65rem] text-[var(--text-faint)]">
+                  {formatRelativ(ticket.erstellt_am)}
                 </span>
               </div>
             </button>
