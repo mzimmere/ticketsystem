@@ -26,10 +26,15 @@ standardmäßig inaktiv (siehe unten).
    alter publication supabase_realtime add table public.tickets;
    alter publication supabase_realtime add table public.ticket_nachrichten;
    ```
-5. **Storage**: Zwei Buckets anlegen:
-   - `anhaenge` (privat) – Policy auf Basis der `profiles`-Organisation, siehe TODO im Schema, Abschnitt 5.
-   - `avatare` (öffentlich lesbar) – für Profilbilder.
-   - `logos` (öffentlich lesbar) – für Firmenlogos, die du selbst pro Organisation in `organisationen.logo_url` eintragen kannst.
+5. **Storage**: Drei Buckets anlegen:
+   - `anhaenge` (privat)
+   - `avatare` (öffentlich lesbar) – für Profilbilder
+   - `logos` (öffentlich lesbar) – für Firmenlogos
+
+   Danach die zugehörigen RLS-Policies ausführen (Abschnitt 12 in
+   `supabase/schema.sql`, oder die separate `fix_storage_policies.sql`,
+   falls du sie schon mal vergessen hattest) – ohne die schlägt jeder
+   Upload mit "new row violates row-level security policy" fehl.
 
 ## 2. Erste Organisation + ersten Admin anlegen
 

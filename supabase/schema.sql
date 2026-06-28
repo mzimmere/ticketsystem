@@ -345,3 +345,53 @@ create policy profiles_select on profiles for select
   );
 -- Kunden sehen damit sich selbst + Techniker/Admins ihrer Organisation
 -- (um z.B. den Bearbeiter ihres Tickets zu sehen), aber keine anderen Kunden.
+
+-- ============================================================
+-- 12. Storage-RLS-Policies (avatare, anhaenge, logos)
+-- ============================================================
+-- Voraussetzung: Buckets "avatare", "anhaenge", "logos" im Storage-Dashboard
+-- anlegen, dann diese Policies ausführen.
+
+create policy avatare_insert on storage.objects for insert
+  with check (
+    bucket_id = 'avatare'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy avatare_update on storage.objects for update
+  using (
+    bucket_id = 'avatare'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy avatare_select on storage.objects for select
+  using (bucket_id = 'avatare');
+
+create policy anhaenge_insert on storage.objects for insert
+  with check (
+    bucket_id = 'anhaenge'
+    and exists (
+      select 1 from tickets t
+      where t.id::text = (storage.foldername(name))[1]
+        and (t.organisation_id = current_user_org() or t.kunde_id = auth.uid())
+    )
+  );
+
+create policy anhaenge_select on storage.objects for select
+  using (
+    bucket_id = 'anhaenge'
+    and exists (
+      select 1 from tickets t
+      where t.id::text = (storage.foldername(name))[1]
+        and (t.organisation_id = current_user_org() or t.kunde_id = auth.uid())
+    )
+  );
+
+create policy logos_insert on storage.objects for insert
+  with check (
+    bucket_id = 'logos'
+    and current_user_rolle() in ('super_admin', 'org_admin')
+  );
+
+create policy logos_select on storage.objects for select
+  using (bucket_id = 'logos');
