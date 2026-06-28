@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sun, Moon, User } from "lucide-react";
+import { Sun, Moon, User, Settings } from "lucide-react";
 import { useProfil } from "./lib/useProfil";
 import { useTheme } from "./lib/useTheme";
 import { supabase } from "./lib/supabaseClient";
@@ -10,6 +10,7 @@ import MeinTicketDetail from "./components/MeinTicketDetail";
 import TicketUebersicht from "./components/TicketUebersicht";
 import TicketDetail from "./components/TicketDetail";
 import MeinProfil from "./components/MeinProfil";
+import Verwaltung from "./components/Verwaltung";
 
 interface Organisation {
   name: string;
@@ -23,6 +24,7 @@ export default function App() {
   const [ausgewaehltesTicket, setAusgewaehltesTicket] = useState<string | null>(null);
   const [zeigeNeuesTicket, setZeigeNeuesTicket] = useState(false);
   const [zeigeProfil, setZeigeProfil] = useState(false);
+  const [zeigeVerwaltung, setZeigeVerwaltung] = useState(false);
 
   useEffect(() => {
     if (profil?.organisation_id) {
@@ -57,6 +59,7 @@ export default function App() {
 
   const istIntern =
     profil.rolle === "super_admin" || profil.rolle === "org_admin" || profil.rolle === "techniker";
+  const istAdmin = profil.rolle === "super_admin" || profil.rolle === "org_admin";
 
   return (
     <div className="min-h-screen bg-[var(--bg-muted)]">
@@ -77,9 +80,24 @@ export default function App() {
           >
             {dunkel ? <Sun size={16} /> : <Moon size={16} />}
           </button>
+          {istAdmin && (
+            <button
+              onClick={() => {
+                setZeigeVerwaltung(true);
+                setZeigeProfil(false);
+                setAusgewaehltesTicket(null);
+                setZeigeNeuesTicket(false);
+              }}
+              className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+              title="Verwaltung"
+            >
+              <Settings size={16} />
+            </button>
+          )}
           <button
             onClick={() => {
               setZeigeProfil(true);
+              setZeigeVerwaltung(false);
               setAusgewaehltesTicket(null);
               setZeigeNeuesTicket(false);
             }}
@@ -99,7 +117,17 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-6 space-y-4">
-        {zeigeProfil ? (
+        {zeigeVerwaltung ? (
+          <>
+            <button
+              onClick={() => setZeigeVerwaltung(false)}
+              className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
+            >
+              ← Zurück
+            </button>
+            <Verwaltung rolle={profil.rolle} organisationId={profil.organisation_id} />
+          </>
+        ) : zeigeProfil ? (
           <>
             <button
               onClick={() => setZeigeProfil(false)}

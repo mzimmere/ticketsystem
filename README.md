@@ -8,8 +8,9 @@ standardmäßig inaktiv (siehe unten).
 - Dark/Light Mode (oben rechts umschaltbar, merkt sich die Wahl)
 - Firmenname + Logo pro Organisation im Header (über `organisationen.logo_url`)
 - Profilbilder für Mitarbeiter (eigenes Profil → Bild ändern)
-- Verfügbarkeit (Verfügbar/Abwesend/Urlaub) + Ein-Klick-Übergabe aller offenen
-  Tickets an eine Kollegin/einen Kollegen
+- Verwaltungsbereich (Zahnrad-Icon, nur für Org-Admin/Super-Admin):
+  Firmenname/Logo, Personen einladen (Kunde/Techniker/Org-Admin),
+  bei Super-Admin zusätzlich Organisationen anlegen
 
 ## 1. Supabase-Projekt einrichten
 
@@ -62,6 +63,7 @@ npm run dev
 
 ```bash
 supabase functions deploy invite-kunde
+supabase functions deploy invite-mitarbeiter
 ```
 
 Die `whatsapp-webhook`-Function liegt bereit, aber **bewusst noch nicht
