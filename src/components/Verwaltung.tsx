@@ -4,6 +4,7 @@ import { sichererDateiname } from "../lib/dateiname";
 import { generierePasswort } from "../lib/passwort";
 import KundenListe from "./KundenListe";
 import MitarbeiterListe from "./MitarbeiterListe";
+import ZugangsdatenBox from "./ZugangsdatenBox";
 
 type Rolle = "super_admin" | "org_admin" | "techniker" | "kunde";
 
@@ -47,7 +48,7 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
   const [teamRefreshKey, setTeamRefreshKey] = useState(0);
   const [zeigeMitarbeiterAnlegen, setZeigeMitarbeiterAnlegen] = useState(false);
   const [mitarbeiterZugangsdaten, setMitarbeiterZugangsdaten] = useState<
-    { email: string; passwort: string } | null
+    { email: string; passwort?: string; link?: string; telefon?: string } | null
   >(null);
 
   const [neuerKundeEmail, setNeuerKundeEmail] = useState("");
@@ -59,7 +60,7 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
   const [kundenRefreshKey, setKundenRefreshKey] = useState(0);
   const [zeigeKundeAnlegen, setZeigeKundeAnlegen] = useState(false);
   const [kundeZugangsdaten, setKundeZugangsdaten] = useState<
-    { email: string; passwort: string } | null
+    { email: string; passwort?: string; link?: string; telefon?: string } | null
   >(null);
 
   const [hinweis, setHinweis] = useState<string | null>(null);
@@ -196,9 +197,12 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
 
       if (neuerKundePasswort.trim()) {
         setKundeZugangsdaten({ email: neuerKundeEmail.trim(), passwort: neuerKundePasswort.trim() });
-        setHinweis(null);
       } else {
-        setHinweis(`Kunde angelegt, Einladung an ${neuerKundeEmail} gesendet.`);
+        setKundeZugangsdaten({
+          email: neuerKundeEmail.trim(),
+          link: json.link,
+          telefon: neuerKundeTelefon.trim() || undefined,
+        });
       }
       setNeuerKundeEmail("");
       setNeuerKundeName("");
@@ -257,9 +261,12 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
           email: neuerMitarbeiterEmail.trim(),
           passwort: neuerMitarbeiterPasswort.trim(),
         });
-        setHinweis(null);
       } else {
-        setHinweis(`Mitarbeiter angelegt, Einladung an ${neuerMitarbeiterEmail} gesendet.`);
+        setMitarbeiterZugangsdaten({
+          email: neuerMitarbeiterEmail.trim(),
+          link: json.link,
+          telefon: neuerMitarbeiterTelefon.trim() || undefined,
+        });
       }
       setNeuerMitarbeiterEmail("");
       setNeuerMitarbeiterName("");
@@ -474,7 +481,7 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
                 </button>
               </div>
               <p className="text-xs text-[var(--text-faint)]">
-                Leer lassen für normale Mail-Einladung. Mit Passwort: Account ist sofort nutzbar,
+                Leer lassen, um einen Einladungslink zu erzeugen (zum Weitergeben per WhatsApp/Mail). Mit Passwort: Account ist sofort nutzbar,
                 keine Mail wird verschickt – du gibst die Zugangsdaten selbst weiter.
               </p>
 
@@ -487,27 +494,19 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
                   ? "Wird angelegt…"
                   : neuerMitarbeiterPasswort.trim()
                   ? "Mitarbeiter mit Passwort anlegen"
-                  : "Mitarbeiter anlegen & einladen"}
+                  : "Mitarbeiter anlegen & Link erzeugen"}
               </button>
             </div>
           )}
 
           {mitarbeiterZugangsdaten && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-900/50 dark:bg-amber-500/10">
-              <p className="mb-2 font-medium text-[var(--text-strong)]">
-                Account angelegt – Zugangsdaten weitergeben:
-              </p>
-              <p className="font-mono text-[var(--text-strong)]">{mitarbeiterZugangsdaten.email}</p>
-              <p className="font-mono text-[var(--text-strong)]">
-                {mitarbeiterZugangsdaten.passwort}
-              </p>
-              <button
-                onClick={() => setMitarbeiterZugangsdaten(null)}
-                className="mt-2 text-xs text-[var(--text-faint)] hover:underline"
-              >
-                Ausblenden
-              </button>
-            </div>
+            <ZugangsdatenBox
+              email={mitarbeiterZugangsdaten.email}
+              passwort={mitarbeiterZugangsdaten.passwort}
+              link={mitarbeiterZugangsdaten.link}
+              telefon={mitarbeiterZugangsdaten.telefon}
+              onSchliessen={() => setMitarbeiterZugangsdaten(null)}
+            />
           )}
 
           <MitarbeiterListe
@@ -585,7 +584,7 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
                 </button>
               </div>
               <p className="text-xs text-[var(--text-faint)]">
-                Leer lassen für normale Mail-Einladung. Mit Passwort: Account ist sofort nutzbar,
+                Leer lassen, um einen Einladungslink zu erzeugen (zum Weitergeben per WhatsApp/Mail). Mit Passwort: Account ist sofort nutzbar,
                 keine Mail wird verschickt – du gibst die Zugangsdaten selbst weiter.
               </p>
 
@@ -598,25 +597,19 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
                   ? "Wird angelegt…"
                   : neuerKundePasswort.trim()
                   ? "Kunde mit Passwort anlegen"
-                  : "Kunde anlegen & einladen"}
+                  : "Kunde anlegen & Link erzeugen"}
               </button>
             </div>
           )}
 
           {kundeZugangsdaten && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-900/50 dark:bg-amber-500/10">
-              <p className="mb-2 font-medium text-[var(--text-strong)]">
-                Account angelegt – Zugangsdaten weitergeben:
-              </p>
-              <p className="font-mono text-[var(--text-strong)]">{kundeZugangsdaten.email}</p>
-              <p className="font-mono text-[var(--text-strong)]">{kundeZugangsdaten.passwort}</p>
-              <button
-                onClick={() => setKundeZugangsdaten(null)}
-                className="mt-2 text-xs text-[var(--text-faint)] hover:underline"
-              >
-                Ausblenden
-              </button>
-            </div>
+            <ZugangsdatenBox
+              email={kundeZugangsdaten.email}
+              passwort={kundeZugangsdaten.passwort}
+              link={kundeZugangsdaten.link}
+              telefon={kundeZugangsdaten.telefon}
+              onSchliessen={() => setKundeZugangsdaten(null)}
+            />
           )}
 
           <KundenListe organisationId={organisationId} refreshKey={kundenRefreshKey} />

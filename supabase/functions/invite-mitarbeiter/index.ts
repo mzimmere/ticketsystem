@@ -48,24 +48,43 @@ Deno.serve(async (req: Request) => {
       name: name ?? null,
     };
 
-    const { data, error } = passwort
-      ? await supabaseAdmin.auth.admin.createUser({
-          email,
-          password: passwort,
-          email_confirm: true,
-          user_metadata: metadaten,
-        })
-      : await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-          data: metadaten,
-          redirectTo: Deno.env.get("PUBLIC_SITE_URL"),
-        });
+    if (passwort) {
+      const { data, error } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: passwort,
+        email_confirm: true,
+        user_metadata: metadaten,
+      });
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ ok: true, userId: data.user?.id }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: {
+        data: metadaten,
+        redirectTo: Deno.env.get("PUBLIC_SITE_URL"),
+      },
+    });
 
     if (error) throw error;
 
-    return new Response(JSON.stringify({ ok: true, userId: data.user?.id }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        userId: data.user?.id,
+        link: data.properties?.action_link,
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   } catch (err) {
     console.error("Einladungs-Fehler:", err);
     return new Response(JSON.stringify({ error: "Einladung fehlgeschlagen" }), {

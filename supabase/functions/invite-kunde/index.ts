@@ -58,27 +58,48 @@ Deno.serve(async (req: Request) => {
     // Mit Passwort: Account wird sofort nutzbar angelegt, keine Mail nötig
     // (Fallback, falls der Mail-Versand mal nicht funktioniert).
     // Ohne Passwort: normaler Einladungs-Link per Mail, wie bisher.
-    const { data, error } = passwort
-      ? await supabaseAdmin.auth.admin.createUser({
-          email,
-          password: passwort,
-          email_confirm: true,
-          user_metadata: metadaten,
-        })
-      : await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-          data: metadaten,
-          redirectTo: Deno.env.get("PUBLIC_SITE_URL"),
-        });
+    // Mit Passwort: Account wird sofort nutzbar angelegt, keine Mail nötig
+    // (Fallback, falls der Mail-Versand mal nicht funktioniert).
+    // Ohne Passwort: Link wird erzeugt, aber NICHT automatisch verschickt -
+    // das Frontend zeigt ihn an, damit du ihn per WhatsApp/Mail/Kopieren
+    // selbst weitergeben kannst (umgeht Supabase's Mail-Limits komplett).
+    if (passwort) {
+      const { data, error } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: passwort,
+        email_confirm: true,
+        user_metadata: metadaten,
+      });
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ ok: true, userId: data.user?.id }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: {
+        data: metadaten,
+        redirectTo: Deno.env.get("PUBLIC_SITE_URL"),
+      },
+    });
 
     if (error) throw error;
 
-    // Der Trigger trg_handle_new_user (siehe SQL-Schema, Abschnitt 9)
-    // legt jetzt automatisch die passende profiles-Zeile an.
-
-    return new Response(JSON.stringify({ ok: true, userId: data.user?.id }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        userId: data.user?.id,
+        link: data.properties?.action_link,
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   } catch (err) {
     console.error("Einladungs-Fehler:", err);
     return new Response(JSON.stringify({ error: "Einladung fehlgeschlagen" }), {
