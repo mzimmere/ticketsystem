@@ -743,3 +743,14 @@ create policy kunden_preise_delete on kunden_preise for delete
     current_user_rolle() = 'super_admin'
     or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
   );
+
+-- ============================================================
+-- 24. Adresse aufteilen: PLZ, Ort, Straße, Hausnummer
+-- ============================================================
+-- "adresse" (Freitext) bleibt als Altfeld bestehen, UI nutzt ab hier
+-- nur noch die strukturierten Felder.
+alter table profiles
+  add column strasse text,
+  add column hausnummer text,
+  add column plz text,
+  add column ort text;

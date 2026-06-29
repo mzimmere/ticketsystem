@@ -18,7 +18,10 @@ interface Anpassung {
 
 interface Kunde {
   name: string | null;
-  adresse: string | null;
+  strasse: string | null;
+  hausnummer: string | null;
+  plz: string | null;
+  ort: string | null;
   telefonnummer: string | null;
 }
 
@@ -86,7 +89,11 @@ export default function RechnungDetail({
     setLaedt(true);
     const [{ data: kundeDaten }, { data: orgDaten }, { data: zeitDaten }, { data: anpassungDaten }] =
       await Promise.all([
-        supabase.from("profiles").select("name, adresse, telefonnummer").eq("id", kundeId).single(),
+        supabase
+          .from("profiles")
+          .select("name, strasse, hausnummer, plz, ort, telefonnummer")
+          .eq("id", kundeId)
+          .single(),
         supabase
           .from("organisationen")
           .select("name, logo_url, adresse, telefon, email")
@@ -207,8 +214,12 @@ export default function RechnungDetail({
         <div className="mb-6">
           <p className="text-xs uppercase tracking-wide text-[var(--text-faint)]">Kunde</p>
           <p className="text-sm font-medium text-[var(--text-strong)]">{kunde?.name ?? "Unbenannt"}</p>
-          {kunde?.adresse && (
-            <p className="whitespace-pre-line text-sm text-[var(--text-soft)]">{kunde.adresse}</p>
+          {(kunde?.strasse || kunde?.ort) && (
+            <p className="text-sm text-[var(--text-soft)]">
+              {[kunde?.strasse, kunde?.hausnummer].filter(Boolean).join(" ")}
+              {(kunde?.strasse || kunde?.hausnummer) && (kunde?.plz || kunde?.ort) && <br />}
+              {[kunde?.plz, kunde?.ort].filter(Boolean).join(" ")}
+            </p>
           )}
           {kunde?.telefonnummer && (
             <p className="text-sm text-[var(--text-soft)]">{kunde.telefonnummer}</p>

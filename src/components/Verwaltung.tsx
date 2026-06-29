@@ -57,7 +57,10 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
   const [neuerKundeEmail, setNeuerKundeEmail] = useState("");
   const [neuerKundeName, setNeuerKundeName] = useState("");
   const [neuerKundeTelefon, setNeuerKundeTelefon] = useState("");
-  const [neuerKundeAdresse, setNeuerKundeAdresse] = useState("");
+  const [neuerKundeStrasse, setNeuerKundeStrasse] = useState("");
+  const [neuerKundeHausnummer, setNeuerKundeHausnummer] = useState("");
+  const [neuerKundePlz, setNeuerKundePlz] = useState("");
+  const [neuerKundeOrt, setNeuerKundeOrt] = useState("");
   const [neuerKundeNotizen, setNeuerKundeNotizen] = useState("");
   const [neuerKundePasswort, setNeuerKundePasswort] = useState("");
   const [kundenRefreshKey, setKundenRefreshKey] = useState(0);
@@ -206,12 +209,18 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Anlegen fehlgeschlagen");
 
-      if (json.userId && (neuerKundeTelefon || neuerKundeAdresse || neuerKundeNotizen)) {
+      if (
+        json.userId &&
+        (neuerKundeTelefon || neuerKundeStrasse || neuerKundeHausnummer || neuerKundePlz || neuerKundeOrt || neuerKundeNotizen)
+      ) {
         await supabase
           .from("profiles")
           .update({
             telefonnummer: neuerKundeTelefon.trim() || null,
-            adresse: neuerKundeAdresse.trim() || null,
+            strasse: neuerKundeStrasse.trim() || null,
+            hausnummer: neuerKundeHausnummer.trim() || null,
+            plz: neuerKundePlz.trim() || null,
+            ort: neuerKundeOrt.trim() || null,
             notizen: neuerKundeNotizen.trim() || null,
           })
           .eq("id", json.userId);
@@ -229,7 +238,10 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
       setNeuerKundeEmail("");
       setNeuerKundeName("");
       setNeuerKundeTelefon("");
-      setNeuerKundeAdresse("");
+      setNeuerKundeStrasse("");
+      setNeuerKundeHausnummer("");
+      setNeuerKundePlz("");
+      setNeuerKundeOrt("");
       setNeuerKundeNotizen("");
       setNeuerKundePasswort("");
       setZeigeKundeAnlegen(false);
@@ -595,13 +607,38 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
                 placeholder="Telefon / WhatsApp (optional)"
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
               />
-              <textarea
-                value={neuerKundeAdresse}
-                onChange={(e) => setNeuerKundeAdresse(e.target.value)}
-                placeholder="Adresse (optional)"
-                rows={2}
-                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={neuerKundeStrasse}
+                  onChange={(e) => setNeuerKundeStrasse(e.target.value)}
+                  placeholder="Straße (optional)"
+                  className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                />
+                <input
+                  type="text"
+                  value={neuerKundeHausnummer}
+                  onChange={(e) => setNeuerKundeHausnummer(e.target.value)}
+                  placeholder="Nr."
+                  className="w-16 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                />
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={neuerKundePlz}
+                  onChange={(e) => setNeuerKundePlz(e.target.value)}
+                  placeholder="PLZ"
+                  className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                />
+                <input
+                  type="text"
+                  value={neuerKundeOrt}
+                  onChange={(e) => setNeuerKundeOrt(e.target.value)}
+                  placeholder="Ort"
+                  className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                />
+              </div>
               <textarea
                 value={neuerKundeNotizen}
                 onChange={(e) => setNeuerKundeNotizen(e.target.value)}

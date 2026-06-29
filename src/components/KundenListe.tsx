@@ -9,7 +9,10 @@ interface Kunde {
   name: string | null;
   avatar_url: string | null;
   telefonnummer: string | null;
-  adresse: string | null;
+  strasse: string | null;
+  hausnummer: string | null;
+  plz: string | null;
+  ort: string | null;
   notizen: string | null;
   deaktiviert: boolean;
 }
@@ -45,6 +48,7 @@ export default function KundenListe({
   onlineIds,
 }: KundenListeProps) {
   const [kunden, setKunden] = useState<Kunde[]>([]);
+  const [suchbegriff, setSuchbegriff] = useState("");
   const [zeigeArchivierte, setZeigeArchivierte] = useState(false);
   const [offenId, setOffenId] = useState<string | null>(null);
   const [entwurf, setEntwurf] = useState<Partial<Kunde>>({});
@@ -68,7 +72,9 @@ export default function KundenListe({
   async function ladeKunden() {
     const { data } = await supabase
       .from("profiles")
-      .select("id, name, avatar_url, telefonnummer, adresse, notizen, deaktiviert")
+      .select(
+        "id, name, avatar_url, telefonnummer, strasse, hausnummer, plz, ort, notizen, deaktiviert",
+      )
       .eq("organisation_id", organisationId)
       .eq("rolle", "kunde")
       .eq("deaktiviert", zeigeArchivierte)
@@ -153,7 +159,10 @@ export default function KundenListe({
       .update({
         name: entwurf.name?.trim() || null,
         telefonnummer: entwurf.telefonnummer?.trim() || null,
-        adresse: entwurf.adresse?.trim() || null,
+        strasse: entwurf.strasse?.trim() || null,
+        hausnummer: entwurf.hausnummer?.trim() || null,
+        plz: entwurf.plz?.trim() || null,
+        ort: entwurf.ort?.trim() || null,
         notizen: entwurf.notizen?.trim() || null,
       })
       .eq("id", offenId);
@@ -266,31 +275,42 @@ export default function KundenListe({
     }
   }
 
-  if (kunden.length === 0) {
-    return (
-      <div className="space-y-2">
-        <p className="text-sm text-[var(--text-faint)]">
-          {zeigeArchivierte ? "Keine deaktivierten Kunden." : "Noch keine Kunden vorhanden."}
-        </p>
-        <button
-          onClick={() => setZeigeArchivierte((v) => !v)}
-          className="text-xs text-[var(--text-faint)] hover:underline"
-        >
-          {zeigeArchivierte ? "← Zurück zu aktiven Kunden" : "Deaktivierte Kunden anzeigen"}
-        </button>
-      </div>
-    );
-  }
+  const gefilterteKunden = kunden.filter((k) => {
+    const begriff = suchbegriff.trim().toLowerCase();
+    if (!begriff) return true;
+    return [k.name, k.telefonnummer, k.strasse, k.hausnummer, k.plz, k.ort]
+      .filter(Boolean)
+      .some((feld) => feld!.toLowerCase().includes(begriff));
+  });
 
   return (
     <div className="space-y-2">
-      <button
-        onClick={() => setZeigeArchivierte((v) => !v)}
-        className="text-xs text-[var(--text-faint)] hover:underline"
-      >
-        {zeigeArchivierte ? "← Zurück zu aktiven Kunden" : "Deaktivierte Kunden anzeigen"}
-      </button>
-      {kunden.map((k) => (
+      <div className="flex items-center justify-between gap-2">
+        <input
+          type="text"
+          value={suchbegriff}
+          onChange={(e) => setSuchbegriff(e.target.value)}
+          placeholder="Suche nach Name, Telefon, Straße, PLZ oder Ort…"
+          className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+        />
+        <button
+          onClick={() => setZeigeArchivierte((v) => !v)}
+          className="shrink-0 text-xs text-[var(--text-faint)] hover:underline"
+        >
+          {zeigeArchivierte ? "← Aktive" : "Archiv"}
+        </button>
+      </div>
+
+      {gefilterteKunden.length === 0 ? (
+        <p className="text-sm text-[var(--text-faint)]">
+          {kunden.length === 0
+            ? zeigeArchivierte
+              ? "Keine deaktivierten Kunden."
+              : "Noch keine Kunden vorhanden."
+            : "Keine Treffer für diese Suche."}
+        </p>
+      ) : (
+        gefilterteKunden.map((k) => (
         <div
           key={k.id}
           className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-surface)]"
@@ -354,15 +374,36 @@ export default function KundenListe({
                 />
               </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  Adresse
-                </label>
-                <textarea
-                  value={entwurf.adresse ?? ""}
-                  onChange={(e) => setEntwurf({ ...entwurf, adresse: e.target.value })}
-                  rows={2}
-                  className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={entwurf.strasse ?? ""}
+                  onChange={(e) => setEntwurf({ ...entwurf, strasse: e.target.value })}
+                  placeholder="Straße"
+                  className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                />
+                <input
+                  type="text"
+                  value={entwurf.hausnummer ?? ""}
+                  onChange={(e) => setEntwurf({ ...entwurf, hausnummer: e.target.value })}
+                  placeholder="Nr."
+                  className="w-16 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                />
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={entwurf.plz ?? ""}
+                  onChange={(e) => setEntwurf({ ...entwurf, plz: e.target.value })}
+                  placeholder="PLZ"
+                  className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                />
+                <input
+                  type="text"
+                  value={entwurf.ort ?? ""}
+                  onChange={(e) => setEntwurf({ ...entwurf, ort: e.target.value })}
+                  placeholder="Ort"
+                  className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
               </div>
 
@@ -546,7 +587,8 @@ export default function KundenListe({
             </div>
           )}
         </div>
-      ))}
+        ))
+      )}
     </div>
   );
 }
