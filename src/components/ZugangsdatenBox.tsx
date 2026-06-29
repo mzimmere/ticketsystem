@@ -5,6 +5,8 @@ interface ZugangsdatenBoxProps {
   passwort?: string;
   link?: string;
   telefon?: string;
+  firmenName?: string | null;
+  logoUrl?: string | null;
   onSchliessen: () => void;
 }
 
@@ -13,13 +15,34 @@ export default function ZugangsdatenBox({
   passwort,
   link,
   telefon,
+  firmenName,
+  logoUrl,
   onSchliessen,
 }: ZugangsdatenBoxProps) {
   const [kopiert, setKopiert] = useState(false);
+  const seitenUrl = window.location.origin;
+  const absender = firmenName ? `${firmenName}` : "dein IT-Team";
 
   const text = passwort
-    ? `Zugangsdaten für dein Login:\nE-Mail: ${email}\nPasswort: ${passwort}`
-    : `Hier ist dein Link, um dein Konto einzurichten:\n${link}`;
+    ? [
+        `Hallo! ${absender} hat dir einen Zugang zum Ticketsystem eingerichtet.`,
+        ``,
+        `So loggst du dich ein:`,
+        `1. Öffne ${seitenUrl}`,
+        `2. Melde dich mit folgenden Daten an:`,
+        `   E-Mail: ${email}`,
+        `   Passwort: ${passwort}`,
+        ``,
+        `Dort siehst du deine Anfragen und kannst neue stellen.`,
+      ].join("\n")
+    : [
+        `Hallo! ${absender} hat dir einen Zugang zum Ticketsystem eingerichtet.`,
+        ``,
+        `So richtest du dein Konto ein:`,
+        `1. Klick auf diesen Link: ${link}`,
+        `2. Lege dort dein eigenes Passwort fest`,
+        `3. Danach kannst du dich jederzeit unter ${seitenUrl} mit deiner E-Mail und diesem Passwort einloggen.`,
+      ].join("\n");
 
   async function kopieren() {
     await navigator.clipboard.writeText(text);
@@ -36,15 +59,20 @@ export default function ZugangsdatenBox({
   }
 
   function perMail() {
-    const betreff = encodeURIComponent("Dein Zugang zum Ticketsystem");
+    const betreff = encodeURIComponent(
+      firmenName ? `Dein Zugang zum Ticketsystem von ${firmenName}` : "Dein Zugang zum Ticketsystem",
+    );
     window.open(`mailto:${email}?subject=${betreff}&body=${encodeURIComponent(text)}`, "_blank");
   }
 
   return (
     <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-900/50 dark:bg-amber-500/10">
-      <p className="mb-2 font-medium text-[var(--text-strong)]">
-        {passwort ? "Account angelegt – Zugangsdaten weitergeben:" : "Link erzeugt – weitergeben:"}
-      </p>
+      <div className="mb-2 flex items-center gap-2">
+        {logoUrl && <img src={logoUrl} alt={firmenName ?? ""} className="h-6 w-6 rounded" />}
+        <p className="font-medium text-[var(--text-strong)]">
+          {passwort ? "Account angelegt – Zugangsdaten weitergeben:" : "Link erzeugt – weitergeben:"}
+        </p>
+      </div>
 
       <p className="mb-1 font-mono text-xs text-[var(--text-strong)]">{email}</p>
       {passwort && <p className="mb-1 font-mono text-xs text-[var(--text-strong)]">{passwort}</p>}

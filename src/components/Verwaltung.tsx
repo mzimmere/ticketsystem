@@ -540,6 +540,8 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
               passwort={mitarbeiterZugangsdaten.passwort}
               link={mitarbeiterZugangsdaten.link}
               telefon={mitarbeiterZugangsdaten.telefon}
+              firmenName={organisation?.name}
+              logoUrl={organisation?.logo_url}
               onSchliessen={() => setMitarbeiterZugangsdaten(null)}
             />
           )}
@@ -643,6 +645,8 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
               passwort={kundeZugangsdaten.passwort}
               link={kundeZugangsdaten.link}
               telefon={kundeZugangsdaten.telefon}
+              firmenName={organisation?.name}
+              logoUrl={organisation?.logo_url}
               onSchliessen={() => setKundeZugangsdaten(null)}
             />
           )}
