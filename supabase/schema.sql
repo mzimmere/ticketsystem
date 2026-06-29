@@ -112,7 +112,10 @@ $$ language sql stable security definer set search_path = public;
 
 -- Organisationen: nur super_admin sieht/verwaltet die Liste
 create policy organisationen_select on organisationen for select
-  using (current_user_rolle() = 'super_admin');
+  using (
+    current_user_rolle() = 'super_admin'
+    or id = current_user_org()
+  );
 
 -- Tickets: super_admin & org_admin/techniker sehen ihre Organisation
 create policy tickets_select_intern on tickets for select
@@ -395,3 +398,92 @@ create policy logos_insert on storage.objects for insert
 
 create policy logos_select on storage.objects for select
   using (bucket_id = 'logos');
+
+-- ============================================================
+-- 13. Fehlende Schreib-Policies (INSERT/UPDATE)
+-- ============================================================
+-- Bugfix: bisher gab es fast überall nur SELECT-Policies, das blockierte
+-- Ticket anlegen, Status ändern, Zeit erfassen, Nachricht schreiben,
+-- Firmenprofil bearbeiten usw.
+
+create policy organisationen_update on organisationen for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (id = current_user_org() and current_user_rolle() = 'org_admin')
+  );
+
+create policy organisationen_insert on organisationen for insert
+  with check (current_user_rolle() = 'super_admin');
+
+create policy profiles_update on profiles for update
+  using (
+    id = auth.uid()
+    or current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+  );
+
+create policy tickets_insert on tickets for insert
+  with check (
+    organisation_id = current_user_org()
+    or current_user_rolle() = 'super_admin'
+  );
+
+create policy tickets_update on tickets for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+  );
+
+create policy nachrichten_insert on ticket_nachrichten for insert
+  with check (
+    exists (
+      select 1 from tickets t
+      where t.id = ticket_nachrichten.ticket_id
+        and (
+          current_user_rolle() = 'super_admin'
+          or (t.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+          or (t.kunde_id = auth.uid() and ticket_nachrichten.quelle <> 'intern')
+        )
+    )
+  );
+
+create policy zeiteintraege_insert on zeiteintraege for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+  );
+
+create policy zeiteintraege_update on zeiteintraege for update
+  using (
+    techniker_id = auth.uid()
+    or current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+  );
+
+create policy anhaenge_select on anhaenge for select
+  using (
+    exists (
+      select 1 from ticket_nachrichten n
+      join tickets t on t.id = n.ticket_id
+      where n.id = anhaenge.nachricht_id
+        and (
+          current_user_rolle() = 'super_admin'
+          or (t.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+          or t.kunde_id = auth.uid()
+        )
+    )
+  );
+
+create policy anhaenge_insert on anhaenge for insert
+  with check (
+    exists (
+      select 1 from ticket_nachrichten n
+      join tickets t on t.id = n.ticket_id
+      where n.id = anhaenge.nachricht_id
+        and (
+          current_user_rolle() = 'super_admin'
+          or (t.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+          or t.kunde_id = auth.uid()
+        )
+    )
+  );

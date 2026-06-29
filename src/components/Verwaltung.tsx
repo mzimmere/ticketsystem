@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import Avatar from "./Avatar";
 
 type Rolle = "super_admin" | "org_admin" | "techniker" | "kunde";
 
@@ -9,16 +10,32 @@ interface Organisation {
   logo_url: string | null;
 }
 
+interface TeamMitglied {
+  id: string;
+  name: string | null;
+  avatar_url: string | null;
+  rolle: Rolle;
+  verfuegbarkeit: string;
+}
+
 interface VerwaltungProps {
   rolle: Rolle;
   organisationId: string | null;
 }
+
+const ROLLE_LABEL: Record<Rolle, string> = {
+  super_admin: "Super-Admin",
+  org_admin: "Org-Admin",
+  techniker: "Techniker",
+  kunde: "Kunde",
+};
 
 export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [orgName, setOrgName] = useState("");
   const [alleOrganisationen, setAlleOrganisationen] = useState<Organisation[]>([]);
   const [neueOrgName, setNeueOrgName] = useState("");
+  const [team, setTeam] = useState<TeamMitglied[]>([]);
 
   const [einladenEmail, setEinladenEmail] = useState("");
   const [einladenName, setEinladenName] = useState("");
@@ -28,7 +45,10 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
   const [laedt, setLaedt] = useState(false);
 
   useEffect(() => {
-    if (organisationId) ladeOrganisation();
+    if (organisationId) {
+      ladeOrganisation();
+      ladeTeam();
+    }
     if (rolle === "super_admin") ladeAlleOrganisationen();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -43,6 +63,20 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
       setOrganisation(data);
       setOrgName(data.name);
     }
+  }
+
+  async function ladeTeam() {
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, name, avatar_url, rolle, verfuegbarkeit")
+      .eq("organisation_id", organisationId)
+      .order("rolle");
+    setTeam((data as TeamMitglied[]) ?? []);
+  }
+
+  async function rolleAendern(mitgliedId: string, neueRolle: Rolle) {
+    await supabase.from("profiles").update({ rolle: neueRolle }).eq("id", mitgliedId);
+    setTeam((t) => t.map((m) => (m.id === mitgliedId ? { ...m, rolle: neueRolle } : m)));
   }
 
   async function ladeAlleOrganisationen() {
@@ -133,6 +167,7 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
       setHinweis(`Einladung an ${einladenEmail} gesendet.`);
       setEinladenEmail("");
       setEinladenName("");
+      ladeTeam();
     } catch (err) {
       console.error(err);
       setHinweis("Einladung fehlgeschlagen. Sind die Edge Functions deployt?");
@@ -242,6 +277,44 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
           >
             Einladung senden
           </button>
+        </div>
+      )}
+
+      {organisationId && team.length > 0 && (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
+          <h3 className="text-sm font-medium text-[var(--text-strong)]">Team</h3>
+          <div className="divide-y divide-[var(--border)]">
+            {team.map((m) => (
+              <div key={m.id} className="flex items-center justify-between gap-3 py-2.5">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Avatar name={m.name} avatarUrl={m.avatar_url} groesse="sm" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm text-[var(--text-strong)]">
+                      {m.name ?? "Unbenannt"}
+                    </p>
+                    {m.rolle !== "kunde" && m.verfuegbarkeit !== "verfuegbar" && (
+                      <p className="text-xs text-[var(--text-faint)]">
+                        {m.verfuegbarkeit === "urlaub" ? "Urlaub" : "Abwesend"}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {(rolle === "super_admin" || rolle === "org_admin") ? (
+                  <select
+                    value={m.rolle}
+                    onChange={(e) => rolleAendern(m.id, e.target.value as Rolle)}
+                    className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1 text-xs text-[var(--text-strong)]"
+                  >
+                    <option value="kunde">Kunde</option>
+                    <option value="techniker">Techniker</option>
+                    <option value="org_admin">Org-Admin</option>
+                  </select>
+                ) : (
+                  <span className="text-xs text-[var(--text-soft)]">{ROLLE_LABEL[m.rolle]}</span>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
