@@ -358,13 +358,33 @@ create policy profiles_select on profiles for select
 create policy avatare_insert on storage.objects for insert
   with check (
     bucket_id = 'avatare'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and (
+      (storage.foldername(name))[1] = auth.uid()::text
+      or exists (
+        select 1 from profiles p
+        where p.id::text = (storage.foldername(name))[1]
+          and (
+            current_user_rolle() = 'super_admin'
+            or (p.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+          )
+      )
+    )
   );
 
 create policy avatare_update on storage.objects for update
   using (
     bucket_id = 'avatare'
-    and (storage.foldername(name))[1] = auth.uid()::text
+    and (
+      (storage.foldername(name))[1] = auth.uid()::text
+      or exists (
+        select 1 from profiles p
+        where p.id::text = (storage.foldername(name))[1]
+          and (
+            current_user_rolle() = 'super_admin'
+            or (p.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+          )
+      )
+    )
   );
 
 create policy avatare_select on storage.objects for select
@@ -494,3 +514,86 @@ create policy anhaenge_insert on anhaenge for insert
 alter table profiles
   add column adresse text,
   add column notizen text;
+
+-- ============================================================
+-- 15. Kundendokumente (ticket-unabhängig) + erweiterte
+-- Avatar-Upload-Rechte
+-- ============================================================
+-- Voraussetzung: Storage-Bucket "kundendokumente" anlegen (privat).
+
+create table kunden_dokumente (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  kunde_id uuid not null references profiles(id),
+  storage_path text not null,
+  dateiname text not null,
+  dateityp text,
+  hochgeladen_von uuid references profiles(id),
+  erstellt_am timestamptz default now()
+);
+
+create index idx_kunden_dokumente_kunde on kunden_dokumente(kunde_id);
+
+alter table kunden_dokumente enable row level security;
+
+create policy kunden_dokumente_select on kunden_dokumente for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+  );
+
+create policy kunden_dokumente_insert on kunden_dokumente for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+  );
+
+create policy kunden_dokumente_delete on kunden_dokumente for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+  );
+
+create policy kundendokumente_insert on storage.objects for insert
+  with check (
+    bucket_id = 'kundendokumente'
+    and exists (
+      select 1 from profiles p
+      where p.id::text = (storage.foldername(name))[1]
+        and (
+          current_user_rolle() = 'super_admin'
+          or (p.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+        )
+    )
+  );
+
+create policy kundendokumente_select on storage.objects for select
+  using (
+    bucket_id = 'kundendokumente'
+    and exists (
+      select 1 from profiles p
+      where p.id::text = (storage.foldername(name))[1]
+        and (
+          current_user_rolle() = 'super_admin'
+          or (p.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+        )
+    )
+  );
+
+create policy kundendokumente_delete on storage.objects for delete
+  using (
+    bucket_id = 'kundendokumente'
+    and exists (
+      select 1 from profiles p
+      where p.id::text = (storage.foldername(name))[1]
+        and (
+          current_user_rolle() = 'super_admin'
+          or (p.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+        )
+    )
+  );
+
+-- ============================================================
+-- 16. Fortlaufende Ticket-Nummer
+-- ============================================================
+alter table tickets add column ticket_nr serial;

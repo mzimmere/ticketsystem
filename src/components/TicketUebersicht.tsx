@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../lib/supabaseClient";
 import Avatar from "./Avatar";
 import NeuesTicketIntern from "./NeuesTicketIntern";
@@ -8,12 +8,18 @@ type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
 
 interface TicketZeile {
   id: string;
+  ticket_nr: number;
   titel: string;
   status: Status;
   prioritaet: Prioritaet;
   erstellt_am: string;
-  kunde: { name: string | null } | null;
+  kunde: { id: string; name: string | null } | null;
   zugewiesen: { name: string | null; avatar_url: string | null } | null;
+}
+
+interface KundeOption {
+  id: string;
+  name: string | null;
 }
 
 const STATUS_LABEL: Record<Status, string> = {
@@ -31,8 +37,6 @@ const PRIORITAET_LABEL: Record<Prioritaet, string> = {
   kritisch: "Kritisch",
 };
 
-// Wiederverwendet die Badge-Textfarben aus index.css als kräftige Akzentfarbe
-// für den Prioritäts-Punkt - die sind pro Theme schon auf guten Kontrast abgestimmt.
 const PRIORITAET_AKZENT: Record<Prioritaet, string> = {
   niedrig: "var(--text-faint)",
   mittel: "var(--badge-mittel-text)",
@@ -87,8 +91,11 @@ export default function TicketUebersicht({
   technikerId,
 }: TicketUebersichtProps) {
   const [tickets, setTickets] = useState<TicketZeile[]>([]);
+  const [kundenOptionen, setKundenOptionen] = useState<KundeOption[]>([]);
   const [statusFilter, setStatusFilter] = useState<Status | "alle">("alle");
   const [prioritaetFilter, setPrioritaetFilter] = useState<Prioritaet | "alle">("alle");
+  const [kundeFilter, setKundeFilter] = useState<string>("alle");
+  const [suchbegriff, setSuchbegriff] = useState("");
   const [laedt, setLaedt] = useState(true);
   const [zeigeNeuesTicket, setZeigeNeuesTicket] = useState(false);
 
@@ -106,24 +113,50 @@ export default function TicketUebersicht({
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, prioritaetFilter]);
+  }, [statusFilter, prioritaetFilter, kundeFilter]);
+
+  useEffect(() => {
+    if (!organisationId) return;
+    supabase
+      .from("profiles")
+      .select("id, name")
+      .eq("organisation_id", organisationId)
+      .eq("rolle", "kunde")
+      .order("name")
+      .then(({ data }) => setKundenOptionen((data as KundeOption[]) ?? []));
+  }, [organisationId]);
 
   async function ladeTickets() {
     setLaedt(true);
     let query = supabase
       .from("tickets")
       .select(
-        "id, titel, status, prioritaet, erstellt_am, kunde:kunde_id(name), zugewiesen:zugewiesen_an(name, avatar_url)",
+        "id, ticket_nr, titel, status, prioritaet, erstellt_am, kunde:kunde_id(id, name), zugewiesen:zugewiesen_an(name, avatar_url)",
       )
       .order("erstellt_am", { ascending: false });
 
     if (statusFilter !== "alle") query = query.eq("status", statusFilter);
     if (prioritaetFilter !== "alle") query = query.eq("prioritaet", prioritaetFilter);
+    if (kundeFilter !== "alle") query = query.eq("kunde_id", kundeFilter);
 
     const { data } = await query;
     setTickets((data as unknown as TicketZeile[]) ?? []);
     setLaedt(false);
   }
+
+  const gefilterteTickets = useMemo(() => {
+    const begriff = suchbegriff.trim().toLowerCase();
+    if (!begriff) return tickets;
+    return tickets.filter((t) => {
+      const ticketNrText = `#${t.ticket_nr}`;
+      return (
+        t.titel.toLowerCase().includes(begriff) ||
+        t.kunde?.name?.toLowerCase().includes(begriff) ||
+        t.zugewiesen?.name?.toLowerCase().includes(begriff) ||
+        ticketNrText.includes(begriff)
+      );
+    });
+  }, [tickets, suchbegriff]);
 
   return (
     <div className="space-y-4">
@@ -136,13 +169,13 @@ export default function TicketUebersicht({
         </h2>
         {!laedt && (
           <span className="font-mono text-xs text-[var(--text-faint)]">
-            {tickets.length} {tickets.length === 1 ? "Eintrag" : "Einträge"}
+            {gefilterteTickets.length} {gefilterteTickets.length === 1 ? "Eintrag" : "Einträge"}
           </span>
         )}
       </div>
 
-      {organisationId && (
-        zeigeNeuesTicket ? (
+      {organisationId &&
+        (zeigeNeuesTicket ? (
           <NeuesTicketIntern
             organisationId={organisationId}
             technikerId={technikerId}
@@ -159,51 +192,89 @@ export default function TicketUebersicht({
           >
             + Neues Ticket anlegen
           </button>
-        )
-      )}
+        ))}
 
-      <div>
-        <p className="mb-1.5 text-[0.65rem] font-medium uppercase tracking-wide text-[var(--text-faint)]">
-          Status
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          <FilterChip aktiv={statusFilter === "alle"} onClick={() => setStatusFilter("alle")}>
-            Alle
-          </FilterChip>
-          {(Object.keys(STATUS_LABEL) as Status[]).map((s) => (
-            <FilterChip key={s} aktiv={statusFilter === s} onClick={() => setStatusFilter(s)}>
-              {STATUS_LABEL[s]}
-            </FilterChip>
-          ))}
-        </div>
+      {/* Suche */}
+      <div className="relative">
+        <svg
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-faint)]"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"
+          />
+        </svg>
+        <input
+          type="text"
+          value={suchbegriff}
+          onChange={(e) => setSuchbegriff(e.target.value)}
+          placeholder="Suche nach Titel, Kunde, Ticket-Nr. (#12) oder Bearbeiter…"
+          className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-surface)] py-2 pl-9 pr-3 text-sm text-[var(--text-strong)]"
+        />
       </div>
 
-      <div>
-        <p className="mb-1.5 text-[0.65rem] font-medium uppercase tracking-wide text-[var(--text-faint)]">
-          Priorität
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          <FilterChip
-            aktiv={prioritaetFilter === "alle"}
-            onClick={() => setPrioritaetFilter("alle")}
-          >
-            Alle
-          </FilterChip>
-          {(Object.keys(PRIORITAET_LABEL) as Prioritaet[]).map((p) => (
-            <FilterChip key={p} aktiv={prioritaetFilter === p} onClick={() => setPrioritaetFilter(p)}>
-              {PRIORITAET_LABEL[p]}
-            </FilterChip>
+      {/* Filter */}
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={kundeFilter}
+          onChange={(e) => setKundeFilter(e.target.value)}
+          className="rounded-full border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-1 text-xs text-[var(--text-strong)]"
+        >
+          <option value="alle">Alle Kunden</option>
+          {kundenOptionen.map((k) => (
+            <option key={k.id} value={k.id}>
+              {k.name ?? "Unbenannt"}
+            </option>
           ))}
-        </div>
+        </select>
+
+        <span className="h-4 w-px bg-[var(--border)]" />
+
+        <FilterChip aktiv={statusFilter === "alle"} onClick={() => setStatusFilter("alle")}>
+          Alle Status
+        </FilterChip>
+        {(Object.keys(STATUS_LABEL) as Status[]).map((s) => (
+          <FilterChip key={s} aktiv={statusFilter === s} onClick={() => setStatusFilter(s)}>
+            {STATUS_LABEL[s]}
+          </FilterChip>
+        ))}
+
+        <span className="h-4 w-px bg-[var(--border)]" />
+
+        <FilterChip
+          aktiv={prioritaetFilter === "alle"}
+          onClick={() => setPrioritaetFilter("alle")}
+        >
+          Alle Prioritäten
+        </FilterChip>
+        {(Object.keys(PRIORITAET_LABEL) as Prioritaet[]).map((p) => (
+          <FilterChip key={p} aktiv={prioritaetFilter === p} onClick={() => setPrioritaetFilter(p)}>
+            {PRIORITAET_LABEL[p]}
+          </FilterChip>
+        ))}
       </div>
 
+      {/* Tabelle */}
       {laedt ? (
         <p className="text-sm text-[var(--text-faint)]">Lädt…</p>
-      ) : tickets.length === 0 ? (
+      ) : gefilterteTickets.length === 0 ? (
         <p className="text-sm text-[var(--text-faint)]">Keine Tickets gefunden.</p>
       ) : (
         <div className="overflow-hidden rounded-lg border border-[var(--border)]">
-          {tickets.map((ticket) => (
+          <div className="hidden items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-muted)] px-4 py-1.5 text-[0.65rem] font-medium uppercase tracking-wide text-[var(--text-faint)] sm:flex">
+            <span className="w-2" />
+            <span className="w-10">Nr.</span>
+            <span className="flex-1">Betreff &amp; Kunde</span>
+            <span className="w-20 text-right">Status</span>
+            <span className="w-20 text-right">Zeit</span>
+          </div>
+
+          {gefilterteTickets.map((ticket) => (
             <button
               key={ticket.id}
               onClick={() => onAuswahl(ticket.id)}
@@ -214,8 +285,14 @@ export default function TicketUebersicht({
                 style={{ background: PRIORITAET_AKZENT[ticket.prioritaet] }}
                 title={PRIORITAET_LABEL[ticket.prioritaet]}
               />
+              <span className="hidden w-10 shrink-0 font-mono text-xs text-[var(--text-faint)] sm:inline">
+                #{ticket.ticket_nr}
+              </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-[var(--text-strong)]">
+                  <span className="mr-1.5 font-mono text-xs text-[var(--text-faint)] sm:hidden">
+                    #{ticket.ticket_nr}
+                  </span>
                   {ticket.titel}
                 </p>
                 <div className="mt-0.5 flex items-center gap-1.5">

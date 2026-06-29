@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { sichererDateiname } from "../lib/dateiname";
 import Avatar from "./Avatar";
 
 interface Kunde {
@@ -12,6 +13,13 @@ interface Kunde {
   preis_pro_minute_cent: number | null;
 }
 
+interface Dokument {
+  id: string;
+  storage_path: string;
+  dateiname: string;
+  erstellt_am: string;
+}
+
 interface KundenListeProps {
   organisationId: string;
   refreshKey?: number;
@@ -21,6 +29,7 @@ export default function KundenListe({ organisationId, refreshKey }: KundenListeP
   const [kunden, setKunden] = useState<Kunde[]>([]);
   const [offenId, setOffenId] = useState<string | null>(null);
   const [entwurf, setEntwurf] = useState<Partial<Kunde>>({});
+  const [dokumente, setDokumente] = useState<Dokument[]>([]);
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
 
@@ -39,10 +48,20 @@ export default function KundenListe({ organisationId, refreshKey }: KundenListeP
     setKunden((data as Kunde[]) ?? []);
   }
 
+  async function ladeDokumente(kundeId: string) {
+    const { data } = await supabase
+      .from("kunden_dokumente")
+      .select("id, storage_path, dateiname, erstellt_am")
+      .eq("kunde_id", kundeId)
+      .order("erstellt_am", { ascending: false });
+    setDokumente((data as Dokument[]) ?? []);
+  }
+
   function bearbeitenOeffnen(k: Kunde) {
     setOffenId(k.id);
     setEntwurf(k);
     setHinweis(null);
+    ladeDokumente(k.id);
   }
 
   async function speichern() {
@@ -71,6 +90,80 @@ export default function KundenListe({ organisationId, refreshKey }: KundenListeP
     ladeKunden();
   }
 
+  async function avatarHochladen(kundeId: string, datei: File) {
+    setLaedt(true);
+    setHinweis(null);
+    try {
+      const pfad = `${kundeId}/${Date.now()}-${sichererDateiname(datei.name)}`;
+      const { error: uploadFehler } = await supabase.storage
+        .from("avatare")
+        .upload(pfad, datei, { upsert: true });
+      if (uploadFehler) throw uploadFehler;
+
+      const { data: oeffentlich } = supabase.storage.from("avatare").getPublicUrl(pfad);
+      const { error: updateFehler } = await supabase
+        .from("profiles")
+        .update({ avatar_url: oeffentlich.publicUrl })
+        .eq("id", kundeId);
+      if (updateFehler) throw updateFehler;
+
+      setEntwurf((e) => ({ ...e, avatar_url: oeffentlich.publicUrl }));
+      ladeKunden();
+    } catch (err) {
+      console.error(err);
+      setHinweis("Profilbild-Upload fehlgeschlagen.");
+    } finally {
+      setLaedt(false);
+    }
+  }
+
+  async function dokumentHochladen(kundeId: string, datei: File) {
+    setLaedt(true);
+    setHinweis(null);
+    try {
+      const pfad = `${kundeId}/${Date.now()}-${sichererDateiname(datei.name)}`;
+      const { error: uploadFehler } = await supabase.storage
+        .from("kundendokumente")
+        .upload(pfad, datei);
+      if (uploadFehler) throw uploadFehler;
+
+      const { data: authData } = await supabase.auth.getUser();
+      const { error: insertFehler } = await supabase.from("kunden_dokumente").insert({
+        organisation_id: organisationId,
+        kunde_id: kundeId,
+        storage_path: pfad,
+        dateiname: datei.name,
+        dateityp: datei.type,
+        hochgeladen_von: authData.user?.id,
+      });
+      if (insertFehler) throw insertFehler;
+
+      ladeDokumente(kundeId);
+    } catch (err) {
+      console.error(err);
+      setHinweis("Dokument-Upload fehlgeschlagen.");
+    } finally {
+      setLaedt(false);
+    }
+  }
+
+  async function dokumentOeffnen(pfad: string) {
+    const { data, error } = await supabase.storage
+      .from("kundendokumente")
+      .createSignedUrl(pfad, 60);
+    if (error || !data) {
+      setHinweis("Konnte Dokument nicht öffnen.");
+      return;
+    }
+    window.open(data.signedUrl, "_blank");
+  }
+
+  async function dokumentLoeschen(dokId: string, pfad: string, kundeId: string) {
+    await supabase.storage.from("kundendokumente").remove([pfad]);
+    await supabase.from("kunden_dokumente").delete().eq("id", dokId);
+    ladeDokumente(kundeId);
+  }
+
   if (kunden.length === 0) {
     return <p className="text-sm text-[var(--text-faint)]">Noch keine Kunden vorhanden.</p>;
   }
@@ -94,7 +187,20 @@ export default function KundenListe({ organisationId, refreshKey }: KundenListeP
           </button>
 
           {offenId === k.id && (
-            <div className="space-y-2.5 border-t border-[var(--border)] px-4 py-3">
+            <div className="space-y-3 border-t border-[var(--border)] px-4 py-3">
+              <div className="flex items-center gap-3">
+                <Avatar name={entwurf.name ?? k.name} avatarUrl={entwurf.avatar_url ?? null} groesse="lg" />
+                <label className="cursor-pointer rounded border border-[var(--border-input)] px-3 py-1.5 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
+                  Profilbild ändern
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && avatarHochladen(k.id, e.target.files[0])}
+                  />
+                </label>
+              </div>
+
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
                   Name
@@ -163,8 +269,6 @@ export default function KundenListe({ organisationId, refreshKey }: KundenListeP
                 />
               </div>
 
-              {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}
-
               <button
                 onClick={speichern}
                 disabled={laedt}
@@ -172,6 +276,49 @@ export default function KundenListe({ organisationId, refreshKey }: KundenListeP
               >
                 Speichern
               </button>
+
+              <div className="border-t border-[var(--border)] pt-3">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
+                  Dokumente (unabhängig von Tickets)
+                </p>
+
+                {dokumente.length > 0 && (
+                  <div className="mb-2 space-y-1.5">
+                    {dokumente.map((d) => (
+                      <div
+                        key={d.id}
+                        className="flex items-center justify-between gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5"
+                      >
+                        <button
+                          onClick={() => dokumentOeffnen(d.storage_path)}
+                          className="truncate text-left text-sm text-[var(--text-strong)] hover:underline"
+                        >
+                          {d.dateiname}
+                        </button>
+                        <button
+                          onClick={() => dokumentLoeschen(d.id, d.storage_path, k.id)}
+                          className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
+                        >
+                          Löschen
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <label className="block cursor-pointer rounded border border-dashed border-[var(--border-input)] px-3 py-2 text-center text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
+                  + Dokument hochladen
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={(e) =>
+                      e.target.files?.[0] && dokumentHochladen(k.id, e.target.files[0])
+                    }
+                  />
+                </label>
+              </div>
+
+              {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}
             </div>
           )}
         </div>

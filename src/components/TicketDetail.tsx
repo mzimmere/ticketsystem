@@ -9,6 +9,7 @@ type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
 
 interface Ticket {
   id: string;
+  ticket_nr: number;
   titel: string;
   status: Status;
   prioritaet: Prioritaet;
@@ -150,7 +151,12 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
     <div className="space-y-5">
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-3">
         <div>
-          <h2 className="text-base font-semibold text-[var(--text-strong)]">{ticket.titel}</h2>
+          <h2 className="text-base font-semibold text-[var(--text-strong)]">
+            <span className="mr-1.5 font-mono text-sm text-[var(--text-faint)]">
+              #{ticket.ticket_nr}
+            </span>
+            {ticket.titel}
+          </h2>
           <p className="text-xs text-[var(--text-soft)]">
             {ticket.kunde?.name ?? "Unbekannter Kunde"}
             {ticket.kunde?.telefonnummer && ` · ${ticket.kunde.telefonnummer}`}
