@@ -516,8 +516,8 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
                 </button>
               </div>
               <p className="text-xs text-[var(--text-faint)]">
-                Leer lassen, um einen Einladungslink zu erzeugen (zum Weitergeben per WhatsApp/Mail). Mit Passwort: Account ist sofort nutzbar,
-                keine Mail wird verschickt – du gibst die Zugangsdaten selbst weiter.
+                Leer lassen, um einen Einladungslink zu erzeugen. Mit Passwort: Account ist sofort nutzbar,
+                keine Mail wird verschickt – du gibst die Zugangsdaten selbst weiter. Für WhatsApp empfehlenswert (Links können dort vorab verbraucht werden).
               </p>
 
               <button
@@ -625,8 +625,8 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
                 </button>
               </div>
               <p className="text-xs text-[var(--text-faint)]">
-                Leer lassen, um einen Einladungslink zu erzeugen (zum Weitergeben per WhatsApp/Mail). Mit Passwort: Account ist sofort nutzbar,
-                keine Mail wird verschickt – du gibst die Zugangsdaten selbst weiter.
+                Leer lassen, um einen Einladungslink zu erzeugen. Mit Passwort: Account ist sofort nutzbar,
+                keine Mail wird verschickt – du gibst die Zugangsdaten selbst weiter. Für WhatsApp empfehlenswert (Links können dort vorab verbraucht werden).
               </p>
 
               <button
