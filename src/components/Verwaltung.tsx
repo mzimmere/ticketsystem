@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
+import { generierePasswort } from "../lib/passwort";
 import KundenListe from "./KundenListe";
 import MitarbeiterListe from "./MitarbeiterListe";
 
@@ -39,19 +40,27 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
   const [neuerMitarbeiterEmail, setNeuerMitarbeiterEmail] = useState("");
   const [neuerMitarbeiterName, setNeuerMitarbeiterName] = useState("");
   const [neuerMitarbeiterTelefon, setNeuerMitarbeiterTelefon] = useState("");
+  const [neuerMitarbeiterPasswort, setNeuerMitarbeiterPasswort] = useState("");
   const [neuerMitarbeiterRolle, setNeuerMitarbeiterRolle] = useState<"techniker" | "org_admin">(
     "techniker",
   );
   const [teamRefreshKey, setTeamRefreshKey] = useState(0);
   const [zeigeMitarbeiterAnlegen, setZeigeMitarbeiterAnlegen] = useState(false);
+  const [mitarbeiterZugangsdaten, setMitarbeiterZugangsdaten] = useState<
+    { email: string; passwort: string } | null
+  >(null);
 
   const [neuerKundeEmail, setNeuerKundeEmail] = useState("");
   const [neuerKundeName, setNeuerKundeName] = useState("");
   const [neuerKundeTelefon, setNeuerKundeTelefon] = useState("");
   const [neuerKundeAdresse, setNeuerKundeAdresse] = useState("");
   const [neuerKundeNotizen, setNeuerKundeNotizen] = useState("");
+  const [neuerKundePasswort, setNeuerKundePasswort] = useState("");
   const [kundenRefreshKey, setKundenRefreshKey] = useState(0);
   const [zeigeKundeAnlegen, setZeigeKundeAnlegen] = useState(false);
+  const [kundeZugangsdaten, setKundeZugangsdaten] = useState<
+    { email: string; passwort: string } | null
+  >(null);
 
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
@@ -153,6 +162,7 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
     if (!neuerKundeEmail.trim() || !organisationId) return;
     setLaedt(true);
     setHinweis(null);
+    setKundeZugangsdaten(null);
 
     const { data: sessionData } = await supabase.auth.getSession();
 
@@ -167,12 +177,12 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
           email: neuerKundeEmail.trim(),
           name: neuerKundeName.trim() || null,
           organisationId,
+          passwort: neuerKundePasswort.trim() || undefined,
         }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Anlegen fehlgeschlagen");
 
-      // Telefon/Adresse/Notizen direkt im neu erstellten Profil ergänzen
       if (json.userId && (neuerKundeTelefon || neuerKundeAdresse || neuerKundeNotizen)) {
         await supabase
           .from("profiles")
@@ -184,12 +194,18 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
           .eq("id", json.userId);
       }
 
-      setHinweis(`Kunde angelegt, Einladung an ${neuerKundeEmail} gesendet.`);
+      if (neuerKundePasswort.trim()) {
+        setKundeZugangsdaten({ email: neuerKundeEmail.trim(), passwort: neuerKundePasswort.trim() });
+        setHinweis(null);
+      } else {
+        setHinweis(`Kunde angelegt, Einladung an ${neuerKundeEmail} gesendet.`);
+      }
       setNeuerKundeEmail("");
       setNeuerKundeName("");
       setNeuerKundeTelefon("");
       setNeuerKundeAdresse("");
       setNeuerKundeNotizen("");
+      setNeuerKundePasswort("");
       setZeigeKundeAnlegen(false);
       setKundenRefreshKey((k) => k + 1);
     } catch (err) {
@@ -204,6 +220,7 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
     if (!neuerMitarbeiterEmail.trim() || !organisationId) return;
     setLaedt(true);
     setHinweis(null);
+    setMitarbeiterZugangsdaten(null);
 
     const { data: sessionData } = await supabase.auth.getSession();
 
@@ -221,6 +238,7 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
             name: neuerMitarbeiterName.trim() || null,
             organisationId,
             rolle: neuerMitarbeiterRolle,
+            passwort: neuerMitarbeiterPasswort.trim() || undefined,
           }),
         },
       );
@@ -234,10 +252,19 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
           .eq("id", json.userId);
       }
 
-      setHinweis(`Mitarbeiter angelegt, Einladung an ${neuerMitarbeiterEmail} gesendet.`);
+      if (neuerMitarbeiterPasswort.trim()) {
+        setMitarbeiterZugangsdaten({
+          email: neuerMitarbeiterEmail.trim(),
+          passwort: neuerMitarbeiterPasswort.trim(),
+        });
+        setHinweis(null);
+      } else {
+        setHinweis(`Mitarbeiter angelegt, Einladung an ${neuerMitarbeiterEmail} gesendet.`);
+      }
       setNeuerMitarbeiterEmail("");
       setNeuerMitarbeiterName("");
       setNeuerMitarbeiterTelefon("");
+      setNeuerMitarbeiterPasswort("");
       setZeigeMitarbeiterAnlegen(false);
       setTeamRefreshKey((k) => k + 1);
     } catch (err) {
@@ -429,12 +456,56 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
                 <option value="techniker">Techniker</option>
                 <option value="org_admin">Org-Admin</option>
               </select>
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={neuerMitarbeiterPasswort}
+                  onChange={(e) => setNeuerMitarbeiterPasswort(e.target.value)}
+                  placeholder="Passwort (optional, statt Mail-Einladung)"
+                  className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setNeuerMitarbeiterPasswort(generierePasswort())}
+                  className="rounded border border-[var(--border-input)] px-3 py-2 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+                >
+                  Generieren
+                </button>
+              </div>
+              <p className="text-xs text-[var(--text-faint)]">
+                Leer lassen für normale Mail-Einladung. Mit Passwort: Account ist sofort nutzbar,
+                keine Mail wird verschickt – du gibst die Zugangsdaten selbst weiter.
+              </p>
+
               <button
                 onClick={mitarbeiterAnlegen}
                 disabled={laedt}
                 className="w-full rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
-                {laedt ? "Wird angelegt…" : "Mitarbeiter anlegen & einladen"}
+                {laedt
+                  ? "Wird angelegt…"
+                  : neuerMitarbeiterPasswort.trim()
+                  ? "Mitarbeiter mit Passwort anlegen"
+                  : "Mitarbeiter anlegen & einladen"}
+              </button>
+            </div>
+          )}
+
+          {mitarbeiterZugangsdaten && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-900/50 dark:bg-amber-500/10">
+              <p className="mb-2 font-medium text-[var(--text-strong)]">
+                Account angelegt – Zugangsdaten weitergeben:
+              </p>
+              <p className="font-mono text-[var(--text-strong)]">{mitarbeiterZugangsdaten.email}</p>
+              <p className="font-mono text-[var(--text-strong)]">
+                {mitarbeiterZugangsdaten.passwort}
+              </p>
+              <button
+                onClick={() => setMitarbeiterZugangsdaten(null)}
+                className="mt-2 text-xs text-[var(--text-faint)] hover:underline"
+              >
+                Ausblenden
               </button>
             </div>
           )}
@@ -496,12 +567,54 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
                 rows={2}
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
               />
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={neuerKundePasswort}
+                  onChange={(e) => setNeuerKundePasswort(e.target.value)}
+                  placeholder="Passwort (optional, statt Mail-Einladung)"
+                  className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setNeuerKundePasswort(generierePasswort())}
+                  className="rounded border border-[var(--border-input)] px-3 py-2 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+                >
+                  Generieren
+                </button>
+              </div>
+              <p className="text-xs text-[var(--text-faint)]">
+                Leer lassen für normale Mail-Einladung. Mit Passwort: Account ist sofort nutzbar,
+                keine Mail wird verschickt – du gibst die Zugangsdaten selbst weiter.
+              </p>
+
               <button
                 onClick={kundeAnlegen}
                 disabled={laedt}
                 className="w-full rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
-                {laedt ? "Wird angelegt…" : "Kunde anlegen & einladen"}
+                {laedt
+                  ? "Wird angelegt…"
+                  : neuerKundePasswort.trim()
+                  ? "Kunde mit Passwort anlegen"
+                  : "Kunde anlegen & einladen"}
+              </button>
+            </div>
+          )}
+
+          {kundeZugangsdaten && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-900/50 dark:bg-amber-500/10">
+              <p className="mb-2 font-medium text-[var(--text-strong)]">
+                Account angelegt – Zugangsdaten weitergeben:
+              </p>
+              <p className="font-mono text-[var(--text-strong)]">{kundeZugangsdaten.email}</p>
+              <p className="font-mono text-[var(--text-strong)]">{kundeZugangsdaten.passwort}</p>
+              <button
+                onClick={() => setKundeZugangsdaten(null)}
+                className="mt-2 text-xs text-[var(--text-faint)] hover:underline"
+              >
+                Ausblenden
               </button>
             </div>
           )}

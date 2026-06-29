@@ -30,7 +30,7 @@ Deno.serve(async (req: Request) => {
   try {
     // TODO vor Produktiveinsatz: Auth-Header des Aufrufers prüfen
     // (org_admin/super_admin der jeweiligen Organisation)
-    const { email, name, organisationId, rolle } = await req.json();
+    const { email, name, organisationId, rolle, passwort } = await req.json();
 
     if (!email || !organisationId) {
       return new Response(
@@ -42,14 +42,23 @@ Deno.serve(async (req: Request) => {
     const erlaubteRollen = ["techniker", "org_admin"];
     const gewaehlteRolle = erlaubteRollen.includes(rolle) ? rolle : "techniker";
 
-    const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-      data: {
-        organisation_id: organisationId,
-        rolle: gewaehlteRolle,
-        name: name ?? null,
-      },
-      redirectTo: Deno.env.get("PUBLIC_SITE_URL"),
-    });
+    const metadaten = {
+      organisation_id: organisationId,
+      rolle: gewaehlteRolle,
+      name: name ?? null,
+    };
+
+    const { data, error } = passwort
+      ? await supabaseAdmin.auth.admin.createUser({
+          email,
+          password: passwort,
+          email_confirm: true,
+          user_metadata: metadaten,
+        })
+      : await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+          data: metadaten,
+          redirectTo: Deno.env.get("PUBLIC_SITE_URL"),
+        });
 
     if (error) throw error;
 

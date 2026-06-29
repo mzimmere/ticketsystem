@@ -40,7 +40,7 @@ Deno.serve(async (req: Request) => {
     // organisationId ist. Sonst könnte theoretisch jeder eingeloggte
     // Nutzer Kunden in fremde Organisationen einladen.
 
-    const { email, name, organisationId } = await req.json();
+    const { email, name, organisationId, passwort } = await req.json();
 
     if (!email || !organisationId) {
       return new Response(
@@ -49,14 +49,26 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-      data: {
-        organisation_id: organisationId,
-        rolle: "kunde",
-        name: name ?? null,
-      },
-      redirectTo: Deno.env.get("PUBLIC_SITE_URL"),
-    });
+    const metadaten = {
+      organisation_id: organisationId,
+      rolle: "kunde",
+      name: name ?? null,
+    };
+
+    // Mit Passwort: Account wird sofort nutzbar angelegt, keine Mail nötig
+    // (Fallback, falls der Mail-Versand mal nicht funktioniert).
+    // Ohne Passwort: normaler Einladungs-Link per Mail, wie bisher.
+    const { data, error } = passwort
+      ? await supabaseAdmin.auth.admin.createUser({
+          email,
+          password: passwort,
+          email_confirm: true,
+          user_metadata: metadaten,
+        })
+      : await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+          data: metadaten,
+          redirectTo: Deno.env.get("PUBLIC_SITE_URL"),
+        });
 
     if (error) throw error;
 
