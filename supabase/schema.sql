@@ -597,3 +597,13 @@ create policy kundendokumente_delete on storage.objects for delete
 -- 16. Fortlaufende Ticket-Nummer
 -- ============================================================
 alter table tickets add column ticket_nr serial;
+
+-- ============================================================
+-- 17. Adresse + Kontaktmöglichkeiten für die Organisation
+-- ============================================================
+alter table organisationen
+  add column adresse text,
+  add column telefon text,
+  add column email text,
+  add column website text,
+  add column oeffnungszeiten text;

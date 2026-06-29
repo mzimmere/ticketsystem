@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sun, Moon, User, Settings } from "lucide-react";
+import { Sun, Moon, User, Settings, Building2 } from "lucide-react";
 import { useProfil } from "./lib/useProfil";
 import { useTheme } from "./lib/useTheme";
 import { supabase } from "./lib/supabaseClient";
@@ -11,6 +11,7 @@ import TicketUebersicht from "./components/TicketUebersicht";
 import TicketDetail from "./components/TicketDetail";
 import MeinProfil from "./components/MeinProfil";
 import Verwaltung from "./components/Verwaltung";
+import FirmenInfo from "./components/FirmenInfo";
 
 interface Organisation {
   name: string;
@@ -25,6 +26,7 @@ export default function App() {
   const [zeigeNeuesTicket, setZeigeNeuesTicket] = useState(false);
   const [zeigeProfil, setZeigeProfil] = useState(false);
   const [zeigeVerwaltung, setZeigeVerwaltung] = useState(false);
+  const [zeigeFirmenInfo, setZeigeFirmenInfo] = useState(false);
 
   useEffect(() => {
     if (profil?.organisation_id) {
@@ -80,10 +82,26 @@ export default function App() {
           >
             {dunkel ? <Sun size={16} /> : <Moon size={16} />}
           </button>
+          {profil.organisation_id && (
+            <button
+              onClick={() => {
+                setZeigeFirmenInfo(true);
+                setZeigeVerwaltung(false);
+                setZeigeProfil(false);
+                setAusgewaehltesTicket(null);
+                setZeigeNeuesTicket(false);
+              }}
+              className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+              title="Über uns / Kontakt"
+            >
+              <Building2 size={16} />
+            </button>
+          )}
           {istAdmin && (
             <button
               onClick={() => {
                 setZeigeVerwaltung(true);
+                setZeigeFirmenInfo(false);
                 setZeigeProfil(false);
                 setAusgewaehltesTicket(null);
                 setZeigeNeuesTicket(false);
@@ -97,6 +115,7 @@ export default function App() {
           <button
             onClick={() => {
               setZeigeProfil(true);
+              setZeigeFirmenInfo(false);
               setZeigeVerwaltung(false);
               setAusgewaehltesTicket(null);
               setZeigeNeuesTicket(false);
@@ -117,7 +136,17 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-6 space-y-4">
-        {zeigeVerwaltung ? (
+        {zeigeFirmenInfo ? (
+          <>
+            <button
+              onClick={() => setZeigeFirmenInfo(false)}
+              className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
+            >
+              ← Zurück
+            </button>
+            {profil.organisation_id && <FirmenInfo organisationId={profil.organisation_id} />}
+          </>
+        ) : zeigeVerwaltung ? (
           <>
             <button
               onClick={() => setZeigeVerwaltung(false)}

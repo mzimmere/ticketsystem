@@ -6,10 +6,18 @@ import MitarbeiterListe from "./MitarbeiterListe";
 
 type Rolle = "super_admin" | "org_admin" | "techniker" | "kunde";
 
-interface Organisation {
+interface OrganisationKurz {
   id: string;
   name: string;
   logo_url: string | null;
+}
+
+interface Organisation extends OrganisationKurz {
+  adresse: string | null;
+  telefon: string | null;
+  email: string | null;
+  website: string | null;
+  oeffnungszeiten: string | null;
 }
 
 interface VerwaltungProps {
@@ -20,7 +28,12 @@ interface VerwaltungProps {
 export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [orgName, setOrgName] = useState("");
-  const [alleOrganisationen, setAlleOrganisationen] = useState<Organisation[]>([]);
+  const [orgAdresse, setOrgAdresse] = useState("");
+  const [orgTelefon, setOrgTelefon] = useState("");
+  const [orgEmail, setOrgEmail] = useState("");
+  const [orgWebsite, setOrgWebsite] = useState("");
+  const [orgOeffnungszeiten, setOrgOeffnungszeiten] = useState("");
+  const [alleOrganisationen, setAlleOrganisationen] = useState<OrganisationKurz[]>([]);
   const [neueOrgName, setNeueOrgName] = useState("");
 
   const [neuerMitarbeiterEmail, setNeuerMitarbeiterEmail] = useState("");
@@ -54,12 +67,17 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
   async function ladeOrganisation() {
     const { data } = await supabase
       .from("organisationen")
-      .select("id, name, logo_url")
+      .select("id, name, logo_url, adresse, telefon, email, website, oeffnungszeiten")
       .eq("id", organisationId)
       .single();
     if (data) {
       setOrganisation(data);
       setOrgName(data.name);
+      setOrgAdresse(data.adresse ?? "");
+      setOrgTelefon(data.telefon ?? "");
+      setOrgEmail(data.email ?? "");
+      setOrgWebsite(data.website ?? "");
+      setOrgOeffnungszeiten(data.oeffnungszeiten ?? "");
     }
   }
 
@@ -76,7 +94,14 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
     setLaedt(true);
     const { error } = await supabase
       .from("organisationen")
-      .update({ name: orgName })
+      .update({
+        name: orgName,
+        adresse: orgAdresse.trim() || null,
+        telefon: orgTelefon.trim() || null,
+        email: orgEmail.trim() || null,
+        website: orgWebsite.trim() || null,
+        oeffnungszeiten: orgOeffnungszeiten.trim() || null,
+      })
       .eq("id", organisation.id);
     setLaedt(false);
     setHinweis(error ? "Speichern fehlgeschlagen." : "Gespeichert.");
@@ -278,16 +303,84 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
               type="text"
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
+              placeholder="Firmenname"
               className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
             />
-            <button
-              onClick={organisationSpeichern}
-              disabled={laedt}
-              className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-            >
-              Speichern
-            </button>
           </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+              Adresse
+            </label>
+            <textarea
+              value={orgAdresse}
+              onChange={(e) => setOrgAdresse(e.target.value)}
+              rows={2}
+              placeholder="Straße, PLZ, Ort"
+              className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+                Telefon
+              </label>
+              <input
+                type="text"
+                value={orgTelefon}
+                onChange={(e) => setOrgTelefon(e.target.value)}
+                placeholder="+49 ..."
+                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+                E-Mail
+              </label>
+              <input
+                type="email"
+                value={orgEmail}
+                onChange={(e) => setOrgEmail(e.target.value)}
+                placeholder="support@firma.de"
+                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+              Website
+            </label>
+            <input
+              type="text"
+              value={orgWebsite}
+              onChange={(e) => setOrgWebsite(e.target.value)}
+              placeholder="https://…"
+              className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+              Öffnungs- / Erreichbarkeitszeiten
+            </label>
+            <input
+              type="text"
+              value={orgOeffnungszeiten}
+              onChange={(e) => setOrgOeffnungszeiten(e.target.value)}
+              placeholder="z.B. Mo–Fr 8–17 Uhr"
+              className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+            />
+          </div>
+
+          <button
+            onClick={organisationSpeichern}
+            disabled={laedt}
+            className="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {laedt ? "Speichert…" : "Speichern"}
+          </button>
         </div>
       )}
 
