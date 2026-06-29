@@ -11,8 +11,13 @@ interface Kunde {
   telefonnummer: string | null;
   adresse: string | null;
   notizen: string | null;
-  preis_pro_minute_cent: number | null;
   deaktiviert: boolean;
+}
+
+interface KundenPreis {
+  id: string;
+  preis_pro_minute_cent: number;
+  gueltig_ab: string;
 }
 
 interface Dokument {
@@ -41,7 +46,9 @@ export default function KundenListe({
   const [zeigeArchivierte, setZeigeArchivierte] = useState(false);
   const [offenId, setOffenId] = useState<string | null>(null);
   const [entwurf, setEntwurf] = useState<Partial<Kunde>>({});
-  const [preisEuro, setPreisEuro] = useState("");
+  const [preise, setPreise] = useState<KundenPreis[]>([]);
+  const [neuesPreisDatum, setNeuesPreisDatum] = useState("");
+  const [neuerPreisEuro, setNeuerPreisEuro] = useState("");
   const [dokumente, setDokumente] = useState<Dokument[]>([]);
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
@@ -59,9 +66,7 @@ export default function KundenListe({
   async function ladeKunden() {
     const { data } = await supabase
       .from("profiles")
-      .select(
-        "id, name, avatar_url, telefonnummer, adresse, notizen, preis_pro_minute_cent, deaktiviert",
-      )
+      .select("id, name, avatar_url, telefonnummer, adresse, notizen, deaktiviert")
       .eq("organisation_id", organisationId)
       .eq("rolle", "kunde")
       .eq("deaktiviert", zeigeArchivierte)
@@ -92,27 +97,54 @@ export default function KundenListe({
     setDokumente((data as Dokument[]) ?? []);
   }
 
+  async function ladePreise(kundeId: string) {
+    const { data } = await supabase
+      .from("kunden_preise")
+      .select("id, preis_pro_minute_cent, gueltig_ab")
+      .eq("kunde_id", kundeId)
+      .order("gueltig_ab", { ascending: false });
+    setPreise((data as KundenPreis[]) ?? []);
+  }
+
   function bearbeitenOeffnen(k: Kunde) {
     setOffenId(k.id);
     setEntwurf(k);
-    setPreisEuro(k.preis_pro_minute_cent != null ? (k.preis_pro_minute_cent / 100).toFixed(2) : "");
+    setNeuesPreisDatum(new Date().toISOString().slice(0, 10));
+    setNeuerPreisEuro("");
     setHinweis(null);
     ladeDokumente(k.id);
+    ladePreise(k.id);
+  }
+
+  async function preisHinzufuegen(kundeId: string) {
+    if (!neuesPreisDatum || neuerPreisEuro.trim() === "") return;
+    const wert = parseFloat(neuerPreisEuro.trim().replace(",", "."));
+    if (isNaN(wert)) {
+      setHinweis("Ungültiger Preis – bitte z.B. 1,99 eingeben.");
+      return;
+    }
+    const { error } = await supabase.from("kunden_preise").insert({
+      kunde_id: kundeId,
+      organisation_id: organisationId,
+      preis_pro_minute_cent: Math.round(wert * 100),
+      gueltig_ab: neuesPreisDatum,
+    });
+    if (error) {
+      console.error(error);
+      setHinweis("Preis konnte nicht hinzugefügt werden.");
+      return;
+    }
+    setNeuerPreisEuro("");
+    ladePreise(kundeId);
+  }
+
+  async function preisLoeschen(preisId: string, kundeId: string) {
+    await supabase.from("kunden_preise").delete().eq("id", preisId);
+    ladePreise(kundeId);
   }
 
   async function speichern() {
     if (!offenId) return;
-
-    let preisCent: number | null = null;
-    if (preisEuro.trim() !== "") {
-      const wert = parseFloat(preisEuro.trim().replace(",", "."));
-      if (isNaN(wert)) {
-        setHinweis("Ungültiger Preis – bitte z.B. 1,99 eingeben.");
-        return;
-      }
-      preisCent = Math.round(wert * 100);
-    }
-
     setLaedt(true);
     const { error } = await supabase
       .from("profiles")
@@ -121,7 +153,6 @@ export default function KundenListe({
         telefonnummer: entwurf.telefonnummer?.trim() || null,
         adresse: entwurf.adresse?.trim() || null,
         notizen: entwurf.notizen?.trim() || null,
-        preis_pro_minute_cent: preisCent,
       })
       .eq("id", offenId);
     setLaedt(false);
@@ -340,16 +371,78 @@ export default function KundenListe({
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  Individueller Minutenpreis in Euro (optional)
+                  Individueller Minutenpreis (Verlauf, optional)
                 </label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={preisEuro}
-                  onChange={(e) => setPreisEuro(e.target.value)}
-                  placeholder="z.B. 1,99 – leer = Standardpreis der Firma"
-                  className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                />
+
+                {preise.length === 0 ? (
+                  <p className="mb-2 text-xs text-[var(--text-faint)]">
+                    Noch kein individueller Preis gesetzt – es gilt der Standardpreis der Firma.
+                  </p>
+                ) : (
+                  <div className="mb-2 space-y-1">
+                    {(() => {
+                      const heute = new Date().toISOString().slice(0, 10);
+                      const aktiveId = preise.find((p) => p.gueltig_ab <= heute)?.id;
+                      return preise.map((p) => (
+                        <div
+                          key={p.id}
+                          className="flex items-center justify-between gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5 text-sm"
+                        >
+                          <span className="text-[var(--text-strong)]">
+                            ab {new Date(p.gueltig_ab).toLocaleDateString("de-DE")}:{" "}
+                            {(p.preis_pro_minute_cent / 100).toLocaleString("de-DE", {
+                              style: "currency",
+                              currency: "EUR",
+                            })}
+                            {p.id === aktiveId && (
+                              <span className="ml-2 rounded bg-amber-500 px-1.5 py-0.5 text-[0.65rem] font-medium text-white">
+                                Aktuell
+                              </span>
+                            )}
+                            {p.gueltig_ab > heute && (
+                              <span className="ml-2 rounded bg-[var(--border)] px-1.5 py-0.5 text-[0.65rem] font-medium text-[var(--text-soft)]">
+                                Geplant
+                              </span>
+                            )}
+                          </span>
+                          <button
+                            onClick={() => preisLoeschen(p.id, k.id)}
+                            className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
+                          >
+                            Entfernen
+                          </button>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    value={neuesPreisDatum}
+                    onChange={(e) => setNeuesPreisDatum(e.target.value)}
+                    className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                  />
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={neuerPreisEuro}
+                    onChange={(e) => setNeuerPreisEuro(e.target.value)}
+                    placeholder="z.B. 1,99"
+                    className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                  />
+                  <button
+                    onClick={() => preisHinzufuegen(k.id)}
+                    className="rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white"
+                  >
+                    +
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-[var(--text-faint)]">
+                  Gilt automatisch ab dem gewählten Datum – ältere Zeiterfassungen bleiben mit
+                  ihrem damaligen Preis unangetastet.
+                </p>
               </div>
 
               <button

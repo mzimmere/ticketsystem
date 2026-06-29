@@ -249,13 +249,25 @@ create unique index idx_zeit_aktiver_timer
 -- ============================================================
 
 create or replace function set_preis_snapshot() returns trigger as $$
+declare
+  v_preis integer;
 begin
   if new.preis_pro_minute_cent_snapshot is null then
-    select coalesce(p.preis_pro_minute_cent, o.standard_preis_pro_minute_cent)
-      into new.preis_pro_minute_cent_snapshot
-    from profiles p
-    join organisationen o on o.id = p.organisation_id
-    where p.id = new.kunde_id;
+    select kp.preis_pro_minute_cent into v_preis
+    from kunden_preise kp
+    where kp.kunde_id = new.kunde_id
+      and kp.gueltig_ab <= new.erstellt_am::date
+    order by kp.gueltig_ab desc
+    limit 1;
+
+    if v_preis is null then
+      select o.standard_preis_pro_minute_cent into v_preis
+      from profiles p
+      join organisationen o on o.id = p.organisation_id
+      where p.id = new.kunde_id;
+    end if;
+
+    new.preis_pro_minute_cent_snapshot := v_preis;
   end if;
   return new;
 end;
@@ -692,6 +704,41 @@ create policy rechnungsanpassungen_insert on rechnungsanpassungen for insert
   );
 
 create policy rechnungsanpassungen_delete on rechnungsanpassungen for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+  );
+
+-- ============================================================
+-- 23. Preis-Historie pro Kunde (mit Gültigkeitsdatum)
+-- ============================================================
+create table kunden_preise (
+  id uuid primary key default gen_random_uuid(),
+  kunde_id uuid not null references profiles(id),
+  organisation_id uuid not null references organisationen(id),
+  preis_pro_minute_cent integer not null,
+  gueltig_ab date not null,
+  erstellt_am timestamptz default now()
+);
+
+create index idx_kunden_preise_kunde on kunden_preise(kunde_id, gueltig_ab);
+
+alter table kunden_preise enable row level security;
+
+create policy kunden_preise_select on kunden_preise for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or kunde_id = auth.uid()
+  );
+
+create policy kunden_preise_insert on kunden_preise for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+  );
+
+create policy kunden_preise_delete on kunden_preise for delete
   using (
     current_user_rolle() = 'super_admin'
     or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
