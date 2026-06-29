@@ -24,6 +24,7 @@ interface MitarbeiterListeProps {
   organisationName?: string | null;
   organisationAdresse?: string | null;
   organisationLogoUrl?: string | null;
+  onlineIds?: Set<string>;
 }
 
 const ROLLE_LABEL: Record<Rolle, string> = {
@@ -40,6 +41,7 @@ export default function MitarbeiterListe({
   organisationName,
   organisationAdresse,
   organisationLogoUrl,
+  onlineIds,
 }: MitarbeiterListeProps) {
   const [mitglieder, setMitglieder] = useState<Mitglied[]>([]);
   const [zeigeArchivierte, setZeigeArchivierte] = useState(false);
@@ -203,7 +205,15 @@ export default function MitarbeiterListe({
             onClick={() => (offenId === m.id ? setOffenId(null) : bearbeitenOeffnen(m))}
             className="flex w-full items-center gap-2.5 px-4 py-3 text-left"
           >
-            <Avatar name={m.name} avatarUrl={m.avatar_url} groesse="sm" />
+            <span className="relative shrink-0">
+              <Avatar name={m.name} avatarUrl={m.avatar_url} groesse="sm" />
+              {onlineIds?.has(m.id) && (
+                <span
+                  className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border-2 border-[var(--bg-surface)] bg-emerald-500"
+                  title="Online"
+                />
+              )}
+            </span>
             <div className="min-w-0">
               <p className="truncate text-sm text-[var(--text-strong)]">{m.name ?? "Unbenannt"}</p>
               {m.verfuegbarkeit !== "verfuegbar" && (

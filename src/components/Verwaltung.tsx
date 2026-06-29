@@ -26,9 +26,10 @@ interface Organisation extends OrganisationKurz {
 interface VerwaltungProps {
   rolle: Rolle;
   organisationId: string | null;
+  onlineIds?: Set<string>;
 }
 
-export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
+export default function Verwaltung({ rolle, organisationId, onlineIds }: VerwaltungProps) {
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [orgName, setOrgName] = useState("");
   const [orgAdresse, setOrgAdresse] = useState("");
@@ -554,6 +555,7 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
             organisationName={organisation?.name}
             organisationAdresse={organisation?.adresse}
             organisationLogoUrl={organisation?.logo_url}
+            onlineIds={onlineIds}
           />
         </div>
       )}
@@ -662,6 +664,7 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
             organisationName={organisation?.name}
             organisationAdresse={organisation?.adresse}
             organisationLogoUrl={organisation?.logo_url}
+            onlineIds={onlineIds}
           />
         </div>
       )}

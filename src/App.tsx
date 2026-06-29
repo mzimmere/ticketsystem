@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Sun, Moon, User, Settings, Building2, Receipt } from "lucide-react";
 import { useProfil } from "./lib/useProfil";
 import { useTheme } from "./lib/useTheme";
+import { useOnlinePraesenz } from "./lib/praesenz";
 import { supabase } from "./lib/supabaseClient";
 import Login from "./components/Login";
 import NeuesTicket from "./components/NeuesTicket";
@@ -42,6 +43,7 @@ function authLinkFehler(): string | null {
 export default function App() {
   const { profil, eingeloggt, laedt } = useProfil();
   const { dunkel, umschalten } = useTheme();
+  const onlineIds = useOnlinePraesenz(profil?.organisation_id, profil?.id);
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [ausgewaehltesTicket, setAusgewaehltesTicket] = useState<string | null>(null);
   const [zeigeNeuesTicket, setZeigeNeuesTicket] = useState(false);
@@ -275,7 +277,11 @@ export default function App() {
             >
               ← Zurück
             </button>
-            <Verwaltung rolle={profil.rolle} organisationId={profil.organisation_id} />
+            <Verwaltung
+              rolle={profil.rolle}
+              organisationId={profil.organisation_id}
+              onlineIds={onlineIds}
+            />
           </>
         ) : zeigeProfil ? (
           <>

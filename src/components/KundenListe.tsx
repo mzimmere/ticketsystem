@@ -33,6 +33,7 @@ interface KundenListeProps {
   organisationName?: string | null;
   organisationAdresse?: string | null;
   organisationLogoUrl?: string | null;
+  onlineIds?: Set<string>;
 }
 
 export default function KundenListe({
@@ -41,6 +42,7 @@ export default function KundenListe({
   organisationName,
   organisationAdresse,
   organisationLogoUrl,
+  onlineIds,
 }: KundenListeProps) {
   const [kunden, setKunden] = useState<Kunde[]>([]);
   const [zeigeArchivierte, setZeigeArchivierte] = useState(false);
@@ -297,7 +299,15 @@ export default function KundenListe({
             onClick={() => (offenId === k.id ? setOffenId(null) : bearbeitenOeffnen(k))}
             className="flex w-full items-center gap-2.5 px-4 py-3 text-left"
           >
-            <Avatar name={k.name} avatarUrl={k.avatar_url} groesse="sm" />
+            <span className="relative shrink-0">
+              <Avatar name={k.name} avatarUrl={k.avatar_url} groesse="sm" />
+              {onlineIds?.has(k.id) && (
+                <span
+                  className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border-2 border-[var(--bg-surface)] bg-emerald-500"
+                  title="Online"
+                />
+              )}
+            </span>
             <span className="text-sm text-[var(--text-strong)]">{k.name ?? "Unbenannt"}</span>
             <span className="ml-auto truncate text-xs text-[var(--text-faint)]">
               {k.telefonnummer ?? "—"}
