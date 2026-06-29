@@ -487,3 +487,10 @@ create policy anhaenge_insert on anhaenge for insert
         )
     )
   );
+
+-- ============================================================
+-- 14. Kundendaten: Adresse + Notizen/Besonderheiten
+-- ============================================================
+alter table profiles
+  add column adresse text,
+  add column notizen text;

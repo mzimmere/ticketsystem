@@ -9,9 +9,22 @@ const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
+// CORS: nötig, weil diese Function direkt aus dem Browser (Vercel-Domain)
+// aufgerufen wird. Ohne diese Header blockt der Browser den Request schon
+// beim Preflight (OPTIONS), bevor er überhaupt bei der Function ankommt.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   }
 
   try {
@@ -22,7 +35,7 @@ Deno.serve(async (req: Request) => {
     if (!email || !organisationId) {
       return new Response(
         JSON.stringify({ error: "email und organisationId sind erforderlich" }),
-        { status: 400 },
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -35,19 +48,20 @@ Deno.serve(async (req: Request) => {
         rolle: gewaehlteRolle,
         name: name ?? null,
       },
+      redirectTo: Deno.env.get("PUBLIC_SITE_URL"),
     });
 
     if (error) throw error;
 
     return new Response(JSON.stringify({ ok: true, userId: data.user?.id }), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
     console.error("Einladungs-Fehler:", err);
     return new Response(JSON.stringify({ error: "Einladung fehlgeschlagen" }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

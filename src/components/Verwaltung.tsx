@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
 import Avatar from "./Avatar";
+import KundenListe from "./KundenListe";
 
 type Rolle = "super_admin" | "org_admin" | "techniker" | "kunde";
 
@@ -328,6 +329,13 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {organisationId && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-[var(--text-strong)]">Kunden</h3>
+          <KundenListe organisationId={organisationId} />
         </div>
       )}
 
