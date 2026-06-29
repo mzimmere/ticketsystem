@@ -631,3 +631,10 @@ $$ language plpgsql security definer set search_path = public;
 create trigger trg_set_kunden_nachricht_zeit
   after insert on ticket_nachrichten
   for each row execute function set_kunden_nachricht_zeit();
+
+-- ============================================================
+-- 19. Kunde darf sein eigenes Ticket schließen
+-- ============================================================
+create policy tickets_update_kunde on tickets for update
+  using (kunde_id = auth.uid())
+  with check (kunde_id = auth.uid() and status = 'geschlossen');
