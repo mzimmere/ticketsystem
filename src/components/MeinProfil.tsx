@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { sichererDateiname } from "../lib/dateiname";
 import Avatar from "./Avatar";
 
 type Verfuegbarkeit = "verfuegbar" | "abwesend" | "urlaub";
@@ -63,17 +64,18 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
     setLaedt(true);
     setHinweis(null);
     try {
-      const pfad = `${profilId}/${Date.now()}-${datei.name}`;
+      const pfad = `${profilId}/${Date.now()}-${sichererDateiname(datei.name)}`;
       const { error: uploadFehler } = await supabase.storage
         .from("avatare")
         .upload(pfad, datei, { upsert: true });
       if (uploadFehler) throw uploadFehler;
 
       const { data: oeffentlich } = supabase.storage.from("avatare").getPublicUrl(pfad);
-      await supabase
+      const { error: updateFehler } = await supabase
         .from("profiles")
         .update({ avatar_url: oeffentlich.publicUrl })
         .eq("id", profilId);
+      if (updateFehler) throw updateFehler;
 
       setAvatarUrl(oeffentlich.publicUrl);
       setHinweis("Profilbild aktualisiert.");
@@ -86,8 +88,16 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
   }
 
   async function verfuegbarkeitAendern(wert: Verfuegbarkeit) {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ verfuegbarkeit: wert })
+      .eq("id", profilId);
+    if (error) {
+      console.error(error);
+      setHinweis("Speichern fehlgeschlagen.");
+      return;
+    }
     setVerfuegbarkeit(wert);
-    await supabase.from("profiles").update({ verfuegbarkeit: wert }).eq("id", profilId);
   }
 
   async function ticketsUebergeben() {

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { sichererDateiname } from "../lib/dateiname";
 
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
 
@@ -62,7 +63,7 @@ export default function NeuesTicket({ onErstellt }: NeuesTicketProps) {
 
       if (dateien) {
         for (const datei of Array.from(dateien)) {
-          const pfad = `${ticket.id}/${Date.now()}-${datei.name}`;
+          const pfad = `${ticket.id}/${Date.now()}-${sichererDateiname(datei.name)}`;
           const { error: uploadFehler } = await supabase.storage
             .from("anhaenge")
             .upload(pfad, datei);

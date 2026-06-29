@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { sichererDateiname } from "../lib/dateiname";
 import Avatar from "./Avatar";
 
 type Rolle = "super_admin" | "org_admin" | "techniker" | "kunde";
@@ -75,7 +76,15 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
   }
 
   async function rolleAendern(mitgliedId: string, neueRolle: Rolle) {
-    await supabase.from("profiles").update({ rolle: neueRolle }).eq("id", mitgliedId);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ rolle: neueRolle })
+      .eq("id", mitgliedId);
+    if (error) {
+      console.error(error);
+      setHinweis("Rolle ändern fehlgeschlagen.");
+      return;
+    }
     setTeam((t) => t.map((m) => (m.id === mitgliedId ? { ...m, rolle: neueRolle } : m)));
   }
 
@@ -90,9 +99,12 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
   async function organisationSpeichern() {
     if (!organisation) return;
     setLaedt(true);
-    await supabase.from("organisationen").update({ name: orgName }).eq("id", organisation.id);
+    const { error } = await supabase
+      .from("organisationen")
+      .update({ name: orgName })
+      .eq("id", organisation.id);
     setLaedt(false);
-    setHinweis("Gespeichert.");
+    setHinweis(error ? "Speichern fehlgeschlagen." : "Gespeichert.");
   }
 
   async function logoHochladen(datei: File) {
@@ -100,17 +112,18 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
     setLaedt(true);
     setHinweis(null);
     try {
-      const pfad = `${organisation.id}/${Date.now()}-${datei.name}`;
+      const pfad = `${organisation.id}/${Date.now()}-${sichererDateiname(datei.name)}`;
       const { error: uploadFehler } = await supabase.storage
         .from("logos")
         .upload(pfad, datei, { upsert: true });
       if (uploadFehler) throw uploadFehler;
 
       const { data: oeffentlich } = supabase.storage.from("logos").getPublicUrl(pfad);
-      await supabase
+      const { error: updateFehler } = await supabase
         .from("organisationen")
         .update({ logo_url: oeffentlich.publicUrl })
         .eq("id", organisation.id);
+      if (updateFehler) throw updateFehler;
 
       setOrganisation({ ...organisation, logo_url: oeffentlich.publicUrl });
       setHinweis("Logo aktualisiert.");
