@@ -8,6 +8,7 @@ export interface Profil {
   organisation_id: string | null;
   rolle: Rolle;
   name: string | null;
+  deaktiviert: boolean;
 }
 
 export function useProfil() {
@@ -38,7 +39,7 @@ export function useProfil() {
     setEingeloggt(true);
     const { data } = await supabase
       .from("profiles")
-      .select("id, organisation_id, rolle, name")
+      .select("id, organisation_id, rolle, name, deaktiviert")
       .eq("id", authData.user.id)
       .single();
     setProfil((data as Profil) ?? null);

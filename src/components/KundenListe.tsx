@@ -11,6 +11,7 @@ interface Kunde {
   adresse: string | null;
   notizen: string | null;
   preis_pro_minute_cent: number | null;
+  deaktiviert: boolean;
 }
 
 interface Dokument {
@@ -27,6 +28,7 @@ interface KundenListeProps {
 
 export default function KundenListe({ organisationId, refreshKey }: KundenListeProps) {
   const [kunden, setKunden] = useState<Kunde[]>([]);
+  const [zeigeArchivierte, setZeigeArchivierte] = useState(false);
   const [offenId, setOffenId] = useState<string | null>(null);
   const [entwurf, setEntwurf] = useState<Partial<Kunde>>({});
   const [dokumente, setDokumente] = useState<Dokument[]>([]);
@@ -36,16 +38,33 @@ export default function KundenListe({ organisationId, refreshKey }: KundenListeP
   useEffect(() => {
     ladeKunden();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organisationId, refreshKey]);
+  }, [organisationId, refreshKey, zeigeArchivierte]);
 
   async function ladeKunden() {
     const { data } = await supabase
       .from("profiles")
-      .select("id, name, avatar_url, telefonnummer, adresse, notizen, preis_pro_minute_cent")
+      .select(
+        "id, name, avatar_url, telefonnummer, adresse, notizen, preis_pro_minute_cent, deaktiviert",
+      )
       .eq("organisation_id", organisationId)
       .eq("rolle", "kunde")
+      .eq("deaktiviert", zeigeArchivierte)
       .order("name");
     setKunden((data as Kunde[]) ?? []);
+  }
+
+  async function statusUmschalten(kundeId: string, deaktivieren: boolean) {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ deaktiviert: deaktivieren })
+      .eq("id", kundeId);
+    if (error) {
+      console.error(error);
+      setHinweis("Aktion fehlgeschlagen.");
+      return;
+    }
+    setOffenId(null);
+    ladeKunden();
   }
 
   async function ladeDokumente(kundeId: string) {
@@ -165,11 +184,29 @@ export default function KundenListe({ organisationId, refreshKey }: KundenListeP
   }
 
   if (kunden.length === 0) {
-    return <p className="text-sm text-[var(--text-faint)]">Noch keine Kunden vorhanden.</p>;
+    return (
+      <div className="space-y-2">
+        <p className="text-sm text-[var(--text-faint)]">
+          {zeigeArchivierte ? "Keine deaktivierten Kunden." : "Noch keine Kunden vorhanden."}
+        </p>
+        <button
+          onClick={() => setZeigeArchivierte((v) => !v)}
+          className="text-xs text-[var(--text-faint)] hover:underline"
+        >
+          {zeigeArchivierte ? "← Zurück zu aktiven Kunden" : "Deaktivierte Kunden anzeigen"}
+        </button>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-2">
+      <button
+        onClick={() => setZeigeArchivierte((v) => !v)}
+        className="text-xs text-[var(--text-faint)] hover:underline"
+      >
+        {zeigeArchivierte ? "← Zurück zu aktiven Kunden" : "Deaktivierte Kunden anzeigen"}
+      </button>
       {kunden.map((k) => (
         <div
           key={k.id}
@@ -319,6 +356,24 @@ export default function KundenListe({ organisationId, refreshKey }: KundenListeP
               </div>
 
               {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}
+
+              <div className="border-t border-[var(--border)] pt-3">
+                {zeigeArchivierte ? (
+                  <button
+                    onClick={() => statusUmschalten(k.id, false)}
+                    className="w-full rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+                  >
+                    Wieder aktivieren
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => statusUmschalten(k.id, true)}
+                    className="w-full rounded border border-red-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30"
+                  >
+                    Kunde deaktivieren
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>

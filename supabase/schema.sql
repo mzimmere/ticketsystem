@@ -638,3 +638,9 @@ create trigger trg_set_kunden_nachricht_zeit
 create policy tickets_update_kunde on tickets for update
   using (kunde_id = auth.uid())
   with check (kunde_id = auth.uid() and status = 'geschlossen');
+
+-- ============================================================
+-- 20. Deaktivieren statt Löschen (Kunden + Mitarbeiter)
+-- ============================================================
+alter table profiles
+  add column deaktiviert boolean not null default false;

@@ -42,6 +42,7 @@ export default function NeuesTicketIntern({
       .select("id, name")
       .eq("organisation_id", organisationId)
       .eq("rolle", "kunde")
+      .eq("deaktiviert", false)
       .order("name")
       .then(({ data }) => setKunden((data as Kunde[]) ?? []));
 
@@ -50,6 +51,7 @@ export default function NeuesTicketIntern({
       .select("id, name")
       .eq("organisation_id", organisationId)
       .in("rolle", ["techniker", "org_admin"])
+      .eq("deaktiviert", false)
       .order("name")
       .then(({ data }) => setTechniker((data as Techniker[]) ?? []));
   }, [organisationId]);

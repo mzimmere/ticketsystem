@@ -59,6 +59,25 @@ export default function App() {
     );
   }
 
+  if (profil.deaktiviert) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bg-muted)] p-8">
+        <div className="max-w-sm text-center">
+          <p className="mb-4 text-sm text-[var(--text-strong)]">
+            Dieser Account wurde deaktiviert. Bitte wende dich an deinen Ansprechpartner, falls das
+            ein Irrtum ist.
+          </p>
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="text-xs text-[var(--text-faint)] hover:text-[var(--text-soft)]"
+          >
+            Abmelden
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const istIntern =
     profil.rolle === "super_admin" || profil.rolle === "org_admin" || profil.rolle === "techniker";
   const istAdmin = profil.rolle === "super_admin" || profil.rolle === "org_admin";

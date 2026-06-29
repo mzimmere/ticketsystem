@@ -13,6 +13,7 @@ interface Mitglied {
   telefonnummer: string | null;
   rolle: Rolle;
   verfuegbarkeit: Verfuegbarkeit;
+  deaktiviert: boolean;
 }
 
 interface MitarbeiterListeProps {
@@ -34,6 +35,7 @@ export default function MitarbeiterListe({
   refreshKey,
 }: MitarbeiterListeProps) {
   const [mitglieder, setMitglieder] = useState<Mitglied[]>([]);
+  const [zeigeArchivierte, setZeigeArchivierte] = useState(false);
   const [offenId, setOffenId] = useState<string | null>(null);
   const [entwurf, setEntwurf] = useState<Partial<Mitglied>>({});
   const [hinweis, setHinweis] = useState<string | null>(null);
@@ -44,16 +46,31 @@ export default function MitarbeiterListe({
   useEffect(() => {
     ladeMitglieder();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organisationId, refreshKey]);
+  }, [organisationId, refreshKey, zeigeArchivierte]);
 
   async function ladeMitglieder() {
     const { data } = await supabase
       .from("profiles")
-      .select("id, name, avatar_url, telefonnummer, rolle, verfuegbarkeit")
+      .select("id, name, avatar_url, telefonnummer, rolle, verfuegbarkeit, deaktiviert")
       .eq("organisation_id", organisationId)
       .in("rolle", ["techniker", "org_admin", "super_admin"])
+      .eq("deaktiviert", zeigeArchivierte)
       .order("rolle");
     setMitglieder((data as Mitglied[]) ?? []);
+  }
+
+  async function statusUmschalten(mitgliedId: string, deaktivieren: boolean) {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ deaktiviert: deaktivieren })
+      .eq("id", mitgliedId);
+    if (error) {
+      console.error(error);
+      setHinweis("Aktion fehlgeschlagen.");
+      return;
+    }
+    setOffenId(null);
+    ladeMitglieder();
   }
 
   function bearbeitenOeffnen(m: Mitglied) {
@@ -113,11 +130,33 @@ export default function MitarbeiterListe({
   }
 
   if (mitglieder.length === 0) {
-    return <p className="text-sm text-[var(--text-faint)]">Noch keine Team-Mitglieder.</p>;
+    return (
+      <div className="space-y-2">
+        <p className="text-sm text-[var(--text-faint)]">
+          {zeigeArchivierte ? "Keine deaktivierten Mitglieder." : "Noch keine Team-Mitglieder."}
+        </p>
+        {darfBearbeiten && (
+          <button
+            onClick={() => setZeigeArchivierte((v) => !v)}
+            className="text-xs text-[var(--text-faint)] hover:underline"
+          >
+            {zeigeArchivierte ? "← Zurück zum aktiven Team" : "Deaktivierte Mitglieder anzeigen"}
+          </button>
+        )}
+      </div>
+    );
   }
 
   return (
     <div className="space-y-2">
+      {darfBearbeiten && (
+        <button
+          onClick={() => setZeigeArchivierte((v) => !v)}
+          className="text-xs text-[var(--text-faint)] hover:underline"
+        >
+          {zeigeArchivierte ? "← Zurück zum aktiven Team" : "Deaktivierte Mitglieder anzeigen"}
+        </button>
+      )}
       {mitglieder.map((m) => (
         <div
           key={m.id}
@@ -228,6 +267,24 @@ export default function MitarbeiterListe({
               >
                 Speichern
               </button>
+
+              <div className="border-t border-[var(--border)] pt-3">
+                {zeigeArchivierte ? (
+                  <button
+                    onClick={() => statusUmschalten(m.id, false)}
+                    className="w-full rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+                  >
+                    Wieder aktivieren
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => statusUmschalten(m.id, true)}
+                    className="w-full rounded border border-red-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30"
+                  >
+                    Mitarbeiter deaktivieren
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>

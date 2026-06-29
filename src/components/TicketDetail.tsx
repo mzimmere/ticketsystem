@@ -127,7 +127,8 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
       .from("profiles")
       .select("id, name, avatar_url, verfuegbarkeit")
       .eq("organisation_id", organisationId)
-      .in("rolle", ["techniker", "org_admin"]);
+      .in("rolle", ["techniker", "org_admin"])
+      .eq("deaktiviert", false);
     setTechniker((data as Techniker[]) ?? []);
   }
 
