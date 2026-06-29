@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sun, Moon, User, Settings, Building2 } from "lucide-react";
+import { Sun, Moon, User, Settings, Building2, Receipt } from "lucide-react";
 import { useProfil } from "./lib/useProfil";
 import { useTheme } from "./lib/useTheme";
 import { supabase } from "./lib/supabaseClient";
@@ -12,6 +12,7 @@ import TicketDetail from "./components/TicketDetail";
 import MeinProfil from "./components/MeinProfil";
 import Verwaltung from "./components/Verwaltung";
 import FirmenInfo from "./components/FirmenInfo";
+import Abrechnung from "./components/Abrechnung";
 
 interface Organisation {
   name: string;
@@ -27,6 +28,7 @@ export default function App() {
   const [zeigeProfil, setZeigeProfil] = useState(false);
   const [zeigeVerwaltung, setZeigeVerwaltung] = useState(false);
   const [zeigeFirmenInfo, setZeigeFirmenInfo] = useState(false);
+  const [zeigeAbrechnung, setZeigeAbrechnung] = useState(false);
 
   useEffect(() => {
     if (profil?.organisation_id) {
@@ -105,6 +107,7 @@ export default function App() {
             <button
               onClick={() => {
                 setZeigeFirmenInfo(true);
+                setZeigeAbrechnung(false);
                 setZeigeVerwaltung(false);
                 setZeigeProfil(false);
                 setAusgewaehltesTicket(null);
@@ -119,7 +122,24 @@ export default function App() {
           {istAdmin && (
             <button
               onClick={() => {
+                setZeigeAbrechnung(true);
+                setZeigeFirmenInfo(false);
+                setZeigeVerwaltung(false);
+                setZeigeProfil(false);
+                setAusgewaehltesTicket(null);
+                setZeigeNeuesTicket(false);
+              }}
+              className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+              title="Abrechnung"
+            >
+              <Receipt size={16} />
+            </button>
+          )}
+          {istAdmin && (
+            <button
+              onClick={() => {
                 setZeigeVerwaltung(true);
+                setZeigeAbrechnung(false);
                 setZeigeFirmenInfo(false);
                 setZeigeProfil(false);
                 setAusgewaehltesTicket(null);
@@ -134,6 +154,7 @@ export default function App() {
           <button
             onClick={() => {
               setZeigeProfil(true);
+              setZeigeAbrechnung(false);
               setZeigeFirmenInfo(false);
               setZeigeVerwaltung(false);
               setAusgewaehltesTicket(null);
@@ -155,7 +176,17 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-6 space-y-4">
-        {zeigeFirmenInfo ? (
+        {zeigeAbrechnung ? (
+          <>
+            <button
+              onClick={() => setZeigeAbrechnung(false)}
+              className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
+            >
+              ← Zurück
+            </button>
+            {profil.organisation_id && <Abrechnung organisationId={profil.organisation_id} />}
+          </>
+        ) : zeigeFirmenInfo ? (
           <>
             <button
               onClick={() => setZeigeFirmenInfo(false)}

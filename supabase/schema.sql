@@ -181,7 +181,7 @@ create index idx_zeit_kunde on zeiteintraege(kunde_id);
 create index idx_zeit_org_status on zeiteintraege(organisation_id, abrechnungsstatus);
 
 -- Zeit-/Kostensumme pro Ticket
-create view ticket_zeitsumme as
+create view ticket_zeitsumme with (security_invoker = true) as
 select
   ticket_id,
   sum(minuten) as gesamt_minuten,
@@ -191,7 +191,7 @@ where ticket_id is not null
 group by ticket_id;
 
 -- Zeit-/Kostensumme pro einzelnem Kunden (über alle dessen Tickets)
-create view kunde_zeitsumme as
+create view kunde_zeitsumme with (security_invoker = true) as
 select
   kunde_id,
   organisation_id,
@@ -644,3 +644,20 @@ create policy tickets_update_kunde on tickets for update
 -- ============================================================
 alter table profiles
   add column deaktiviert boolean not null default false;
+
+-- ============================================================
+-- 21. Monatsabrechnung-View + Kunde darf eigene Zeit lesen
+-- ============================================================
+create view kunde_monatsabrechnung with (security_invoker = true) as
+select
+  kunde_id,
+  organisation_id,
+  date_trunc('month', erstellt_am)::date as monat,
+  sum(minuten) as gesamt_minuten,
+  sum(minuten * preis_pro_minute_cent_snapshot) as gesamt_cent
+from zeiteintraege
+where minuten is not null
+group by kunde_id, organisation_id, date_trunc('month', erstellt_am);
+
+create policy zeiteintraege_select_kunde on zeiteintraege for select
+  using (kunde_id = auth.uid());

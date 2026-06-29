@@ -10,11 +10,29 @@ interface Kollege {
   name: string | null;
 }
 
+interface NutzungsMonat {
+  monat: string;
+  gesamt_minuten: number;
+  gesamt_cent: number;
+}
+
 const VERFUEGBARKEIT_LABEL: Record<Verfuegbarkeit, string> = {
   verfuegbar: "Verfügbar",
   abwesend: "Abwesend",
   urlaub: "Urlaub",
 };
+
+function formatEuro(cent: number): string {
+  return (cent / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
+}
+
+function monatLabelKurz(isoDatum: string): string {
+  const [j, m] = isoDatum.split("-");
+  return new Date(Number(j), Number(m) - 1, 1).toLocaleDateString("de-DE", {
+    month: "long",
+    year: "numeric",
+  });
+}
 
 interface MeinProfilProps {
   profilId: string;
@@ -28,14 +46,26 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
   const [verfuegbarkeit, setVerfuegbarkeit] = useState<Verfuegbarkeit>("verfuegbar");
   const [kollegen, setKollegen] = useState<Kollege[]>([]);
   const [uebergabeAn, setUebergabeAn] = useState("");
+  const [nutzung, setNutzung] = useState<NutzungsMonat[]>([]);
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
 
   useEffect(() => {
     ladeProfil();
     if (istIntern && organisationId) ladeKollegen();
+    if (!istIntern) ladeNutzung();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function ladeNutzung() {
+    const { data } = await supabase
+      .from("kunde_monatsabrechnung")
+      .select("monat, gesamt_minuten, gesamt_cent")
+      .eq("kunde_id", profilId)
+      .order("monat", { ascending: false })
+      .limit(6);
+    setNutzung((data as NutzungsMonat[]) ?? []);
+  }
 
   async function ladeProfil() {
     const { data } = await supabase
@@ -188,6 +218,35 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
               Übergeben
             </button>
           </div>
+        </div>
+      )}
+      {!istIntern && (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
+          <h3 className="text-sm font-medium text-[var(--text-strong)]">Meine Nutzung</h3>
+          {nutzung.length === 0 ? (
+            <p className="text-xs text-[var(--text-faint)]">
+              Noch keine erfasste Zeit – hier siehst du, sobald Arbeit an deinen Tickets erfasst
+              wurde, wie viele Minuten und Kosten das pro Monat ausmacht.
+            </p>
+          ) : (
+            <div className="divide-y divide-[var(--border)]">
+              {nutzung.map((n, i) => (
+                <div key={n.monat} className="flex items-center justify-between py-2 text-sm">
+                  <span className={i === 0 ? "font-medium text-[var(--text-strong)]" : "text-[var(--text-soft)]"}>
+                    {monatLabelKurz(n.monat)}
+                  </span>
+                  <span className="flex items-center gap-3">
+                    <span className="font-mono text-xs text-[var(--text-faint)]">
+                      {n.gesamt_minuten} Min.
+                    </span>
+                    <span className="font-mono text-sm text-[var(--text-strong)]">
+                      {formatEuro(n.gesamt_cent)}
+                    </span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

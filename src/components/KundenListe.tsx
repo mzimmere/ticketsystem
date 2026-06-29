@@ -31,6 +31,7 @@ export default function KundenListe({ organisationId, refreshKey }: KundenListeP
   const [zeigeArchivierte, setZeigeArchivierte] = useState(false);
   const [offenId, setOffenId] = useState<string | null>(null);
   const [entwurf, setEntwurf] = useState<Partial<Kunde>>({});
+  const [preisEuro, setPreisEuro] = useState("");
   const [dokumente, setDokumente] = useState<Dokument[]>([]);
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
@@ -79,12 +80,24 @@ export default function KundenListe({ organisationId, refreshKey }: KundenListeP
   function bearbeitenOeffnen(k: Kunde) {
     setOffenId(k.id);
     setEntwurf(k);
+    setPreisEuro(k.preis_pro_minute_cent != null ? (k.preis_pro_minute_cent / 100).toFixed(2) : "");
     setHinweis(null);
     ladeDokumente(k.id);
   }
 
   async function speichern() {
     if (!offenId) return;
+
+    let preisCent: number | null = null;
+    if (preisEuro.trim() !== "") {
+      const wert = parseFloat(preisEuro.trim().replace(",", "."));
+      if (isNaN(wert)) {
+        setHinweis("Ungültiger Preis – bitte z.B. 1,99 eingeben.");
+        return;
+      }
+      preisCent = Math.round(wert * 100);
+    }
+
     setLaedt(true);
     const { error } = await supabase
       .from("profiles")
@@ -93,10 +106,7 @@ export default function KundenListe({ organisationId, refreshKey }: KundenListeP
         telefonnummer: entwurf.telefonnummer?.trim() || null,
         adresse: entwurf.adresse?.trim() || null,
         notizen: entwurf.notizen?.trim() || null,
-        preis_pro_minute_cent:
-          entwurf.preis_pro_minute_cent === null || entwurf.preis_pro_minute_cent === undefined
-            ? null
-            : Number(entwurf.preis_pro_minute_cent),
+        preis_pro_minute_cent: preisCent,
       })
       .eq("id", offenId);
     setLaedt(false);
@@ -290,18 +300,14 @@ export default function KundenListe({ organisationId, refreshKey }: KundenListeP
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  Individueller Minutenpreis in Cent (optional)
+                  Individueller Minutenpreis in Euro (optional)
                 </label>
                 <input
-                  type="number"
-                  value={entwurf.preis_pro_minute_cent ?? ""}
-                  onChange={(e) =>
-                    setEntwurf({
-                      ...entwurf,
-                      preis_pro_minute_cent: e.target.value === "" ? null : Number(e.target.value),
-                    })
-                  }
-                  placeholder="leer = Standardpreis der Firma"
+                  type="text"
+                  inputMode="decimal"
+                  value={preisEuro}
+                  onChange={(e) => setPreisEuro(e.target.value)}
+                  placeholder="z.B. 1,99 – leer = Standardpreis der Firma"
                   className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
               </div>

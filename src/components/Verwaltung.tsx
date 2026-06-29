@@ -20,6 +20,7 @@ interface Organisation extends OrganisationKurz {
   email: string | null;
   website: string | null;
   oeffnungszeiten: string | null;
+  standard_preis_pro_minute_cent: number | null;
 }
 
 interface VerwaltungProps {
@@ -35,6 +36,7 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
   const [orgEmail, setOrgEmail] = useState("");
   const [orgWebsite, setOrgWebsite] = useState("");
   const [orgOeffnungszeiten, setOrgOeffnungszeiten] = useState("");
+  const [orgStandardpreisEuro, setOrgStandardpreisEuro] = useState("");
   const [alleOrganisationen, setAlleOrganisationen] = useState<OrganisationKurz[]>([]);
   const [neueOrgName, setNeueOrgName] = useState("");
 
@@ -77,7 +79,9 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
   async function ladeOrganisation() {
     const { data } = await supabase
       .from("organisationen")
-      .select("id, name, logo_url, adresse, telefon, email, website, oeffnungszeiten")
+      .select(
+        "id, name, logo_url, adresse, telefon, email, website, oeffnungszeiten, standard_preis_pro_minute_cent",
+      )
       .eq("id", organisationId)
       .single();
     if (data) {
@@ -88,6 +92,11 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
       setOrgEmail(data.email ?? "");
       setOrgWebsite(data.website ?? "");
       setOrgOeffnungszeiten(data.oeffnungszeiten ?? "");
+      setOrgStandardpreisEuro(
+        data.standard_preis_pro_minute_cent != null
+          ? (data.standard_preis_pro_minute_cent / 100).toFixed(2)
+          : "",
+      );
     }
   }
 
@@ -101,6 +110,17 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
 
   async function organisationSpeichern() {
     if (!organisation) return;
+
+    let standardpreisCent: number | null = null;
+    if (orgStandardpreisEuro.trim() !== "") {
+      const wert = parseFloat(orgStandardpreisEuro.trim().replace(",", "."));
+      if (isNaN(wert)) {
+        setHinweis("Ungültiger Standardpreis – bitte z.B. 1,99 eingeben.");
+        return;
+      }
+      standardpreisCent = Math.round(wert * 100);
+    }
+
     setLaedt(true);
     const { error } = await supabase
       .from("organisationen")
@@ -111,6 +131,7 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
         email: orgEmail.trim() || null,
         website: orgWebsite.trim() || null,
         oeffnungszeiten: orgOeffnungszeiten.trim() || null,
+        standard_preis_pro_minute_cent: standardpreisCent,
       })
       .eq("id", organisation.id);
     setLaedt(false);
@@ -404,6 +425,20 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
               value={orgOeffnungszeiten}
               onChange={(e) => setOrgOeffnungszeiten(e.target.value)}
               placeholder="z.B. Mo–Fr 8–17 Uhr"
+              className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+              Standard-Minutenpreis in Euro (für die Abrechnung)
+            </label>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={orgStandardpreisEuro}
+              onChange={(e) => setOrgStandardpreisEuro(e.target.value)}
+              placeholder="z.B. 1,99"
               className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
             />
           </div>
