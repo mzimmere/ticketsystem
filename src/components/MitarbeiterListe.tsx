@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
 import Avatar from "./Avatar";
+import ZugangsdatenBox from "./ZugangsdatenBox";
 
 type Rolle = "super_admin" | "org_admin" | "techniker" | "kunde";
 type Verfuegbarkeit = "verfuegbar" | "abwesend" | "urlaub";
@@ -39,6 +40,11 @@ export default function MitarbeiterListe({
   const [offenId, setOffenId] = useState<string | null>(null);
   const [entwurf, setEntwurf] = useState<Partial<Mitglied>>({});
   const [hinweis, setHinweis] = useState<string | null>(null);
+  const [neuerZugang, setNeuerZugang] = useState<{
+    email: string;
+    link?: string;
+    telefon?: string;
+  } | null>(null);
   const [laedt, setLaedt] = useState(false);
 
   const darfBearbeiten = eigeneRolle === "super_admin" || eigeneRolle === "org_admin";
@@ -124,6 +130,31 @@ export default function MitarbeiterListe({
     } catch (err) {
       console.error(err);
       setHinweis("Profilbild-Upload fehlgeschlagen.");
+    } finally {
+      setLaedt(false);
+    }
+  }
+
+  async function neuenLinkAnfordern(mitgliedId: string, telefon: string | null) {
+    setLaedt(true);
+    setHinweis(null);
+    setNeuerZugang(null);
+    const { data: sessionData } = await supabase.auth.getSession();
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/resend-zugang`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session?.access_token}`,
+        },
+        body: JSON.stringify({ userId: mitgliedId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Fehlgeschlagen");
+      setNeuerZugang({ email: json.email, link: json.link, telefon: telefon ?? undefined });
+    } catch (err) {
+      console.error(err);
+      setHinweis("Neuer Link konnte nicht erzeugt werden. Ist resend-zugang deployt?");
     } finally {
       setLaedt(false);
     }
@@ -267,6 +298,23 @@ export default function MitarbeiterListe({
               >
                 Speichern
               </button>
+
+              <button
+                onClick={() => neuenLinkAnfordern(m.id, entwurf.telefonnummer ?? null)}
+                disabled={laedt}
+                className="w-full rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)] disabled:opacity-50"
+              >
+                Neuen Zugangslink erzeugen
+              </button>
+
+              {neuerZugang && (
+                <ZugangsdatenBox
+                  email={neuerZugang.email}
+                  link={neuerZugang.link}
+                  telefon={neuerZugang.telefon}
+                  onSchliessen={() => setNeuerZugang(null)}
+                />
+              )}
 
               <div className="border-t border-[var(--border)] pt-3">
                 {zeigeArchivierte ? (

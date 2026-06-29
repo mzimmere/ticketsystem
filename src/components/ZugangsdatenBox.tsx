@@ -42,6 +42,10 @@ export default function ZugangsdatenBox({
         `1. Klick auf diesen Link: ${link}`,
         `2. Lege dort dein eigenes Passwort fest`,
         `3. Danach kannst du dich jederzeit unter ${seitenUrl} mit deiner E-Mail und diesem Passwort einloggen.`,
+        ``,
+        `Hinweis: Der Link ist nur 24 Stunden gültig. Falls er nicht mehr funktioniert, einfach kurz Bescheid sagen, dann gibt's einen neuen.`,
+        ``,
+        `Hinweis: Der Link ist nur 24 Stunden gültig. Falls er nicht mehr funktioniert, sag kurz Bescheid - du bekommst dann einfach einen neuen.`,
       ].join("\n");
 
   async function kopieren() {
