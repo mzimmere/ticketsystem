@@ -6,6 +6,7 @@ interface ZugangsdatenBoxProps {
   link?: string;
   telefon?: string;
   firmenName?: string | null;
+  firmenAdresse?: string | null;
   logoUrl?: string | null;
   onSchliessen: () => void;
 }
@@ -16,12 +17,17 @@ export default function ZugangsdatenBox({
   link,
   telefon,
   firmenName,
+  firmenAdresse,
   logoUrl,
   onSchliessen,
 }: ZugangsdatenBoxProps) {
   const [kopiert, setKopiert] = useState(false);
   const seitenUrl = window.location.origin;
-  const absender = firmenName ? `${firmenName}` : "dein IT-Team";
+  const absender = firmenName ? firmenName : "dein IT-Team";
+  const signaturZeilen = [``, `—`, firmenName ?? "", firmenAdresse ?? ""].filter(
+    (z) => z !== "",
+  );
+  const signatur = signaturZeilen.join("\n");
 
   const text = passwort
     ? [
@@ -34,6 +40,7 @@ export default function ZugangsdatenBox({
         `   Passwort: ${passwort}`,
         ``,
         `Dort siehst du deine Anfragen und kannst neue stellen.`,
+        signatur,
       ].join("\n")
     : [
         `Hallo! ${absender} hat dir einen Zugang zum Ticketsystem eingerichtet.`,
@@ -43,9 +50,8 @@ export default function ZugangsdatenBox({
         `2. Lege dort dein eigenes Passwort fest`,
         `3. Danach kannst du dich jederzeit unter ${seitenUrl} mit deiner E-Mail und diesem Passwort einloggen.`,
         ``,
-        `Hinweis: Der Link ist nur 24 Stunden gültig. Falls er nicht mehr funktioniert, einfach kurz Bescheid sagen, dann gibt's einen neuen.`,
-        ``,
         `Hinweis: Der Link ist nur 24 Stunden gültig. Falls er nicht mehr funktioniert, sag kurz Bescheid - du bekommst dann einfach einen neuen.`,
+        signatur,
       ].join("\n");
 
   async function kopieren() {

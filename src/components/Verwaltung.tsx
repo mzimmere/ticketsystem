@@ -541,6 +541,7 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
               link={mitarbeiterZugangsdaten.link}
               telefon={mitarbeiterZugangsdaten.telefon}
               firmenName={organisation?.name}
+              firmenAdresse={organisation?.adresse}
               logoUrl={organisation?.logo_url}
               onSchliessen={() => setMitarbeiterZugangsdaten(null)}
             />
@@ -550,6 +551,9 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
             organisationId={organisationId}
             eigeneRolle={rolle}
             refreshKey={teamRefreshKey}
+            organisationName={organisation?.name}
+            organisationAdresse={organisation?.adresse}
+            organisationLogoUrl={organisation?.logo_url}
           />
         </div>
       )}
@@ -646,12 +650,19 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
               link={kundeZugangsdaten.link}
               telefon={kundeZugangsdaten.telefon}
               firmenName={organisation?.name}
+              firmenAdresse={organisation?.adresse}
               logoUrl={organisation?.logo_url}
               onSchliessen={() => setKundeZugangsdaten(null)}
             />
           )}
 
-          <KundenListe organisationId={organisationId} refreshKey={kundenRefreshKey} />
+          <KundenListe
+            organisationId={organisationId}
+            refreshKey={kundenRefreshKey}
+            organisationName={organisation?.name}
+            organisationAdresse={organisation?.adresse}
+            organisationLogoUrl={organisation?.logo_url}
+          />
         </div>
       )}
 

@@ -25,9 +25,18 @@ interface Dokument {
 interface KundenListeProps {
   organisationId: string;
   refreshKey?: number;
+  organisationName?: string | null;
+  organisationAdresse?: string | null;
+  organisationLogoUrl?: string | null;
 }
 
-export default function KundenListe({ organisationId, refreshKey }: KundenListeProps) {
+export default function KundenListe({
+  organisationId,
+  refreshKey,
+  organisationName,
+  organisationAdresse,
+  organisationLogoUrl,
+}: KundenListeProps) {
   const [kunden, setKunden] = useState<Kunde[]>([]);
   const [zeigeArchivierte, setZeigeArchivierte] = useState(false);
   const [offenId, setOffenId] = useState<string | null>(null);
@@ -407,6 +416,9 @@ export default function KundenListe({ organisationId, refreshKey }: KundenListeP
                   email={neuerZugang.email}
                   link={neuerZugang.link}
                   telefon={neuerZugang.telefon}
+                  firmenName={organisationName}
+                  firmenAdresse={organisationAdresse}
+                  logoUrl={organisationLogoUrl}
                   onSchliessen={() => setNeuerZugang(null)}
                 />
               )}

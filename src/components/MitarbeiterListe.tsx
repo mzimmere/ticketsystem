@@ -21,6 +21,9 @@ interface MitarbeiterListeProps {
   organisationId: string;
   eigeneRolle: Rolle;
   refreshKey?: number;
+  organisationName?: string | null;
+  organisationAdresse?: string | null;
+  organisationLogoUrl?: string | null;
 }
 
 const ROLLE_LABEL: Record<Rolle, string> = {
@@ -34,6 +37,9 @@ export default function MitarbeiterListe({
   organisationId,
   eigeneRolle,
   refreshKey,
+  organisationName,
+  organisationAdresse,
+  organisationLogoUrl,
 }: MitarbeiterListeProps) {
   const [mitglieder, setMitglieder] = useState<Mitglied[]>([]);
   const [zeigeArchivierte, setZeigeArchivierte] = useState(false);
@@ -312,6 +318,9 @@ export default function MitarbeiterListe({
                   email={neuerZugang.email}
                   link={neuerZugang.link}
                   telefon={neuerZugang.telefon}
+                  firmenName={organisationName}
+                  firmenAdresse={organisationAdresse}
+                  logoUrl={organisationLogoUrl}
                   onSchliessen={() => setNeuerZugang(null)}
                 />
               )}
