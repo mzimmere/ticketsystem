@@ -13,6 +13,8 @@ interface TicketZeile {
   status: Status;
   prioritaet: Prioritaet;
   erstellt_am: string;
+  zuletzt_kunden_nachricht_am: string | null;
+  zuletzt_gelesen_am: string | null;
   kunde: { id: string; name: string | null } | null;
   zugewiesen: { name: string | null; avatar_url: string | null } | null;
 }
@@ -56,6 +58,12 @@ function formatRelativ(iso: string): string {
   return new Date(iso).toLocaleDateString("de-DE");
 }
 
+function istUngelesen(t: TicketZeile): boolean {
+  if (!t.zuletzt_kunden_nachricht_am) return false;
+  if (!t.zuletzt_gelesen_am) return true;
+  return new Date(t.zuletzt_kunden_nachricht_am) > new Date(t.zuletzt_gelesen_am);
+}
+
 function FilterChip({
   aktiv,
   onClick,
@@ -92,7 +100,7 @@ export default function TicketUebersicht({
 }: TicketUebersichtProps) {
   const [tickets, setTickets] = useState<TicketZeile[]>([]);
   const [kundenOptionen, setKundenOptionen] = useState<KundeOption[]>([]);
-  const [statusFilter, setStatusFilter] = useState<Status | "alle">("alle");
+  const [statusFilter, setStatusFilter] = useState<Status | "alle" | "offene">("offene");
   const [prioritaetFilter, setPrioritaetFilter] = useState<Prioritaet | "alle">("alle");
   const [kundeFilter, setKundeFilter] = useState<string>("alle");
   const [suchbegriff, setSuchbegriff] = useState("");
@@ -131,11 +139,15 @@ export default function TicketUebersicht({
     let query = supabase
       .from("tickets")
       .select(
-        "id, ticket_nr, titel, status, prioritaet, erstellt_am, kunde:kunde_id(id, name), zugewiesen:zugewiesen_an(name, avatar_url)",
+        "id, ticket_nr, titel, status, prioritaet, erstellt_am, zuletzt_kunden_nachricht_am, zuletzt_gelesen_am, kunde:kunde_id(id, name), zugewiesen:zugewiesen_an(name, avatar_url)",
       )
       .order("erstellt_am", { ascending: false });
 
-    if (statusFilter !== "alle") query = query.eq("status", statusFilter);
+    if (statusFilter === "offene") {
+      query = query.not("status", "in", '("geloest","geschlossen")');
+    } else if (statusFilter !== "alle") {
+      query = query.eq("status", statusFilter);
+    }
     if (prioritaetFilter !== "alle") query = query.eq("prioritaet", prioritaetFilter);
     if (kundeFilter !== "alle") query = query.eq("kunde_id", kundeFilter);
 
@@ -235,6 +247,9 @@ export default function TicketUebersicht({
 
         <span className="h-4 w-px bg-[var(--border)]" />
 
+        <FilterChip aktiv={statusFilter === "offene"} onClick={() => setStatusFilter("offene")}>
+          Offene
+        </FilterChip>
         <FilterChip aktiv={statusFilter === "alle"} onClick={() => setStatusFilter("alle")}>
           Alle Status
         </FilterChip>
@@ -274,11 +289,15 @@ export default function TicketUebersicht({
             <span className="w-20 text-right">Zeit</span>
           </div>
 
-          {gefilterteTickets.map((ticket) => (
+          {gefilterteTickets.map((ticket) => {
+            const ungelesen = istUngelesen(ticket);
+            return (
             <button
               key={ticket.id}
               onClick={() => onAuswahl(ticket.id)}
-              className="flex w-full items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3 text-left last:border-b-0 hover:bg-[var(--bg-muted)]"
+              className={`flex w-full items-center gap-3 border-b border-[var(--border)] px-4 py-3 text-left last:border-b-0 hover:bg-[var(--bg-muted)] ${
+                ungelesen ? "bg-amber-50/60 dark:bg-amber-500/10" : "bg-[var(--bg-surface)]"
+              }`}
             >
               <span
                 className="h-2 w-2 shrink-0 rounded-full"
@@ -289,15 +308,30 @@ export default function TicketUebersicht({
                 #{ticket.ticket_nr}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-[var(--text-strong)]">
+                <p
+                  className={`truncate text-sm ${
+                    ungelesen
+                      ? "font-semibold text-[var(--text-strong)]"
+                      : "font-medium text-[var(--text-strong)]"
+                  }`}
+                >
                   <span className="mr-1.5 font-mono text-xs text-[var(--text-faint)] sm:hidden">
                     #{ticket.ticket_nr}
                   </span>
+                  {ungelesen && (
+                    <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-500 align-middle" />
+                  )}
                   {ticket.titel}
                 </p>
                 <div className="mt-0.5 flex items-center gap-1.5">
-                  <p className="truncate text-xs text-[var(--text-soft)]">
-                    {ticket.kunde?.name ?? "Unbekannter Kunde"}
+                  <p
+                    className={`truncate text-xs ${
+                      ungelesen ? "text-amber-700 dark:text-amber-400" : "text-[var(--text-soft)]"
+                    }`}
+                  >
+                    {ungelesen
+                      ? "Neue Nachricht vom Kunden"
+                      : ticket.kunde?.name ?? "Unbekannter Kunde"}
                   </p>
                   {ticket.zugewiesen?.name && (
                     <>
@@ -320,7 +354,8 @@ export default function TicketUebersicht({
                 </span>
               </div>
             </button>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

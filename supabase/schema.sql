@@ -607,3 +607,27 @@ alter table organisationen
   add column email text,
   add column website text,
   add column oeffnungszeiten text;
+
+-- ============================================================
+-- 18. Ungelesen-Markierung: Zeitstempel + Trigger
+-- ============================================================
+alter table tickets
+  add column zuletzt_kunden_nachricht_am timestamptz,
+  add column zuletzt_gelesen_am timestamptz;
+
+create or replace function set_kunden_nachricht_zeit() returns trigger as $$
+begin
+  if new.quelle = 'whatsapp'
+     or new.autor_id = (select kunde_id from tickets where id = new.ticket_id)
+  then
+    update tickets
+    set zuletzt_kunden_nachricht_am = new.erstellt_am
+    where id = new.ticket_id;
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+create trigger trg_set_kunden_nachricht_zeit
+  after insert on ticket_nachrichten
+  for each row execute function set_kunden_nachricht_zeit();

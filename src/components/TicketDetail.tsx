@@ -75,7 +75,10 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
           table: "ticket_nachrichten",
           filter: `ticket_id=eq.${ticketId}`,
         },
-        () => ladeNachrichten(),
+        () => {
+          ladeNachrichten();
+          markiereGelesen();
+        },
       )
       .subscribe();
 
@@ -89,6 +92,14 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
     const ticketDaten = await ladeTicket();
     await ladeNachrichten();
     if (ticketDaten) await ladeTechniker(ticketDaten.organisation_id);
+    markiereGelesen();
+  }
+
+  async function markiereGelesen() {
+    await supabase
+      .from("tickets")
+      .update({ zuletzt_gelesen_am: new Date().toISOString() })
+      .eq("id", ticketId);
   }
 
   async function ladeTicket() {
