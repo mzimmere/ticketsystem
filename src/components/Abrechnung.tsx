@@ -3,9 +3,12 @@ import { supabase } from "../lib/supabaseClient";
 
 interface AbrechnungsZeile {
   kunde_id: string;
-  kunde_name: string | null;
+  kunde_name: string;
+  mwst_satz: number;
   gesamt_minuten: number;
-  gesamt_cent: number;
+  netto_cent: number;
+  mwst_cent: number;
+  brutto_cent: number;
 }
 
 interface AbrechnungProps {
@@ -43,27 +46,71 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
 
   async function ladeAbrechnung() {
     setLaedt(true);
-    const { data } = await supabase
-      .from("kunde_monatsabrechnung")
-      .select("kunde_id, gesamt_minuten, gesamt_cent, kunde:kunde_id(name)")
-      .eq("organisation_id", organisationId)
-      .eq("monat", monatsErster);
 
-    const zeilenMitName = ((data ?? []) as unknown as Array<{
+    const [{ data: zeitDaten }, { data: anpassungDaten }] = await Promise.all([
+      supabase
+        .from("kunde_monatsabrechnung")
+        .select("kunde_id, gesamt_minuten, gesamt_cent, kunde:kunde_id(name, mwst_satz)")
+        .eq("organisation_id", organisationId)
+        .eq("monat", monatsErster),
+      supabase
+        .from("rechnungsanpassungen")
+        .select("kunde_id, betrag_cent, kunde:kunde_id(name, mwst_satz)")
+        .eq("organisation_id", organisationId)
+        .eq("monat", monatsErster),
+    ]);
+
+    type Roh = {
+      kunde_id: string;
+      kunde_name: string;
+      mwst_satz: number;
+      gesamt_minuten: number;
+      netto_cent: number;
+    };
+    const karte = new Map<string, Roh>();
+
+    for (const z of (zeitDaten ?? []) as unknown as Array<{
       kunde_id: string;
       gesamt_minuten: number;
       gesamt_cent: number;
-      kunde: { name: string | null } | null;
-    }>)
-      .map((z) => ({
+      kunde: { name: string | null; mwst_satz: number | null } | null;
+    }>) {
+      karte.set(z.kunde_id, {
         kunde_id: z.kunde_id,
         kunde_name: z.kunde?.name ?? "Unbenannt",
+        mwst_satz: z.kunde?.mwst_satz ?? 0,
         gesamt_minuten: z.gesamt_minuten,
-        gesamt_cent: z.gesamt_cent,
-      }))
-      .sort((a, b) => (a.kunde_name ?? "").localeCompare(b.kunde_name ?? ""));
+        netto_cent: z.gesamt_cent,
+      });
+    }
 
-    setZeilen(zeilenMitName);
+    for (const a of (anpassungDaten ?? []) as unknown as Array<{
+      kunde_id: string;
+      betrag_cent: number;
+      kunde: { name: string | null; mwst_satz: number | null } | null;
+    }>) {
+      const bestehend = karte.get(a.kunde_id);
+      if (bestehend) {
+        bestehend.netto_cent += a.betrag_cent;
+      } else {
+        karte.set(a.kunde_id, {
+          kunde_id: a.kunde_id,
+          kunde_name: a.kunde?.name ?? "Unbenannt",
+          mwst_satz: a.kunde?.mwst_satz ?? 0,
+          gesamt_minuten: 0,
+          netto_cent: a.betrag_cent,
+        });
+      }
+    }
+
+    const zeilenFertig: AbrechnungsZeile[] = Array.from(karte.values())
+      .map((z) => {
+        const mwstCent = Math.round(z.netto_cent * (z.mwst_satz / 100));
+        return { ...z, mwst_cent: mwstCent, brutto_cent: z.netto_cent + mwstCent };
+      })
+      .sort((a, b) => a.kunde_name.localeCompare(b.kunde_name));
+
+    setZeilen(zeilenFertig);
     setLaedt(false);
   }
 
@@ -83,9 +130,12 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
 
   function csvExportieren() {
     const zeilenText = zeilen
-      .map((z) => `${z.kunde_name};${z.gesamt_minuten};${(z.gesamt_cent / 100).toFixed(2)}`)
+      .map(
+        (z) =>
+          `${z.kunde_name};${z.gesamt_minuten};${(z.netto_cent / 100).toFixed(2)};${(z.mwst_cent / 100).toFixed(2)};${(z.brutto_cent / 100).toFixed(2)}`,
+      )
       .join("\n");
-    const csv = `Kunde;Minuten;Betrag (EUR)\n${zeilenText}`;
+    const csv = `Kunde;Minuten;Netto (EUR);MwSt (EUR);Brutto (EUR)\n${zeilenText}`;
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -96,20 +146,30 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
   }
 
   const gesamtMinuten = zeilen.reduce((sum, z) => sum + z.gesamt_minuten, 0);
-  const gesamtCent = zeilen.reduce((sum, z) => sum + z.gesamt_cent, 0);
+  const gesamtNetto = zeilen.reduce((sum, z) => sum + z.netto_cent, 0);
+  const gesamtMwst = zeilen.reduce((sum, z) => sum + z.mwst_cent, 0);
+  const gesamtBrutto = zeilen.reduce((sum, z) => sum + z.brutto_cent, 0);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="keine-druckansicht flex items-center justify-between">
         <h2
           className="text-lg font-semibold text-[var(--text-strong)]"
           style={{ fontFamily: "'Space Grotesk', sans-serif" }}
         >
           Abrechnung
         </h2>
+        {zeilen.length > 0 && (
+          <button
+            onClick={() => window.print()}
+            className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+          >
+            Drucken / Als PDF
+          </button>
+        )}
       </div>
 
-      <div className="flex items-center justify-between rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-2.5">
+      <div className="keine-druckansicht flex items-center justify-between rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-2.5">
         <button
           onClick={() => monatWechseln(-1)}
           className="rounded px-2 py-1 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
@@ -131,15 +191,20 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
         <p className="text-sm text-[var(--text-faint)]">Lädt…</p>
       ) : zeilen.length === 0 ? (
         <p className="text-sm text-[var(--text-faint)]">
-          Keine erfassten Zeiten in diesem Monat.
+          Keine erfassten Zeiten oder Anpassungen in diesem Monat.
         </p>
       ) : (
         <>
-          <div className="overflow-hidden rounded-lg border border-[var(--border)]">
+          <div className="druckbereich overflow-hidden rounded-lg border border-[var(--border)]">
+            <p className="hidden border-b border-[var(--border)] bg-[var(--bg-surface)] px-4 py-2 text-sm font-medium text-[var(--text-strong)] print:block">
+              Monatsübersicht – {monatLabel(jahr, monat)}
+            </p>
             <div className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-muted)] px-4 py-1.5 text-[0.65rem] font-medium uppercase tracking-wide text-[var(--text-faint)]">
               <span className="flex-1">Kunde</span>
-              <span className="w-20 text-right">Minuten</span>
-              <span className="w-24 text-right">Betrag</span>
+              <span className="w-16 text-right">Min.</span>
+              <span className="w-20 text-right">Netto</span>
+              <span className="w-16 text-right">MwSt.</span>
+              <span className="w-20 text-right">Brutto</span>
             </div>
             {zeilen.map((z) => (
               <button
@@ -148,28 +213,40 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
                 className="flex w-full items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-surface)] px-4 py-2.5 text-left text-sm last:border-b-0 hover:bg-[var(--bg-muted)]"
               >
                 <span className="flex-1 text-[var(--text-strong)]">{z.kunde_name}</span>
-                <span className="w-20 text-right font-mono text-[var(--text-soft)]">
+                <span className="w-16 text-right font-mono text-[var(--text-soft)]">
                   {z.gesamt_minuten}
                 </span>
-                <span className="w-24 text-right font-mono text-[var(--text-strong)]">
-                  {formatEuro(z.gesamt_cent)}
+                <span className="w-20 text-right font-mono text-[var(--text-soft)]">
+                  {formatEuro(z.netto_cent)}
+                </span>
+                <span className="w-16 text-right font-mono text-[var(--text-faint)]">
+                  {formatEuro(z.mwst_cent)}
+                </span>
+                <span className="w-20 text-right font-mono text-[var(--text-strong)]">
+                  {formatEuro(z.brutto_cent)}
                 </span>
               </button>
             ))}
             <div className="flex items-center gap-3 bg-[var(--bg-muted)] px-4 py-2.5 text-sm font-medium">
               <span className="flex-1 text-[var(--text-strong)]">Gesamt</span>
-              <span className="w-20 text-right font-mono text-[var(--text-strong)]">
+              <span className="w-16 text-right font-mono text-[var(--text-strong)]">
                 {gesamtMinuten}
               </span>
-              <span className="w-24 text-right font-mono text-[var(--text-strong)]">
-                {formatEuro(gesamtCent)}
+              <span className="w-20 text-right font-mono text-[var(--text-strong)]">
+                {formatEuro(gesamtNetto)}
+              </span>
+              <span className="w-16 text-right font-mono text-[var(--text-strong)]">
+                {formatEuro(gesamtMwst)}
+              </span>
+              <span className="w-20 text-right font-mono text-[var(--text-strong)]">
+                {formatEuro(gesamtBrutto)}
               </span>
             </div>
           </div>
 
           <button
             onClick={csvExportieren}
-            className="w-full rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+            className="keine-druckansicht w-full rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
           >
             Als CSV exportieren
           </button>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
+import { LAENDER_MWST, LAENDER_LISTE } from "../lib/laender";
 import Avatar from "./Avatar";
 import ZugangsdatenBox from "./ZugangsdatenBox";
 
@@ -13,6 +14,8 @@ interface Kunde {
   hausnummer: string | null;
   plz: string | null;
   ort: string | null;
+  land: string | null;
+  mwst_satz: number | null;
   notizen: string | null;
   deaktiviert: boolean;
 }
@@ -73,7 +76,7 @@ export default function KundenListe({
     const { data } = await supabase
       .from("profiles")
       .select(
-        "id, name, avatar_url, telefonnummer, strasse, hausnummer, plz, ort, notizen, deaktiviert",
+        "id, name, avatar_url, telefonnummer, strasse, hausnummer, plz, ort, land, mwst_satz, notizen, deaktiviert",
       )
       .eq("organisation_id", organisationId)
       .eq("rolle", "kunde")
@@ -163,6 +166,8 @@ export default function KundenListe({
         hausnummer: entwurf.hausnummer?.trim() || null,
         plz: entwurf.plz?.trim() || null,
         ort: entwurf.ort?.trim() || null,
+        land: entwurf.land?.trim() || null,
+        mwst_satz: entwurf.mwst_satz ?? null,
         notizen: entwurf.notizen?.trim() || null,
       })
       .eq("id", offenId);
@@ -406,6 +411,47 @@ export default function KundenListe({
                   className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
               </div>
+
+              <div className="flex gap-2">
+                <select
+                  value={entwurf.land ?? "Deutschland"}
+                  onChange={(e) => {
+                    const land = e.target.value;
+                    setEntwurf({
+                      ...entwurf,
+                      land,
+                      mwst_satz: LAENDER_MWST[land] ?? entwurf.mwst_satz,
+                    });
+                  }}
+                  className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                >
+                  {LAENDER_LISTE.map((land) => (
+                    <option key={land} value={land}>
+                      {land}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex w-28 items-center gap-1">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={entwurf.mwst_satz ?? ""}
+                    onChange={(e) =>
+                      setEntwurf({
+                        ...entwurf,
+                        mwst_satz: e.target.value === "" ? null : Number(e.target.value),
+                      })
+                    }
+                    placeholder="MwSt."
+                    className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-2 text-sm text-[var(--text-strong)]"
+                  />
+                  <span className="text-xs text-[var(--text-faint)]">%</span>
+                </div>
+              </div>
+              <p className="-mt-1 text-xs text-[var(--text-faint)]">
+                Vorschlagswert nach Land, Steuersatz bleibt frei änderbar (z.B. Kleinunternehmer,
+                Reverse-Charge).
+              </p>
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">

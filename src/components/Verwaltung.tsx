@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
 import { generierePasswort } from "../lib/passwort";
+import { LAENDER_MWST, LAENDER_LISTE } from "../lib/laender";
 import KundenListe from "./KundenListe";
 import MitarbeiterListe from "./MitarbeiterListe";
 import ZugangsdatenBox from "./ZugangsdatenBox";
@@ -61,6 +62,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
   const [neuerKundeHausnummer, setNeuerKundeHausnummer] = useState("");
   const [neuerKundePlz, setNeuerKundePlz] = useState("");
   const [neuerKundeOrt, setNeuerKundeOrt] = useState("");
+  const [neuerKundeLand, setNeuerKundeLand] = useState("Deutschland");
+  const [neuerKundeMwstSatz, setNeuerKundeMwstSatz] = useState("19");
   const [neuerKundeNotizen, setNeuerKundeNotizen] = useState("");
   const [neuerKundePasswort, setNeuerKundePasswort] = useState("");
   const [kundenRefreshKey, setKundenRefreshKey] = useState(0);
@@ -221,6 +224,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
             hausnummer: neuerKundeHausnummer.trim() || null,
             plz: neuerKundePlz.trim() || null,
             ort: neuerKundeOrt.trim() || null,
+            land: neuerKundeLand || null,
+            mwst_satz: neuerKundeMwstSatz.trim() === "" ? null : Number(neuerKundeMwstSatz),
             notizen: neuerKundeNotizen.trim() || null,
           })
           .eq("id", json.userId);
@@ -242,6 +247,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
       setNeuerKundeHausnummer("");
       setNeuerKundePlz("");
       setNeuerKundeOrt("");
+      setNeuerKundeLand("Deutschland");
+      setNeuerKundeMwstSatz("19");
       setNeuerKundeNotizen("");
       setNeuerKundePasswort("");
       setZeigeKundeAnlegen(false);
@@ -638,6 +645,36 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
                   placeholder="Ort"
                   className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
+              </div>
+              <div className="flex gap-2">
+                <select
+                  value={neuerKundeLand}
+                  onChange={(e) => {
+                    const land = e.target.value;
+                    setNeuerKundeLand(land);
+                    if (LAENDER_MWST[land] !== undefined) {
+                      setNeuerKundeMwstSatz(String(LAENDER_MWST[land]));
+                    }
+                  }}
+                  className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                >
+                  {LAENDER_LISTE.map((land) => (
+                    <option key={land} value={land}>
+                      {land}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex w-28 items-center gap-1">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={neuerKundeMwstSatz}
+                    onChange={(e) => setNeuerKundeMwstSatz(e.target.value)}
+                    placeholder="MwSt."
+                    className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-2 text-sm text-[var(--text-strong)]"
+                  />
+                  <span className="text-xs text-[var(--text-faint)]">%</span>
+                </div>
               </div>
               <textarea
                 value={neuerKundeNotizen}

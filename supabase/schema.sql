@@ -754,3 +754,10 @@ alter table profiles
   add column hausnummer text,
   add column plz text,
   add column ort text;
+
+-- ============================================================
+-- 25. Land + MwSt-Satz pro Kunde
+-- ============================================================
+alter table profiles
+  add column land text default 'Deutschland',
+  add column mwst_satz numeric(5,2) default 19.00;

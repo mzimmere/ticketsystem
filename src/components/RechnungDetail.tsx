@@ -22,6 +22,8 @@ interface Kunde {
   hausnummer: string | null;
   plz: string | null;
   ort: string | null;
+  land: string | null;
+  mwst_satz: number | null;
   telefonnummer: string | null;
 }
 
@@ -91,7 +93,7 @@ export default function RechnungDetail({
       await Promise.all([
         supabase
           .from("profiles")
-          .select("name, strasse, hausnummer, plz, ort, telefonnummer")
+          .select("name, strasse, hausnummer, plz, ort, land, mwst_satz, telefonnummer")
           .eq("id", kundeId)
           .single(),
         supabase
@@ -159,7 +161,10 @@ export default function RechnungDetail({
   );
   const gesamtMinuten = eintraege.reduce((sum, e) => sum + e.minuten, 0);
   const anpassungenSumme = anpassungen.reduce((sum, a) => sum + a.betrag_cent, 0);
-  const gesamtsumme = zwischensumme + anpassungenSumme;
+  const nettosumme = zwischensumme + anpassungenSumme;
+  const mwstSatz = kunde?.mwst_satz ?? 0;
+  const mwstBetrag = Math.round(nettosumme * (mwstSatz / 100));
+  const bruttosumme = nettosumme + mwstBetrag;
 
   if (laedt) return <p className="text-sm text-[var(--text-faint)]">Lädt…</p>;
 
@@ -219,6 +224,12 @@ export default function RechnungDetail({
               {[kunde?.strasse, kunde?.hausnummer].filter(Boolean).join(" ")}
               {(kunde?.strasse || kunde?.hausnummer) && (kunde?.plz || kunde?.ort) && <br />}
               {[kunde?.plz, kunde?.ort].filter(Boolean).join(" ")}
+              {kunde?.land && kunde.land !== "Deutschland" && (
+                <>
+                  <br />
+                  {kunde.land}
+                </>
+              )}
             </p>
           )}
           {kunde?.telefonnummer && (
@@ -286,9 +297,17 @@ export default function RechnungDetail({
               </div>
             ))}
 
+            <div className="flex justify-between border-t border-[var(--border)] pt-1 text-[var(--text-soft)]">
+              <span>Netto</span>
+              <span className="font-mono">{formatEuro(nettosumme)}</span>
+            </div>
+            <div className="flex justify-between text-[var(--text-soft)]">
+              <span>MwSt. ({mwstSatz.toLocaleString("de-DE")} %)</span>
+              <span className="font-mono">{formatEuro(mwstBetrag)}</span>
+            </div>
             <div className="flex justify-between border-t border-[var(--border)] pt-1 font-semibold text-[var(--text-strong)]">
-              <span>Gesamt</span>
-              <span className="font-mono">{formatEuro(gesamtsumme)}</span>
+              <span>Gesamt (Brutto)</span>
+              <span className="font-mono">{formatEuro(bruttosumme)}</span>
             </div>
           </div>
         </div>
