@@ -661,3 +661,38 @@ group by kunde_id, organisation_id, date_trunc('month', erstellt_am);
 
 create policy zeiteintraege_select_kunde on zeiteintraege for select
   using (kunde_id = auth.uid());
+
+-- ============================================================
+-- 22. Rechnungsanpassungen: Rabatte/Gutschriften pro Kunde+Monat
+-- ============================================================
+create table rechnungsanpassungen (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  kunde_id uuid not null references profiles(id),
+  monat date not null,
+  betrag_cent integer not null,
+  beschreibung text not null,
+  erstellt_am timestamptz default now()
+);
+
+create index idx_rechnungsanpassungen_kunde_monat on rechnungsanpassungen(kunde_id, monat);
+
+alter table rechnungsanpassungen enable row level security;
+
+create policy rechnungsanpassungen_select on rechnungsanpassungen for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+  );
+
+create policy rechnungsanpassungen_insert on rechnungsanpassungen for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+  );
+
+create policy rechnungsanpassungen_delete on rechnungsanpassungen for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+  );

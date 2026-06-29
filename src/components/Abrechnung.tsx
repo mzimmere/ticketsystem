@@ -10,6 +10,7 @@ interface AbrechnungsZeile {
 
 interface AbrechnungProps {
   organisationId: string;
+  onKundeAuswahl: (kundeId: string, jahr: number, monat: number) => void;
 }
 
 function formatEuro(cent: number): string {
@@ -23,7 +24,7 @@ function monatLabel(jahr: number, monat: number): string {
   });
 }
 
-export default function Abrechnung({ organisationId }: AbrechnungProps) {
+export default function Abrechnung({ organisationId, onKundeAuswahl }: AbrechnungProps) {
   const heute = new Date();
   const [jahr, setJahr] = useState(heute.getFullYear());
   const [monat, setMonat] = useState(heute.getMonth() + 1); // 1-12
@@ -141,9 +142,10 @@ export default function Abrechnung({ organisationId }: AbrechnungProps) {
               <span className="w-24 text-right">Betrag</span>
             </div>
             {zeilen.map((z) => (
-              <div
+              <button
                 key={z.kunde_id}
-                className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm last:border-b-0"
+                onClick={() => onKundeAuswahl(z.kunde_id, jahr, monat)}
+                className="flex w-full items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-surface)] px-4 py-2.5 text-left text-sm last:border-b-0 hover:bg-[var(--bg-muted)]"
               >
                 <span className="flex-1 text-[var(--text-strong)]">{z.kunde_name}</span>
                 <span className="w-20 text-right font-mono text-[var(--text-soft)]">
@@ -152,7 +154,7 @@ export default function Abrechnung({ organisationId }: AbrechnungProps) {
                 <span className="w-24 text-right font-mono text-[var(--text-strong)]">
                   {formatEuro(z.gesamt_cent)}
                 </span>
-              </div>
+              </button>
             ))}
             <div className="flex items-center gap-3 bg-[var(--bg-muted)] px-4 py-2.5 text-sm font-medium">
               <span className="flex-1 text-[var(--text-strong)]">Gesamt</span>

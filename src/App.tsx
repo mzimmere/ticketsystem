@@ -13,6 +13,7 @@ import MeinProfil from "./components/MeinProfil";
 import Verwaltung from "./components/Verwaltung";
 import FirmenInfo from "./components/FirmenInfo";
 import Abrechnung from "./components/Abrechnung";
+import RechnungDetail from "./components/RechnungDetail";
 
 interface Organisation {
   name: string;
@@ -48,6 +49,9 @@ export default function App() {
   const [zeigeVerwaltung, setZeigeVerwaltung] = useState(false);
   const [zeigeFirmenInfo, setZeigeFirmenInfo] = useState(false);
   const [zeigeAbrechnung, setZeigeAbrechnung] = useState(false);
+  const [rechnungDetail, setRechnungDetail] = useState<
+    { kundeId: string; jahr: number; monat: number } | null
+  >(null);
 
   useEffect(() => {
     if (profil?.organisation_id) {
@@ -155,6 +159,7 @@ export default function App() {
               onClick={() => {
                 setZeigeFirmenInfo(true);
                 setZeigeAbrechnung(false);
+                setRechnungDetail(null);
                 setZeigeVerwaltung(false);
                 setZeigeProfil(false);
                 setAusgewaehltesTicket(null);
@@ -187,6 +192,7 @@ export default function App() {
               onClick={() => {
                 setZeigeVerwaltung(true);
                 setZeigeAbrechnung(false);
+                setRechnungDetail(null);
                 setZeigeFirmenInfo(false);
                 setZeigeProfil(false);
                 setAusgewaehltesTicket(null);
@@ -202,6 +208,7 @@ export default function App() {
             onClick={() => {
               setZeigeProfil(true);
               setZeigeAbrechnung(false);
+                setRechnungDetail(null);
               setZeigeFirmenInfo(false);
               setZeigeVerwaltung(false);
               setAusgewaehltesTicket(null);
@@ -224,15 +231,32 @@ export default function App() {
 
       <main className="mx-auto max-w-3xl px-4 py-6 space-y-4">
         {zeigeAbrechnung ? (
-          <>
-            <button
-              onClick={() => setZeigeAbrechnung(false)}
-              className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
-            >
-              ← Zurück
-            </button>
-            {profil.organisation_id && <Abrechnung organisationId={profil.organisation_id} />}
-          </>
+          rechnungDetail ? (
+            <RechnungDetail
+              organisationId={profil.organisation_id!}
+              kundeId={rechnungDetail.kundeId}
+              jahr={rechnungDetail.jahr}
+              monat={rechnungDetail.monat}
+              onZurueck={() => setRechnungDetail(null)}
+            />
+          ) : (
+            <>
+              <button
+                onClick={() => setZeigeAbrechnung(false)}
+                className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
+              >
+                ← Zurück
+              </button>
+              {profil.organisation_id && (
+                <Abrechnung
+                  organisationId={profil.organisation_id}
+                  onKundeAuswahl={(kundeId, jahr, monat) =>
+                    setRechnungDetail({ kundeId, jahr, monat })
+                  }
+                />
+              )}
+            </>
+          )
         ) : zeigeFirmenInfo ? (
           <>
             <button
