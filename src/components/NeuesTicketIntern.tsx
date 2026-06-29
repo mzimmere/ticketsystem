@@ -8,6 +8,11 @@ interface Kunde {
   name: string | null;
 }
 
+interface Techniker {
+  id: string;
+  name: string | null;
+}
+
 interface NeuesTicketInternProps {
   organisationId: string;
   technikerId: string;
@@ -22,7 +27,9 @@ export default function NeuesTicketIntern({
   onAbbrechen,
 }: NeuesTicketInternProps) {
   const [kunden, setKunden] = useState<Kunde[]>([]);
+  const [techniker, setTechniker] = useState<Techniker[]>([]);
   const [kundeId, setKundeId] = useState("");
+  const [zugewiesenAn, setZugewiesenAn] = useState(technikerId);
   const [titel, setTitel] = useState("");
   const [beschreibung, setBeschreibung] = useState("");
   const [prioritaet, setPrioritaet] = useState<Prioritaet>("mittel");
@@ -37,6 +44,14 @@ export default function NeuesTicketIntern({
       .eq("rolle", "kunde")
       .order("name")
       .then(({ data }) => setKunden((data as Kunde[]) ?? []));
+
+    supabase
+      .from("profiles")
+      .select("id, name")
+      .eq("organisation_id", organisationId)
+      .in("rolle", ["techniker", "org_admin"])
+      .order("name")
+      .then(({ data }) => setTechniker((data as Techniker[]) ?? []));
   }, [organisationId]);
 
   async function absenden() {
@@ -55,7 +70,7 @@ export default function NeuesTicketIntern({
           titel: titel.trim(),
           prioritaet,
           quelle: "manuell",
-          zugewiesen_an: technikerId,
+          zugewiesen_an: zugewiesenAn || null,
         })
         .select("id")
         .single();
@@ -127,6 +142,25 @@ export default function NeuesTicketIntern({
           placeholder="z.B. was am Telefon berichtet wurde"
           className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
         />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+          Zuweisen an
+        </label>
+        <select
+          value={zugewiesenAn}
+          onChange={(e) => setZugewiesenAn(e.target.value)}
+          className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+        >
+          <option value="">Nicht zugewiesen</option>
+          {techniker.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name ?? "Unbenannt"}
+              {t.id === technikerId ? " (ich)" : ""}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div>
