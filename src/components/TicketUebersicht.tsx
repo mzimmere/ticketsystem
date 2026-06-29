@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import Avatar from "./Avatar";
+import NeuesTicketIntern from "./NeuesTicketIntern";
 
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
@@ -76,13 +77,20 @@ function FilterChip({
 
 interface TicketUebersichtProps {
   onAuswahl: (ticketId: string) => void;
+  organisationId: string | null;
+  technikerId: string;
 }
 
-export default function TicketUebersicht({ onAuswahl }: TicketUebersichtProps) {
+export default function TicketUebersicht({
+  onAuswahl,
+  organisationId,
+  technikerId,
+}: TicketUebersichtProps) {
   const [tickets, setTickets] = useState<TicketZeile[]>([]);
   const [statusFilter, setStatusFilter] = useState<Status | "alle">("alle");
   const [prioritaetFilter, setPrioritaetFilter] = useState<Prioritaet | "alle">("alle");
   const [laedt, setLaedt] = useState(true);
+  const [zeigeNeuesTicket, setZeigeNeuesTicket] = useState(false);
 
   useEffect(() => {
     ladeTickets();
@@ -132,6 +140,27 @@ export default function TicketUebersicht({ onAuswahl }: TicketUebersichtProps) {
           </span>
         )}
       </div>
+
+      {organisationId && (
+        zeigeNeuesTicket ? (
+          <NeuesTicketIntern
+            organisationId={organisationId}
+            technikerId={technikerId}
+            onErstellt={(id) => {
+              setZeigeNeuesTicket(false);
+              onAuswahl(id);
+            }}
+            onAbbrechen={() => setZeigeNeuesTicket(false)}
+          />
+        ) : (
+          <button
+            onClick={() => setZeigeNeuesTicket(true)}
+            className="w-full rounded border border-dashed border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+          >
+            + Neues Ticket anlegen
+          </button>
+        )
+      )}
 
       <div>
         <p className="mb-1.5 text-[0.65rem] font-medium uppercase tracking-wide text-[var(--text-faint)]">

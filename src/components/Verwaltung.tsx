@@ -43,6 +43,14 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
   const [einladenName, setEinladenName] = useState("");
   const [einladenRolle, setEinladenRolle] = useState<"kunde" | "techniker" | "org_admin">("kunde");
 
+  const [neuerKundeEmail, setNeuerKundeEmail] = useState("");
+  const [neuerKundeName, setNeuerKundeName] = useState("");
+  const [neuerKundeTelefon, setNeuerKundeTelefon] = useState("");
+  const [neuerKundeAdresse, setNeuerKundeAdresse] = useState("");
+  const [neuerKundeNotizen, setNeuerKundeNotizen] = useState("");
+  const [kundenRefreshKey, setKundenRefreshKey] = useState(0);
+  const [zeigeKundeAnlegen, setZeigeKundeAnlegen] = useState(false);
+
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
 
@@ -147,6 +155,57 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
       setHinweis("Organisation angelegt.");
     } else {
       setHinweis("Anlegen fehlgeschlagen.");
+    }
+  }
+
+  async function kundeAnlegen() {
+    if (!neuerKundeEmail.trim() || !organisationId) return;
+    setLaedt(true);
+    setHinweis(null);
+
+    const { data: sessionData } = await supabase.auth.getSession();
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-kunde`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session?.access_token}`,
+        },
+        body: JSON.stringify({
+          email: neuerKundeEmail.trim(),
+          name: neuerKundeName.trim() || null,
+          organisationId,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Anlegen fehlgeschlagen");
+
+      // Telefon/Adresse/Notizen direkt im neu erstellten Profil ergänzen
+      if (json.userId && (neuerKundeTelefon || neuerKundeAdresse || neuerKundeNotizen)) {
+        await supabase
+          .from("profiles")
+          .update({
+            telefonnummer: neuerKundeTelefon.trim() || null,
+            adresse: neuerKundeAdresse.trim() || null,
+            notizen: neuerKundeNotizen.trim() || null,
+          })
+          .eq("id", json.userId);
+      }
+
+      setHinweis(`Kunde angelegt, Einladung an ${neuerKundeEmail} gesendet.`);
+      setNeuerKundeEmail("");
+      setNeuerKundeName("");
+      setNeuerKundeTelefon("");
+      setNeuerKundeAdresse("");
+      setNeuerKundeNotizen("");
+      setZeigeKundeAnlegen(false);
+      setKundenRefreshKey((k) => k + 1);
+    } catch (err) {
+      console.error(err);
+      setHinweis("Kunde anlegen fehlgeschlagen. Sind die Edge Functions deployt?");
+    } finally {
+      setLaedt(false);
     }
   }
 
@@ -334,8 +393,64 @@ export default function Verwaltung({ rolle, organisationId }: VerwaltungProps) {
 
       {organisationId && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-[var(--text-strong)]">Kunden</h3>
-          <KundenListe organisationId={organisationId} />
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium text-[var(--text-strong)]">Kunden</h3>
+            <button
+              onClick={() => setZeigeKundeAnlegen((v) => !v)}
+              className="text-xs text-amber-600 hover:underline"
+            >
+              {zeigeKundeAnlegen ? "Abbrechen" : "+ Kunde anlegen"}
+            </button>
+          </div>
+
+          {zeigeKundeAnlegen && (
+            <div className="space-y-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
+              <input
+                type="email"
+                value={neuerKundeEmail}
+                onChange={(e) => setNeuerKundeEmail(e.target.value)}
+                placeholder="E-Mail (für die Einladung)"
+                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+              />
+              <input
+                type="text"
+                value={neuerKundeName}
+                onChange={(e) => setNeuerKundeName(e.target.value)}
+                placeholder="Name"
+                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+              />
+              <input
+                type="text"
+                value={neuerKundeTelefon}
+                onChange={(e) => setNeuerKundeTelefon(e.target.value)}
+                placeholder="Telefon / WhatsApp (optional)"
+                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+              />
+              <textarea
+                value={neuerKundeAdresse}
+                onChange={(e) => setNeuerKundeAdresse(e.target.value)}
+                placeholder="Adresse (optional)"
+                rows={2}
+                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+              />
+              <textarea
+                value={neuerKundeNotizen}
+                onChange={(e) => setNeuerKundeNotizen(e.target.value)}
+                placeholder="Notizen / Besonderheiten (optional)"
+                rows={2}
+                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+              />
+              <button
+                onClick={kundeAnlegen}
+                disabled={laedt}
+                className="w-full rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              >
+                {laedt ? "Wird angelegt…" : "Kunde anlegen & einladen"}
+              </button>
+            </div>
+          )}
+
+          <KundenListe organisationId={organisationId} refreshKey={kundenRefreshKey} />
         </div>
       )}
 

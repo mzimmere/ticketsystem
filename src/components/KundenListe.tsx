@@ -14,9 +14,10 @@ interface Kunde {
 
 interface KundenListeProps {
   organisationId: string;
+  refreshKey?: number;
 }
 
-export default function KundenListe({ organisationId }: KundenListeProps) {
+export default function KundenListe({ organisationId, refreshKey }: KundenListeProps) {
   const [kunden, setKunden] = useState<Kunde[]>([]);
   const [offenId, setOffenId] = useState<string | null>(null);
   const [entwurf, setEntwurf] = useState<Partial<Kunde>>({});
@@ -26,7 +27,7 @@ export default function KundenListe({ organisationId }: KundenListeProps) {
   useEffect(() => {
     ladeKunden();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organisationId]);
+  }, [organisationId, refreshKey]);
 
   async function ladeKunden() {
     const { data } = await supabase

@@ -154,7 +154,11 @@ export default function App() {
               <TicketDetail ticketId={ausgewaehltesTicket} technikerId={profil.id} />
             </>
           ) : (
-            <TicketUebersicht onAuswahl={setAusgewaehltesTicket} />
+            <TicketUebersicht
+            onAuswahl={setAusgewaehltesTicket}
+            organisationId={profil.organisation_id}
+            technikerId={profil.id}
+          />
           )
         ) : (
           // ---------- Kunden-Ansicht ----------
