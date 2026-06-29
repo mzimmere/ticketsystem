@@ -21,8 +21,12 @@ export default function Login() {
       setModus(data.session ? "passwort-setzen" : "anmelden");
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") setModus("passwort-setzen");
+    // Bewusst auf JEDE Änderung reagieren, nicht nur auf "PASSWORD_RECOVERY" -
+    // bei Einladungs-Links feuert oft ein anderes Event (z.B. "SIGNED_IN"),
+    // entscheidend ist nur: sobald eine Sitzung da ist, muss ein Passwort
+    // gesetzt werden, bevor es weitergeht.
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) setModus("passwort-setzen");
     });
     return () => listener.subscription.unsubscribe();
   }, []);
@@ -49,7 +53,10 @@ export default function Login() {
     setLaedt(false);
     if (error) {
       setFehler("Konnte das Passwort nicht setzen. Bitte Link erneut anfordern.");
+      return;
     }
+    // URL bereinigen, damit ein Reload nicht wieder im Einladungs-Modus landet
+    window.history.replaceState(null, "", window.location.pathname);
   }
 
   if (modus === "laden") return null;

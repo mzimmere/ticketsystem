@@ -19,6 +19,25 @@ interface Organisation {
   logo_url: string | null;
 }
 
+// Erkennt, ob die aktuelle URL von einem Einladungs- oder Passwort-Link kommt
+// (Supabase hängt das als Hash- oder Query-Parameter an). In diesem Fall
+// MUSS die Person erst ein Passwort setzen, bevor sie in die App darf -
+// unabhängig davon, ob technisch schon eine Sitzung existiert.
+function kommtVonAuthLink(): boolean {
+  const ziel = window.location.hash + window.location.search;
+  return (
+    ziel.includes("type=invite") ||
+    ziel.includes("type=recovery") ||
+    ziel.includes("type=signup")
+  );
+}
+
+function authLinkFehler(): string | null {
+  const ziel = window.location.hash + window.location.search;
+  const match = ziel.match(/error_description=([^&]+)/);
+  return match ? decodeURIComponent(match[1].replace(/\+/g, " ")) : null;
+}
+
 export default function App() {
   const { profil, eingeloggt, laedt } = useProfil();
   const { dunkel, umschalten } = useTheme();
@@ -43,6 +62,34 @@ export default function App() {
 
   if (laedt) {
     return <div className="p-8 text-sm text-[var(--text-faint)]">Lädt…</div>;
+  }
+
+  const linkFehler = authLinkFehler();
+  if (linkFehler) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bg-muted)] p-8">
+        <div className="max-w-sm text-center text-sm">
+          <p className="mb-2 font-medium text-[var(--text-strong)]">
+            Dieser Link funktioniert nicht (mehr).
+          </p>
+          <p className="text-[var(--text-soft)]">{linkFehler}</p>
+          <p className="mt-2 text-xs text-[var(--text-faint)]">
+            Bitte beim Admin einen neuen Link/Zugang anfordern.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Wichtig: Diese Prüfung kommt VOR "!eingeloggt", weil ein Einladungs-Link
+  // bereits eine Sitzung erzeugt - die Person muss aber zwingend erst ein
+  // Passwort setzen, bevor sie in die eigentliche App darf.
+  if (kommtVonAuthLink()) {
+    return (
+      <div className="min-h-screen bg-[var(--bg-muted)]">
+        <Login />
+      </div>
+    );
   }
 
   if (!eingeloggt) {
