@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sun, Moon, User, Settings, Building2, Receipt, Mail } from "lucide-react";
+import { Sun, Moon, User, Settings, Building2, Receipt, Mail, Ticket as TicketIcon } from "lucide-react";
 import { useProfil } from "./lib/useProfil";
 import { useTheme } from "./lib/useTheme";
 import { useOnlinePraesenz } from "./lib/praesenz";
@@ -73,6 +73,20 @@ export default function App() {
     profil?.rolle === "super_admin" ? superAdminFirma : profil?.organisation_id ?? null;
 
   const onlineIds = useOnlinePraesenz(aktiveOrgId, profil?.id);
+
+  // Direkter Sprung zur Ticketübersicht von überall aus, ohne den
+  // gewählten Firmenkontext (superAdminFirma) zu verlieren - kein Umweg
+  // mehr nötig über "Alle Firmen" und zurück.
+  function zurueckZuTickets() {
+    setZeigeVerwaltung(false);
+    setZeigeAbrechnung(false);
+    setRechnungDetail(null);
+    setZeigePostfach(false);
+    setZeigeFirmenInfo(false);
+    setZeigeProfil(false);
+    setAusgewaehltesTicket(null);
+    setZeigeNeuesTicket(false);
+  }
 
   // Beim Firmenwechsel (Super-Admin) alle offenen Detail-/Auswahl-Zustände
   // zurücksetzen - sonst bliebe z.B. ein offenes Ticket der vorherigen
@@ -178,13 +192,28 @@ export default function App() {
       style={{ "--akzent": organisation?.akzentfarbe || "#f59e0b" } as React.CSSProperties}
     >
       <header className="border-b border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <button
+          onClick={zurueckZuTickets}
+          className="flex items-center gap-2 rounded hover:opacity-75"
+          title="Zur Ticketübersicht"
+        >
           {organisation?.logo_url && (
             <img src={organisation.logo_url} alt={organisation.name} className="h-6 w-6 shrink-0 rounded object-contain" />
           )}
           <span className="text-sm font-semibold text-[var(--text-strong)]">
             {organisation?.name ?? "IT-Ticketsystem"}
           </span>
+        </button>
+        <div className="flex items-center gap-2">
+          {istIntern && aktiveOrgId && (
+            <button
+              onClick={zurueckZuTickets}
+              className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+              title="Zur Ticketübersicht"
+            >
+              <TicketIcon size={16} />
+            </button>
+          )}
           {profil.rolle === "super_admin" && superAdminFirma && (
             <button
               onClick={() => {
@@ -195,14 +224,12 @@ export default function App() {
                 setZeigeFirmenInfo(false);
                 setAusgewaehltesTicket(null);
               }}
-              className="ml-1 rounded-full bg-akzent px-2 py-0.5 text-[0.65rem] font-medium text-white"
+              className="rounded-full bg-akzent px-2 py-0.5 text-[0.65rem] font-medium text-white"
               title="Zurück zu allen Firmen"
             >
               als Super-Admin in dieser Firma · verlassen
             </button>
           )}
-        </div>
-        <div className="flex items-center gap-3">
           <button
             onClick={umschalten}
             className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
