@@ -69,6 +69,17 @@ body {
   filter: brightness(0.92);
 }
 
+/* Browser-Autofill (z.B. Chrome) ignoriert sonst unser Theme und färbt
+   Felder gelb - das hier zwingt die Hintergrundfarbe auf unsere eigene. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-strong);
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg-surface) inset;
+  box-shadow: 0 0 0px 1000px var(--bg-surface) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 @media print {
   body * {
     visibility: hidden;

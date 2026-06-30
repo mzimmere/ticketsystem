@@ -104,7 +104,7 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
         className="flex min-h-screen items-center justify-center bg-[var(--bg-muted)] p-8"
         style={{ "--akzent": organisation.akzentfarbe || "#f59e0b" } as React.CSSProperties}
       >
-        <div className="max-w-sm rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-6 text-center">
+        <div className="max-w-md rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-7 text-center">
           {organisation.logo_url && (
             <img
               src={organisation.logo_url}
@@ -127,7 +127,7 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
       className="flex min-h-screen items-center justify-center bg-[var(--bg-muted)] p-8"
       style={{ "--akzent": organisation.akzentfarbe || "#f59e0b" } as React.CSSProperties}
     >
-      <div className="w-full max-w-sm rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-6">
+      <div className="w-full max-w-md rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-7">
         <div className="mb-5 text-center">
           {organisation.logo_url && (
             <img
