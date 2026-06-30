@@ -811,3 +811,16 @@ create or replace function get_user_id_by_email(p_email text)
 returns uuid as $$
   select id from auth.users where lower(email) = lower(p_email) limit 1;
 $$ language sql security definer set search_path = public, auth;
+
+-- ============================================================
+-- 29. Firmen-Slug + öffentliche View für Registrierungslink
+-- ============================================================
+alter table organisationen
+  add column slug text unique;
+
+create view organisationen_oeffentlich as
+select id, name, logo_url, motto, akzentfarbe, slug
+from organisationen
+where slug is not null;
+
+grant select on organisationen_oeffentlich to anon, authenticated;

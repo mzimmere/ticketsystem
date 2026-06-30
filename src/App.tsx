@@ -17,6 +17,11 @@ import FirmenInfo from "./components/FirmenInfo";
 import Abrechnung from "./components/Abrechnung";
 import RechnungDetail from "./components/RechnungDetail";
 import AdminPostfach from "./components/AdminPostfach";
+import KundenRegistrierung from "./components/KundenRegistrierung";
+
+function neukundeSlug(): string | null {
+  return new URLSearchParams(window.location.search).get("neukunde");
+}
 
 interface Organisation {
   name: string;
@@ -93,6 +98,11 @@ export default function App() {
 
   if (laedt) {
     return <div className="p-8 text-sm text-[var(--text-faint)]">Lädt…</div>;
+  }
+
+  const slug = neukundeSlug();
+  if (slug && !eingeloggt) {
+    return <KundenRegistrierung slug={slug} />;
   }
 
   const linkFehler = authLinkFehler();

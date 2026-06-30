@@ -25,6 +25,7 @@ interface Organisation extends OrganisationKurz {
   motto: string | null;
   akzentfarbe: string | null;
   hero_bild_url: string | null;
+  slug: string | null;
 }
 
 interface VerwaltungProps {
@@ -44,6 +45,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
   const [orgStandardpreisEuro, setOrgStandardpreisEuro] = useState("");
   const [orgMotto, setOrgMotto] = useState("");
   const [orgAkzentfarbe, setOrgAkzentfarbe] = useState("#f59e0b");
+  const [orgSlug, setOrgSlug] = useState("");
+  const [slugKopiert, setSlugKopiert] = useState(false);
 
   const [neuerMitarbeiterEmail, setNeuerMitarbeiterEmail] = useState("");
   const [neuerMitarbeiterName, setNeuerMitarbeiterName] = useState("");
@@ -92,7 +95,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
     const { data } = await supabase
       .from("organisationen")
       .select(
-        "id, name, logo_url, adresse, telefon, email, website, oeffnungszeiten, standard_preis_pro_minute_cent, motto, akzentfarbe, hero_bild_url",
+        "id, name, logo_url, adresse, telefon, email, website, oeffnungszeiten, standard_preis_pro_minute_cent, motto, akzentfarbe, hero_bild_url, slug",
       )
       .eq("id", organisationId)
       .single();
@@ -111,6 +114,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
       );
       setOrgMotto(data.motto ?? "");
       setOrgAkzentfarbe(data.akzentfarbe ?? "#f59e0b");
+      setOrgSlug(data.slug ?? "");
     }
   }
 
@@ -128,6 +132,16 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
     }
 
     setLaedt(true);
+    const normalisierterSlug =
+      orgSlug
+        .trim()
+        .toLowerCase()
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9-]+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "") || null;
+
     const { error } = await supabase
       .from("organisationen")
       .update({
@@ -140,10 +154,20 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
         standard_preis_pro_minute_cent: standardpreisCent,
         motto: orgMotto.trim() || null,
         akzentfarbe: orgAkzentfarbe || null,
+        slug: normalisierterSlug,
       })
       .eq("id", organisation.id);
     setLaedt(false);
-    setHinweis(error ? "Speichern fehlgeschlagen." : "Gespeichert.");
+    if (error) {
+      setHinweis(
+        error.message.includes("duplicate")
+          ? "Dieser Link-Name ist schon vergeben, bitte einen anderen wählen."
+          : "Speichern fehlgeschlagen.",
+      );
+      return;
+    }
+    setOrgSlug(normalisierterSlug ?? "");
+    setHinweis("Gespeichert.");
   }
 
   async function logoHochladen(datei: File) {
@@ -552,6 +576,46 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
                   onChange={(e) => e.target.files?.[0] && heroBildHochladen(e.target.files[0])}
                 />
               </label>
+            </div>
+
+            <div className="mt-3 border-t border-[var(--border)] pt-3">
+              <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+                Registrierungslink für Kunden
+              </label>
+              <div className="flex items-center gap-1 text-sm">
+                <span className="text-[var(--text-faint)]">{window.location.origin}/?neukunde=</span>
+                <input
+                  type="text"
+                  value={orgSlug}
+                  onChange={(e) => setOrgSlug(e.target.value)}
+                  placeholder="meine-firma"
+                  className="min-w-0 flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1.5 text-sm text-[var(--text-strong)]"
+                />
+              </div>
+              {organisation?.slug && (
+                <div className="mt-2 flex items-center gap-2">
+                  <p className="flex-1 truncate font-mono text-xs text-[var(--text-soft)]">
+                    {window.location.origin}/?neukunde={organisation.slug}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        `${window.location.origin}/?neukunde=${organisation.slug}`,
+                      );
+                      setSlugKopiert(true);
+                      setTimeout(() => setSlugKopiert(false), 2000);
+                    }}
+                    className="shrink-0 rounded border border-[var(--border-input)] px-2 py-1 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+                  >
+                    {slugKopiert ? "Kopiert ✓" : "Kopieren"}
+                  </button>
+                </div>
+              )}
+              <p className="mt-1 text-xs text-[var(--text-faint)]">
+                Diesen Link auf eurer Website verlinken – Kunden können sich darüber selbst
+                registrieren und landen direkt bei eurer Firma.
+              </p>
             </div>
           </div>
 
