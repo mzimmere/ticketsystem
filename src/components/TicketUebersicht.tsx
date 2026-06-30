@@ -125,7 +125,7 @@ export default function TicketUebersicht({
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, prioritaetFilter, kundeFilter]);
+  }, [statusFilter, prioritaetFilter, kundeFilter, organisationId]);
 
   useEffect(() => {
     if (!organisationId) return;
@@ -139,12 +139,18 @@ export default function TicketUebersicht({
   }, [organisationId]);
 
   async function ladeTickets() {
+    if (!organisationId) {
+      setTickets([]);
+      setLaedt(false);
+      return;
+    }
     setLaedt(true);
     let query = supabase
       .from("tickets")
       .select(
         "id, ticket_nr, titel, status, prioritaet, erstellt_am, zuletzt_kunden_nachricht_am, zuletzt_gelesen_am, kunde:kunde_id(id, name), zugewiesen:zugewiesen_an(name, avatar_url)",
       )
+      .eq("organisation_id", organisationId)
       .order("erstellt_am", { ascending: false });
 
     if (statusFilter === "offene") {
@@ -292,7 +298,12 @@ export default function TicketUebersicht({
       </div>
 
       {/* Tabelle */}
-      {laedt ? (
+      {!organisationId ? (
+        <p className="text-sm text-[var(--text-faint)]">
+          Wähle zuerst über das Zahnrad-Icon → "Alle Firmen" eine Firma aus, um deren Tickets zu
+          sehen.
+        </p>
+      ) : laedt ? (
         <p className="text-sm text-[var(--text-faint)]">Lädt…</p>
       ) : gefilterteTickets.length === 0 ? (
         <p className="text-sm text-[var(--text-faint)]">Keine Tickets gefunden.</p>
