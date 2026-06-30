@@ -769,3 +769,37 @@ alter table organisationen
   add column motto text,
   add column akzentfarbe text default '#f59e0b',
   add column hero_bild_url text;
+
+-- ============================================================
+-- 27. Interne Nachrichten: Org-Admin → Super-Admin
+-- ============================================================
+create table admin_nachrichten (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  von_id uuid not null references profiles(id),
+  betreff text not null,
+  inhalt text not null,
+  gelesen boolean not null default false,
+  antwort text,
+  beantwortet_am timestamptz,
+  erstellt_am timestamptz default now()
+);
+
+create index idx_admin_nachrichten_org on admin_nachrichten(organisation_id);
+
+alter table admin_nachrichten enable row level security;
+
+create policy admin_nachrichten_select on admin_nachrichten for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+  );
+
+create policy admin_nachrichten_insert on admin_nachrichten for insert
+  with check (
+    organisation_id = current_user_org()
+    and current_user_rolle() in ('org_admin', 'techniker')
+  );
+
+create policy admin_nachrichten_update on admin_nachrichten for update
+  using (current_user_rolle() = 'super_admin');

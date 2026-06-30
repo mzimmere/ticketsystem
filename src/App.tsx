@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sun, Moon, User, Settings, Building2, Receipt } from "lucide-react";
+import { Sun, Moon, User, Settings, Building2, Receipt, Mail } from "lucide-react";
 import { useProfil } from "./lib/useProfil";
 import { useTheme } from "./lib/useTheme";
 import { useOnlinePraesenz } from "./lib/praesenz";
@@ -16,6 +16,7 @@ import SuperAdminUebersicht from "./components/SuperAdminUebersicht";
 import FirmenInfo from "./components/FirmenInfo";
 import Abrechnung from "./components/Abrechnung";
 import RechnungDetail from "./components/RechnungDetail";
+import AdminPostfach from "./components/AdminPostfach";
 
 interface Organisation {
   name: string;
@@ -56,6 +57,7 @@ export default function App() {
   const [superAdminFirma, setSuperAdminFirma] = useState<string | null>(null);
   const [zeigeFirmenInfo, setZeigeFirmenInfo] = useState(false);
   const [zeigeAbrechnung, setZeigeAbrechnung] = useState(false);
+  const [zeigePostfach, setZeigePostfach] = useState(false);
   const [rechnungDetail, setRechnungDetail] = useState<
     { kundeId: string; jahr: number; monat: number } | null
   >(null);
@@ -168,6 +170,7 @@ export default function App() {
             <button
               onClick={() => {
                 setZeigeFirmenInfo(true);
+                setZeigePostfach(false);
                 setZeigeAbrechnung(false);
                 setRechnungDetail(null);
                 setZeigeVerwaltung(false);
@@ -185,6 +188,7 @@ export default function App() {
             <button
               onClick={() => {
                 setZeigeAbrechnung(true);
+                setZeigePostfach(false);
                 setZeigeFirmenInfo(false);
                 setZeigeVerwaltung(false);
                 setZeigeProfil(false);
@@ -200,8 +204,27 @@ export default function App() {
           {istAdmin && (
             <button
               onClick={() => {
+                setZeigePostfach(true);
+                setZeigeAbrechnung(false);
+                setRechnungDetail(null);
+                setZeigeVerwaltung(false);
+                setZeigeFirmenInfo(false);
+                setZeigeProfil(false);
+                setAusgewaehltesTicket(null);
+                setZeigeNeuesTicket(false);
+              }}
+              className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+              title={profil.rolle === "super_admin" ? "Nachrichten von Firmen" : "Nachricht an Super-Admin"}
+            >
+              <Mail size={16} />
+            </button>
+          )}
+          {istAdmin && (
+            <button
+              onClick={() => {
                 setZeigeVerwaltung(true);
                 setZeigeAbrechnung(false);
+                setZeigePostfach(false);
                 setRechnungDetail(null);
                 setZeigeFirmenInfo(false);
                 setZeigeProfil(false);
@@ -218,6 +241,7 @@ export default function App() {
             onClick={() => {
               setZeigeProfil(true);
               setZeigeAbrechnung(false);
+              setZeigePostfach(false);
                 setRechnungDetail(null);
               setZeigeFirmenInfo(false);
               setZeigeVerwaltung(false);
@@ -240,7 +264,17 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-6 space-y-4">
-        {zeigeAbrechnung ? (
+        {zeigePostfach ? (
+          <>
+            <button
+              onClick={() => setZeigePostfach(false)}
+              className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
+            >
+              ← Zurück
+            </button>
+            <AdminPostfach rolle={profil.rolle} organisationId={profil.organisation_id} />
+          </>
+        ) : zeigeAbrechnung ? (
           rechnungDetail ? (
             <RechnungDetail
               organisationId={profil.organisation_id!}
