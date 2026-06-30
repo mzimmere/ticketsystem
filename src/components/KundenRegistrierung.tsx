@@ -103,7 +103,7 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
             <img
               src={organisation.logo_url}
               alt={organisation.name}
-              className="mx-auto mb-4 h-20 w-20 rounded-lg object-cover"
+              className="mx-auto mb-4 h-20 w-20 rounded-lg bg-[var(--bg-muted)] object-contain p-1"
             />
           )}
           <p className="text-sm text-[var(--text-strong)]">
@@ -127,7 +127,7 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
             <img
               src={organisation.logo_url}
               alt={organisation.name}
-              className="mx-auto mb-3 h-48 w-48 rounded-lg object-cover"
+              className="mx-auto mb-3 h-48 w-48 rounded-lg bg-[var(--bg-muted)] object-contain p-2"
             />
           )}
           <h1 className="text-base font-semibold text-[var(--text-strong)]">

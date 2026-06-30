@@ -189,7 +189,7 @@ export default function RechnungDetail({
         <div className="mb-6 flex items-start justify-between">
           <div className="flex items-center gap-2">
             {organisation?.logo_url && (
-              <img src={organisation.logo_url} alt="" className="h-10 w-10 rounded" />
+              <img src={organisation.logo_url} alt="" className="h-10 w-10 rounded bg-[var(--bg-muted)] object-contain p-0.5" />
             )}
             <div>
               <p className="font-semibold text-[var(--text-strong)]">{organisation?.name}</p>

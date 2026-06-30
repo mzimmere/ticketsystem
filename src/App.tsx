@@ -180,7 +180,7 @@ export default function App() {
       <header className="border-b border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {organisation?.logo_url && (
-            <img src={organisation.logo_url} alt={organisation.name} className="h-6 w-6 rounded" />
+            <img src={organisation.logo_url} alt={organisation.name} className="h-6 w-6 rounded object-contain" />
           )}
           <span className="text-sm font-semibold text-[var(--text-strong)]">
             {organisation?.name ?? "IT-Ticketsystem"}

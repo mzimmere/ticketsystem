@@ -435,7 +435,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
           <h3 className="text-sm font-medium text-[var(--text-strong)]">Firmenprofil</h3>
           <div className="flex items-center gap-4">
             {organisation.logo_url && (
-              <img src={organisation.logo_url} alt={organisation.name} className="h-10 w-10 rounded" />
+              <img src={organisation.logo_url} alt={organisation.name} className="h-10 w-10 rounded bg-[var(--bg-muted)] object-contain p-0.5" />
             )}
             <label className="cursor-pointer rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-1.5 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
               Logo ändern
