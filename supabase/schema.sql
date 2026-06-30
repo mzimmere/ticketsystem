@@ -290,13 +290,20 @@ create trigger trg_set_preis_snapshot
 
 create or replace function handle_new_user() returns trigger as $$
 begin
-  insert into public.profiles (id, organisation_id, rolle, name, telefonnummer)
+  insert into public.profiles (
+    id, organisation_id, rolle, name, telefonnummer,
+    strasse, hausnummer, plz, ort
+  )
   values (
     new.id,
     (new.raw_user_meta_data->>'organisation_id')::uuid,
     coalesce((new.raw_user_meta_data->>'rolle')::public.user_rolle, 'kunde'),
     new.raw_user_meta_data->>'name',
-    new.raw_user_meta_data->>'telefonnummer'
+    new.raw_user_meta_data->>'telefonnummer',
+    new.raw_user_meta_data->>'strasse',
+    new.raw_user_meta_data->>'hausnummer',
+    new.raw_user_meta_data->>'plz',
+    new.raw_user_meta_data->>'ort'
   );
   return new;
 end;

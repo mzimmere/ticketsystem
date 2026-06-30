@@ -185,7 +185,7 @@ export default function TicketUebersicht({
       {(heroBildUrl || motto) && (
         <div className="overflow-hidden rounded-lg border border-[var(--border)]">
           {heroBildUrl && (
-            <img src={heroBildUrl} alt="" className="h-32 w-full object-cover sm:h-40" />
+            <img src={heroBildUrl} alt="" className="h-40 w-full object-cover sm:h-56" />
           )}
           {motto && (
             <p className="bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--text-soft)]">

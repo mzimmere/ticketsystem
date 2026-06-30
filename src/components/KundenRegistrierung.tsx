@@ -19,6 +19,11 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [passwort, setPasswort] = useState("");
+  const [telefon, setTelefon] = useState("");
+  const [strasse, setStrasse] = useState("");
+  const [hausnummer, setHausnummer] = useState("");
+  const [plz, setPlz] = useState("");
+  const [ort, setOrt] = useState("");
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [fertig, setFertig] = useState<"sofort" | "bestaetigung" | null>(null);
@@ -38,7 +43,7 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
   async function registrieren() {
     if (!organisation) return;
     if (!name.trim() || !email.trim() || passwort.length < 8) {
-      setFehler("Bitte Name, E-Mail und ein Passwort mit mind. 8 Zeichen angeben.");
+      setFehler("Bitte mindestens Name, E-Mail und ein Passwort mit 8+ Zeichen angeben.");
       return;
     }
     setFehler(null);
@@ -52,6 +57,11 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
           organisation_id: organisation.id,
           rolle: "kunde",
           name: name.trim(),
+          telefonnummer: telefon.trim() || null,
+          strasse: strasse.trim() || null,
+          hausnummer: hausnummer.trim() || null,
+          plz: plz.trim() || null,
+          ort: ort.trim() || null,
         },
       },
     });
@@ -93,7 +103,7 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
             <img
               src={organisation.logo_url}
               alt={organisation.name}
-              className="mx-auto mb-3 h-10 w-10 rounded"
+              className="mx-auto mb-4 h-20 w-20 rounded-lg object-cover"
             />
           )}
           <p className="text-sm text-[var(--text-strong)]">
@@ -117,7 +127,7 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
             <img
               src={organisation.logo_url}
               alt={organisation.name}
-              className="mx-auto mb-2 h-10 w-10 rounded"
+              className="mx-auto mb-3 h-20 w-20 rounded-lg object-cover"
             />
           )}
           <h1 className="text-base font-semibold text-[var(--text-strong)]">
@@ -151,6 +161,46 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
             placeholder="Passwort (mind. 8 Zeichen)"
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
           />
+          <input
+            type="text"
+            value={telefon}
+            onChange={(e) => setTelefon(e.target.value)}
+            placeholder="Telefon / WhatsApp (optional)"
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+          />
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={strasse}
+              onChange={(e) => setStrasse(e.target.value)}
+              placeholder="Straße (optional)"
+              className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+            />
+            <input
+              type="text"
+              value={hausnummer}
+              onChange={(e) => setHausnummer(e.target.value)}
+              placeholder="Nr."
+              className="w-16 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+            />
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={plz}
+              onChange={(e) => setPlz(e.target.value)}
+              placeholder="PLZ"
+              className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+            />
+            <input
+              type="text"
+              value={ort}
+              onChange={(e) => setOrt(e.target.value)}
+              placeholder="Ort"
+              className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+            />
+          </div>
 
           {fehler && <p className="text-sm text-red-600">{fehler}</p>}
 
