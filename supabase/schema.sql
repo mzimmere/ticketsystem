@@ -890,3 +890,8 @@ alter table profiles add column ust_id text;
 alter table organisationen
   add column datenschutz_url text,
   add column datenschutz_text text;
+
+-- ============================================================
+-- 34. Realtime für "anhaenge" aktivieren
+-- ============================================================
+alter publication supabase_realtime add table public.anhaenge;

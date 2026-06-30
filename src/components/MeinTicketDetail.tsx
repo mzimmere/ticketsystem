@@ -71,6 +71,11 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
       )
       .on(
         "postgres_changes",
+        { event: "INSERT", schema: "public", table: "anhaenge" },
+        () => ladeNachrichten(),
+      )
+      .on(
+        "postgres_changes",
         { event: "UPDATE", schema: "public", table: "tickets", filter: `id=eq.${ticketId}` },
         () => ladeTicket(),
       )
@@ -148,6 +153,7 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
     setAntwort("");
     setDateien([]);
     setSendeLaedt(false);
+    await ladeNachrichten();
   }
 
   async function ticketSchliessen() {

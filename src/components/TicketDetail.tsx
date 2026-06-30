@@ -101,6 +101,16 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
           markiereGelesen();
         },
       )
+      .on(
+        // Anhänge werden erst NACH der Nachricht hochgeladen - ohne diese
+        // zweite Subscription würde die obige schon (ohne Anhang) auslösen,
+        // bevor die Datei überhaupt fertig ist.
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "anhaenge" },
+        () => {
+          ladeNachrichten();
+        },
+      )
       .subscribe();
 
     return () => {
@@ -207,6 +217,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
     setNeueNotiz("");
     setNeueDateien([]);
     setSendeLaedt(false);
+    await ladeNachrichten();
     if (fuerKundeSichtbar) {
       benachrichtigeKunde({ ticketId, ereignis: "neue_antwort" });
     }
