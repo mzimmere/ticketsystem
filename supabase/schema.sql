@@ -824,3 +824,25 @@ from organisationen
 where slug is not null;
 
 grant select on organisationen_oeffentlich to anon, authenticated;
+
+-- ============================================================
+-- 30. Korrektur: RPC-Funktion statt View für öffentliche
+-- Registrierungs-Anzeige (zuverlässiger im PostgREST-Schema-Cache)
+-- ============================================================
+drop view if exists organisationen_oeffentlich;
+
+create or replace function get_organisation_by_slug(p_slug text)
+returns table (
+  id uuid,
+  name text,
+  logo_url text,
+  motto text,
+  akzentfarbe text
+) as $$
+  select id, name, logo_url, motto, akzentfarbe
+  from organisationen
+  where slug = p_slug
+  limit 1;
+$$ language sql stable security definer set search_path = public;
+
+grant execute on function get_organisation_by_slug(text) to anon, authenticated;

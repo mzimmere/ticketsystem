@@ -25,12 +25,12 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
 
   useEffect(() => {
     supabase
-      .from("organisationen_oeffentlich")
-      .select("id, name, logo_url, motto, akzentfarbe")
-      .eq("slug", slug)
-      .single()
-      .then(({ data }) => {
-        setOrganisation(data);
+      .rpc("get_organisation_by_slug", { p_slug: slug })
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("[KundenRegistrierung] Firma konnte nicht geladen werden:", error);
+        }
+        setOrganisation(data && data.length > 0 ? data[0] : null);
         setLadeOrg(false);
       });
   }, [slug]);

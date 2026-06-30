@@ -121,14 +121,17 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
   async function organisationSpeichern() {
     if (!organisation) return;
 
-    let standardpreisCent: number | null = null;
+    let standardpreisCent: number | null = organisation.standard_preis_pro_minute_cent;
+    let preisFehler: string | null = null;
     if (orgStandardpreisEuro.trim() !== "") {
       const wert = parseFloat(orgStandardpreisEuro.trim().replace(",", "."));
       if (isNaN(wert)) {
-        setHinweis("Ungültiger Standardpreis – bitte z.B. 1,99 eingeben.");
-        return;
+        preisFehler = "Ungültiger Standardpreis – andere Felder wurden trotzdem gespeichert.";
+      } else {
+        standardpreisCent = Math.round(wert * 100);
       }
-      standardpreisCent = Math.round(wert * 100);
+    } else {
+      standardpreisCent = null;
     }
 
     setLaedt(true);
@@ -167,7 +170,12 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
       return;
     }
     setOrgSlug(normalisierterSlug ?? "");
-    setHinweis("Gespeichert.");
+    setOrganisation({
+      ...organisation,
+      slug: normalisierterSlug,
+      standard_preis_pro_minute_cent: standardpreisCent,
+    });
+    setHinweis(preisFehler ?? "Gespeichert.");
   }
 
   async function logoHochladen(datei: File) {
@@ -616,6 +624,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
                 Diesen Link auf eurer Website verlinken – Kunden können sich darüber selbst
                 registrieren und landen direkt bei eurer Firma.
               </p>
+              {hinweis && <p className="mt-2 text-xs text-[var(--text-soft)]">{hinweis}</p>}
             </div>
           </div>
 
