@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
+import { pruefeBild } from "../lib/bildvalidierung";
 import { generierePasswort } from "../lib/passwort";
 import { LAENDER_MWST, LAENDER_LISTE } from "../lib/laender";
 import KundenListe from "./KundenListe";
@@ -180,8 +181,15 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
 
   async function logoHochladen(datei: File) {
     if (!organisation) return;
-    setLaedt(true);
     setHinweis(null);
+
+    const fehlermeldung = await pruefeBild(datei, { maxSizeMb: 3, minDimensionPx: 400 });
+    if (fehlermeldung && fehlermeldung.includes("zu groß")) {
+      setHinweis(fehlermeldung);
+      return;
+    }
+
+    setLaedt(true);
     try {
       const pfad = `${organisation.id}/${Date.now()}-${sichererDateiname(datei.name)}`;
       const { error: uploadFehler } = await supabase.storage
@@ -197,7 +205,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
       if (updateFehler) throw updateFehler;
 
       setOrganisation({ ...organisation, logo_url: oeffentlich.publicUrl });
-      setHinweis("Logo aktualisiert.");
+      setHinweis(fehlermeldung ?? "Logo aktualisiert.");
     } catch (err) {
       console.error(err);
       setHinweis("Logo-Upload fehlgeschlagen.");
@@ -208,8 +216,15 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
 
   async function heroBildHochladen(datei: File) {
     if (!organisation) return;
-    setLaedt(true);
     setHinweis(null);
+
+    const fehlermeldung = await pruefeBild(datei, { maxSizeMb: 5, minDimensionPx: 800 });
+    if (fehlermeldung && fehlermeldung.includes("zu groß")) {
+      setHinweis(fehlermeldung);
+      return;
+    }
+
+    setLaedt(true);
     try {
       const pfad = `${organisation.id}/hero-${Date.now()}-${sichererDateiname(datei.name)}`;
       const { error: uploadFehler } = await supabase.storage
@@ -225,7 +240,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
       if (updateFehler) throw updateFehler;
 
       setOrganisation({ ...organisation, hero_bild_url: oeffentlich.publicUrl });
-      setHinweis("Bild aktualisiert.");
+      setHinweis(fehlermeldung ?? "Bild aktualisiert.");
     } catch (err) {
       console.error(err);
       setHinweis("Bild-Upload fehlgeschlagen.");
@@ -432,6 +447,10 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
               />
             </label>
           </div>
+          <p className="text-xs text-[var(--text-faint)]">
+            Empfohlen: quadratisch, mind. 400×400px, max. 3 MB. Wird auf der Registrierungsseite
+            bis zu 192×192px groß angezeigt.
+          </p>
           <div className="flex gap-2">
             <input
               type="text"
@@ -584,6 +603,9 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
                   onChange={(e) => e.target.files?.[0] && heroBildHochladen(e.target.files[0])}
                 />
               </label>
+              <p className="mt-1 text-xs text-[var(--text-faint)]">
+                Empfohlen: Querformat, mind. 800px breit, max. 5 MB.
+              </p>
             </div>
 
             <div className="mt-3 border-t border-[var(--border)] pt-3">
