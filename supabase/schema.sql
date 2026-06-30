@@ -838,15 +838,21 @@ grant select on organisationen_oeffentlich to anon, authenticated;
 -- ============================================================
 drop view if exists organisationen_oeffentlich;
 
-create or replace function get_organisation_by_slug(p_slug text)
+drop function if exists get_organisation_by_slug(text);
+
+create function get_organisation_by_slug(p_slug text)
 returns table (
   id uuid,
   name text,
   logo_url text,
   motto text,
-  akzentfarbe text
+  akzentfarbe text,
+  adresse text,
+  telefon text,
+  email text,
+  website text
 ) as $$
-  select id, name, logo_url, motto, akzentfarbe
+  select id, name, logo_url, motto, akzentfarbe, adresse, telefon, email, website
   from organisationen
   where slug = p_slug
   limit 1;

@@ -7,6 +7,10 @@ interface OrgOeffentlich {
   logo_url: string | null;
   motto: string | null;
   akzentfarbe: string | null;
+  adresse: string | null;
+  telefon: string | null;
+  email: string | null;
+  website: string | null;
 }
 
 interface KundenRegistrierungProps {
@@ -136,7 +140,31 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
           {organisation.motto && (
             <p className="mt-1 text-xs text-[var(--text-soft)]">{organisation.motto}</p>
           )}
-          <p className="mt-3 text-sm text-[var(--text-soft)]">Neuen Account anlegen</p>
+        </div>
+
+        <div className="mb-5 rounded-md bg-[var(--bg-muted)] p-3 text-center">
+          <p className="text-sm text-[var(--text-strong)]">
+            <strong>{organisation.name}</strong> lädt dich ein, ihr Ticketsystem zu nutzen.
+          </p>
+          <p className="mt-1 text-xs text-[var(--text-soft)]">
+            Hier stellst du Anfragen, siehst den Bearbeitungsstand live und musst nie wieder
+            nachfragen, ob deine Mail überhaupt angekommen ist – kein Zettel, kein Anrufbeantworter,
+            keine Warteschleife.
+          </p>
+          {(organisation.adresse || organisation.telefon || organisation.email || organisation.website) && (
+            <div className="mt-2 space-y-0.5 border-t border-[var(--border)] pt-2 text-xs text-[var(--text-faint)]">
+              {organisation.adresse && (
+                <p className="whitespace-pre-line">{organisation.adresse}</p>
+              )}
+              {organisation.telefon && <p>{organisation.telefon}</p>}
+              {organisation.email && <p>{organisation.email}</p>}
+              {organisation.website && <p>{organisation.website}</p>}
+            </div>
+          )}
+        </div>
+
+        <div className="mb-2 text-center">
+          <p className="text-sm text-[var(--text-soft)]">Neuen Account anlegen</p>
         </div>
 
         <div className="space-y-2.5">
