@@ -150,7 +150,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
       .from("ticket_nachrichten")
       .select("id, quelle, inhalt, erstellt_am, autor:autor_id(name), anhaenge(id, storage_path, dateityp)")
       .eq("ticket_id", ticketId)
-      .order("erstellt_am", { ascending: true });
+      .order("erstellt_am", { ascending: false });
     setNachrichten((data as unknown as Nachricht[]) ?? []);
   }
 

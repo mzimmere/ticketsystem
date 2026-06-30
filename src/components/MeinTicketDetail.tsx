@@ -101,7 +101,7 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
       .from("ticket_nachrichten")
       .select("id, quelle, inhalt, erstellt_am, anhaenge(id, storage_path)")
       .eq("ticket_id", ticketId)
-      .order("erstellt_am", { ascending: true });
+      .order("erstellt_am", { ascending: false });
     setNachrichten((data as unknown as Nachricht[]) ?? []);
   }
 
