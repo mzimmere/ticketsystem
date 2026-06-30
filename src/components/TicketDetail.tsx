@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { benachrichtigeKunde } from "../lib/benachrichtigungen";
 import { sichererDateiname } from "../lib/dateiname";
+import DateiAuswahl from "./DateiAuswahl";
 import Zeiterfassung from "./Zeiterfassung";
 import Avatar from "./Avatar";
 
@@ -42,6 +43,16 @@ interface Techniker {
   verfuegbarkeit: string;
 }
 
+function formatDatum(iso: string): string {
+  return new Date(iso).toLocaleString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 const STATUS_OPTIONEN: Status[] = [
   "offen",
   "in_bearbeitung",
@@ -68,7 +79,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
   const [nachrichten, setNachrichten] = useState<Nachricht[]>([]);
   const [techniker, setTechniker] = useState<Techniker[]>([]);
   const [neueNotiz, setNeueNotiz] = useState("");
-  const [neueDateien, setNeueDateien] = useState<FileList | null>(null);
+  const [neueDateien, setNeueDateien] = useState<File[]>([]);
   const [sendeLaedt, setSendeLaedt] = useState(false);
   const [fuerKundeSichtbar, setFuerKundeSichtbar] = useState(false);
 
@@ -162,7 +173,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
   }
 
   async function notizSenden() {
-    if (!neueNotiz.trim() && (!neueDateien || neueDateien.length === 0)) return;
+    if (!neueNotiz.trim() && neueDateien.length === 0) return;
     setSendeLaedt(true);
 
     const { data: nachricht, error } = await supabase
@@ -181,24 +192,20 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
       return;
     }
 
-    if (neueDateien) {
-      for (const datei of Array.from(neueDateien)) {
-        const pfad = `${ticketId}/${Date.now()}-${sichererDateiname(datei.name)}`;
-        const { error: uploadFehler } = await supabase.storage
-          .from("anhaenge")
-          .upload(pfad, datei);
-        if (!uploadFehler) {
-          await supabase.from("anhaenge").insert({
-            nachricht_id: nachricht.id,
-            storage_path: pfad,
-            dateityp: datei.type,
-          });
-        }
+    for (const datei of neueDateien) {
+      const pfad = `${ticketId}/${Date.now()}-${sichererDateiname(datei.name)}`;
+      const { error: uploadFehler } = await supabase.storage.from("anhaenge").upload(pfad, datei);
+      if (!uploadFehler) {
+        await supabase.from("anhaenge").insert({
+          nachricht_id: nachricht.id,
+          storage_path: pfad,
+          dateityp: datei.type,
+        });
       }
     }
 
     setNeueNotiz("");
-    setNeueDateien(null);
+    setNeueDateien([]);
     setSendeLaedt(false);
     if (fuerKundeSichtbar) {
       benachrichtigeKunde({ ticketId, ereignis: "neue_antwort" });
@@ -278,7 +285,12 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
                 <span>
                   {n.autor?.name ?? (n.quelle === "whatsapp" ? "Kunde (WhatsApp)" : "Kunde")}
                 </span>
-                <span className="uppercase tracking-wide">{n.quelle}</span>
+                <span className="flex items-center gap-2">
+                  <span className="font-mono text-[var(--text-faint)]">
+                    {formatDatum(n.erstellt_am)}
+                  </span>
+                  <span className="uppercase tracking-wide">{n.quelle}</span>
+                </span>
               </div>
               <p className="text-[var(--text-strong)]">{n.inhalt}</p>
               {n.anhaenge && n.anhaenge.length > 0 && (
@@ -306,12 +318,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
             placeholder="Notiz oder Antwort schreiben…"
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
           />
-          <input
-            type="file"
-            multiple
-            onChange={(e) => setNeueDateien(e.target.files)}
-            className="w-full text-xs text-[var(--text-soft)]"
-          />
+          <DateiAuswahl dateien={neueDateien} onAendern={setNeueDateien} />
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 text-xs text-[var(--text-soft)]">
               <input

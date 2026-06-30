@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
 import Avatar from "./Avatar";
+import DateiAuswahl from "./DateiAuswahl";
 
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 
@@ -30,6 +31,16 @@ const STATUS_LABEL: Record<Status, string> = {
   geschlossen: "Geschlossen",
 };
 
+function formatDatum(iso: string): string {
+  return new Date(iso).toLocaleString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
   const [titel, setTitel] = useState("");
   const [status, setStatus] = useState<Status | null>(null);
@@ -38,7 +49,7 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
   );
   const [nachrichten, setNachrichten] = useState<Nachricht[]>([]);
   const [antwort, setAntwort] = useState("");
-  const [dateien, setDateien] = useState<FileList | null>(null);
+  const [dateien, setDateien] = useState<File[]>([]);
   const [laedt, setLaedt] = useState(false);
   const [sendeLaedt, setSendeLaedt] = useState(false);
 
@@ -102,7 +113,7 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
   }
 
   async function antwortSenden() {
-    if (!antwort.trim() && (!dateien || dateien.length === 0)) return;
+    if (!antwort.trim() && dateien.length === 0) return;
     setSendeLaedt(true);
     const { data: authData } = await supabase.auth.getUser();
 
@@ -122,24 +133,20 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
       return;
     }
 
-    if (dateien) {
-      for (const datei of Array.from(dateien)) {
-        const pfad = `${ticketId}/${Date.now()}-${sichererDateiname(datei.name)}`;
-        const { error: uploadFehler } = await supabase.storage
-          .from("anhaenge")
-          .upload(pfad, datei);
-        if (!uploadFehler) {
-          await supabase.from("anhaenge").insert({
-            nachricht_id: nachricht.id,
-            storage_path: pfad,
-            dateityp: datei.type,
-          });
-        }
+    for (const datei of dateien) {
+      const pfad = `${ticketId}/${Date.now()}-${sichererDateiname(datei.name)}`;
+      const { error: uploadFehler } = await supabase.storage.from("anhaenge").upload(pfad, datei);
+      if (!uploadFehler) {
+        await supabase.from("anhaenge").insert({
+          nachricht_id: nachricht.id,
+          storage_path: pfad,
+          dateityp: datei.type,
+        });
       }
     }
 
     setAntwort("");
-    setDateien(null);
+    setDateien([]);
     setSendeLaedt(false);
   }
 
@@ -175,6 +182,9 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
       <div className="max-h-96 space-y-3 overflow-y-auto">
         {nachrichten.map((n) => (
           <div key={n.id} className="rounded-md border border-[var(--border)] bg-[var(--bg-muted)] p-3 text-sm">
+            <p className="mb-1 text-right font-mono text-xs text-[var(--text-faint)]">
+              {formatDatum(n.erstellt_am)}
+            </p>
             <p className="text-[var(--text-strong)]">{n.inhalt}</p>
             {n.anhaenge && n.anhaenge.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -201,12 +211,7 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
           placeholder="Antworten…"
           className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
         />
-        <input
-          type="file"
-          multiple
-          onChange={(e) => setDateien(e.target.files)}
-          className="w-full text-xs text-[var(--text-soft)]"
-        />
+        <DateiAuswahl dateien={dateien} onAendern={setDateien} />
         <div className="flex items-center justify-between gap-2">
           <button
             onClick={antwortSenden}

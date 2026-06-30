@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
+import DateiAuswahl from "./DateiAuswahl";
 
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
 
@@ -12,7 +13,7 @@ export default function NeuesTicket({ onErstellt }: NeuesTicketProps) {
   const [titel, setTitel] = useState("");
   const [beschreibung, setBeschreibung] = useState("");
   const [prioritaet, setPrioritaet] = useState<Prioritaet>("mittel");
-  const [dateien, setDateien] = useState<FileList | null>(null);
+  const [dateien, setDateien] = useState<File[]>([]);
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
 
@@ -61,26 +62,24 @@ export default function NeuesTicket({ onErstellt }: NeuesTicketProps) {
         .single();
       if (nachrichtFehler || !nachricht) throw nachrichtFehler;
 
-      if (dateien) {
-        for (const datei of Array.from(dateien)) {
-          const pfad = `${ticket.id}/${Date.now()}-${sichererDateiname(datei.name)}`;
-          const { error: uploadFehler } = await supabase.storage
-            .from("anhaenge")
-            .upload(pfad, datei);
-          if (uploadFehler) throw uploadFehler;
+      for (const datei of dateien) {
+        const pfad = `${ticket.id}/${Date.now()}-${sichererDateiname(datei.name)}`;
+        const { error: uploadFehler } = await supabase.storage
+          .from("anhaenge")
+          .upload(pfad, datei);
+        if (uploadFehler) throw uploadFehler;
 
-          await supabase.from("anhaenge").insert({
-            nachricht_id: nachricht.id,
-            storage_path: pfad,
-            dateityp: datei.type,
-          });
-        }
+        await supabase.from("anhaenge").insert({
+          nachricht_id: nachricht.id,
+          storage_path: pfad,
+          dateityp: datei.type,
+        });
       }
 
       setTitel("");
       setBeschreibung("");
       setPrioritaet("mittel");
-      setDateien(null);
+      setDateien([]);
       onErstellt?.(ticket.id);
     } catch (err) {
       console.error(err);
@@ -134,12 +133,7 @@ export default function NeuesTicket({ onErstellt }: NeuesTicketProps) {
         <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
           Anhänge (Screenshots, Dokumente)
         </label>
-        <input
-          type="file"
-          multiple
-          onChange={(e) => setDateien(e.target.files)}
-          className="w-full text-sm"
-        />
+        <DateiAuswahl dateien={dateien} onAendern={setDateien} label="Anhänge auswählen" />
       </div>
 
       {fehler && <p className="text-sm text-red-600">{fehler}</p>}
