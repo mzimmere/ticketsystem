@@ -69,6 +69,15 @@ export default function App() {
 
   const onlineIds = useOnlinePraesenz(aktiveOrgId, profil?.id);
 
+  // Beim Firmenwechsel (Super-Admin) alle offenen Detail-/Auswahl-Zustände
+  // zurücksetzen - sonst bliebe z.B. ein offenes Ticket der vorherigen
+  // Firma sichtbar, weil RLS dem Super-Admin technisch jedes Ticket erlaubt.
+  useEffect(() => {
+    setAusgewaehltesTicket(null);
+    setZeigeNeuesTicket(false);
+    setRechnungDetail(null);
+  }, [superAdminFirma]);
+
   useEffect(() => {
     if (aktiveOrgId) {
       supabase

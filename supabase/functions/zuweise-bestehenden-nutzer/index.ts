@@ -58,6 +58,25 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Schutz: Ein Super-Admin-Account darf nicht versehentlich auf eine
+    // Firmenrolle herabgestuft werden - er hat über "Alle Firmen" ohnehin
+    // schon vollen Zugriff auf jede Organisation, ganz ohne Mitgliedschaft.
+    const { data: bestehendesProfil } = await supabaseAdmin
+      .from("profiles")
+      .select("rolle")
+      .eq("id", userId)
+      .single();
+
+    if (bestehendesProfil?.rolle === "super_admin") {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Dieser Account ist Super-Admin und hat bereits vollen Zugriff auf alle Firmen über 'Alle Firmen' - keine Zuweisung nötig (und würde den Super-Admin-Status entfernen).",
+        }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const { data: profil, error: updateFehler } = await supabaseAdmin
       .from("profiles")
       .update({ organisation_id: organisationId, rolle, deaktiviert: false })
