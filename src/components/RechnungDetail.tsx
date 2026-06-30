@@ -34,6 +34,7 @@ interface Organisation {
   adresse: string | null;
   telefon: string | null;
   email: string | null;
+  rechnungslogo_breite: number | null;
 }
 
 interface RechnungDetailProps {
@@ -99,7 +100,7 @@ export default function RechnungDetail({
           .single(),
         supabase
           .from("organisationen")
-          .select("name, logo_url, adresse, telefon, email")
+          .select("name, logo_url, adresse, telefon, email, rechnungslogo_breite")
           .eq("id", organisationId)
           .single(),
         supabase
@@ -191,7 +192,12 @@ export default function RechnungDetail({
         <div className="mb-6 flex items-start justify-between">
           <div className="flex items-center gap-2">
             {organisation?.logo_url && (
-              <img src={organisation.logo_url} alt="" className="h-10 w-10 shrink-0 rounded bg-[var(--bg-muted)] object-contain p-0.5" />
+              <img
+                src={organisation.logo_url}
+                alt=""
+                style={{ width: `${organisation.rechnungslogo_breite ?? 80}px` }}
+                className="h-auto shrink-0 rounded bg-[var(--bg-muted)] object-contain p-0.5"
+              />
             )}
             <div>
               <p className="font-semibold text-[var(--text-strong)]">{organisation?.name}</p>

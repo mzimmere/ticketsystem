@@ -29,6 +29,7 @@ interface Organisation extends OrganisationKurz {
   slug: string | null;
   datenschutz_url: string | null;
   datenschutz_text: string | null;
+  rechnungslogo_breite: number | null;
 }
 
 interface VerwaltungProps {
@@ -52,6 +53,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
   const [slugKopiert, setSlugKopiert] = useState(false);
   const [orgDatenschutzUrl, setOrgDatenschutzUrl] = useState("");
   const [orgDatenschutzText, setOrgDatenschutzText] = useState("");
+  const [orgRechnungslogoBreite, setOrgRechnungslogoBreite] = useState("80");
 
   const [neuerMitarbeiterEmail, setNeuerMitarbeiterEmail] = useState("");
   const [neuerMitarbeiterVorname, setNeuerMitarbeiterVorname] = useState("");
@@ -103,7 +105,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
     const { data } = await supabase
       .from("organisationen")
       .select(
-        "id, name, logo_url, adresse, telefon, email, website, oeffnungszeiten, standard_preis_pro_minute_cent, motto, akzentfarbe, hero_bild_url, slug, datenschutz_url, datenschutz_text",
+        "id, name, logo_url, adresse, telefon, email, website, oeffnungszeiten, standard_preis_pro_minute_cent, motto, akzentfarbe, hero_bild_url, slug, datenschutz_url, datenschutz_text, rechnungslogo_breite",
       )
       .eq("id", organisationId)
       .single();
@@ -125,6 +127,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
       setOrgSlug(data.slug ?? "");
       setOrgDatenschutzUrl(data.datenschutz_url ?? "");
       setOrgDatenschutzText(data.datenschutz_text ?? "");
+      setOrgRechnungslogoBreite(String(data.rechnungslogo_breite ?? 80));
     }
   }
 
@@ -170,6 +173,9 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
         slug: normalisierterSlug,
         datenschutz_url: orgDatenschutzUrl.trim() || null,
         datenschutz_text: orgDatenschutzText.trim() || null,
+        rechnungslogo_breite: orgRechnungslogoBreite.trim()
+          ? Math.max(20, Math.min(300, Number(orgRechnungslogoBreite)))
+          : 80,
       })
       .eq("id", organisation.id);
     setLaedt(false);
@@ -188,6 +194,9 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
       standard_preis_pro_minute_cent: standardpreisCent,
       datenschutz_url: orgDatenschutzUrl.trim() || null,
       datenschutz_text: orgDatenschutzText.trim() || null,
+      rechnungslogo_breite: orgRechnungslogoBreite.trim()
+        ? Math.max(20, Math.min(300, Number(orgRechnungslogoBreite)))
+        : 80,
     });
     setHinweis(preisFehler ?? "Gespeichert.");
   }
@@ -470,6 +479,24 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
             Empfohlen: quadratisch, mind. 400×400px, max. 3 MB. Wird auf der Registrierungsseite
             bis zu 192×192px groß angezeigt.
           </p>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+              Logo-Breite auf der Rechnung
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={20}
+                max={300}
+                value={orgRechnungslogoBreite}
+                onChange={(e) => setOrgRechnungslogoBreite(e.target.value)}
+                className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+              />
+              <span className="text-xs text-[var(--text-faint)]">px (20–300, Standard 80)</span>
+            </div>
+          </div>
+
           <div className="flex gap-2">
             <input
               type="text"

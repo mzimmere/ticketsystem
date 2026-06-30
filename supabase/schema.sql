@@ -379,10 +379,10 @@ create policy avatare_insert on storage.objects for insert
   with check (
     bucket_id = 'avatare'
     and (
-      (storage.foldername(name))[1] = auth.uid()::text
+      (storage.foldername(storage.objects.name))[1] = auth.uid()::text
       or exists (
         select 1 from profiles p
-        where p.id::text = (storage.foldername(name))[1]
+        where p.id::text = (storage.foldername(storage.objects.name))[1]
           and (
             current_user_rolle() = 'super_admin'
             or (p.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
@@ -395,10 +395,10 @@ create policy avatare_update on storage.objects for update
   using (
     bucket_id = 'avatare'
     and (
-      (storage.foldername(name))[1] = auth.uid()::text
+      (storage.foldername(storage.objects.name))[1] = auth.uid()::text
       or exists (
         select 1 from profiles p
-        where p.id::text = (storage.foldername(name))[1]
+        where p.id::text = (storage.foldername(storage.objects.name))[1]
           and (
             current_user_rolle() = 'super_admin'
             or (p.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
@@ -415,7 +415,7 @@ create policy anhaenge_insert on storage.objects for insert
     bucket_id = 'anhaenge'
     and exists (
       select 1 from tickets t
-      where t.id::text = (storage.foldername(name))[1]
+      where t.id::text = (storage.foldername(storage.objects.name))[1]
         and (t.organisation_id = current_user_org() or t.kunde_id = auth.uid())
     )
   );
@@ -425,7 +425,7 @@ create policy anhaenge_select on storage.objects for select
     bucket_id = 'anhaenge'
     and exists (
       select 1 from tickets t
-      where t.id::text = (storage.foldername(name))[1]
+      where t.id::text = (storage.foldername(storage.objects.name))[1]
         and (t.organisation_id = current_user_org() or t.kunde_id = auth.uid())
     )
   );
@@ -579,7 +579,7 @@ create policy kundendokumente_insert on storage.objects for insert
     bucket_id = 'kundendokumente'
     and exists (
       select 1 from profiles p
-      where p.id::text = (storage.foldername(name))[1]
+      where p.id::text = (storage.foldername(storage.objects.name))[1]
         and (
           current_user_rolle() = 'super_admin'
           or (p.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
@@ -592,7 +592,7 @@ create policy kundendokumente_select on storage.objects for select
     bucket_id = 'kundendokumente'
     and exists (
       select 1 from profiles p
-      where p.id::text = (storage.foldername(name))[1]
+      where p.id::text = (storage.foldername(storage.objects.name))[1]
         and (
           current_user_rolle() = 'super_admin'
           or (p.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
@@ -605,7 +605,7 @@ create policy kundendokumente_delete on storage.objects for delete
     bucket_id = 'kundendokumente'
     and exists (
       select 1 from profiles p
-      where p.id::text = (storage.foldername(name))[1]
+      where p.id::text = (storage.foldername(storage.objects.name))[1]
         and (
           current_user_rolle() = 'super_admin'
           or (p.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
@@ -895,3 +895,9 @@ alter table organisationen
 -- 34. Realtime für "anhaenge" aktivieren
 -- ============================================================
 alter publication supabase_realtime add table public.anhaenge;
+
+-- ============================================================
+-- 35. Einstellbare Logo-Breite speziell für die Rechnung
+-- ============================================================
+alter table organisationen
+  add column rechnungslogo_breite integer default 80;
