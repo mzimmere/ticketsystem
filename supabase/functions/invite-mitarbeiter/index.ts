@@ -30,7 +30,7 @@ Deno.serve(async (req: Request) => {
   try {
     // TODO vor Produktiveinsatz: Auth-Header des Aufrufers prüfen
     // (org_admin/super_admin der jeweiligen Organisation)
-    const { email, name, organisationId, rolle, passwort } = await req.json();
+    const { email, vorname, nachname, organisationId, rolle, passwort } = await req.json();
 
     if (!email || !organisationId) {
       return new Response(
@@ -45,7 +45,8 @@ Deno.serve(async (req: Request) => {
     const metadaten = {
       organisation_id: organisationId,
       rolle: gewaehlteRolle,
-      name: name ?? null,
+      vorname: vorname ?? null,
+      nachname: nachname ?? null,
     };
 
     if (passwort) {

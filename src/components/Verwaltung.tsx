@@ -50,7 +50,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
   const [slugKopiert, setSlugKopiert] = useState(false);
 
   const [neuerMitarbeiterEmail, setNeuerMitarbeiterEmail] = useState("");
-  const [neuerMitarbeiterName, setNeuerMitarbeiterName] = useState("");
+  const [neuerMitarbeiterVorname, setNeuerMitarbeiterVorname] = useState("");
+  const [neuerMitarbeiterNachname, setNeuerMitarbeiterNachname] = useState("");
   const [neuerMitarbeiterTelefon, setNeuerMitarbeiterTelefon] = useState("");
   const [neuerMitarbeiterPasswort, setNeuerMitarbeiterPasswort] = useState("");
   const [neuerMitarbeiterRolle, setNeuerMitarbeiterRolle] = useState<"techniker" | "org_admin">(
@@ -66,7 +67,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
   >(null);
 
   const [neuerKundeEmail, setNeuerKundeEmail] = useState("");
-  const [neuerKundeName, setNeuerKundeName] = useState("");
+  const [neuerKundeVorname, setNeuerKundeVorname] = useState("");
+  const [neuerKundeNachname, setNeuerKundeNachname] = useState("");
   const [neuerKundeTelefon, setNeuerKundeTelefon] = useState("");
   const [neuerKundeStrasse, setNeuerKundeStrasse] = useState("");
   const [neuerKundeHausnummer, setNeuerKundeHausnummer] = useState("");
@@ -266,7 +268,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
         },
         body: JSON.stringify({
           email: neuerKundeEmail.trim(),
-          name: neuerKundeName.trim() || null,
+          vorname: neuerKundeVorname.trim() || null,
+          nachname: neuerKundeNachname.trim() || null,
           organisationId,
           passwort: neuerKundePasswort.trim() || undefined,
         }),
@@ -303,7 +306,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
         });
       }
       setNeuerKundeEmail("");
-      setNeuerKundeName("");
+      setNeuerKundeVorname("");
+      setNeuerKundeNachname("");
       setNeuerKundeTelefon("");
       setNeuerKundeStrasse("");
       setNeuerKundeHausnummer("");
@@ -342,7 +346,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
           },
           body: JSON.stringify({
             email: neuerMitarbeiterEmail.trim(),
-            name: neuerMitarbeiterName.trim() || null,
+            vorname: neuerMitarbeiterVorname.trim() || null,
+            nachname: neuerMitarbeiterNachname.trim() || null,
             organisationId,
             rolle: neuerMitarbeiterRolle,
             passwort: neuerMitarbeiterPasswort.trim() || undefined,
@@ -372,7 +377,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
         });
       }
       setNeuerMitarbeiterEmail("");
-      setNeuerMitarbeiterName("");
+      setNeuerMitarbeiterVorname("");
+      setNeuerMitarbeiterNachname("");
       setNeuerMitarbeiterTelefon("");
       setNeuerMitarbeiterPasswort("");
       setZeigeMitarbeiterAnlegen(false);
@@ -435,7 +441,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
           <h3 className="text-sm font-medium text-[var(--text-strong)]">Firmenprofil</h3>
           <div className="flex items-center gap-4">
             {organisation.logo_url && (
-              <img src={organisation.logo_url} alt={organisation.name} className="h-10 w-10 rounded bg-[var(--bg-muted)] object-contain p-0.5" />
+              <img src={organisation.logo_url} alt={organisation.name} className="h-10 w-10 shrink-0 rounded bg-[var(--bg-muted)] object-contain p-0.5" />
             )}
             <label className="cursor-pointer rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-1.5 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
               Logo ändern
@@ -726,13 +732,22 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
                 placeholder="E-Mail (für die Einladung)"
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
               />
-              <input
-                type="text"
-                value={neuerMitarbeiterName}
-                onChange={(e) => setNeuerMitarbeiterName(e.target.value)}
-                placeholder="Name"
-                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={neuerMitarbeiterVorname}
+                  onChange={(e) => setNeuerMitarbeiterVorname(e.target.value)}
+                  placeholder="Vorname"
+                  className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+                />
+                <input
+                  type="text"
+                  value={neuerMitarbeiterNachname}
+                  onChange={(e) => setNeuerMitarbeiterNachname(e.target.value)}
+                  placeholder="Nachname"
+                  className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+                />
+              </div>
               <input
                 type="text"
                 value={neuerMitarbeiterTelefon}
@@ -832,13 +847,22 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
                 placeholder="E-Mail (für die Einladung)"
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
               />
-              <input
-                type="text"
-                value={neuerKundeName}
-                onChange={(e) => setNeuerKundeName(e.target.value)}
-                placeholder="Name"
-                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={neuerKundeVorname}
+                  onChange={(e) => setNeuerKundeVorname(e.target.value)}
+                  placeholder="Vorname"
+                  className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                />
+                <input
+                  type="text"
+                  value={neuerKundeNachname}
+                  onChange={(e) => setNeuerKundeNachname(e.target.value)}
+                  placeholder="Nachname"
+                  className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                />
+              </div>
               <input
                 type="text"
                 value={neuerKundeTelefon}

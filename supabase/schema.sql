@@ -291,14 +291,15 @@ create trigger trg_set_preis_snapshot
 create or replace function handle_new_user() returns trigger as $$
 begin
   insert into public.profiles (
-    id, organisation_id, rolle, name, telefonnummer,
+    id, organisation_id, rolle, vorname, nachname, telefonnummer,
     strasse, hausnummer, plz, ort
   )
   values (
     new.id,
     (new.raw_user_meta_data->>'organisation_id')::uuid,
     coalesce((new.raw_user_meta_data->>'rolle')::public.user_rolle, 'kunde'),
-    new.raw_user_meta_data->>'name',
+    new.raw_user_meta_data->>'vorname',
+    new.raw_user_meta_data->>'nachname',
     new.raw_user_meta_data->>'telefonnummer',
     new.raw_user_meta_data->>'strasse',
     new.raw_user_meta_data->>'hausnummer',
@@ -859,3 +860,18 @@ returns table (
 $$ language sql stable security definer set search_path = public;
 
 grant execute on function get_organisation_by_slug(text) to anon, authenticated;
+
+-- ============================================================
+-- 31. Vor-/Nachname getrennt halten (statt einem "name"-Feld)
+-- ============================================================
+alter table profiles add column vorname text;
+alter table profiles add column nachname text;
+
+update profiles
+set vorname = split_part(name, ' ', 1),
+    nachname = nullif(trim(substring(name from position(' ' in name) + 1)), '')
+where vorname is null and name is not null and name <> '';
+
+alter table profiles drop column if exists name;
+alter table profiles add column name text
+  generated always as (trim(both ' ' from coalesce(vorname, '') || ' ' || coalesce(nachname, ''))) stored;

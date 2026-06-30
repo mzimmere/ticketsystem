@@ -20,7 +20,8 @@ interface KundenRegistrierungProps {
 export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) {
   const [organisation, setOrganisation] = useState<OrgOeffentlich | null>(null);
   const [ladeOrg, setLadeOrg] = useState(true);
-  const [name, setName] = useState("");
+  const [vorname, setVorname] = useState("");
+  const [nachname, setNachname] = useState("");
   const [email, setEmail] = useState("");
   const [passwort, setPasswort] = useState("");
   const [telefon, setTelefon] = useState("");
@@ -46,8 +47,8 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
 
   async function registrieren() {
     if (!organisation) return;
-    if (!name.trim() || !email.trim() || passwort.length < 8) {
-      setFehler("Bitte mindestens Name, E-Mail und ein Passwort mit 8+ Zeichen angeben.");
+    if (!vorname.trim() || !nachname.trim() || !email.trim() || passwort.length < 8) {
+      setFehler("Bitte mindestens Vor- und Nachname, E-Mail und ein Passwort mit 8+ Zeichen angeben.");
       return;
     }
     setFehler(null);
@@ -60,7 +61,8 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
         data: {
           organisation_id: organisation.id,
           rolle: "kunde",
-          name: name.trim(),
+          vorname: vorname.trim(),
+          nachname: nachname.trim(),
           telefonnummer: telefon.trim() || null,
           strasse: strasse.trim() || null,
           hausnummer: hausnummer.trim() || null,
@@ -168,13 +170,22 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
         </div>
 
         <div className="space-y-2.5">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Name"
-            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={vorname}
+              onChange={(e) => setVorname(e.target.value)}
+              placeholder="Vorname"
+              className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+            />
+            <input
+              type="text"
+              value={nachname}
+              onChange={(e) => setNachname(e.target.value)}
+              placeholder="Nachname"
+              className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+            />
+          </div>
           <input
             type="text"
             value={telefon}

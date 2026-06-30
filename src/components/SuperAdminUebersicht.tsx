@@ -107,7 +107,7 @@ export default function SuperAdminUebersicht({ onFirmaOeffnen }: SuperAdminUeber
             onClick={() => onFirmaOeffnen(org.id)}
             className="flex w-full items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3 text-left hover:bg-[var(--bg-muted)]"
           >
-            {org.logo_url && <img src={org.logo_url} alt="" className="h-8 w-8 rounded bg-[var(--bg-muted)] object-contain p-0.5" />}
+            {org.logo_url && <img src={org.logo_url} alt="" className="h-8 w-8 shrink-0 rounded bg-[var(--bg-muted)] object-contain p-0.5" />}
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-[var(--text-strong)]">{org.name}</p>
               <div className="mt-1 flex items-center gap-1.5">

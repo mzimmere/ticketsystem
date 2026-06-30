@@ -8,6 +8,8 @@ import ZugangsdatenBox from "./ZugangsdatenBox";
 interface Kunde {
   id: string;
   name: string | null;
+  vorname: string | null;
+  nachname: string | null;
   avatar_url: string | null;
   telefonnummer: string | null;
   strasse: string | null;
@@ -76,7 +78,7 @@ export default function KundenListe({
     const { data } = await supabase
       .from("profiles")
       .select(
-        "id, name, avatar_url, telefonnummer, strasse, hausnummer, plz, ort, land, mwst_satz, notizen, deaktiviert",
+        "id, name, vorname, nachname, avatar_url, telefonnummer, strasse, hausnummer, plz, ort, land, mwst_satz, notizen, deaktiviert",
       )
       .eq("organisation_id", organisationId)
       .eq("rolle", "kunde")
@@ -160,7 +162,8 @@ export default function KundenListe({
     const { error } = await supabase
       .from("profiles")
       .update({
-        name: entwurf.name?.trim() || null,
+        vorname: entwurf.vorname?.trim() || null,
+        nachname: entwurf.nachname?.trim() || null,
         telefonnummer: entwurf.telefonnummer?.trim() || null,
         strasse: entwurf.strasse?.trim() || null,
         hausnummer: entwurf.hausnummer?.trim() || null,
@@ -354,16 +357,29 @@ export default function KundenListe({
                 </label>
               </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  value={entwurf.name ?? ""}
-                  onChange={(e) => setEntwurf({ ...entwurf, name: e.target.value })}
-                  className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                />
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+                    Vorname
+                  </label>
+                  <input
+                    type="text"
+                    value={entwurf.vorname ?? ""}
+                    onChange={(e) => setEntwurf({ ...entwurf, vorname: e.target.value })}
+                    className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+                    Nachname
+                  </label>
+                  <input
+                    type="text"
+                    value={entwurf.nachname ?? ""}
+                    onChange={(e) => setEntwurf({ ...entwurf, nachname: e.target.value })}
+                    className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                  />
+                </div>
               </div>
 
               <div>

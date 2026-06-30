@@ -64,7 +64,7 @@ export default function FirmenInfo({ organisationId }: FirmenInfoProps) {
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
         <div className="flex items-center gap-3">
           {organisation.logo_url && (
-            <img src={organisation.logo_url} alt={organisation.name} className="h-12 w-12 rounded bg-[var(--bg-muted)] object-contain p-0.5" />
+            <img src={organisation.logo_url} alt={organisation.name} className="h-12 w-12 shrink-0 rounded bg-[var(--bg-muted)] object-contain p-0.5" />
           )}
           <h2
             className="text-lg font-semibold text-[var(--text-strong)]"

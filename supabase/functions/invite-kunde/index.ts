@@ -40,7 +40,7 @@ Deno.serve(async (req: Request) => {
     // organisationId ist. Sonst könnte theoretisch jeder eingeloggte
     // Nutzer Kunden in fremde Organisationen einladen.
 
-    const { email, name, organisationId, passwort } = await req.json();
+    const { email, vorname, nachname, organisationId, passwort } = await req.json();
 
     if (!email || !organisationId) {
       return new Response(
@@ -52,7 +52,8 @@ Deno.serve(async (req: Request) => {
     const metadaten = {
       organisation_id: organisationId,
       rolle: "kunde",
-      name: name ?? null,
+      vorname: vorname ?? null,
+      nachname: nachname ?? null,
     };
 
     // Mit Passwort: Account wird sofort nutzbar angelegt, keine Mail nötig
