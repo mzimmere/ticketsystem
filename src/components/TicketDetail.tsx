@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { benachrichtigeKunde } from "../lib/benachrichtigungen";
+import { sichererDateiname } from "../lib/dateiname";
 import Zeiterfassung from "./Zeiterfassung";
 import Avatar from "./Avatar";
 
@@ -19,12 +20,19 @@ interface Ticket {
   kunde: { name: string | null; telefonnummer: string | null } | null;
 }
 
+interface Anhang {
+  id: string;
+  storage_path: string;
+  dateityp: string | null;
+}
+
 interface Nachricht {
   id: string;
   quelle: string;
   inhalt: string | null;
   erstellt_am: string;
   autor: { name: string | null } | null;
+  anhaenge: Anhang[];
 }
 
 interface Techniker {
@@ -60,6 +68,8 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
   const [nachrichten, setNachrichten] = useState<Nachricht[]>([]);
   const [techniker, setTechniker] = useState<Techniker[]>([]);
   const [neueNotiz, setNeueNotiz] = useState("");
+  const [neueDateien, setNeueDateien] = useState<FileList | null>(null);
+  const [sendeLaedt, setSendeLaedt] = useState(false);
   const [fuerKundeSichtbar, setFuerKundeSichtbar] = useState(false);
 
   useEffect(() => {
@@ -116,10 +126,15 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
   async function ladeNachrichten() {
     const { data } = await supabase
       .from("ticket_nachrichten")
-      .select("id, quelle, inhalt, erstellt_am, autor:autor_id(name)")
+      .select("id, quelle, inhalt, erstellt_am, autor:autor_id(name), anhaenge(id, storage_path, dateityp)")
       .eq("ticket_id", ticketId)
       .order("erstellt_am", { ascending: true });
     setNachrichten((data as unknown as Nachricht[]) ?? []);
+  }
+
+  async function anhangOeffnen(pfad: string) {
+    const { data, error } = await supabase.storage.from("anhaenge").createSignedUrl(pfad, 60);
+    if (!error && data) window.open(data.signedUrl, "_blank");
   }
 
   async function ladeTechniker(organisationId: string) {
@@ -147,14 +162,44 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
   }
 
   async function notizSenden() {
-    if (!neueNotiz.trim()) return;
-    await supabase.from("ticket_nachrichten").insert({
-      ticket_id: ticketId,
-      autor_id: technikerId,
-      quelle: fuerKundeSichtbar ? "portal" : "intern",
-      inhalt: neueNotiz.trim(),
-    });
+    if (!neueNotiz.trim() && (!neueDateien || neueDateien.length === 0)) return;
+    setSendeLaedt(true);
+
+    const { data: nachricht, error } = await supabase
+      .from("ticket_nachrichten")
+      .insert({
+        ticket_id: ticketId,
+        autor_id: technikerId,
+        quelle: fuerKundeSichtbar ? "portal" : "intern",
+        inhalt: neueNotiz.trim() || null,
+      })
+      .select("id")
+      .single();
+
+    if (error || !nachricht) {
+      setSendeLaedt(false);
+      return;
+    }
+
+    if (neueDateien) {
+      for (const datei of Array.from(neueDateien)) {
+        const pfad = `${ticketId}/${Date.now()}-${sichererDateiname(datei.name)}`;
+        const { error: uploadFehler } = await supabase.storage
+          .from("anhaenge")
+          .upload(pfad, datei);
+        if (!uploadFehler) {
+          await supabase.from("anhaenge").insert({
+            nachricht_id: nachricht.id,
+            storage_path: pfad,
+            dateityp: datei.type,
+          });
+        }
+      }
+    }
+
     setNeueNotiz("");
+    setNeueDateien(null);
+    setSendeLaedt(false);
     if (fuerKundeSichtbar) {
       benachrichtigeKunde({ ticketId, ereignis: "neue_antwort" });
     }
@@ -236,6 +281,19 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
                 <span className="uppercase tracking-wide">{n.quelle}</span>
               </div>
               <p className="text-[var(--text-strong)]">{n.inhalt}</p>
+              {n.anhaenge && n.anhaenge.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {n.anhaenge.map((a) => (
+                    <button
+                      key={a.id}
+                      onClick={() => anhangOeffnen(a.storage_path)}
+                      className="rounded border border-[var(--border)] bg-[var(--bg-surface)] px-2 py-1 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+                    >
+                      📎 {a.storage_path.split("-").slice(1).join("-") || "Anhang"}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -247,6 +305,12 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
             rows={3}
             placeholder="Notiz oder Antwort schreiben…"
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
+          />
+          <input
+            type="file"
+            multiple
+            onChange={(e) => setNeueDateien(e.target.files)}
+            className="w-full text-xs text-[var(--text-soft)]"
           />
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 text-xs text-[var(--text-soft)]">
@@ -260,9 +324,10 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
             </label>
             <button
               onClick={notizSenden}
-              className="rounded bg-slate-900 px-4 py-1.5 text-sm font-medium text-white"
+              disabled={sendeLaedt}
+              className="rounded bg-slate-900 px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50"
             >
-              Senden
+              {sendeLaedt ? "Wird gesendet…" : "Senden"}
             </button>
           </div>
         </div>

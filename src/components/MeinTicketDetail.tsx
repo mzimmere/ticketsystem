@@ -1,14 +1,21 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { sichererDateiname } from "../lib/dateiname";
 import Avatar from "./Avatar";
 
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
+
+interface Anhang {
+  id: string;
+  storage_path: string;
+}
 
 interface Nachricht {
   id: string;
   quelle: string;
   inhalt: string | null;
   erstellt_am: string;
+  anhaenge: Anhang[];
 }
 
 interface MeinTicketDetailProps {
@@ -31,7 +38,9 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
   );
   const [nachrichten, setNachrichten] = useState<Nachricht[]>([]);
   const [antwort, setAntwort] = useState("");
+  const [dateien, setDateien] = useState<FileList | null>(null);
   const [laedt, setLaedt] = useState(false);
+  const [sendeLaedt, setSendeLaedt] = useState(false);
 
   useEffect(() => {
     ladeTicket();
@@ -81,22 +90,57 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
     // RLS blendet interne Notizen hier automatisch aus
     const { data } = await supabase
       .from("ticket_nachrichten")
-      .select("id, quelle, inhalt, erstellt_am")
+      .select("id, quelle, inhalt, erstellt_am, anhaenge(id, storage_path)")
       .eq("ticket_id", ticketId)
       .order("erstellt_am", { ascending: true });
-    setNachrichten((data as Nachricht[]) ?? []);
+    setNachrichten((data as unknown as Nachricht[]) ?? []);
+  }
+
+  async function anhangOeffnen(pfad: string) {
+    const { data, error } = await supabase.storage.from("anhaenge").createSignedUrl(pfad, 60);
+    if (!error && data) window.open(data.signedUrl, "_blank");
   }
 
   async function antwortSenden() {
-    if (!antwort.trim()) return;
+    if (!antwort.trim() && (!dateien || dateien.length === 0)) return;
+    setSendeLaedt(true);
     const { data: authData } = await supabase.auth.getUser();
-    await supabase.from("ticket_nachrichten").insert({
-      ticket_id: ticketId,
-      autor_id: authData.user?.id,
-      quelle: "portal",
-      inhalt: antwort.trim(),
-    });
+
+    const { data: nachricht, error } = await supabase
+      .from("ticket_nachrichten")
+      .insert({
+        ticket_id: ticketId,
+        autor_id: authData.user?.id,
+        quelle: "portal",
+        inhalt: antwort.trim() || null,
+      })
+      .select("id")
+      .single();
+
+    if (error || !nachricht) {
+      setSendeLaedt(false);
+      return;
+    }
+
+    if (dateien) {
+      for (const datei of Array.from(dateien)) {
+        const pfad = `${ticketId}/${Date.now()}-${sichererDateiname(datei.name)}`;
+        const { error: uploadFehler } = await supabase.storage
+          .from("anhaenge")
+          .upload(pfad, datei);
+        if (!uploadFehler) {
+          await supabase.from("anhaenge").insert({
+            nachricht_id: nachricht.id,
+            storage_path: pfad,
+            dateityp: datei.type,
+          });
+        }
+      }
+    }
+
     setAntwort("");
+    setDateien(null);
+    setSendeLaedt(false);
   }
 
   async function ticketSchliessen() {
@@ -132,6 +176,19 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
         {nachrichten.map((n) => (
           <div key={n.id} className="rounded-md border border-[var(--border)] bg-[var(--bg-muted)] p-3 text-sm">
             <p className="text-[var(--text-strong)]">{n.inhalt}</p>
+            {n.anhaenge && n.anhaenge.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {n.anhaenge.map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() => anhangOeffnen(a.storage_path)}
+                    className="rounded border border-[var(--border)] bg-[var(--bg-surface)] px-2 py-1 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+                  >
+                    📎 {a.storage_path.split("-").slice(1).join("-") || "Anhang"}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -144,12 +201,19 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
           placeholder="Antworten…"
           className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
         />
+        <input
+          type="file"
+          multiple
+          onChange={(e) => setDateien(e.target.files)}
+          className="w-full text-xs text-[var(--text-soft)]"
+        />
         <div className="flex items-center justify-between gap-2">
           <button
             onClick={antwortSenden}
-            className="rounded bg-akzent px-4 py-1.5 text-sm font-medium text-white"
+            disabled={sendeLaedt}
+            className="rounded bg-akzent px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50"
           >
-            Senden
+            {sendeLaedt ? "Wird gesendet…" : "Senden"}
           </button>
           {status && status !== "geschlossen" && (
             <button
