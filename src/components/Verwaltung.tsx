@@ -39,8 +39,6 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
   const [orgWebsite, setOrgWebsite] = useState("");
   const [orgOeffnungszeiten, setOrgOeffnungszeiten] = useState("");
   const [orgStandardpreisEuro, setOrgStandardpreisEuro] = useState("");
-  const [alleOrganisationen, setAlleOrganisationen] = useState<OrganisationKurz[]>([]);
-  const [neueOrgName, setNeueOrgName] = useState("");
 
   const [neuerMitarbeiterEmail, setNeuerMitarbeiterEmail] = useState("");
   const [neuerMitarbeiterName, setNeuerMitarbeiterName] = useState("");
@@ -79,9 +77,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
     if (organisationId) {
       ladeOrganisation();
     }
-    if (rolle === "super_admin") ladeAlleOrganisationen();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [organisationId]);
 
   async function ladeOrganisation() {
     const { data } = await supabase
@@ -105,14 +102,6 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
           : "",
       );
     }
-  }
-
-  async function ladeAlleOrganisationen() {
-    const { data } = await supabase
-      .from("organisationen")
-      .select("id, name, logo_url")
-      .order("name");
-    setAlleOrganisationen(data ?? []);
   }
 
   async function organisationSpeichern() {
@@ -170,20 +159,6 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
       setHinweis("Logo-Upload fehlgeschlagen.");
     } finally {
       setLaedt(false);
-    }
-  }
-
-  async function neueOrganisationAnlegen() {
-    if (!neueOrgName.trim()) return;
-    setLaedt(true);
-    const { error } = await supabase.from("organisationen").insert({ name: neueOrgName.trim() });
-    setLaedt(false);
-    if (!error) {
-      setNeueOrgName("");
-      ladeAlleOrganisationen();
-      setHinweis("Organisation angelegt.");
-    } else {
-      setHinweis("Anlegen fehlgeschlagen.");
     }
   }
 
@@ -325,36 +300,9 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
 
   return (
     <div className="space-y-5">
-      <h2 className="text-base font-semibold text-[var(--text-strong)]">Verwaltung</h2>
-
-      {rolle === "super_admin" && (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
-          <h3 className="text-sm font-medium text-[var(--text-strong)]">Organisationen</h3>
-          {alleOrganisationen.length > 0 && (
-            <ul className="space-y-1 text-sm text-[var(--text-soft)]">
-              {alleOrganisationen.map((o) => (
-                <li key={o.id}>{o.name}</li>
-              ))}
-            </ul>
-          )}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={neueOrgName}
-              onChange={(e) => setNeueOrgName(e.target.value)}
-              placeholder="Name der neuen Firma"
-              className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
-            />
-            <button
-              onClick={neueOrganisationAnlegen}
-              disabled={laedt}
-              className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-            >
-              Anlegen
-            </button>
-          </div>
-        </div>
-      )}
+      <h2 className="text-base font-semibold text-[var(--text-strong)]">
+        Verwaltung{organisation && rolle === "super_admin" ? ` – ${organisation.name}` : ""}
+      </h2>
 
       {organisation && (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">

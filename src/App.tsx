@@ -12,6 +12,7 @@ import TicketUebersicht from "./components/TicketUebersicht";
 import TicketDetail from "./components/TicketDetail";
 import MeinProfil from "./components/MeinProfil";
 import Verwaltung from "./components/Verwaltung";
+import SuperAdminUebersicht from "./components/SuperAdminUebersicht";
 import FirmenInfo from "./components/FirmenInfo";
 import Abrechnung from "./components/Abrechnung";
 import RechnungDetail from "./components/RechnungDetail";
@@ -49,6 +50,7 @@ export default function App() {
   const [zeigeNeuesTicket, setZeigeNeuesTicket] = useState(false);
   const [zeigeProfil, setZeigeProfil] = useState(false);
   const [zeigeVerwaltung, setZeigeVerwaltung] = useState(false);
+  const [superAdminFirma, setSuperAdminFirma] = useState<string | null>(null);
   const [zeigeFirmenInfo, setZeigeFirmenInfo] = useState(false);
   const [zeigeAbrechnung, setZeigeAbrechnung] = useState(false);
   const [rechnungDetail, setRechnungDetail] = useState<
@@ -272,16 +274,28 @@ export default function App() {
         ) : zeigeVerwaltung ? (
           <>
             <button
-              onClick={() => setZeigeVerwaltung(false)}
+              onClick={() => {
+                if (profil.rolle === "super_admin" && superAdminFirma) {
+                  setSuperAdminFirma(null);
+                } else {
+                  setZeigeVerwaltung(false);
+                }
+              }}
               className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
             >
               ← Zurück
             </button>
-            <Verwaltung
-              rolle={profil.rolle}
-              organisationId={profil.organisation_id}
-              onlineIds={onlineIds}
-            />
+            {profil.rolle === "super_admin" && !superAdminFirma ? (
+              <SuperAdminUebersicht onFirmaOeffnen={setSuperAdminFirma} />
+            ) : (
+              <Verwaltung
+                rolle={profil.rolle}
+                organisationId={
+                  profil.rolle === "super_admin" ? superAdminFirma : profil.organisation_id
+                }
+                onlineIds={onlineIds}
+              />
+            )}
           </>
         ) : zeigeProfil ? (
           <>

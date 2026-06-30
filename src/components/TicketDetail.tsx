@@ -155,6 +155,9 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
       inhalt: neueNotiz.trim(),
     });
     setNeueNotiz("");
+    if (fuerKundeSichtbar) {
+      benachrichtigeKunde({ ticketId, ereignis: "neue_antwort" });
+    }
   }
 
   if (!ticket) return <p className="text-sm text-[var(--text-faint)]">Lädt…</p>;
