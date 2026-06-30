@@ -803,3 +803,11 @@ create policy admin_nachrichten_insert on admin_nachrichten for insert
 
 create policy admin_nachrichten_update on admin_nachrichten for update
   using (current_user_rolle() = 'super_admin');
+
+-- ============================================================
+-- 28. Hilfsfunktion: Auth-User-ID anhand E-Mail finden
+-- ============================================================
+create or replace function get_user_id_by_email(p_email text)
+returns uuid as $$
+  select id from auth.users where lower(email) = lower(p_email) limit 1;
+$$ language sql security definer set search_path = public, auth;

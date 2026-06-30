@@ -54,6 +54,9 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
   );
   const [teamRefreshKey, setTeamRefreshKey] = useState(0);
   const [zeigeMitarbeiterAnlegen, setZeigeMitarbeiterAnlegen] = useState(false);
+  const [zeigeNutzerZuweisen, setZeigeNutzerZuweisen] = useState(false);
+  const [zuweisenEmail, setZuweisenEmail] = useState("");
+  const [zuweisenRolle, setZuweisenRolle] = useState<"techniker" | "org_admin">("techniker");
   const [mitarbeiterZugangsdaten, setMitarbeiterZugangsdaten] = useState<
     { email: string; passwort?: string; link?: string; telefon?: string } | null
   >(null);
@@ -267,7 +270,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
       setKundenRefreshKey((k) => k + 1);
     } catch (err) {
       console.error(err);
-      setHinweis("Kunde anlegen fehlgeschlagen. Sind die Edge Functions deployt?");
+      setHinweis(err instanceof Error ? err.message : "Kunde anlegen fehlgeschlagen.");
     } finally {
       setLaedt(false);
     }
@@ -329,7 +332,46 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
       setTeamRefreshKey((k) => k + 1);
     } catch (err) {
       console.error(err);
-      setHinweis("Anlegen fehlgeschlagen. Ist invite-mitarbeiter deployt?");
+      setHinweis(err instanceof Error ? err.message : "Anlegen fehlgeschlagen.");
+    } finally {
+      setLaedt(false);
+    }
+  }
+
+  async function nutzerZuweisen() {
+    if (!zuweisenEmail.trim() || !organisationId) return;
+    setLaedt(true);
+    setHinweis(null);
+    setMitarbeiterZugangsdaten(null);
+
+    const { data: sessionData } = await supabase.auth.getSession();
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/zuweise-bestehenden-nutzer`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${sessionData.session?.access_token}`,
+          },
+          body: JSON.stringify({
+            email: zuweisenEmail.trim(),
+            organisationId,
+            rolle: zuweisenRolle,
+          }),
+        },
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Zuweisen fehlgeschlagen");
+
+      setHinweis(`${json.name ?? zuweisenEmail} ist jetzt Teil dieser Firma.`);
+      setZuweisenEmail("");
+      setZeigeNutzerZuweisen(false);
+      setTeamRefreshKey((k) => k + 1);
+    } catch (err) {
+      console.error(err);
+      setHinweis(err instanceof Error ? err.message : "Zuweisen fehlgeschlagen.");
     } finally {
       setLaedt(false);
     }
@@ -527,13 +569,58 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-[var(--text-strong)]">Team</h3>
-            <button
-              onClick={() => setZeigeMitarbeiterAnlegen((v) => !v)}
-              className="text-xs text-amber-600 hover:underline"
-            >
-              {zeigeMitarbeiterAnlegen ? "Abbrechen" : "+ Mitarbeiter anlegen"}
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setZeigeNutzerZuweisen((v) => !v);
+                  setZeigeMitarbeiterAnlegen(false);
+                }}
+                className="text-xs text-amber-600 hover:underline"
+              >
+                {zeigeNutzerZuweisen ? "Abbrechen" : "Bestehenden Nutzer zuweisen"}
+              </button>
+              <button
+                onClick={() => {
+                  setZeigeMitarbeiterAnlegen((v) => !v);
+                  setZeigeNutzerZuweisen(false);
+                }}
+                className="text-xs text-amber-600 hover:underline"
+              >
+                {zeigeMitarbeiterAnlegen ? "Abbrechen" : "+ Mitarbeiter anlegen"}
+              </button>
+            </div>
           </div>
+
+          {zeigeNutzerZuweisen && (
+            <div className="space-y-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
+              <p className="text-xs text-[var(--text-faint)]">
+                Für Personen, die schon einen Account haben (z.B. bei einer anderen Firma oder
+                bereits als Kunde) – wird hier neu zugeordnet, kein neuer Account nötig.
+              </p>
+              <input
+                type="email"
+                value={zuweisenEmail}
+                onChange={(e) => setZuweisenEmail(e.target.value)}
+                placeholder="E-Mail des bestehenden Accounts"
+                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+              />
+              <select
+                value={zuweisenRolle}
+                onChange={(e) => setZuweisenRolle(e.target.value as typeof zuweisenRolle)}
+                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+              >
+                <option value="techniker">Techniker</option>
+                <option value="org_admin">Org-Admin</option>
+              </select>
+              <button
+                onClick={nutzerZuweisen}
+                disabled={laedt}
+                className="w-full rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              >
+                {laedt ? "Wird zugewiesen…" : "Zuweisen"}
+              </button>
+            </div>
+          )}
 
           {zeigeMitarbeiterAnlegen && (
             <div className="space-y-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">

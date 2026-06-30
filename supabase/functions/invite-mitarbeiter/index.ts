@@ -87,6 +87,16 @@ Deno.serve(async (req: Request) => {
     );
   } catch (err) {
     console.error("Einladungs-Fehler:", err);
+    const meldung = err instanceof Error ? err.message : String(err);
+    if (meldung.toLowerCase().includes("already") || meldung.toLowerCase().includes("registered")) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Für diese E-Mail existiert schon ein Account. Nutze stattdessen 'Bestehenden Nutzer zuweisen'.",
+        }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
     return new Response(JSON.stringify({ error: "Einladung fehlgeschlagen" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
