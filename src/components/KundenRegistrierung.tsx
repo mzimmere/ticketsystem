@@ -127,7 +127,7 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
             <img
               src={organisation.logo_url}
               alt={organisation.name}
-              className="mx-auto mb-3 h-20 w-20 rounded-lg object-cover"
+              className="mx-auto mb-3 h-48 w-48 rounded-lg object-cover"
             />
           )}
           <h1 className="text-base font-semibold text-[var(--text-strong)]">
@@ -145,20 +145,6 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Name"
-            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-          />
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="E-Mail"
-            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-          />
-          <input
-            type="password"
-            value={passwort}
-            onChange={(e) => setPasswort(e.target.value)}
-            placeholder="Passwort (mind. 8 Zeichen)"
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
           />
           <input
@@ -201,6 +187,23 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
               className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
             />
           </div>
+
+          <div className="border-t border-[var(--border)] pt-2.5" />
+
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="E-Mail"
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+          />
+          <input
+            type="password"
+            value={passwort}
+            onChange={(e) => setPasswort(e.target.value)}
+            placeholder="Passwort (mind. 8 Zeichen)"
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+          />
 
           {fehler && <p className="text-sm text-red-600">{fehler}</p>}
 
