@@ -24,6 +24,7 @@ interface Kunde {
   ort: string | null;
   land: string | null;
   mwst_satz: number | null;
+  ust_id: string | null;
   telefonnummer: string | null;
 }
 
@@ -93,7 +94,7 @@ export default function RechnungDetail({
       await Promise.all([
         supabase
           .from("profiles")
-          .select("name, strasse, hausnummer, plz, ort, land, mwst_satz, telefonnummer")
+          .select("name, strasse, hausnummer, plz, ort, land, mwst_satz, ust_id, telefonnummer")
           .eq("id", kundeId)
           .single(),
         supabase
@@ -162,7 +163,8 @@ export default function RechnungDetail({
   const gesamtMinuten = eintraege.reduce((sum, e) => sum + e.minuten, 0);
   const anpassungenSumme = anpassungen.reduce((sum, a) => sum + a.betrag_cent, 0);
   const nettosumme = zwischensumme + anpassungenSumme;
-  const mwstSatz = kunde?.mwst_satz ?? 0;
+  const istInnergemeinschaftlich = !!kunde?.ust_id?.trim();
+  const mwstSatz = istInnergemeinschaftlich ? 0 : kunde?.mwst_satz ?? 0;
   const mwstBetrag = Math.round(nettosumme * (mwstSatz / 100));
   const bruttosumme = nettosumme + mwstBetrag;
 
@@ -234,6 +236,9 @@ export default function RechnungDetail({
           )}
           {kunde?.telefonnummer && (
             <p className="text-sm text-[var(--text-soft)]">{kunde.telefonnummer}</p>
+          )}
+          {kunde?.ust_id && (
+            <p className="text-sm text-[var(--text-soft)]">USt-IdNr.: {kunde.ust_id}</p>
           )}
         </div>
 
@@ -310,6 +315,16 @@ export default function RechnungDetail({
               <span className="font-mono">{formatEuro(bruttosumme)}</span>
             </div>
           </div>
+        </div>
+
+        <div className="mt-4 space-y-1 border-t border-[var(--border)] pt-3 text-xs text-[var(--text-faint)]">
+          {istInnergemeinschaftlich && (
+            <p>
+              Steuerfreie innergemeinschaftliche Lieferung / Tax-free intra-Community supply
+              (Art. 138 MwStSystRL)
+            </p>
+          )}
+          <p>Rechnungsdatum ist Lieferdatum.</p>
         </div>
       </div>
 

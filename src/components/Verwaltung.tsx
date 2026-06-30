@@ -76,6 +76,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
   const [neuerKundeOrt, setNeuerKundeOrt] = useState("");
   const [neuerKundeLand, setNeuerKundeLand] = useState("Deutschland");
   const [neuerKundeMwstSatz, setNeuerKundeMwstSatz] = useState("19");
+  const [neuerKundeUstId, setNeuerKundeUstId] = useState("");
   const [neuerKundeNotizen, setNeuerKundeNotizen] = useState("");
   const [neuerKundePasswort, setNeuerKundePasswort] = useState("");
   const [kundenRefreshKey, setKundenRefreshKey] = useState(0);
@@ -290,6 +291,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
             plz: neuerKundePlz.trim() || null,
             ort: neuerKundeOrt.trim() || null,
             land: neuerKundeLand || null,
+            ust_id: neuerKundeUstId.trim() || null,
             mwst_satz: neuerKundeMwstSatz.trim() === "" ? null : Number(neuerKundeMwstSatz),
             notizen: neuerKundeNotizen.trim() || null,
           })
@@ -315,6 +317,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
       setNeuerKundeOrt("");
       setNeuerKundeLand("Deutschland");
       setNeuerKundeMwstSatz("19");
+      setNeuerKundeUstId("");
       setNeuerKundeNotizen("");
       setNeuerKundePasswort("");
       setZeigeKundeAnlegen(false);
@@ -932,6 +935,13 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
                   <span className="text-xs text-[var(--text-faint)]">%</span>
                 </div>
               </div>
+              <input
+                type="text"
+                value={neuerKundeUstId}
+                onChange={(e) => setNeuerKundeUstId(e.target.value)}
+                placeholder="USt-IdNr. (optional, z.B. ATU12345678)"
+                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+              />
               <textarea
                 value={neuerKundeNotizen}
                 onChange={(e) => setNeuerKundeNotizen(e.target.value)}

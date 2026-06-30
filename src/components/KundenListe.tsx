@@ -18,6 +18,7 @@ interface Kunde {
   ort: string | null;
   land: string | null;
   mwst_satz: number | null;
+  ust_id: string | null;
   notizen: string | null;
   deaktiviert: boolean;
 }
@@ -78,7 +79,7 @@ export default function KundenListe({
     const { data } = await supabase
       .from("profiles")
       .select(
-        "id, name, vorname, nachname, avatar_url, telefonnummer, strasse, hausnummer, plz, ort, land, mwst_satz, notizen, deaktiviert",
+        "id, name, vorname, nachname, avatar_url, telefonnummer, strasse, hausnummer, plz, ort, land, mwst_satz, ust_id, notizen, deaktiviert",
       )
       .eq("organisation_id", organisationId)
       .eq("rolle", "kunde")
@@ -170,6 +171,7 @@ export default function KundenListe({
         plz: entwurf.plz?.trim() || null,
         ort: entwurf.ort?.trim() || null,
         land: entwurf.land?.trim() || null,
+        ust_id: entwurf.ust_id?.trim() || null,
         mwst_satz: entwurf.mwst_satz ?? null,
         notizen: entwurf.notizen?.trim() || null,
       })
@@ -468,6 +470,24 @@ export default function KundenListe({
                 Vorschlagswert nach Land, Steuersatz bleibt frei änderbar (z.B. Kleinunternehmer,
                 Reverse-Charge).
               </p>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+                  USt-IdNr. (für steuerfreie innergemeinschaftliche Lieferung)
+                </label>
+                <input
+                  type="text"
+                  value={entwurf.ust_id ?? ""}
+                  onChange={(e) => setEntwurf({ ...entwurf, ust_id: e.target.value })}
+                  placeholder="z.B. ATU12345678"
+                  className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                />
+                <p className="mt-1 text-xs text-[var(--text-faint)]">
+                  Wenn ausgefüllt, weist die Rechnung automatisch 0% MwSt. aus und vermerkt
+                  "Steuerfreie innergemeinschaftliche Lieferung / Tax-free intra-Community
+                  supply".
+                </p>
+              </div>
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">

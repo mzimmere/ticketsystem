@@ -875,3 +875,8 @@ where vorname is null and name is not null and name <> '';
 alter table profiles drop column if exists name;
 alter table profiles add column name text
   generated always as (trim(both ' ' from coalesce(vorname, '') || ' ' || coalesce(nachname, ''))) stored;
+
+-- ============================================================
+-- 32. USt-IdNr. für Kunden (innergemeinschaftliche Lieferung)
+-- ============================================================
+alter table profiles add column ust_id text;
