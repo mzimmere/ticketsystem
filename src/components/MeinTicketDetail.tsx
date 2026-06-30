@@ -138,16 +138,29 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
       return;
     }
 
+    let anhangFehler = false;
     for (const datei of dateien) {
       const pfad = `${ticketId}/${Date.now()}-${sichererDateiname(datei.name)}`;
       const { error: uploadFehler } = await supabase.storage.from("anhaenge").upload(pfad, datei);
-      if (!uploadFehler) {
-        await supabase.from("anhaenge").insert({
-          nachricht_id: nachricht.id,
-          storage_path: pfad,
-          dateityp: datei.type,
-        });
+      if (uploadFehler) {
+        console.error("[MeinTicketDetail] Anhang-Upload fehlgeschlagen:", uploadFehler);
+        anhangFehler = true;
+        continue;
       }
+      const { error: insertFehler } = await supabase.from("anhaenge").insert({
+        nachricht_id: nachricht.id,
+        storage_path: pfad,
+        dateityp: datei.type,
+      });
+      if (insertFehler) {
+        console.error("[MeinTicketDetail] Anhang-Eintrag fehlgeschlagen:", insertFehler);
+        anhangFehler = true;
+      }
+    }
+    if (anhangFehler) {
+      alert(
+        "Mindestens ein Anhang konnte nicht gespeichert werden. Details siehe Browser-Konsole (F12).",
+      );
     }
 
     setAntwort("");
