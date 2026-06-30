@@ -5,6 +5,7 @@ import { sichererDateiname } from "../lib/dateiname";
 import DateiAuswahl from "./DateiAuswahl";
 import Zeiterfassung from "./Zeiterfassung";
 import Avatar from "./Avatar";
+import StatusBadge from "./StatusBadge";
 
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
@@ -255,6 +256,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge status={ticket.status} />
           <select
             value={ticket.status}
             onChange={(e) => statusAendern(e.target.value as Status)}

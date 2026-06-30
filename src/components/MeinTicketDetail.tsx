@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
 import Avatar from "./Avatar";
 import DateiAuswahl from "./DateiAuswahl";
+import StatusBadge from "./StatusBadge";
 
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 
@@ -22,14 +23,6 @@ interface Nachricht {
 interface MeinTicketDetailProps {
   ticketId: string;
 }
-
-const STATUS_LABEL: Record<Status, string> = {
-  offen: "Offen",
-  in_bearbeitung: "In Bearbeitung",
-  wartet_auf_kunde: "Wartet auf dich",
-  geloest: "Gelöst",
-  geschlossen: "Geschlossen",
-};
 
 function formatDatum(iso: string): string {
   return new Date(iso).toLocaleString("de-DE", {
@@ -185,9 +178,10 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-base font-semibold text-[var(--text-strong)]">{titel}</h2>
           {status && (
-            <span className="shrink-0 rounded bg-[var(--bg-muted)] px-2 py-0.5 text-xs font-medium text-[var(--text-soft)]">
-              {STATUS_LABEL[status]}
-            </span>
+            <StatusBadge
+              status={status}
+              labelOverride={status === "wartet_auf_kunde" ? "Wartet auf dich" : undefined}
+            />
           )}
         </div>
         {bearbeiter?.name && (

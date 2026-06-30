@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../lib/supabaseClient";
 import Avatar from "./Avatar";
 import NeuesTicketIntern from "./NeuesTicketIntern";
+import StatusBadge from "./StatusBadge";
 
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
@@ -374,9 +375,7 @@ export default function TicketUebersicht({
                 </div>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1">
-                <span className="rounded bg-[var(--bg-muted)] px-2 py-0.5 font-mono text-[0.65rem] text-[var(--text-soft)]">
-                  {STATUS_LABEL[ticket.status]}
-                </span>
+                <StatusBadge status={ticket.status} />
                 <span className="font-mono text-[0.65rem] text-[var(--text-faint)]">
                   {formatRelativ(ticket.erstellt_am)}
                 </span>

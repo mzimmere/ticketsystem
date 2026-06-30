@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import StatusBadge from "./StatusBadge";
 
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 
@@ -9,14 +10,6 @@ interface TicketZeile {
   status: Status;
   erstellt_am: string;
 }
-
-const STATUS_LABEL: Record<Status, string> = {
-  offen: "Offen",
-  in_bearbeitung: "In Bearbeitung",
-  wartet_auf_kunde: "Wartet auf dich",
-  geloest: "Gelöst",
-  geschlossen: "Geschlossen",
-};
 
 interface MeineTicketsProps {
   onAuswahl: (ticketId: string) => void;
@@ -56,9 +49,10 @@ export default function MeineTickets({ onAuswahl }: MeineTicketsProps) {
           className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[var(--bg-muted)]"
         >
           <p className="truncate text-sm font-medium text-[var(--text-strong)]">{ticket.titel}</p>
-          <span className="shrink-0 rounded bg-[var(--bg-muted)] px-2 py-0.5 text-xs font-medium text-[var(--text-soft)]">
-            {STATUS_LABEL[ticket.status]}
-          </span>
+          <StatusBadge
+            status={ticket.status}
+            labelOverride={ticket.status === "wartet_auf_kunde" ? "Wartet auf dich" : undefined}
+          />
         </button>
       ))}
     </div>

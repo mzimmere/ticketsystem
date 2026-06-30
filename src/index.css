@@ -69,6 +69,55 @@ body {
   filter: brightness(0.92);
 }
 
+:root {
+  --status-offen-bg: #fee2e2;
+  --status-offen-text: #b91c1c;
+  --status-bearbeitung-bg: #dbeafe;
+  --status-bearbeitung-text: #1d4ed8;
+  --status-warten-bg: #fef3c7;
+  --status-warten-text: #b45309;
+  --status-geloest-bg: #dcfce7;
+  --status-geloest-text: #15803d;
+  --status-geschlossen-bg: var(--bg-muted);
+  --status-geschlossen-text: var(--text-faint);
+}
+
+.dark {
+  --status-offen-bg: #7f1d1d;
+  --status-offen-text: #fecaca;
+  --status-bearbeitung-bg: #1e3a8a;
+  --status-bearbeitung-text: #bfdbfe;
+  --status-warten-bg: #78350f;
+  --status-warten-text: #fde68a;
+  --status-geloest-bg: #14532d;
+  --status-geloest-text: #bbf7d0;
+}
+
+@keyframes status-puls {
+  0% {
+    box-shadow: 0 0 0 0 currentColor;
+    opacity: 1;
+  }
+  70% {
+    box-shadow: 0 0 0 5px transparent;
+    opacity: 0.4;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    opacity: 1;
+  }
+}
+
+.status-dot-puls {
+  animation: status-puls 1.8s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-dot-puls {
+    animation: none;
+  }
+}
+
 /* Browser-Autofill (z.B. Chrome) ignoriert sonst unser Theme und färbt
    Felder gelb - das hier zwingt die Hintergrundfarbe auf unsere eigene. */
 input:-webkit-autofill,
