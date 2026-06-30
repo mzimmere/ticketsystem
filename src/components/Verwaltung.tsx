@@ -27,6 +27,8 @@ interface Organisation extends OrganisationKurz {
   akzentfarbe: string | null;
   hero_bild_url: string | null;
   slug: string | null;
+  datenschutz_url: string | null;
+  datenschutz_text: string | null;
 }
 
 interface VerwaltungProps {
@@ -48,6 +50,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
   const [orgAkzentfarbe, setOrgAkzentfarbe] = useState("#f59e0b");
   const [orgSlug, setOrgSlug] = useState("");
   const [slugKopiert, setSlugKopiert] = useState(false);
+  const [orgDatenschutzUrl, setOrgDatenschutzUrl] = useState("");
+  const [orgDatenschutzText, setOrgDatenschutzText] = useState("");
 
   const [neuerMitarbeiterEmail, setNeuerMitarbeiterEmail] = useState("");
   const [neuerMitarbeiterVorname, setNeuerMitarbeiterVorname] = useState("");
@@ -99,7 +103,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
     const { data } = await supabase
       .from("organisationen")
       .select(
-        "id, name, logo_url, adresse, telefon, email, website, oeffnungszeiten, standard_preis_pro_minute_cent, motto, akzentfarbe, hero_bild_url, slug",
+        "id, name, logo_url, adresse, telefon, email, website, oeffnungszeiten, standard_preis_pro_minute_cent, motto, akzentfarbe, hero_bild_url, slug, datenschutz_url, datenschutz_text",
       )
       .eq("id", organisationId)
       .single();
@@ -119,6 +123,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
       setOrgMotto(data.motto ?? "");
       setOrgAkzentfarbe(data.akzentfarbe ?? "#f59e0b");
       setOrgSlug(data.slug ?? "");
+      setOrgDatenschutzUrl(data.datenschutz_url ?? "");
+      setOrgDatenschutzText(data.datenschutz_text ?? "");
     }
   }
 
@@ -162,6 +168,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
         motto: orgMotto.trim() || null,
         akzentfarbe: orgAkzentfarbe || null,
         slug: normalisierterSlug,
+        datenschutz_url: orgDatenschutzUrl.trim() || null,
+        datenschutz_text: orgDatenschutzText.trim() || null,
       })
       .eq("id", organisation.id);
     setLaedt(false);
@@ -178,6 +186,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
       ...organisation,
       slug: normalisierterSlug,
       standard_preis_pro_minute_cent: standardpreisCent,
+      datenschutz_url: orgDatenschutzUrl.trim() || null,
+      datenschutz_text: orgDatenschutzText.trim() || null,
     });
     setHinweis(preisFehler ?? "Gespeichert.");
   }
@@ -656,6 +666,33 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
                 registrieren und landen direkt bei eurer Firma.
               </p>
               {hinweis && <p className="mt-2 text-xs text-[var(--text-soft)]">{hinweis}</p>}
+            </div>
+
+            <div className="mt-3 border-t border-[var(--border)] pt-3">
+              <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+                Datenschutzerklärung
+              </label>
+              <p className="mb-2 text-xs text-[var(--text-faint)]">
+                Wird Kunden bei der Registrierung als Pflicht-Link angezeigt. Entweder eine
+                bestehende Seite verlinken, oder euren eigenen Text einfügen (z.B. von einem
+                Generator wie eRecht24 oder Datenschutz-Generator.de erstellt) – dann zeigen wir
+                ihn als eigene Seite innerhalb der App an. Link hat Vorrang, falls beides
+                ausgefüllt ist.
+              </p>
+              <input
+                type="text"
+                value={orgDatenschutzUrl}
+                onChange={(e) => setOrgDatenschutzUrl(e.target.value)}
+                placeholder="https://eure-firma.de/datenschutz (optional)"
+                className="mb-2 w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+              />
+              <textarea
+                value={orgDatenschutzText}
+                onChange={(e) => setOrgDatenschutzText(e.target.value)}
+                rows={6}
+                placeholder="Oder hier den vollständigen Text eurer Datenschutzerklärung einfügen…"
+                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+              />
             </div>
           </div>
 

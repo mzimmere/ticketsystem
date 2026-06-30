@@ -851,9 +851,12 @@ returns table (
   adresse text,
   telefon text,
   email text,
-  website text
+  website text,
+  datenschutz_url text,
+  datenschutz_text text
 ) as $$
-  select id, name, logo_url, motto, akzentfarbe, adresse, telefon, email, website
+  select id, name, logo_url, motto, akzentfarbe, adresse, telefon, email, website,
+         datenschutz_url, datenschutz_text
   from organisationen
   where slug = p_slug
   limit 1;
@@ -880,3 +883,10 @@ alter table profiles add column name text
 -- 32. USt-IdNr. für Kunden (innergemeinschaftliche Lieferung)
 -- ============================================================
 alter table profiles add column ust_id text;
+
+-- ============================================================
+-- 33. Datenschutzerklärung pro Firma: Link ODER eigener Text
+-- ============================================================
+alter table organisationen
+  add column datenschutz_url text,
+  add column datenschutz_text text;

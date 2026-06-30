@@ -11,6 +11,8 @@ interface OrgOeffentlich {
   telefon: string | null;
   email: string | null;
   website: string | null;
+  datenschutz_url: string | null;
+  datenschutz_text: string | null;
 }
 
 interface KundenRegistrierungProps {
@@ -32,6 +34,7 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [fertig, setFertig] = useState<"sofort" | "bestaetigung" | null>(null);
+  const [datenschutzAkzeptiert, setDatenschutzAkzeptiert] = useState(false);
 
   useEffect(() => {
     supabase
@@ -45,10 +48,16 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
       });
   }, [slug]);
 
+  const hatDatenschutz = !!(organisation?.datenschutz_url || organisation?.datenschutz_text);
+
   async function registrieren() {
     if (!organisation) return;
     if (!vorname.trim() || !nachname.trim() || !email.trim() || passwort.length < 8) {
       setFehler("Bitte mindestens Vor- und Nachname, E-Mail und ein Passwort mit 8+ Zeichen angeben.");
+      return;
+    }
+    if (hatDatenschutz && !datenschutzAkzeptiert) {
+      setFehler("Bitte die Datenschutzerklärung akzeptieren.");
       return;
     }
     setFehler(null);
@@ -243,6 +252,32 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
             placeholder="Passwort (mind. 8 Zeichen)"
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
           />
+
+          {hatDatenschutz && (
+            <label className="flex items-start gap-2 text-xs text-[var(--text-soft)]">
+              <input
+                type="checkbox"
+                checked={datenschutzAkzeptiert}
+                onChange={(e) => setDatenschutzAkzeptiert(e.target.checked)}
+                className="mt-0.5 accent-amber-500"
+              />
+              <span>
+                Ich habe die{" "}
+                <a
+                  href={
+                    organisation?.datenschutz_url ||
+                    `${window.location.pathname}?datenschutz=${slug}`
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline hover:text-[var(--text-strong)]"
+                >
+                  Datenschutzerklärung
+                </a>{" "}
+                gelesen und akzeptiere sie.
+              </span>
+            </label>
+          )}
 
           {fehler && <p className="text-sm text-red-600">{fehler}</p>}
 
