@@ -48,7 +48,6 @@ function authLinkFehler(): string | null {
 export default function App() {
   const { profil, eingeloggt, laedt } = useProfil();
   const { dunkel, umschalten } = useTheme();
-  const onlineIds = useOnlinePraesenz(profil?.organisation_id, profil?.id);
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [ausgewaehltesTicket, setAusgewaehltesTicket] = useState<string | null>(null);
   const [zeigeNeuesTicket, setZeigeNeuesTicket] = useState(false);
@@ -62,16 +61,26 @@ export default function App() {
     { kundeId: string; jahr: number; monat: number } | null
   >(null);
 
+  // Für Super-Admin: sobald eine Firma in "Alle Firmen" ausgewählt wurde,
+  // gilt sie als aktiver Kontext für Tickets/Abrechnung/Postfach/Firmeninfo -
+  // ohne dass die eigene super_admin-Rolle dafür geändert werden muss.
+  const aktiveOrgId =
+    profil?.rolle === "super_admin" ? superAdminFirma : profil?.organisation_id ?? null;
+
+  const onlineIds = useOnlinePraesenz(aktiveOrgId, profil?.id);
+
   useEffect(() => {
-    if (profil?.organisation_id) {
+    if (aktiveOrgId) {
       supabase
         .from("organisationen")
         .select("name, logo_url, motto, akzentfarbe, hero_bild_url")
-        .eq("id", profil.organisation_id)
+        .eq("id", aktiveOrgId)
         .single()
         .then(({ data }) => setOrganisation(data as Organisation));
+    } else {
+      setOrganisation(null);
     }
-  }, [profil?.organisation_id]);
+  }, [aktiveOrgId]);
 
   if (laedt) {
     return <div className="p-8 text-sm text-[var(--text-faint)]">Lädt…</div>;
@@ -157,6 +166,22 @@ export default function App() {
           <span className="text-sm font-semibold text-[var(--text-strong)]">
             {organisation?.name ?? "IT-Ticketsystem"}
           </span>
+          {profil.rolle === "super_admin" && superAdminFirma && (
+            <button
+              onClick={() => {
+                setSuperAdminFirma(null);
+                setZeigeVerwaltung(false);
+                setZeigeAbrechnung(false);
+                setZeigePostfach(false);
+                setZeigeFirmenInfo(false);
+                setAusgewaehltesTicket(null);
+              }}
+              className="ml-1 rounded-full bg-akzent px-2 py-0.5 text-[0.65rem] font-medium text-white"
+              title="Zurück zu allen Firmen"
+            >
+              als Super-Admin in dieser Firma · verlassen
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -166,7 +191,7 @@ export default function App() {
           >
             {dunkel ? <Sun size={16} /> : <Moon size={16} />}
           </button>
-          {profil.organisation_id && (
+          {aktiveOrgId && (
             <button
               onClick={() => {
                 setZeigeFirmenInfo(true);
@@ -272,12 +297,12 @@ export default function App() {
             >
               ← Zurück
             </button>
-            <AdminPostfach rolle={profil.rolle} organisationId={profil.organisation_id} />
+            <AdminPostfach rolle={profil.rolle} organisationId={aktiveOrgId} />
           </>
         ) : zeigeAbrechnung ? (
           rechnungDetail ? (
             <RechnungDetail
-              organisationId={profil.organisation_id!}
+              organisationId={aktiveOrgId!}
               kundeId={rechnungDetail.kundeId}
               jahr={rechnungDetail.jahr}
               monat={rechnungDetail.monat}
@@ -291,9 +316,9 @@ export default function App() {
               >
                 ← Zurück
               </button>
-              {profil.organisation_id && (
+              {aktiveOrgId && (
                 <Abrechnung
-                  organisationId={profil.organisation_id}
+                  organisationId={aktiveOrgId}
                   onKundeAuswahl={(kundeId, jahr, monat) =>
                     setRechnungDetail({ kundeId, jahr, monat })
                   }
@@ -309,22 +334,24 @@ export default function App() {
             >
               ← Zurück
             </button>
-            {profil.organisation_id && <FirmenInfo organisationId={profil.organisation_id} />}
+            {aktiveOrgId && <FirmenInfo organisationId={aktiveOrgId} />}
           </>
         ) : zeigeVerwaltung ? (
           <>
             <button
-              onClick={() => {
-                if (profil.rolle === "super_admin" && superAdminFirma) {
-                  setSuperAdminFirma(null);
-                } else {
-                  setZeigeVerwaltung(false);
-                }
-              }}
+              onClick={() => setZeigeVerwaltung(false)}
               className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
             >
               ← Zurück
             </button>
+            {profil.rolle === "super_admin" && superAdminFirma && (
+              <button
+                onClick={() => setSuperAdminFirma(null)}
+                className="ml-3 text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
+              >
+                Alle Firmen
+              </button>
+            )}
             {profil.rolle === "super_admin" && !superAdminFirma ? (
               <SuperAdminUebersicht onFirmaOeffnen={setSuperAdminFirma} />
             ) : (
@@ -347,7 +374,7 @@ export default function App() {
             </button>
             <MeinProfil
               profilId={profil.id}
-              organisationId={profil.organisation_id}
+              organisationId={aktiveOrgId}
               istIntern={istIntern}
             />
           </>
@@ -366,7 +393,7 @@ export default function App() {
           ) : (
             <TicketUebersicht
             onAuswahl={setAusgewaehltesTicket}
-            organisationId={profil.organisation_id}
+            organisationId={aktiveOrgId}
             technikerId={profil.id}
             motto={organisation?.motto}
             heroBildUrl={organisation?.hero_bild_url}
