@@ -492,7 +492,7 @@ export default function KundenListe({
                               currency: "EUR",
                             })}
                             {p.id === aktiveId && (
-                              <span className="ml-2 rounded bg-amber-500 px-1.5 py-0.5 text-[0.65rem] font-medium text-white">
+                              <span className="ml-2 rounded bg-akzent px-1.5 py-0.5 text-[0.65rem] font-medium text-white">
                                 Aktuell
                               </span>
                             )}

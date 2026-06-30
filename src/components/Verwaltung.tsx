@@ -22,6 +22,9 @@ interface Organisation extends OrganisationKurz {
   website: string | null;
   oeffnungszeiten: string | null;
   standard_preis_pro_minute_cent: number | null;
+  motto: string | null;
+  akzentfarbe: string | null;
+  hero_bild_url: string | null;
 }
 
 interface VerwaltungProps {
@@ -39,6 +42,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
   const [orgWebsite, setOrgWebsite] = useState("");
   const [orgOeffnungszeiten, setOrgOeffnungszeiten] = useState("");
   const [orgStandardpreisEuro, setOrgStandardpreisEuro] = useState("");
+  const [orgMotto, setOrgMotto] = useState("");
+  const [orgAkzentfarbe, setOrgAkzentfarbe] = useState("#f59e0b");
 
   const [neuerMitarbeiterEmail, setNeuerMitarbeiterEmail] = useState("");
   const [neuerMitarbeiterName, setNeuerMitarbeiterName] = useState("");
@@ -84,7 +89,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
     const { data } = await supabase
       .from("organisationen")
       .select(
-        "id, name, logo_url, adresse, telefon, email, website, oeffnungszeiten, standard_preis_pro_minute_cent",
+        "id, name, logo_url, adresse, telefon, email, website, oeffnungszeiten, standard_preis_pro_minute_cent, motto, akzentfarbe, hero_bild_url",
       )
       .eq("id", organisationId)
       .single();
@@ -101,6 +106,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
           ? (data.standard_preis_pro_minute_cent / 100).toFixed(2)
           : "",
       );
+      setOrgMotto(data.motto ?? "");
+      setOrgAkzentfarbe(data.akzentfarbe ?? "#f59e0b");
     }
   }
 
@@ -128,6 +135,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
         website: orgWebsite.trim() || null,
         oeffnungszeiten: orgOeffnungszeiten.trim() || null,
         standard_preis_pro_minute_cent: standardpreisCent,
+        motto: orgMotto.trim() || null,
+        akzentfarbe: orgAkzentfarbe || null,
       })
       .eq("id", organisation.id);
     setLaedt(false);
@@ -157,6 +166,34 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
     } catch (err) {
       console.error(err);
       setHinweis("Logo-Upload fehlgeschlagen.");
+    } finally {
+      setLaedt(false);
+    }
+  }
+
+  async function heroBildHochladen(datei: File) {
+    if (!organisation) return;
+    setLaedt(true);
+    setHinweis(null);
+    try {
+      const pfad = `${organisation.id}/hero-${Date.now()}-${sichererDateiname(datei.name)}`;
+      const { error: uploadFehler } = await supabase.storage
+        .from("logos")
+        .upload(pfad, datei, { upsert: true });
+      if (uploadFehler) throw uploadFehler;
+
+      const { data: oeffentlich } = supabase.storage.from("logos").getPublicUrl(pfad);
+      const { error: updateFehler } = await supabase
+        .from("organisationen")
+        .update({ hero_bild_url: oeffentlich.publicUrl })
+        .eq("id", organisation.id);
+      if (updateFehler) throw updateFehler;
+
+      setOrganisation({ ...organisation, hero_bild_url: oeffentlich.publicUrl });
+      setHinweis("Bild aktualisiert.");
+    } catch (err) {
+      console.error(err);
+      setHinweis("Bild-Upload fehlgeschlagen.");
     } finally {
       setLaedt(false);
     }
@@ -411,6 +448,71 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
             />
           </div>
 
+          <div className="border-t border-[var(--border)] pt-3">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
+              Individualisierung
+            </p>
+
+            <div className="mb-3">
+              <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+                Motto / Begrüßungszeile
+              </label>
+              <input
+                type="text"
+                value={orgMotto}
+                onChange={(e) => setOrgMotto(e.target.value)}
+                placeholder='z.B. "Schnelle Hilfe, persönlich betreut"'
+                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+              />
+            </div>
+
+            <div className="mb-3">
+              <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+                Akzentfarbe
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={orgAkzentfarbe}
+                  onChange={(e) => setOrgAkzentfarbe(e.target.value)}
+                  className="h-9 w-12 cursor-pointer rounded border border-[var(--border-input)] bg-[var(--bg-surface)]"
+                />
+                <input
+                  type="text"
+                  value={orgAkzentfarbe}
+                  onChange={(e) => setOrgAkzentfarbe(e.target.value)}
+                  className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm font-mono"
+                />
+              </div>
+              <p className="mt-1 text-xs text-[var(--text-faint)]">
+                Ersetzt die Button- und Akzentfarbe überall in der App für eure Mitarbeiter und
+                Kunden.
+              </p>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+                Bild für die Startseite (optional)
+              </label>
+              {organisation?.hero_bild_url && (
+                <img
+                  src={organisation.hero_bild_url}
+                  alt=""
+                  className="mb-2 h-24 w-full rounded object-cover"
+                />
+              )}
+              <label className="block cursor-pointer rounded border border-dashed border-[var(--border-input)] px-3 py-2 text-center text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
+                {organisation?.hero_bild_url ? "Bild ändern" : "+ Bild hochladen"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && heroBildHochladen(e.target.files[0])}
+                />
+              </label>
+            </div>
+          </div>
+
           <button
             onClick={organisationSpeichern}
             disabled={laedt}
@@ -491,7 +593,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
               <button
                 onClick={mitarbeiterAnlegen}
                 disabled={laedt}
-                className="w-full rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                className="w-full rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
                 {laedt
                   ? "Wird angelegt…"
@@ -656,7 +758,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
               <button
                 onClick={kundeAnlegen}
                 disabled={laedt}
-                className="w-full rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                className="w-full rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
                 {laedt
                   ? "Wird angelegt…"

@@ -78,7 +78,7 @@ function FilterChip({
       onClick={onClick}
       className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
         aktiv
-          ? "bg-amber-500 text-white"
+          ? "bg-akzent text-white"
           : "bg-[var(--bg-muted)] text-[var(--text-soft)] hover:bg-[var(--border)]"
       }`}
     >
@@ -91,12 +91,16 @@ interface TicketUebersichtProps {
   onAuswahl: (ticketId: string) => void;
   organisationId: string | null;
   technikerId: string;
+  motto?: string | null;
+  heroBildUrl?: string | null;
 }
 
 export default function TicketUebersicht({
   onAuswahl,
   organisationId,
   technikerId,
+  motto,
+  heroBildUrl,
 }: TicketUebersichtProps) {
   const [tickets, setTickets] = useState<TicketZeile[]>([]);
   const [kundenOptionen, setKundenOptionen] = useState<KundeOption[]>([]);
@@ -172,6 +176,19 @@ export default function TicketUebersicht({
 
   return (
     <div className="space-y-4">
+      {(heroBildUrl || motto) && (
+        <div className="overflow-hidden rounded-lg border border-[var(--border)]">
+          {heroBildUrl && (
+            <img src={heroBildUrl} alt="" className="h-32 w-full object-cover sm:h-40" />
+          )}
+          {motto && (
+            <p className="bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--text-soft)]">
+              {motto}
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="flex items-baseline justify-between">
         <h2
           className="text-lg font-semibold text-[var(--text-strong)]"
@@ -296,7 +313,7 @@ export default function TicketUebersicht({
               key={ticket.id}
               onClick={() => onAuswahl(ticket.id)}
               className={`flex w-full items-center gap-3 border-b border-[var(--border)] px-4 py-3 text-left last:border-b-0 hover:bg-[var(--bg-muted)] ${
-                ungelesen ? "bg-amber-50/60 dark:bg-amber-500/10" : "bg-[var(--bg-surface)]"
+                ungelesen ? "bg-amber-50/60 dark:bg-akzent/10" : "bg-[var(--bg-surface)]"
               }`}
             >
               <span
@@ -319,7 +336,7 @@ export default function TicketUebersicht({
                     #{ticket.ticket_nr}
                   </span>
                   {ungelesen && (
-                    <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-500 align-middle" />
+                    <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-akzent align-middle" />
                   )}
                   {ticket.titel}
                 </p>

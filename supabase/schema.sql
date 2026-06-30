@@ -761,3 +761,11 @@ alter table profiles
 alter table profiles
   add column land text default 'Deutschland',
   add column mwst_satz numeric(5,2) default 19.00;
+
+-- ============================================================
+-- 26. Branding pro Firma: Motto, Akzentfarbe, Hero-Bild
+-- ============================================================
+alter table organisationen
+  add column motto text,
+  add column akzentfarbe text default '#f59e0b',
+  add column hero_bild_url text;

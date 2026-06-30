@@ -20,6 +20,9 @@ import RechnungDetail from "./components/RechnungDetail";
 interface Organisation {
   name: string;
   logo_url: string | null;
+  motto: string | null;
+  akzentfarbe: string | null;
+  hero_bild_url: string | null;
 }
 
 // Erkennt, ob die aktuelle URL von einem Einladungs- oder Passwort-Link kommt
@@ -61,7 +64,7 @@ export default function App() {
     if (profil?.organisation_id) {
       supabase
         .from("organisationen")
-        .select("name, logo_url")
+        .select("name, logo_url, motto, akzentfarbe, hero_bild_url")
         .eq("id", profil.organisation_id)
         .single()
         .then(({ data }) => setOrganisation(data as Organisation));
@@ -140,7 +143,10 @@ export default function App() {
   const istAdmin = profil.rolle === "super_admin" || profil.rolle === "org_admin";
 
   return (
-    <div className="min-h-screen bg-[var(--bg-muted)]">
+    <div
+      className="min-h-screen bg-[var(--bg-muted)]"
+      style={{ "--akzent": organisation?.akzentfarbe || "#f59e0b" } as React.CSSProperties}
+    >
       <header className="border-b border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {organisation?.logo_url && (
@@ -328,6 +334,8 @@ export default function App() {
             onAuswahl={setAusgewaehltesTicket}
             organisationId={profil.organisation_id}
             technikerId={profil.id}
+            motto={organisation?.motto}
+            heroBildUrl={organisation?.hero_bild_url}
           />
           )
         ) : (
@@ -359,9 +367,25 @@ export default function App() {
             </>
           ) : (
             <>
+              {(organisation?.hero_bild_url || organisation?.motto) && (
+                <div className="overflow-hidden rounded-lg border border-[var(--border)]">
+                  {organisation?.hero_bild_url && (
+                    <img
+                      src={organisation.hero_bild_url}
+                      alt=""
+                      className="h-32 w-full object-cover sm:h-40"
+                    />
+                  )}
+                  {organisation?.motto && (
+                    <p className="bg-[var(--bg-surface)] px-4 py-2.5 text-sm text-[var(--text-soft)]">
+                      {organisation.motto}
+                    </p>
+                  )}
+                </div>
+              )}
               <button
                 onClick={() => setZeigeNeuesTicket(true)}
-                className="w-full rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white"
+                className="w-full rounded bg-akzent px-4 py-2 text-sm font-medium text-white"
               >
                 + Neue Anfrage
               </button>

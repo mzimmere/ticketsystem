@@ -147,7 +147,7 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
         <div className="flex items-center justify-between gap-2">
           <button
             onClick={antwortSenden}
-            className="rounded bg-amber-500 px-4 py-1.5 text-sm font-medium text-white"
+            className="rounded bg-akzent px-4 py-1.5 text-sm font-medium text-white"
           >
             Senden
           </button>

@@ -88,7 +88,7 @@ export default function SuperAdminUebersicht({ onFirmaOeffnen }: SuperAdminUeber
           <button
             onClick={neueOrganisationAnlegen}
             disabled={laedt}
-            className="rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
             Anlegen
           </button>

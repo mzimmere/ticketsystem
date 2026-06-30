@@ -185,7 +185,7 @@ export default function NeuesTicketIntern({
         <button
           onClick={absenden}
           disabled={laedt}
-          className="flex-1 rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          className="flex-1 rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           {laedt ? "Wird angelegt…" : "Ticket anlegen"}
         </button>

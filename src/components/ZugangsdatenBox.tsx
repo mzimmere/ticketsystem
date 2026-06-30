@@ -82,7 +82,7 @@ export default function ZugangsdatenBox({
   }
 
   return (
-    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-900/50 dark:bg-amber-500/10">
+    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-900/50 dark:bg-akzent/10">
       <div className="mb-2 flex items-center gap-2">
         {logoUrl && <img src={logoUrl} alt={firmenName ?? ""} className="h-6 w-6 rounded" />}
         <p className="font-medium text-[var(--text-strong)]">

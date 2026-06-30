@@ -147,7 +147,7 @@ export default function NeuesTicket({ onErstellt }: NeuesTicketProps) {
       <button
         onClick={absenden}
         disabled={laedt}
-        className="w-full rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+        className="w-full rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
         {laedt ? "Wird gesendet…" : "Anfrage absenden"}
       </button>

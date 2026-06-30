@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  --akzent: #f59e0b;
   color-scheme: light;
   --bg-surface: #ffffff;
   --bg-muted: #f1f5f9;
@@ -53,6 +54,19 @@ body {
 
 .font-mono {
   font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.bg-akzent {
+  background-color: var(--akzent);
+}
+.text-akzent {
+  color: var(--akzent);
+}
+.border-akzent {
+  border-color: var(--akzent);
+}
+.bg-akzent:hover {
+  filter: brightness(0.92);
 }
 
 @media print {

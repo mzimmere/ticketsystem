@@ -126,7 +126,7 @@ export default function Zeiterfassung({
         </span>
         {aktiverTimer && (
           <span className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+            <span className="h-1.5 w-1.5 rounded-full bg-akzent animate-pulse" />
             läuft
           </span>
         )}
@@ -157,7 +157,7 @@ export default function Zeiterfassung({
           <button
             onClick={timerStarten}
             disabled={laedt}
-            className="w-full rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="w-full rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
             Timer starten
           </button>
