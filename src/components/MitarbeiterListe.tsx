@@ -65,13 +65,17 @@ export default function MitarbeiterListe({
   }, [organisationId, refreshKey, zeigeArchivierte]);
 
   async function ladeMitglieder() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("id, name, vorname, nachname, avatar_url, telefonnummer, rolle, verfuegbarkeit, deaktiviert")
       .eq("organisation_id", organisationId)
       .in("rolle", ["techniker", "org_admin", "super_admin"])
       .eq("deaktiviert", zeigeArchivierte)
       .order("rolle");
+    if (error) {
+      console.error("[MitarbeiterListe] Laden fehlgeschlagen:", error);
+      setHinweis("Team konnte nicht geladen werden (Details in der Browser-Konsole).");
+    }
     setMitglieder((data as Mitglied[]) ?? []);
   }
 

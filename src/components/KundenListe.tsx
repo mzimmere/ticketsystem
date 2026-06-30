@@ -76,7 +76,7 @@ export default function KundenListe({
   }, [organisationId, refreshKey, zeigeArchivierte]);
 
   async function ladeKunden() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select(
         "id, name, vorname, nachname, avatar_url, telefonnummer, strasse, hausnummer, plz, ort, land, mwst_satz, ust_id, notizen, deaktiviert",
@@ -85,6 +85,10 @@ export default function KundenListe({
       .eq("rolle", "kunde")
       .eq("deaktiviert", zeigeArchivierte)
       .order("name");
+    if (error) {
+      console.error("[KundenListe] Laden fehlgeschlagen:", error);
+      setHinweis("Kunden konnten nicht geladen werden (Details in der Browser-Konsole).");
+    }
     setKunden((data as Kunde[]) ?? []);
   }
 
