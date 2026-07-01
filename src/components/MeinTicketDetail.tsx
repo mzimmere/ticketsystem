@@ -4,6 +4,7 @@ import { sichererDateiname } from "../lib/dateiname";
 import Avatar from "./Avatar";
 import DateiAuswahl from "./DateiAuswahl";
 import StatusBadge from "./StatusBadge";
+import CsatBewertung from "./CsatBewertung";
 
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 
@@ -37,6 +38,7 @@ function formatDatum(iso: string): string {
 export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
   const [titel, setTitel] = useState("");
   const [status, setStatus] = useState<Status | null>(null);
+  const [csatBewertung, setCsatBewertung] = useState<number | null>(null);
   const [bearbeiter, setBearbeiter] = useState<{ name: string | null; avatar_url: string | null } | null>(
     null,
   );
@@ -83,12 +85,13 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
   async function ladeTicket() {
     const { data } = await supabase
       .from("tickets")
-      .select("titel, status, zugewiesen:zugewiesen_an(name, avatar_url)")
+      .select("titel, status, csat_bewertung, zugewiesen:zugewiesen_an(name, avatar_url)")
       .eq("id", ticketId)
       .single();
     if (data) {
       setTitel(data.titel);
       setStatus(data.status as Status);
+      setCsatBewertung(data.csat_bewertung ?? null);
       setBearbeiter(
         data.zugewiesen as unknown as { name: string | null; avatar_url: string | null } | null,
       );
@@ -244,6 +247,10 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
           )}
         </div>
       </div>
+
+      {status === "geschlossen" && (
+        <CsatBewertung ticketId={ticketId} bewertung={csatBewertung} />
+      )}
     </div>
   );
 }

@@ -663,9 +663,8 @@ create trigger trg_set_kunden_nachricht_zeit
 -- ============================================================
 -- 19. Kunde darf sein eigenes Ticket schließen
 -- ============================================================
-create policy tickets_update_kunde on tickets for update
-  using (kunde_id = auth.uid())
-  with check (kunde_id = auth.uid() and status = 'geschlossen');
+-- (Policy "tickets_update_kunde" wird später in Abschnitt 36 erweitert
+-- und dort final definiert.)
 
 -- ============================================================
 -- 20. Deaktivieren statt Löschen (Kunden + Mitarbeiter)
@@ -909,3 +908,62 @@ alter publication supabase_realtime add table public.anhaenge;
 -- ============================================================
 alter table organisationen
   add column rechnungslogo_breite integer default 80;
+
+-- ============================================================
+-- 36. Zendesk-artige Features: Vorlagen/Makros, Tags,
+-- Volltextsuche, SLA-Frist, CSAT-Bewertung
+-- ============================================================
+create table vorlagen (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  titel text not null,
+  inhalt text not null,
+  typ text not null default 'antwort',
+  erstellt_am timestamptz default now()
+);
+
+create index idx_vorlagen_org on vorlagen(organisation_id, typ);
+
+alter table vorlagen enable row level security;
+
+create policy vorlagen_select on vorlagen for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+  );
+
+create policy vorlagen_insert on vorlagen for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+  );
+
+create policy vorlagen_delete on vorlagen for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+  );
+
+alter table tickets add column tags text[] not null default '{}';
+alter table organisationen add column sla_stunden integer;
+alter table tickets add column csat_bewertung smallint;
+alter table tickets add column csat_kommentar text;
+
+create policy tickets_update_kunde on tickets for update
+  using (kunde_id = auth.uid())
+  with check (kunde_id = auth.uid());
+
+create or replace function ticket_ids_mit_nachricht(p_organisation_id uuid, p_begriff text)
+returns setof uuid as $$
+  select distinct t.id
+  from tickets t
+  join ticket_nachrichten n on n.ticket_id = t.id
+  where t.organisation_id = p_organisation_id
+    and n.inhalt ilike '%' || p_begriff || '%'
+    and (
+      current_user_rolle() = 'super_admin'
+      or (t.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    );
+$$ language sql stable security definer set search_path = public;
+
+grant execute on function ticket_ids_mit_nachricht(uuid, text) to authenticated;

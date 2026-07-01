@@ -7,6 +7,10 @@ import { LAENDER_MWST, LAENDER_LISTE } from "../lib/laender";
 import KundenListe from "./KundenListe";
 import MitarbeiterListe from "./MitarbeiterListe";
 import ZugangsdatenBox from "./ZugangsdatenBox";
+import VorlagenVerwaltung from "./VorlagenVerwaltung";
+import MakroVerwaltung from "./MakroVerwaltung";
+import TagVerwaltung from "./TagVerwaltung";
+import SlaVerwaltung from "./SlaVerwaltung";
 
 type Rolle = "super_admin" | "org_admin" | "techniker" | "kunde";
 
@@ -30,6 +34,7 @@ interface Organisation extends OrganisationKurz {
   datenschutz_url: string | null;
   datenschutz_text: string | null;
   rechnungslogo_breite: number | null;
+  sla_stunden: number | null;
 }
 
 interface VerwaltungProps {
@@ -54,6 +59,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
   const [orgDatenschutzUrl, setOrgDatenschutzUrl] = useState("");
   const [orgDatenschutzText, setOrgDatenschutzText] = useState("");
   const [orgRechnungslogoBreite, setOrgRechnungslogoBreite] = useState("80");
+  const [orgSlaStunden, setOrgSlaStunden] = useState("");
 
   const [neuerMitarbeiterEmail, setNeuerMitarbeiterEmail] = useState("");
   const [neuerMitarbeiterVorname, setNeuerMitarbeiterVorname] = useState("");
@@ -105,7 +111,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
     const { data } = await supabase
       .from("organisationen")
       .select(
-        "id, name, logo_url, adresse, telefon, email, website, oeffnungszeiten, standard_preis_pro_minute_cent, motto, akzentfarbe, hero_bild_url, slug, datenschutz_url, datenschutz_text, rechnungslogo_breite",
+        "id, name, logo_url, adresse, telefon, email, website, oeffnungszeiten, standard_preis_pro_minute_cent, motto, akzentfarbe, hero_bild_url, slug, datenschutz_url, datenschutz_text, rechnungslogo_breite, sla_stunden",
       )
       .eq("id", organisationId)
       .single();
@@ -128,6 +134,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
       setOrgDatenschutzUrl(data.datenschutz_url ?? "");
       setOrgDatenschutzText(data.datenschutz_text ?? "");
       setOrgRechnungslogoBreite(String(data.rechnungslogo_breite ?? 80));
+      setOrgSlaStunden(data.sla_stunden != null ? String(data.sla_stunden) : "");
     }
   }
 
@@ -176,6 +183,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
         rechnungslogo_breite: orgRechnungslogoBreite.trim()
           ? Math.max(20, Math.min(300, Number(orgRechnungslogoBreite)))
           : 80,
+        sla_stunden: orgSlaStunden.trim() ? Math.max(1, Number(orgSlaStunden)) : null,
       })
       .eq("id", organisation.id);
     setLaedt(false);
@@ -197,6 +205,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
       rechnungslogo_breite: orgRechnungslogoBreite.trim()
         ? Math.max(20, Math.min(300, Number(orgRechnungslogoBreite)))
         : 80,
+      sla_stunden: orgSlaStunden.trim() ? Math.max(1, Number(orgSlaStunden)) : null,
     });
     setHinweis(preisFehler ?? "Gespeichert.");
   }
@@ -495,6 +504,27 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
               />
               <span className="text-xs text-[var(--text-faint)]">px (20–300, Standard 80)</span>
             </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+              SLA-Reaktionszeit (optional)
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                value={orgSlaStunden}
+                onChange={(e) => setOrgSlaStunden(e.target.value)}
+                placeholder="leer = kein SLA"
+                className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+              />
+              <span className="text-xs text-[var(--text-faint)]">Stunden</span>
+            </div>
+            <p className="mt-1 text-xs text-[var(--text-faint)]">
+              Tickets ohne Antwort innerhalb dieser Frist werden in der Übersicht als überfällig
+              markiert.
+            </p>
           </div>
 
           <div className="flex gap-2">
@@ -1070,6 +1100,30 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
             organisationLogoUrl={organisation?.logo_url}
             onlineIds={onlineIds}
           />
+        </div>
+      )}
+
+      {organisationId && (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
+          <VorlagenVerwaltung organisationId={organisationId} />
+        </div>
+      )}
+
+      {organisationId && (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
+          <MakroVerwaltung organisationId={organisationId} />
+        </div>
+      )}
+
+      {organisationId && (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
+          <TagVerwaltung organisationId={organisationId} />
+        </div>
+      )}
+
+      {organisationId && (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
+          <SlaVerwaltung organisationId={organisationId} />
         </div>
       )}
 

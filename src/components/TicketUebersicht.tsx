@@ -16,6 +16,7 @@ interface TicketZeile {
   erstellt_am: string;
   zuletzt_kunden_nachricht_am: string | null;
   zuletzt_gelesen_am: string | null;
+  tags: string[];
   kunde: { id: string; name: string | null } | null;
   zugewiesen: { name: string | null; avatar_url: string | null } | null;
 }
@@ -65,6 +66,12 @@ function istUngelesen(t: TicketZeile): boolean {
   return new Date(t.zuletzt_kunden_nachricht_am) > new Date(t.zuletzt_gelesen_am);
 }
 
+function istUeberfaellig(t: TicketZeile, slaStunden: number | null): boolean {
+  if (!slaStunden || t.status !== "offen") return false;
+  const stundenAlt = (Date.now() - new Date(t.erstellt_am).getTime()) / 3600000;
+  return stundenAlt > slaStunden;
+}
+
 function FilterChip({
   aktiv,
   onClick,
@@ -94,6 +101,7 @@ interface TicketUebersichtProps {
   technikerId: string;
   motto?: string | null;
   heroBildUrl?: string | null;
+  slaStunden?: number | null;
 }
 
 export default function TicketUebersicht({
@@ -102,13 +110,16 @@ export default function TicketUebersicht({
   technikerId,
   motto,
   heroBildUrl,
+  slaStunden,
 }: TicketUebersichtProps) {
   const [tickets, setTickets] = useState<TicketZeile[]>([]);
   const [kundenOptionen, setKundenOptionen] = useState<KundeOption[]>([]);
   const [statusFilter, setStatusFilter] = useState<Status | "alle" | "offene">("offene");
   const [prioritaetFilter, setPrioritaetFilter] = useState<Prioritaet | "alle">("alle");
   const [kundeFilter, setKundeFilter] = useState<string>("alle");
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [suchbegriff, setSuchbegriff] = useState("");
+  const [nachrichtTrefferIds, setNachrichtTrefferIds] = useState<Set<string>>(new Set());
   const [laedt, setLaedt] = useState(true);
   const [zeigeNeuesTicket, setZeigeNeuesTicket] = useState(false);
 
@@ -139,6 +150,25 @@ export default function TicketUebersicht({
       .then(({ data }) => setKundenOptionen((data as KundeOption[]) ?? []));
   }, [organisationId]);
 
+  // Volltextsuche über Nachrichteninhalte - debounced, ergänzt die
+  // client-seitige Suche (Titel/Kunde/Bearbeiter/Nr.) um Treffer im
+  // eigentlichen Gesprächsverlauf.
+  useEffect(() => {
+    const begriff = suchbegriff.trim();
+    if (!begriff || !organisationId) {
+      setNachrichtTrefferIds(new Set());
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      const { data } = await supabase.rpc("ticket_ids_mit_nachricht", {
+        p_organisation_id: organisationId,
+        p_begriff: begriff,
+      });
+      setNachrichtTrefferIds(new Set((data as string[]) ?? []));
+    }, 350);
+    return () => clearTimeout(timeout);
+  }, [suchbegriff, organisationId]);
+
   async function ladeTickets() {
     if (!organisationId) {
       setTickets([]);
@@ -149,7 +179,7 @@ export default function TicketUebersicht({
     let query = supabase
       .from("tickets")
       .select(
-        "id, ticket_nr, titel, status, prioritaet, erstellt_am, zuletzt_kunden_nachricht_am, zuletzt_gelesen_am, kunde:kunde_id(id, name), zugewiesen:zugewiesen_an(name, avatar_url)",
+        "id, ticket_nr, titel, status, prioritaet, erstellt_am, zuletzt_kunden_nachricht_am, zuletzt_gelesen_am, tags, kunde:kunde_id(id, name), zugewiesen:zugewiesen_an(name, avatar_url)",
       )
       .eq("organisation_id", organisationId)
       .order("erstellt_am", { ascending: false });
@@ -167,19 +197,27 @@ export default function TicketUebersicht({
     setLaedt(false);
   }
 
+  const alleTags = useMemo(() => {
+    const set = new Set<string>();
+    tickets.forEach((t) => t.tags?.forEach((tag) => set.add(tag)));
+    return Array.from(set).sort();
+  }, [tickets]);
+
   const gefilterteTickets = useMemo(() => {
     const begriff = suchbegriff.trim().toLowerCase();
-    if (!begriff) return tickets;
     return tickets.filter((t) => {
+      if (tagFilter && !t.tags?.includes(tagFilter)) return false;
+      if (!begriff) return true;
       const ticketNrText = `#${t.ticket_nr}`;
       return (
         t.titel.toLowerCase().includes(begriff) ||
         t.kunde?.name?.toLowerCase().includes(begriff) ||
         t.zugewiesen?.name?.toLowerCase().includes(begriff) ||
-        ticketNrText.includes(begriff)
+        ticketNrText.includes(begriff) ||
+        nachrichtTrefferIds.has(t.id)
       );
     });
-  }, [tickets, suchbegriff]);
+  }, [tickets, suchbegriff, tagFilter, nachrichtTrefferIds]);
 
   return (
     <div className="space-y-4">
@@ -249,7 +287,7 @@ export default function TicketUebersicht({
           type="text"
           value={suchbegriff}
           onChange={(e) => setSuchbegriff(e.target.value)}
-          placeholder="Suche nach Titel, Kunde, Ticket-Nr. (#12) oder Bearbeiter…"
+          placeholder="Suche nach Titel, Kunde, Nr., Bearbeiter oder Verlauf…"
           className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-surface)] py-2 pl-9 pr-3 text-sm text-[var(--text-strong)]"
         />
       </div>
@@ -296,6 +334,21 @@ export default function TicketUebersicht({
             {PRIORITAET_LABEL[p]}
           </FilterChip>
         ))}
+
+        {alleTags.length > 0 && (
+          <>
+            <span className="h-4 w-px bg-[var(--border)]" />
+            {alleTags.map((tag) => (
+              <FilterChip
+                key={tag}
+                aktiv={tagFilter === tag}
+                onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
+              >
+                #{tag}
+              </FilterChip>
+            ))}
+          </>
+        )}
       </div>
 
       {/* Tabelle */}
@@ -320,6 +373,7 @@ export default function TicketUebersicht({
 
           {gefilterteTickets.map((ticket) => {
             const ungelesen = istUngelesen(ticket);
+            const ueberfaellig = istUeberfaellig(ticket, slaStunden ?? null);
             return (
             <button
               key={ticket.id}
@@ -352,7 +406,7 @@ export default function TicketUebersicht({
                   )}
                   {ticket.titel}
                 </p>
-                <div className="mt-0.5 flex items-center gap-1.5">
+                <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
                   <p
                     className={`truncate text-xs ${
                       ungelesen ? "text-amber-700 dark:text-amber-400" : "text-[var(--text-soft)]"
@@ -372,6 +426,19 @@ export default function TicketUebersicht({
                       />
                     </>
                   )}
+                  {ueberfaellig && (
+                    <span className="rounded-full bg-[var(--status-offen-bg)] px-1.5 py-0.5 text-[0.6rem] font-medium text-[var(--status-offen-text)]">
+                      Überfällig
+                    </span>
+                  )}
+                  {ticket.tags?.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full bg-[var(--bg-muted)] px-1.5 py-0.5 text-[0.6rem] text-[var(--text-soft)]"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
                 </div>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1">

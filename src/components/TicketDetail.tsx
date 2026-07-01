@@ -10,6 +10,18 @@ import StatusBadge from "./StatusBadge";
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
 
+interface Tag {
+  id: string;
+  name: string;
+  farbe: string;
+}
+
+interface Makro {
+  id: string;
+  titel: string;
+  inhalt: string;
+}
+
 interface Ticket {
   id: string;
   ticket_nr: number;
@@ -19,6 +31,9 @@ interface Ticket {
   organisation_id: string;
   kunde_id: string;
   zugewiesen_an: string | null;
+  reaktion_faellig_am: string | null;
+  loesung_faellig_am: string | null;
+  erste_antwort_am: string | null;
   kunde: { name: string | null; telefonnummer: string | null } | null;
 }
 
@@ -79,10 +94,15 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [nachrichten, setNachrichten] = useState<Nachricht[]>([]);
   const [techniker, setTechniker] = useState<Techniker[]>([]);
+  const [ticketTags, setTicketTags] = useState<Tag[]>([]);
+  const [alleTags, setAlleTags] = useState<Tag[]>([]);
+  const [makros, setMakros] = useState<Makro[]>([]);
   const [neueNotiz, setNeueNotiz] = useState("");
   const [neueDateien, setNeueDateien] = useState<File[]>([]);
   const [sendeLaedt, setSendeLaedt] = useState(false);
   const [fuerKundeSichtbar, setFuerKundeSichtbar] = useState(false);
+  const [zeigeTagMenu, setZeigeTagMenu] = useState(false);
+  const [andereBetrachter, setAndereBetrachter] = useState<string[]>([]);
 
   useEffect(() => {
     ladeAlles();
@@ -114,8 +134,34 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
       )
       .subscribe();
 
+    // Kollisionswarnung: zeigt an, wenn ein Kollege sich dieses Ticket
+    // gerade auch anschaut - verhindert doppelte Arbeit ohne es zu merken.
+    const praesenzChannel = supabase.channel(`ticket-praesenz-${ticketId}`, {
+      config: { presence: { key: technikerId } },
+    });
+    praesenzChannel
+      .on("presence", { event: "sync" }, () => {
+        const state = praesenzChannel.presenceState();
+        setAndereBetrachter(
+          Object.keys(state)
+            .filter((id) => id !== technikerId)
+            .map((id) => (state[id][0] as { name?: string })?.name ?? "Jemand"),
+        );
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          const { data: eigenesProfil } = await supabase
+            .from("profiles")
+            .select("name")
+            .eq("id", technikerId)
+            .single();
+          await praesenzChannel.track({ name: eigenesProfil?.name ?? "Jemand" });
+        }
+      });
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(praesenzChannel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketId]);
@@ -123,8 +169,40 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
   async function ladeAlles() {
     const ticketDaten = await ladeTicket();
     await ladeNachrichten();
-    if (ticketDaten) await ladeTechniker(ticketDaten.organisation_id);
+    if (ticketDaten) {
+      await ladeTechniker(ticketDaten.organisation_id);
+      await ladeTagsUndMakros(ticketDaten.organisation_id);
+      await ladeTicketTags();
+    }
     markiereGelesen();
+  }
+
+  async function ladeTagsUndMakros(organisationId: string) {
+    const [{ data: tagDaten }, { data: makroDaten }] = await Promise.all([
+      supabase.from("tags").select("id, name, farbe").eq("organisation_id", organisationId).order("name"),
+      supabase.from("makros").select("id, titel, inhalt").eq("organisation_id", organisationId).order("titel"),
+    ]);
+    setAlleTags((tagDaten as Tag[]) ?? []);
+    setMakros((makroDaten as Makro[]) ?? []);
+  }
+
+  async function ladeTicketTags() {
+    const { data } = await supabase
+      .from("ticket_tags")
+      .select("tag:tag_id(id, name, farbe)")
+      .eq("ticket_id", ticketId);
+    setTicketTags(((data ?? []).map((d: unknown) => (d as { tag: Tag }).tag)) as Tag[]);
+  }
+
+  async function tagHinzufuegen(tag: Tag) {
+    await supabase.from("ticket_tags").upsert({ ticket_id: ticketId, tag_id: tag.id });
+    setTicketTags((v) => (v.find((t) => t.id === tag.id) ? v : [...v, tag]));
+    setZeigeTagMenu(false);
+  }
+
+  async function tagEntfernen(tagId: string) {
+    await supabase.from("ticket_tags").delete().eq("ticket_id", ticketId).eq("tag_id", tagId);
+    setTicketTags((v) => v.filter((t) => t.id !== tagId));
   }
 
   async function markiereGelesen() {
@@ -241,6 +319,12 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
 
   return (
     <div className="space-y-5">
+      {andereBetrachter.length > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-500/10 dark:text-amber-300">
+          👀 {andereBetrachter.join(", ")} schaut sich dieses Ticket gerade auch an.
+        </div>
+      )}
+
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-3">
         <div>
           <h2 className="text-base font-semibold text-[var(--text-strong)]">
@@ -291,6 +375,69 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
             ))}
           </select>
         </div>
+
+        {/* SLA-Fälligkeiten */}
+        {(ticket.reaktion_faellig_am || ticket.loesung_faellig_am) && (
+          <div className="flex flex-wrap gap-2">
+            {ticket.reaktion_faellig_am && (
+              <span className={`rounded px-2 py-0.5 text-xs font-medium ${new Date(ticket.reaktion_faellig_am) < new Date() ? "bg-red-100 text-red-700" : "bg-blue-50 text-blue-700"}`}>
+                ⏱ Reaktion: {formatDatum(ticket.reaktion_faellig_am)}
+                {new Date(ticket.reaktion_faellig_am) < new Date() && " – ÜBERFÄLLIG"}
+              </span>
+            )}
+            {ticket.loesung_faellig_am && (
+              <span className={`rounded px-2 py-0.5 text-xs font-medium ${new Date(ticket.loesung_faellig_am) < new Date() ? "bg-red-100 text-red-700" : "bg-orange-50 text-orange-700"}`}>
+                🎯 Lösung: {formatDatum(ticket.loesung_faellig_am)}
+                {new Date(ticket.loesung_faellig_am) < new Date() && " – ÜBERFÄLLIG"}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Tags */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {ticketTags.map((t) => (
+            <span
+              key={t.id}
+              className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium text-white"
+              style={{ background: t.farbe }}
+            >
+              {t.name}
+              <button onClick={() => tagEntfernen(t.id)} className="hover:opacity-75">×</button>
+            </span>
+          ))}
+          {alleTags.filter((t) => !ticketTags.find((tt) => tt.id === t.id)).length > 0 && (
+            <div className="relative">
+              <button
+                onClick={() => setZeigeTagMenu(!zeigeTagMenu)}
+                className="rounded border border-dashed border-[var(--border-input)] px-2 py-0.5 text-xs text-[var(--text-faint)] hover:bg-[var(--bg-muted)]"
+              >
+                + Tag
+              </button>
+              {zeigeTagMenu && (
+                <div className="absolute left-0 top-6 z-10 min-w-[140px] rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-1 shadow-lg">
+                  {alleTags.filter((t) => !ticketTags.find((tt) => tt.id === t.id)).map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => { tagHinzufuegen(t); setZeigeTagMenu(false); }}
+                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-[var(--bg-muted)]"
+                    >
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: t.farbe }} />
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Kollisionswarnung */}
+        {andereBetrachter.length > 0 && (
+          <p className="rounded bg-yellow-50 px-3 py-1.5 text-xs text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200">
+            ⚠️ {andereBetrachter.join(", ")} {andereBetrachter.length === 1 ? "schaut" : "schauen"} gerade auch auf dieses Ticket.
+          </p>
+        )}
       </div>
 
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
@@ -337,6 +484,17 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
         </div>
 
         <div className="mt-4 space-y-2">
+          {makros.length > 0 && (
+            <select
+              onChange={(e) => { if (e.target.value) { setNeueNotiz((prev) => prev ? prev + "\n\n" + e.target.value : e.target.value); e.target.value = ""; } }}
+              className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-soft)]"
+            >
+              <option value="">📋 Makro einfügen…</option>
+              {makros.map((m) => (
+                <option key={m.id} value={m.inhalt}>{m.titel}</option>
+              ))}
+            </select>
+          )}
           <textarea
             value={neueNotiz}
             onChange={(e) => setNeueNotiz(e.target.value)}

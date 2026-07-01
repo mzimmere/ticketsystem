@@ -34,6 +34,7 @@ interface Organisation {
   motto: string | null;
   akzentfarbe: string | null;
   hero_bild_url: string | null;
+  sla_stunden: number | null;
 }
 
 // Erkennt, ob die aktuelle URL von einem Einladungs- oder Passwort-Link kommt
@@ -106,7 +107,7 @@ export default function App() {
     if (aktiveOrgId) {
       supabase
         .from("organisationen")
-        .select("name, logo_url, motto, akzentfarbe, hero_bild_url")
+        .select("name, logo_url, motto, akzentfarbe, hero_bild_url, sla_stunden")
         .eq("id", aktiveOrgId)
         .single()
         .then(({ data }) => setOrganisation(data as Organisation));
@@ -453,6 +454,7 @@ export default function App() {
             technikerId={profil.id}
             motto={organisation?.motto}
             heroBildUrl={organisation?.hero_bild_url}
+            slaStunden={organisation?.sla_stunden}
           />
           )
         ) : (
