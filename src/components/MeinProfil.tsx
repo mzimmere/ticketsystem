@@ -42,6 +42,13 @@ interface MeinProfilProps {
 
 export default function MeinProfil({ profilId, organisationId, istIntern }: MeinProfilProps) {
   const [name, setName] = useState<string | null>(null);
+  const [vorname, setVorname] = useState("");
+  const [nachname, setNachname] = useState("");
+  const [telefon, setTelefon] = useState("");
+  const [strasse, setStrasse] = useState("");
+  const [hausnummer, setHausnummer] = useState("");
+  const [plz, setPlz] = useState("");
+  const [ort, setOrt] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [verfuegbarkeit, setVerfuegbarkeit] = useState<Verfuegbarkeit>("verfuegbar");
   const [kollegen, setKollegen] = useState<Kollege[]>([]);
@@ -70,14 +77,38 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
   async function ladeProfil() {
     const { data } = await supabase
       .from("profiles")
-      .select("name, avatar_url, verfuegbarkeit")
+      .select("name, vorname, nachname, avatar_url, verfuegbarkeit, telefonnummer, strasse, hausnummer, plz, ort")
       .eq("id", profilId)
       .single();
     if (data) {
       setName(data.name);
+      setVorname(data.vorname ?? "");
+      setNachname(data.nachname ?? "");
       setAvatarUrl(data.avatar_url);
       setVerfuegbarkeit((data.verfuegbarkeit as Verfuegbarkeit) ?? "verfuegbar");
+      setTelefon(data.telefonnummer ?? "");
+      setStrasse(data.strasse ?? "");
+      setHausnummer(data.hausnummer ?? "");
+      setPlz(data.plz ?? "");
+      setOrt(data.ort ?? "");
     }
+  }
+
+  async function kundenProfilSpeichern() {
+    if (!vorname.trim()) { setHinweis("Vorname ist erforderlich."); return; }
+    setLaedt(true);
+    const { error } = await supabase.from("profiles").update({
+      vorname: vorname.trim(),
+      nachname: nachname.trim() || null,
+      telefonnummer: telefon.trim() || null,
+      strasse: strasse.trim() || null,
+      hausnummer: hausnummer.trim() || null,
+      plz: plz.trim() || null,
+      ort: ort.trim() || null,
+    }).eq("id", profilId);
+    setLaedt(false);
+    setHinweis(error ? "Fehler beim Speichern." : "Profil gespeichert.");
+    if (!error) ladeProfil();
   }
 
   async function ladeKollegen() {
@@ -220,6 +251,46 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
           </div>
         </div>
       )}
+      {!istIntern && (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
+          <h3 className="text-sm font-medium text-[var(--text-strong)]">Meine Kontaktdaten</h3>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Vorname *</label>
+              <input type="text" value={vorname} onChange={(e) => setVorname(e.target.value)}
+                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Nachname</label>
+              <input type="text" value={nachname} onChange={(e) => setNachname(e.target.value)}
+                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Telefon / WhatsApp</label>
+            <input type="text" value={telefon} onChange={(e) => setTelefon(e.target.value)}
+              className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
+          </div>
+          <div className="flex gap-2">
+            <input type="text" value={strasse} onChange={(e) => setStrasse(e.target.value)}
+              placeholder="Straße" className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
+            <input type="text" value={hausnummer} onChange={(e) => setHausnummer(e.target.value)}
+              placeholder="Nr." className="w-16 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
+          </div>
+          <div className="flex gap-2">
+            <input type="text" value={plz} onChange={(e) => setPlz(e.target.value)}
+              placeholder="PLZ" className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
+            <input type="text" value={ort} onChange={(e) => setOrt(e.target.value)}
+              placeholder="Ort" className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
+          </div>
+          {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}
+          <button onClick={kundenProfilSpeichern} disabled={laedt}
+            className="w-full rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+            {laedt ? "Speichert…" : "Speichern"}
+          </button>
+        </div>
+      )}
+
       {!istIntern && (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
           <h3 className="text-sm font-medium text-[var(--text-strong)]">Meine Nutzung</h3>

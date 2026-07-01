@@ -596,7 +596,7 @@ export default function App() {
               >
                 + Neue Anfrage
               </button>
-              <MeineTickets onAuswahl={setAusgewaehltesTicket} />
+              <MeineTickets onAuswahl={setAusgewaehltesTicket} organisationId={aktiveOrgId} />
             </>
           )
         )}

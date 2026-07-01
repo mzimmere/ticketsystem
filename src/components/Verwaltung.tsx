@@ -11,6 +11,8 @@ import VorlagenVerwaltung from "./VorlagenVerwaltung";
 import MakroVerwaltung from "./MakroVerwaltung";
 import TagVerwaltung from "./TagVerwaltung";
 import SlaVerwaltung from "./SlaVerwaltung";
+import FaqVerwaltung from "./FaqVerwaltung";
+import ReportingExport from "./ReportingExport";
 
 type Rolle = "super_admin" | "org_admin" | "techniker" | "kunde";
 
@@ -1157,6 +1159,18 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
       {aktiveTab === "werkzeuge" && organisationId && (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
           <SlaVerwaltung organisationId={organisationId} />
+        </div>
+      )}
+
+      {aktiveTab === "werkzeuge" && organisationId && (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
+          <FaqVerwaltung organisationId={organisationId} />
+        </div>
+      )}
+
+      {aktiveTab === "werkzeuge" && organisationId && (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
+          <ReportingExport organisationId={organisationId} />
         </div>
       )}
 

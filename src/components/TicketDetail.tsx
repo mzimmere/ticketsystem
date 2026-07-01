@@ -6,6 +6,7 @@ import DateiAuswahl from "./DateiAuswahl";
 import Zeiterfassung from "./Zeiterfassung";
 import Avatar from "./Avatar";
 import StatusBadge from "./StatusBadge";
+import TicketMerge from "./TicketMerge";
 
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
@@ -375,6 +376,16 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
             ))}
           </select>
         </div>
+
+        {/* Zusammenführen */}
+        {ticket.status !== "geschlossen" && (
+          <TicketMerge
+            ticketId={ticketId}
+            ticketNr={ticket.ticket_nr}
+            organisationId={ticket.organisation_id}
+            onMerged={() => window.location.reload()}
+          />
+        )}
 
         {/* SLA-Fälligkeiten */}
         {(ticket.reaktion_faellig_am || ticket.loesung_faellig_am) && (

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import StatusBadge from "./StatusBadge";
+import FaqSeite from "./FaqSeite";
 
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 
@@ -13,9 +14,10 @@ interface TicketZeile {
 
 interface MeineTicketsProps {
   onAuswahl: (ticketId: string) => void;
+  organisationId?: string | null;
 }
 
-export default function MeineTickets({ onAuswahl }: MeineTicketsProps) {
+export default function MeineTickets({ onAuswahl, organisationId }: MeineTicketsProps) {
   const [tickets, setTickets] = useState<TicketZeile[]>([]);
   const [laedt, setLaedt] = useState(true);
 
@@ -41,20 +43,23 @@ export default function MeineTickets({ onAuswahl }: MeineTicketsProps) {
   }
 
   return (
-    <div className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)] bg-[var(--bg-surface)]">
-      {tickets.map((ticket) => (
-        <button
-          key={ticket.id}
-          onClick={() => onAuswahl(ticket.id)}
-          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[var(--bg-muted)]"
-        >
-          <p className="truncate text-sm font-medium text-[var(--text-strong)]">{ticket.titel}</p>
-          <StatusBadge
-            status={ticket.status}
-            labelOverride={ticket.status === "wartet_auf_kunde" ? "Wartet auf dich" : undefined}
-          />
-        </button>
-      ))}
-    </div>
+    <>
+      <div className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)] bg-[var(--bg-surface)]">
+        {tickets.map((ticket) => (
+          <button
+            key={ticket.id}
+            onClick={() => onAuswahl(ticket.id)}
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[var(--bg-muted)]"
+          >
+            <p className="truncate text-sm font-medium text-[var(--text-strong)]">{ticket.titel}</p>
+            <StatusBadge
+              status={ticket.status}
+              labelOverride={ticket.status === "wartet_auf_kunde" ? "Wartet auf dich" : undefined}
+            />
+          </button>
+        ))}
+      </div>
+      {organisationId && <FaqSeite organisationId={organisationId} />}
+    </>
   );
 }
