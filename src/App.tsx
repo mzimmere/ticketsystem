@@ -419,11 +419,11 @@ export default function App() {
               ← Zurück
             </button>
             {profil.rolle === "super_admin" && !superAdminFirma ? (
-              <SuperAdminDashboard />
+              <SuperAdminDashboard onFirmaOeffnen={(id) => { setSuperAdminFirma(id); setZeigeDashboard(false); setZeigeStartseite(true); }} />
             ) : aktiveOrgId ? (
               <Dashboard organisationId={aktiveOrgId} />
             ) : (
-              <SuperAdminDashboard />
+              <SuperAdminDashboard onFirmaOeffnen={(id) => { setSuperAdminFirma(id); setZeigeDashboard(false); setZeigeStartseite(true); }} />
             )}
           </>
         ) : zeigePostfach ? (

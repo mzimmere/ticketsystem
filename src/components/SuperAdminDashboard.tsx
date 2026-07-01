@@ -22,7 +22,7 @@ function formatRelativ(iso: string | null): string {
   return `vor ${Math.floor(h / 24)} Tagen`;
 }
 
-export default function SuperAdminDashboard() {
+export default function SuperAdminDashboard({ onFirmaOeffnen }: { onFirmaOeffnen?: (id: string) => void }) {
   const [firmen, setFirmen] = useState<FirmenStat[]>([]);
   const [laedt, setLaedt] = useState(true);
   const [gesamt, setGesamt] = useState({ tickets: 0, nutzer: 0, firmen: 0 });
@@ -111,7 +111,11 @@ export default function SuperAdminDashboard() {
         ) : (
           <div className="divide-y divide-[var(--border)]">
             {firmen.map((f) => (
-              <div key={f.id} className="flex items-center gap-3 px-4 py-3">
+              <div
+                key={f.id}
+                onClick={() => onFirmaOeffnen?.(f.id)}
+                className={`flex items-center gap-3 px-4 py-3 ${onFirmaOeffnen ? "cursor-pointer hover:bg-[var(--bg-muted)] transition-colors" : ""}`}
+              >
                 {f.logo_url ? (
                   <img src={f.logo_url} alt={f.name}
                     className="h-8 w-8 shrink-0 rounded-lg bg-[var(--bg-muted)] object-contain p-0.5" />
@@ -152,6 +156,9 @@ export default function SuperAdminDashboard() {
                       {f.tickets_gesamt > 0 ? Math.round((f.tickets_offen / f.tickets_gesamt) * 100) : 0}% offen
                     </p>
                   </div>
+                  {onFirmaOeffnen && (
+                    <span className="ml-2 text-sm text-[var(--text-faint)]">›</span>
+                  )}
                 </div>
               </div>
             ))}
