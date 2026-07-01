@@ -18,6 +18,7 @@ import Abrechnung from "./components/Abrechnung";
 import RechnungDetail from "./components/RechnungDetail";
 import AdminPostfach from "./components/AdminPostfach";
 import Dashboard from "./components/Dashboard";
+import SuperAdminDashboard from "./components/SuperAdminDashboard";
 import Startseite from "./components/Startseite";
 import KundenRegistrierung from "./components/KundenRegistrierung";
 import DatenschutzSeite from "./components/DatenschutzSeite";
@@ -313,7 +314,7 @@ export default function App() {
               <Receipt size={16} />
             </button>
           )}
-          {istAdmin && aktiveOrgId && (
+          {(istAdmin || profil.rolle === "super_admin") && (aktiveOrgId || profil.rolle === "super_admin") && (
             <button
               onClick={() => {
                 setZeigeDashboard(true);
@@ -324,6 +325,7 @@ export default function App() {
                 setZeigeProfil(false);
                 setAusgewaehltesTicket(null);
                 setZeigeNeuesTicket(false);
+                setZeigeStartseite(false);
               }}
               className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
               title="Dashboard"
@@ -404,12 +406,21 @@ export default function App() {
             akzentfarbe={organisation?.akzentfarbe ?? null}
             onAktion={startseitenAktion}
           />
-        ) : zeigeDashboard && aktiveOrgId ? (
+        ) : zeigeDashboard ? (
           <>
-            <button onClick={() => setZeigeDashboard(false)} className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]">
+            <button
+              onClick={() => { setZeigeDashboard(false); setZeigeStartseite(true); }}
+              className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
+            >
               ← Zurück
             </button>
-            <Dashboard organisationId={aktiveOrgId} />
+            {profil.rolle === "super_admin" && !superAdminFirma ? (
+              <SuperAdminDashboard />
+            ) : aktiveOrgId ? (
+              <Dashboard organisationId={aktiveOrgId} />
+            ) : (
+              <SuperAdminDashboard />
+            )}
           </>
         ) : zeigePostfach ? (
           <>

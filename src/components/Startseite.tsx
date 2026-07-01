@@ -236,27 +236,33 @@ export default function Startseite({
             <AktionsButton
               icon="📊"
               label="Dashboard"
-              sub="Auswertungen & KPIs"
+              sub={rolle === "super_admin" && !organisationId ? "Alle Firmen im Überblick" : "Auswertungen & KPIs"}
               onClick={() => onAktion("dashboard")}
             />
-            <AktionsButton
-              icon="💶"
-              label="Abrechnung"
-              sub="Rechnungen & Zeiterfassung"
-              onClick={() => onAktion("abrechnung")}
-            />
-            <AktionsButton
-              icon="👥"
-              label="Kunden & Team"
-              sub="Verwaltung"
-              onClick={() => onAktion("verwaltung")}
-            />
-            <AktionsButton
-              icon="🏢"
-              label="Firmenprofil"
-              sub="Einstellungen"
-              onClick={() => onAktion("firmeninfo")}
-            />
+            {organisationId && (
+              <AktionsButton
+                icon="💶"
+                label="Abrechnung"
+                sub="Rechnungen & Zeiterfassung"
+                onClick={() => onAktion("abrechnung")}
+              />
+            )}
+            {organisationId && (
+              <AktionsButton
+                icon="👥"
+                label="Kunden & Team"
+                sub="Verwaltung"
+                onClick={() => onAktion("verwaltung")}
+              />
+            )}
+            {organisationId && (
+              <AktionsButton
+                icon="🏢"
+                label="Firmenprofil"
+                sub="Einstellungen"
+                onClick={() => onAktion("firmeninfo")}
+              />
+            )}
           </div>
         )}
 
