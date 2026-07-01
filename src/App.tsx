@@ -237,28 +237,7 @@ export default function App() {
       style={{ "--akzent": organisation?.akzentfarbe || "#f59e0b" } as React.CSSProperties}
     >
       <header className="border-b border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3 flex items-center justify-between">
-        <button
-          onClick={zurueckZuTickets}
-          className="flex items-center gap-2 rounded hover:opacity-75"
-          title="Zur Ticketübersicht"
-        >
-          {organisation?.logo_url && (
-            <img src={organisation.logo_url} alt={organisation.name} className="h-6 w-6 shrink-0 rounded object-contain" />
-          )}
-          <span className="text-sm font-semibold text-[var(--text-strong)]">
-            {organisation?.name ?? "IT-Ticketsystem"}
-          </span>
-        </button>
         <div className="flex items-center gap-2">
-          {istIntern && aktiveOrgId && (
-            <button
-              onClick={() => { alleZustandsResets(); }}
-              className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
-              title="Zur Ticketübersicht"
-            >
-              <TicketIcon size={16} />
-            </button>
-          )}
           {profil.rolle === "super_admin" && superAdminFirma && (
             <button
               onClick={() => {
@@ -268,11 +247,39 @@ export default function App() {
                 setZeigePostfach(false);
                 setZeigeFirmenInfo(false);
                 setAusgewaehltesTicket(null);
+                setZeigeStartseite(true);
+                setZeigeDashboard(false);
               }}
-              className="rounded-full bg-akzent px-2 py-0.5 text-[0.65rem] font-medium text-white"
-              title="Zurück zu allen Firmen"
+              title="Zurück zur Gesamt-Übersicht"
+              className="group relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-b from-blue-500 to-blue-700 text-base shadow-md shadow-blue-500/40 transition-all hover:scale-110 hover:shadow-blue-500/60 active:scale-95"
             >
-              als Super-Admin in dieser Firma · verlassen
+              {/* Cape-Wellen-Animation */}
+              <span className="absolute -right-0.5 -top-0.5 h-3 w-3 animate-ping rounded-full bg-yellow-400 opacity-75" />
+              <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full bg-yellow-400" />
+              🦸
+            </button>
+          )}
+          <button
+            onClick={zurueckZuTickets}
+            className="flex items-center gap-2 rounded hover:opacity-75"
+            title="Zur Startseite"
+          >
+            {organisation?.logo_url && (
+              <img src={organisation.logo_url} alt={organisation.name} className="h-6 w-6 shrink-0 rounded object-contain" />
+            )}
+            <span className="text-sm font-semibold text-[var(--text-strong)]">
+              {organisation?.name ?? "IT-Ticketsystem"}
+            </span>
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          {istIntern && aktiveOrgId && (
+            <button
+              onClick={() => { alleZustandsResets(); }}
+              className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+              title="Zur Ticketübersicht"
+            >
+              <TicketIcon size={16} />
             </button>
           )}
           <button
