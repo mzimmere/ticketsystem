@@ -60,6 +60,113 @@ function AktionsButton({ icon, label, sub, onClick, hervorgehoben }: AktionsButt
   );
 }
 
+function SchnellNutzerAnlegen() {
+  const [firmen, setFirmen] = useState<{ id: string; name: string }[]>([]);
+  const [firmaId, setFirmaId] = useState("");
+  const [vorname, setVorname] = useState("");
+  const [nachname, setNachname] = useState("");
+  const [email, setEmail] = useState("");
+  const [rolle, setRolleState] = useState<"kunde" | "techniker" | "org_admin">("kunde");
+  const [laedt, setLaedt] = useState(false);
+  const [hinweis, setHinweis] = useState<{ typ: "ok" | "fehler"; text: string } | null>(null);
+
+  useEffect(() => {
+    supabase.from("organisationen").select("id, name").order("name")
+      .then(({ data }) => {
+        setFirmen(data ?? []);
+        if (data?.length === 1) setFirmaId(data[0].id);
+      });
+  }, []);
+
+  async function anlegen() {
+    if (!firmaId || !email.trim() || !vorname.trim()) {
+      setHinweis({ typ: "fehler", text: "Firma, Vorname und E-Mail sind Pflichtfelder." });
+      return;
+    }
+    setLaedt(true);
+    setHinweis(null);
+    try {
+      const fn = rolle === "kunde" ? "invite-kunde" : "invite-mitarbeiter";
+      const { data: sessionData } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${(supabase as unknown as { supabaseUrl: string }).supabaseUrl}/functions/v1/${fn}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${sessionData.session?.access_token}`,
+          },
+          body: JSON.stringify({
+            email: email.trim(),
+            vorname: vorname.trim(),
+            nachname: nachname.trim() || undefined,
+            organisationId: firmaId,
+            rolle,
+          }),
+        }
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Unbekannter Fehler");
+      setHinweis({ typ: "ok", text: `${vorname} wurde als ${rolle === "kunde" ? "Kunde" : rolle === "techniker" ? "Techniker" : "Admin"} angelegt.` });
+      setVorname(""); setNachname(""); setEmail(""); setRolleState("kunde");
+    } catch (err) {
+      setHinweis({ typ: "fehler", text: String(err) });
+    }
+    setLaedt(false);
+  }
+
+  return (
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-3">
+      <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
+        Nutzer schnell anlegen
+      </p>
+
+      <select value={firmaId} onChange={(e) => setFirmaId(e.target.value)}
+        className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm text-[var(--text-strong)]">
+        <option value="">Firma wählen…</option>
+        {firmen.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+      </select>
+
+      <div className="grid grid-cols-2 gap-2">
+        <input type="text" value={vorname} onChange={(e) => setVorname(e.target.value)}
+          placeholder="Vorname *"
+          className="rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
+        <input type="text" value={nachname} onChange={(e) => setNachname(e.target.value)}
+          placeholder="Nachname"
+          className="rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
+      </div>
+
+      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+        placeholder="E-Mail *"
+        className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
+
+      <div className="flex gap-2">
+        {(["kunde", "techniker", "org_admin"] as const).map((r) => (
+          <button key={r} onClick={() => setRolleState(r)}
+            className={`flex-1 rounded-lg border py-1.5 text-xs font-medium transition-colors ${
+              rolle === r
+                ? "border-[var(--akzent)] bg-akzent/10 text-akzent"
+                : "border-[var(--border)] text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+            }`}>
+            {r === "kunde" ? "Kunde" : r === "techniker" ? "Techniker" : "Admin"}
+          </button>
+        ))}
+      </div>
+
+      {hinweis && (
+        <p className={`text-xs ${hinweis.typ === "ok" ? "text-green-600" : "text-red-600"}`}>
+          {hinweis.typ === "ok" ? "✓ " : "✗ "}{hinweis.text}
+        </p>
+      )}
+
+      <button onClick={anlegen} disabled={laedt}
+        className="w-full rounded-lg bg-akzent py-2 text-sm font-medium text-white disabled:opacity-50">
+        {laedt ? "Wird angelegt…" : "Nutzer anlegen"}
+      </button>
+    </div>
+  );
+}
+
 function tagesgruss(name: string | null): string {
   const stunde = new Date().getHours();
   const vorname = name?.split(" ")[0] ?? "";
@@ -160,7 +267,7 @@ export default function Startseite({
         </div>
 
         {/* Live-Zahlen */}
-        {organisationId && (
+        {organisationId && rolle !== "super_admin" && (
           <div className={`mt-5 grid border-t border-[var(--border)] pt-4 ${istIntern ? "grid-cols-3" : "grid-cols-2"} gap-4`}>
             {istIntern ? (
               <>
@@ -182,10 +289,7 @@ export default function Startseite({
               </>
             ) : (
               <>
-                <Schnellzahl
-                  wert={stats.meineTickets}
-                  label="Meine Anfragen"
-                />
+                <Schnellzahl wert={stats.meineTickets} label="Meine Anfragen" />
                 <Schnellzahl
                   wert={stats.wartenAufMich}
                   label="Warten auf mich"
@@ -203,7 +307,7 @@ export default function Startseite({
           Schnellzugriff
         </p>
 
-        {istIntern && (
+        {istIntern && rolle !== "super_admin" && (
           <AktionsButton
             icon="🎫"
             label="Alle Tickets"
@@ -277,7 +381,7 @@ export default function Startseite({
       </div>
 
       {/* Hinweis-Box wenn Tickets warten */}
-      {istIntern && (stats.wartenAufMich ?? 0) > 0 && (
+      {istIntern && (stats.wartenAufMich ?? 0) > 0 && rolle !== "super_admin" && (
         <button
           onClick={() => onAktion("tickets")}
           className="w-full rounded-xl border border-yellow-300 bg-yellow-50 p-4 text-left dark:border-yellow-700 dark:bg-yellow-900/20"
@@ -285,11 +389,11 @@ export default function Startseite({
           <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
             ⏳ {stats.wartenAufMich} {stats.wartenAufMich === 1 ? "Ticket wartet" : "Tickets warten"} auf eine Antwort vom Kunden
           </p>
-          <p className="mt-0.5 text-xs text-yellow-700 dark:text-yellow-300">
-            Zur Ticketübersicht →
-          </p>
+          <p className="mt-0.5 text-xs text-yellow-700 dark:text-yellow-300">Zur Ticketübersicht →</p>
         </button>
       )}
+
+      {rolle === "super_admin" && !organisationId && <SchnellNutzerAnlegen />}
     </div>
   );
 }
