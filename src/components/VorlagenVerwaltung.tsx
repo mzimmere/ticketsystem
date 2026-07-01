@@ -1,160 +1,155 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 
+type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
+
 interface Vorlage {
   id: string;
   titel: string;
-  inhalt: string;
-  typ: "antwort" | "ticket";
+  beschreibung: string;
+  prioritaet: Prioritaet;
 }
 
-interface VorlagenVerwaltungProps {
-  organisationId: string;
-}
+const PRIORITAET_LABEL: Record<Prioritaet, string> = {
+  niedrig: "Niedrig", mittel: "Mittel", hoch: "Hoch", kritisch: "Kritisch",
+};
+const PRIORITAET_FARBE: Record<Prioritaet, string> = {
+  niedrig: "text-slate-500", mittel: "text-yellow-600", hoch: "text-orange-600", kritisch: "text-red-600",
+};
 
-export default function VorlagenVerwaltung({ organisationId }: VorlagenVerwaltungProps) {
+export default function VorlagenVerwaltung({ organisationId }: { organisationId: string }) {
   const [vorlagen, setVorlagen] = useState<Vorlage[]>([]);
-  const [titel, setTitel] = useState("");
-  const [inhalt, setInhalt] = useState("");
-  const [typ, setTyp] = useState<"antwort" | "ticket">("antwort");
-  const [zeigeForm, setZeigeForm] = useState(false);
+  const [offen, setOffen] = useState<string | null>(null);
+  const [zeigeNeu, setZeigeNeu] = useState(false);
+  const [neuerTitel, setNeuerTitel] = useState("");
+  const [neueBeschreibung, setNeueBeschreibung] = useState("");
+  const [neuePrioritaet, setNeuePrioritaet] = useState<Prioritaet>("mittel");
   const [laedt, setLaedt] = useState(false);
+  const [hinweis, setHinweis] = useState<string | null>(null);
 
-  useEffect(() => {
-    laden();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organisationId]);
+  useEffect(() => { laden(); }, [organisationId]);
 
   async function laden() {
     const { data } = await supabase
-      .from("vorlagen")
-      .select("id, titel, inhalt, typ")
-      .eq("organisation_id", organisationId)
-      .order("titel");
+      .from("vorlagen").select("id, titel, beschreibung, prioritaet")
+      .eq("organisation_id", organisationId).order("titel");
     setVorlagen((data as Vorlage[]) ?? []);
   }
 
-  async function hinzufuegen() {
-    if (!titel.trim() || !inhalt.trim()) return;
+  async function speichern() {
+    if (!neuerTitel.trim() || !neueBeschreibung.trim()) {
+      setHinweis("Titel und Beschreibung sind erforderlich."); return;
+    }
     setLaedt(true);
     const { error } = await supabase.from("vorlagen").insert({
       organisation_id: organisationId,
-      titel: titel.trim(),
-      inhalt: inhalt.trim(),
-      typ,
+      titel: neuerTitel.trim(),
+      beschreibung: neueBeschreibung.trim(),
+      prioritaet: neuePrioritaet,
     });
     setLaedt(false);
-    if (!error) {
-      setTitel("");
-      setInhalt("");
-      setZeigeForm(false);
-      laden();
-    }
+    if (error) { setHinweis("Fehler beim Speichern."); return; }
+    setNeuerTitel(""); setNeueBeschreibung(""); setNeuePrioritaet("mittel");
+    setZeigeNeu(false); setHinweis(null); laden();
+  }
+
+  async function aktualisieren(id: string, titel: string, beschreibung: string, prioritaet: Prioritaet) {
+    await supabase.from("vorlagen").update({ titel, beschreibung, prioritaet }).eq("id", id);
+    setOffen(null); laden();
   }
 
   async function loeschen(id: string) {
+    if (!confirm("Vorlage wirklich löschen?")) return;
     await supabase.from("vorlagen").delete().eq("id", id);
     laden();
   }
 
-  const antworten = vorlagen.filter((v) => v.typ === "antwort");
-  const ticketVorlagen = vorlagen.filter((v) => v.typ === "ticket");
-
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-[var(--text-strong)]">
-          Vorlagen &amp; Antwort-Makros
-        </h3>
-        <button
-          onClick={() => setZeigeForm((v) => !v)}
-          className="text-xs text-amber-600 hover:underline"
-        >
-          {zeigeForm ? "Abbrechen" : "+ Neue Vorlage"}
+        <h3 className="text-sm font-medium text-[var(--text-strong)]">Ticket-Vorlagen</h3>
+        <button onClick={() => setZeigeNeu(!zeigeNeu)} className="rounded bg-akzent px-3 py-1.5 text-xs font-medium text-white">
+          + Neue Vorlage
         </button>
       </div>
+      <p className="text-xs text-[var(--text-faint)]">
+        Vorlagen füllen beim Anlegen eines neuen Tickets Titel, Beschreibung und Priorität automatisch aus.
+      </p>
 
-      {zeigeForm && (
-        <div className="space-y-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
-          <select
-            value={typ}
-            onChange={(e) => setTyp(e.target.value as "antwort" | "ticket")}
-            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-          >
-            <option value="antwort">Antwort-Makro (beim Antworten einfügbar)</option>
-            <option value="ticket">Ticket-Vorlage (beim Neu-Anlegen nutzbar)</option>
+      {zeigeNeu && (
+        <div className="space-y-2 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-3">
+          <input type="text" value={neuerTitel} onChange={(e) => setNeuerTitel(e.target.value)}
+            placeholder="Titel (z.B. VPN funktioniert nicht)"
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
+          <textarea value={neueBeschreibung} onChange={(e) => setNeueBeschreibung(e.target.value)}
+            rows={4} placeholder="Beschreibung, die das Ticket vorausfüllt…"
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
+          <select value={neuePrioritaet} onChange={(e) => setNeuePrioritaet(e.target.value as Prioritaet)}
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm">
+            {(["niedrig", "mittel", "hoch", "kritisch"] as Prioritaet[]).map((p) => (
+              <option key={p} value={p}>{PRIORITAET_LABEL[p]}</option>
+            ))}
           </select>
-          <input
-            type="text"
-            value={titel}
-            onChange={(e) => setTitel(e.target.value)}
-            placeholder="Kurzer Titel (z.B. 'Passwort zurückgesetzt')"
-            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-          />
-          <textarea
-            value={inhalt}
-            onChange={(e) => setInhalt(e.target.value)}
-            rows={4}
-            placeholder="Text, der eingefügt wird…"
-            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-          />
-          <button
-            onClick={hinzufuegen}
-            disabled={laedt}
-            className="w-full rounded bg-amber-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-          >
-            Speichern
+          {hinweis && <p className="text-xs text-red-600">{hinweis}</p>}
+          <div className="flex gap-2">
+            <button onClick={speichern} disabled={laedt} className="rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">Speichern</button>
+            <button onClick={() => { setZeigeNeu(false); setHinweis(null); }} className="rounded border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-soft)]">Abbrechen</button>
+          </div>
+        </div>
+      )}
+
+      {vorlagen.length === 0 && !zeigeNeu && (
+        <p className="text-xs text-[var(--text-faint)]">Noch keine Vorlagen angelegt.</p>
+      )}
+
+      {vorlagen.map((v) => (
+        <div key={v.id} className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)]">
+          <button onClick={() => setOffen(offen === v.id ? null : v.id)}
+            className="flex w-full items-center justify-between px-3 py-2.5 text-left">
+            <div className="flex items-center gap-2">
+              <span className={`text-xs font-medium ${PRIORITAET_FARBE[v.prioritaet]}`}>
+                {PRIORITAET_LABEL[v.prioritaet]}
+              </span>
+              <span className="text-sm text-[var(--text-strong)]">{v.titel}</span>
+            </div>
+            <span className="text-xs text-[var(--text-faint)]">{offen === v.id ? "▲" : "▼"}</span>
           </button>
+          {offen === v.id && (
+            <VorlageBearbeiten vorlage={v} onSpeichern={aktualisieren} onLoeschen={loeschen} />
+          )}
         </div>
-      )}
+      ))}
+    </div>
+  );
+}
 
-      {antworten.length > 0 && (
-        <div>
-          <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-            Antwort-Makros
-          </p>
-          <div className="space-y-1.5">
-            {antworten.map((v) => (
-              <div
-                key={v.id}
-                className="flex items-center justify-between gap-2 rounded border border-[var(--border)] bg-[var(--bg-surface)] px-3 py-2"
-              >
-                <span className="truncate text-sm text-[var(--text-strong)]">{v.titel}</span>
-                <button
-                  onClick={() => loeschen(v.id)}
-                  className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
-                >
-                  Löschen
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+function VorlageBearbeiten({ vorlage, onSpeichern, onLoeschen }: {
+  vorlage: Vorlage;
+  onSpeichern: (id: string, titel: string, beschreibung: string, prioritaet: Prioritaet) => void;
+  onLoeschen: (id: string) => void;
+}) {
+  const [titel, setTitel] = useState(vorlage.titel);
+  const [beschreibung, setBeschreibung] = useState(vorlage.beschreibung);
+  const [prioritaet, setPrioritaet] = useState<Prioritaet>(vorlage.prioritaet);
 
-      {ticketVorlagen.length > 0 && (
-        <div>
-          <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-            Ticket-Vorlagen
-          </p>
-          <div className="space-y-1.5">
-            {ticketVorlagen.map((v) => (
-              <div
-                key={v.id}
-                className="flex items-center justify-between gap-2 rounded border border-[var(--border)] bg-[var(--bg-surface)] px-3 py-2"
-              >
-                <span className="truncate text-sm text-[var(--text-strong)]">{v.titel}</span>
-                <button
-                  onClick={() => loeschen(v.id)}
-                  className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
-                >
-                  Löschen
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+  return (
+    <div className="border-t border-[var(--border)] p-3 space-y-2">
+      <input type="text" value={titel} onChange={(e) => setTitel(e.target.value)}
+        className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
+      <textarea value={beschreibung} onChange={(e) => setBeschreibung(e.target.value)}
+        rows={4} className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
+      <select value={prioritaet} onChange={(e) => setPrioritaet(e.target.value as Prioritaet)}
+        className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm">
+        {(["niedrig", "mittel", "hoch", "kritisch"] as Prioritaet[]).map((p) => (
+          <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+        ))}
+      </select>
+      <div className="flex gap-2">
+        <button onClick={() => onSpeichern(vorlage.id, titel, beschreibung, prioritaet)}
+          className="rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white">Speichern</button>
+        <button onClick={() => onLoeschen(vorlage.id)}
+          className="rounded border border-red-300 px-3 py-1.5 text-xs text-red-600">Löschen</button>
+      </div>
     </div>
   );
 }

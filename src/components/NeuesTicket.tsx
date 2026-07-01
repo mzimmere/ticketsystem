@@ -1,9 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
 import DateiAuswahl from "./DateiAuswahl";
 
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
+
+interface Vorlage {
+  id: string;
+  titel: string;
+  beschreibung: string;
+  prioritaet: Prioritaet;
+}
 
 interface NeuesTicketProps {
   onErstellt?: (ticketId: string) => void;
@@ -16,6 +23,21 @@ export default function NeuesTicket({ onErstellt }: NeuesTicketProps) {
   const [dateien, setDateien] = useState<File[]>([]);
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
+  const [vorlagen, setVorlagen] = useState<Vorlage[]>([]);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      const userId = data.user?.id;
+      if (!userId) return;
+      const { data: profil } = await supabase
+        .from("profiles").select("organisation_id").eq("id", userId).single();
+      if (!profil?.organisation_id) return;
+      const { data: vDaten } = await supabase
+        .from("vorlagen").select("id, titel, beschreibung, prioritaet")
+        .eq("organisation_id", profil.organisation_id).order("titel");
+      setVorlagen((vDaten as Vorlage[]) ?? []);
+    });
+  }, []);
 
   async function absenden() {
     if (!titel.trim()) {
@@ -92,6 +114,32 @@ export default function NeuesTicket({ onErstellt }: NeuesTicketProps) {
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-4">
       <h2 className="text-base font-semibold text-[var(--text-strong)]">Neue Anfrage</h2>
+
+      {vorlagen.length > 0 && (
+        <div>
+          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+            Vorlage verwenden (optional)
+          </label>
+          <select
+            onChange={(e) => {
+              const v = vorlagen.find((v) => v.id === e.target.value);
+              if (v) {
+                setTitel(v.titel);
+                setBeschreibung(v.beschreibung);
+                setPrioritaet(v.prioritaet);
+              }
+              e.target.value = "";
+            }}
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-soft)]"
+          >
+            <option value="">📋 Vorlage auswählen…</option>
+            {vorlagen.map((v) => (
+              <option key={v.id} value={v.id}>{v.titel}</option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-[var(--text-faint)]">Füllt das Formular vor – bleibt danach bearbeitbar.</p>
+        </div>
+      )}
 
       <div>
         <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Titel</label>

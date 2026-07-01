@@ -33,6 +33,7 @@ export default function NeuesTicketIntern({
   const [titel, setTitel] = useState("");
   const [beschreibung, setBeschreibung] = useState("");
   const [prioritaet, setPrioritaet] = useState<Prioritaet>("mittel");
+  const [vorlagen, setVorlagen] = useState<{ id: string; titel: string; beschreibung: string; prioritaet: Prioritaet }[]>([]);
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
 
@@ -54,6 +55,13 @@ export default function NeuesTicketIntern({
       .eq("deaktiviert", false)
       .order("name")
       .then(({ data }) => setTechniker((data as Techniker[]) ?? []));
+
+    supabase
+      .from("vorlagen")
+      .select("id, titel, beschreibung, prioritaet")
+      .eq("organisation_id", organisationId)
+      .order("titel")
+      .then(({ data }) => setVorlagen((data as typeof vorlagen) ?? []));
   }, [organisationId]);
 
   async function absenden() {
@@ -121,6 +129,36 @@ export default function NeuesTicketIntern({
           </p>
         )}
       </div>
+
+      {vorlagen.length > 0 && (
+        <div>
+          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+            Vorlage verwenden (optional)
+          </label>
+          <select
+            onChange={(e) => {
+              const v = vorlagen.find((v) => v.id === e.target.value);
+              if (v) {
+                setTitel(v.titel);
+                setBeschreibung(v.beschreibung);
+                setPrioritaet(v.prioritaet as Prioritaet);
+              }
+              e.target.value = "";
+            }}
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-soft)]"
+          >
+            <option value="">📋 Vorlage auswählen…</option>
+            {vorlagen.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.titel} ({v.prioritaet})
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-[var(--text-faint)]">
+            Füllt Titel, Beschreibung und Priorität vor – alles bleibt danach bearbeitbar.
+          </p>
+        </div>
+      )}
 
       <div>
         <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Titel</label>
