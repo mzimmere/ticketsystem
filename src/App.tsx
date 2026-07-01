@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sun, Moon, User, Settings, Building2, Receipt, Mail, Ticket as TicketIcon } from "lucide-react";
+import { Sun, Moon, User, Settings, Building2, Receipt, Mail, Ticket as TicketIcon, BarChart2 } from "lucide-react";
 import { useProfil } from "./lib/useProfil";
 import { useTheme } from "./lib/useTheme";
 import { useOnlinePraesenz } from "./lib/praesenz";
@@ -17,6 +17,7 @@ import FirmenInfo from "./components/FirmenInfo";
 import Abrechnung from "./components/Abrechnung";
 import RechnungDetail from "./components/RechnungDetail";
 import AdminPostfach from "./components/AdminPostfach";
+import Dashboard from "./components/Dashboard";
 import KundenRegistrierung from "./components/KundenRegistrierung";
 import DatenschutzSeite from "./components/DatenschutzSeite";
 
@@ -68,6 +69,7 @@ export default function App() {
   const [zeigeFirmenInfo, setZeigeFirmenInfo] = useState(false);
   const [zeigeAbrechnung, setZeigeAbrechnung] = useState(false);
   const [zeigePostfach, setZeigePostfach] = useState(false);
+  const [zeigeDashboard, setZeigeDashboard] = useState(false);
   const [rechnungDetail, setRechnungDetail] = useState<
     { kundeId: string; jahr: number; monat: number } | null
   >(null);
@@ -92,6 +94,7 @@ export default function App() {
     setZeigeProfil(false);
     setAusgewaehltesTicket(null);
     setZeigeNeuesTicket(false);
+    setZeigeDashboard(false);
   }
 
   // Beim Firmenwechsel (Super-Admin) alle offenen Detail-/Auswahl-Zustände
@@ -276,11 +279,30 @@ export default function App() {
                 setZeigeProfil(false);
                 setAusgewaehltesTicket(null);
                 setZeigeNeuesTicket(false);
+                setZeigeDashboard(false);
               }}
               className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
               title="Abrechnung"
             >
               <Receipt size={16} />
+            </button>
+          )}
+          {istAdmin && aktiveOrgId && (
+            <button
+              onClick={() => {
+                setZeigeDashboard(true);
+                setZeigeAbrechnung(false);
+                setZeigePostfach(false);
+                setZeigeFirmenInfo(false);
+                setZeigeVerwaltung(false);
+                setZeigeProfil(false);
+                setAusgewaehltesTicket(null);
+                setZeigeNeuesTicket(false);
+              }}
+              className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+              title="Dashboard"
+            >
+              <BarChart2 size={16} />
             </button>
           )}
           {istAdmin && (
@@ -346,7 +368,14 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-6 space-y-4">
-        {zeigePostfach ? (
+        {zeigeDashboard && aktiveOrgId ? (
+          <>
+            <button onClick={() => setZeigeDashboard(false)} className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]">
+              ← Zurück
+            </button>
+            <Dashboard organisationId={aktiveOrgId} />
+          </>
+        ) : zeigePostfach ? (
           <>
             <button
               onClick={() => setZeigePostfach(false)}
