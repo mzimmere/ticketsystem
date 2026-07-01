@@ -73,6 +73,7 @@ export default function App() {
   const [zeigePostfach, setZeigePostfach] = useState(false);
   const [zeigeDashboard, setZeigeDashboard] = useState(false);
   const [zeigeStartseite, setZeigeStartseite] = useState(true);
+  const [verwaltungsTab, setVerwaltungsTab] = useState<"firma" | "team" | "kunden" | "werkzeuge">("firma");
   const [rechnungDetail, setRechnungDetail] = useState<
     { kundeId: string; jahr: number; monat: number } | null
   >(null);
@@ -120,8 +121,11 @@ export default function App() {
     if (aktion === "neues-ticket") setZeigeNeuesTicket(true);
     if (aktion === "dashboard") setZeigeDashboard(true);
     if (aktion === "abrechnung") setZeigeAbrechnung(true);
-    if (aktion === "verwaltung") setZeigeVerwaltung(true);
     if (aktion === "firmeninfo") setZeigeFirmenInfo(true);
+    if (aktion === "verwaltung" || aktion === "verwaltung-firma") { setZeigeVerwaltung(true); setVerwaltungsTab("firma"); }
+    if (aktion === "verwaltung-team") { setZeigeVerwaltung(true); setVerwaltungsTab("team"); }
+    if (aktion === "verwaltung-kunden") { setZeigeVerwaltung(true); setVerwaltungsTab("kunden"); }
+    if (aktion === "verwaltung-werkzeuge") { setZeigeVerwaltung(true); setVerwaltungsTab("werkzeuge"); }
   }
 
   // Beim Firmenwechsel (Super-Admin) alle offenen Detail-/Auswahl-Zustände
@@ -494,6 +498,7 @@ export default function App() {
                   profil.rolle === "super_admin" ? superAdminFirma : profil.organisation_id
                 }
                 onlineIds={onlineIds}
+                initialTab={verwaltungsTab}
               />
             )}
           </>

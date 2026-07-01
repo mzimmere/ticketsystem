@@ -37,13 +37,17 @@ interface Organisation extends OrganisationKurz {
   sla_stunden: number | null;
 }
 
+type VerwaltungsTab = "firma" | "team" | "kunden" | "werkzeuge";
+
 interface VerwaltungProps {
   rolle: Rolle;
   organisationId: string | null;
   onlineIds?: Set<string>;
+  initialTab?: VerwaltungsTab;
 }
 
-export default function Verwaltung({ rolle, organisationId, onlineIds }: VerwaltungProps) {
+export default function Verwaltung({ rolle, organisationId, onlineIds, initialTab = "firma" }: VerwaltungProps) {
+  const [aktiveTab, setAktiveTab] = useState<VerwaltungsTab>(initialTab);
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [orgName, setOrgName] = useState("");
   const [orgAdresse, setOrgAdresse] = useState("");
@@ -463,11 +467,40 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
 
   return (
     <div className="space-y-5">
-      <h2 className="text-base font-semibold text-[var(--text-strong)]">
-        Verwaltung{organisation && rolle === "super_admin" ? ` – ${organisation.name}` : ""}
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-semibold text-[var(--text-strong)]">
+          Verwaltung{organisation && rolle === "super_admin" ? ` – ${organisation.name}` : ""}
+        </h2>
+      </div>
 
-      {organisation && (
+      {/* Tab-Leiste */}
+      <div className="flex gap-1 rounded-xl border border-[var(--border)] bg-[var(--bg-muted)] p-1">
+        {([
+          { id: "firma", label: "🏢 Firma" },
+          { id: "team", label: "👥 Team" },
+          { id: "kunden", label: "🤝 Kunden" },
+          { id: "werkzeuge", label: "🔧 Werkzeuge" },
+        ] as { id: VerwaltungsTab; label: string }[]).map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setAktiveTab(t.id)}
+            className={`flex-1 rounded-lg py-2 text-xs font-medium transition-all ${
+              aktiveTab === t.id
+                ? "bg-[var(--bg-surface)] text-[var(--text-strong)] shadow-sm"
+                : "text-[var(--text-faint)] hover:text-[var(--text-soft)]"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Hinweis wenn kein Inhalt */}
+      {!organisationId && aktiveTab !== "firma" && (
+        <p className="text-sm text-[var(--text-faint)]">Bitte zuerst eine Firma auswählen.</p>
+      )}
+
+      {aktiveTab === "firma" && organisation && (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
           <h3 className="text-sm font-medium text-[var(--text-strong)]">Firmenprofil</h3>
           <div className="flex items-center gap-4">
@@ -763,7 +796,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
         </div>
       )}
 
-      {organisationId && (
+      {aktiveTab === "team" && organisationId && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-[var(--text-strong)]">Team</h3>
@@ -923,7 +956,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
         </div>
       )}
 
-      {organisationId && (
+      {aktiveTab === "kunden" && organisationId && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-[var(--text-strong)]">Kunden</h3>
@@ -1103,25 +1136,25 @@ export default function Verwaltung({ rolle, organisationId, onlineIds }: Verwalt
         </div>
       )}
 
-      {organisationId && (
+      {aktiveTab === "werkzeuge" && organisationId && (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
           <VorlagenVerwaltung organisationId={organisationId} />
         </div>
       )}
 
-      {organisationId && (
+      {aktiveTab === "werkzeuge" && organisationId && (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
           <MakroVerwaltung organisationId={organisationId} />
         </div>
       )}
 
-      {organisationId && (
+      {aktiveTab === "werkzeuge" && organisationId && (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
           <TagVerwaltung organisationId={organisationId} />
         </div>
       )}
 
-      {organisationId && (
+      {aktiveTab === "werkzeuge" && organisationId && (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
           <SlaVerwaltung organisationId={organisationId} />
         </div>

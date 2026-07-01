@@ -353,18 +353,34 @@ export default function Startseite({
             )}
             {organisationId && (
               <AktionsButton
-                icon="👥"
-                label="Kunden & Team"
-                sub="Verwaltung"
-                onClick={() => onAktion("verwaltung")}
+                icon="👤"
+                label="Team"
+                sub="Mitarbeiter & Techniker"
+                onClick={() => onAktion("verwaltung-team")}
+              />
+            )}
+            {organisationId && (
+              <AktionsButton
+                icon="🤝"
+                label="Kunden"
+                sub="Kundenstamm verwalten"
+                onClick={() => onAktion("verwaltung-kunden")}
               />
             )}
             {organisationId && (
               <AktionsButton
                 icon="🏢"
                 label="Firmenprofil"
-                sub="Einstellungen"
-                onClick={() => onAktion("firmeninfo")}
+                sub="Einstellungen & Branding"
+                onClick={() => onAktion("verwaltung-firma")}
+              />
+            )}
+            {organisationId && (
+              <AktionsButton
+                icon="🔧"
+                label="Werkzeuge"
+                sub="Makros, Tags, SLA"
+                onClick={() => onAktion("verwaltung-werkzeuge")}
               />
             )}
           </div>
