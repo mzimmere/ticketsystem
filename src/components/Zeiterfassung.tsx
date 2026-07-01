@@ -1,10 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
 
-type AktiverTimer = {
-  id: string;
-  start_zeit: string;
-};
+type AktiverTimer = { id: string; start_zeit: string };
 
 interface ZeiterfassungProps {
   ticketId: string;
@@ -13,185 +10,274 @@ interface ZeiterfassungProps {
   organisationId: string;
 }
 
+// ─── Sound via Web Audio API ───────────────────────────────────────────────
+function spieleStartSound() {
+  try {
+    const ctx = new AudioContext();
+    const noten = [440, 554, 659]; // A4 – C#5 – E5 (A-Dur)
+    noten.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      const t = ctx.currentTime + i * 0.12;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.18, t + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      osc.start(t);
+      osc.stop(t + 0.3);
+    });
+  } catch (_) { /* Browser ohne AudioContext, kein Problem */ }
+}
+
+function spieleStopSound() {
+  try {
+    const ctx = new AudioContext();
+    const noten = [659, 554, 440]; // E5 – C#5 – A4 (absteigend)
+    noten.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      const t = ctx.currentTime + i * 0.1;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.15, t + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+      osc.start(t);
+      osc.stop(t + 0.25);
+    });
+  } catch (_) { /* ignore */ }
+}
+
+// ─── Ziffernrolle (mechanische Anzeigetafel-Animation) ─────────────────────
+function Ziffer({ wert, cls }: { wert: number; cls?: string }) {
+  return (
+    <span
+      className={`inline-block tabular-nums transition-all duration-100 ${cls ?? ""}`}
+      style={{ fontVariantNumeric: "tabular-nums" }}
+    >
+      {String(wert).padStart(2, "0")}
+    </span>
+  );
+}
+
 export default function Zeiterfassung({
-  ticketId,
-  kundeId,
-  technikerId,
-  organisationId,
+  ticketId, kundeId, technikerId, organisationId,
 }: ZeiterfassungProps) {
   const [aktiverTimer, setAktiverTimer] = useState<AktiverTimer | null>(null);
-  const [vergangeneSekunden, setVergangeneSekunden] = useState(0);
+  const [sek, setSek] = useState(0);
   const [beschreibung, setBeschreibung] = useState("");
-  const [manuelleMinuten, setManuelleMinuten] = useState("");
+  const [manuelleMin, setManuelleMin] = useState("");
   const [laedt, setLaedt] = useState(false);
+  const [pulsiert, setPulsiert] = useState(false);
+  const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
+  const [zeigeManuell, setZeigeManuell] = useState(false);
   const intervalRef = useRef<number | null>(null);
+  const buzzerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    async function ladeAktivenTimer() {
-      const { data } = await supabase
-        .from("zeiteintraege")
-        .select("id, start_zeit")
-        .eq("techniker_id", technikerId)
-        .eq("erfassungsart", "timer")
-        .is("end_zeit", null)
-        .maybeSingle();
-      if (data) setAktiverTimer(data);
-    }
-    ladeAktivenTimer();
+    supabase.from("zeiteintraege").select("id, start_zeit")
+      .eq("techniker_id", technikerId).eq("erfassungsart", "timer")
+      .is("end_zeit", null).maybeSingle()
+      .then(({ data }) => { if (data) setAktiverTimer(data); });
   }, [technikerId]);
 
   useEffect(() => {
     if (!aktiverTimer) {
-      if (intervalRef.current) window.clearInterval(intervalRef.current);
+      if (intervalRef.current) clearInterval(intervalRef.current);
       return;
     }
     const start = new Date(aktiverTimer.start_zeit).getTime();
-    const tick = () => setVergangeneSekunden(Math.floor((Date.now() - start) / 1000));
+    const tick = () => setSek(Math.floor((Date.now() - start) / 1000));
     tick();
     intervalRef.current = window.setInterval(tick, 1000);
-    return () => {
-      if (intervalRef.current) window.clearInterval(intervalRef.current);
-    };
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [aktiverTimer]);
 
-  async function timerStarten() {
+  const addRipple = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = buzzerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const id = Date.now();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setRipples((r) => [...r, { id, x, y }]);
+    setTimeout(() => setRipples((r) => r.filter((rp) => rp.id !== id)), 700);
+  }, []);
+
+  async function timerStarten(e: React.MouseEvent<HTMLButtonElement>) {
+    addRipple(e);
+    setPulsiert(true);
+    spieleStartSound();
+    setTimeout(() => setPulsiert(false), 600);
     setLaedt(true);
-    const { data, error } = await supabase
-      .from("zeiteintraege")
-      .insert({
-        organisation_id: organisationId,
-        ticket_id: ticketId,
-        kunde_id: kundeId,
-        techniker_id: technikerId,
-        erfassungsart: "timer",
-        start_zeit: new Date().toISOString(),
-      })
-      .select("id, start_zeit")
-      .single();
+    const { data, error } = await supabase.from("zeiteintraege").insert({
+      organisation_id: organisationId, ticket_id: ticketId, kunde_id: kundeId,
+      techniker_id: technikerId, erfassungsart: "timer",
+      start_zeit: new Date().toISOString(),
+    }).select("id, start_zeit").single();
     setLaedt(false);
     if (!error && data) setAktiverTimer(data);
   }
 
-  async function timerStoppen() {
+  async function timerStoppen(e: React.MouseEvent<HTMLButtonElement>) {
     if (!aktiverTimer) return;
+    addRipple(e);
+    spieleStopSound();
     setLaedt(true);
-    const minuten = Math.max(1, Math.round(vergangeneSekunden / 60));
-    const { error } = await supabase
-      .from("zeiteintraege")
-      .update({
-        end_zeit: new Date().toISOString(),
-        minuten,
-        beschreibung: beschreibung || null,
-      })
-      .eq("id", aktiverTimer.id);
+    const minuten = Math.max(1, Math.round(sek / 60));
+    const { error } = await supabase.from("zeiteintraege").update({
+      end_zeit: new Date().toISOString(), minuten,
+      beschreibung: beschreibung || null,
+    }).eq("id", aktiverTimer.id);
     setLaedt(false);
-    if (!error) {
-      setAktiverTimer(null);
-      setVergangeneSekunden(0);
-      setBeschreibung("");
-    }
+    if (!error) { setAktiverTimer(null); setSek(0); setBeschreibung(""); }
   }
 
   async function manuellSpeichern() {
-    const minuten = parseInt(manuelleMinuten, 10);
-    if (!minuten || minuten <= 0) return;
+    const min = parseInt(manuelleMin, 10);
+    if (!min || min <= 0) return;
     setLaedt(true);
     const { error } = await supabase.from("zeiteintraege").insert({
-      organisation_id: organisationId,
-      ticket_id: ticketId,
-      kunde_id: kundeId,
-      techniker_id: technikerId,
-      erfassungsart: "manuell",
-      minuten,
-      beschreibung: beschreibung || null,
+      organisation_id: organisationId, ticket_id: ticketId, kunde_id: kundeId,
+      techniker_id: technikerId, erfassungsart: "manuell",
+      minuten: min, beschreibung: beschreibung || null,
     });
     setLaedt(false);
-    if (!error) {
-      setManuelleMinuten("");
-      setBeschreibung("");
-    }
+    if (!error) { setManuelleMin(""); setBeschreibung(""); setZeigeManuell(false); }
   }
 
-  function formatZeit(sekunden: number) {
-    const m = Math.floor(sekunden / 60).toString().padStart(2, "0");
-    const s = (sekunden % 60).toString().padStart(2, "0");
-    return `${m}:${s}`;
-  }
+  const std = Math.floor(sek / 3600);
+  const min = Math.floor((sek % 3600) / 60);
+  const sec = sek % 60;
+  const läuft = !!aktiverTimer;
 
   return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-4">
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-4">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium uppercase tracking-wide text-[var(--text-soft)]">
           Zeiterfassung
         </span>
-        {aktiverTimer && (
-          <span className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
-            <span className="h-1.5 w-1.5 rounded-full bg-akzent animate-pulse" />
-            läuft
+        {läuft && (
+          <span className="flex items-center gap-1.5 text-xs font-medium text-amber-500">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+            läuft seit {Math.floor(sek / 60)} Min.
           </span>
         )}
       </div>
 
-      {aktiverTimer ? (
-        <div className="space-y-3">
-          <div className="font-mono text-3xl tabular-nums text-[var(--text-strong)]">
-            {formatZeit(vergangeneSekunden)}
-          </div>
-          <input
-            type="text"
-            value={beschreibung}
-            onChange={(e) => setBeschreibung(e.target.value)}
-            placeholder="Was wurde gemacht? (optional)"
-            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
-          />
-          <button
-            onClick={timerStoppen}
-            disabled={laedt}
-            className="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-          >
-            Timer stoppen &amp; speichern
-          </button>
+      {/* Display */}
+      <div className={`rounded-xl border-2 py-4 text-center transition-all duration-300 ${
+        läuft
+          ? "border-amber-400/60 bg-amber-50/50 dark:bg-amber-900/10"
+          : "border-[var(--border)] bg-[var(--bg-muted)]"
+      }`}>
+        <div className="font-mono text-4xl font-bold tracking-widest text-[var(--text-strong)]">
+          {std > 0 && <><Ziffer wert={std} />:</>}
+          <Ziffer wert={min} cls={läuft && sec === 0 ? "opacity-70" : ""} />
+          <span className={`text-2xl transition-opacity duration-500 ${sec % 2 === 0 && läuft ? "opacity-30" : "opacity-100"}`}>:</span>
+          <Ziffer wert={sec} />
         </div>
-      ) : (
-        <div className="space-y-3">
+        {läuft && (
+          <div className="mt-1 text-[0.65rem] text-[var(--text-faint)]">
+            gestartet {new Date(aktiverTimer!.start_zeit).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr
+          </div>
+        )}
+      </div>
+
+      {/* Buzzer */}
+      <div className="flex justify-center">
+        <button
+          ref={buzzerRef}
+          onClick={läuft ? timerStoppen : timerStarten}
+          disabled={laedt}
+          className={`
+            relative h-24 w-24 overflow-hidden rounded-full border-4 text-white font-bold text-sm
+            shadow-lg transition-all duration-150 select-none
+            active:scale-95 disabled:opacity-50
+            ${läuft
+              ? "border-red-400 bg-gradient-to-b from-red-400 to-red-600 shadow-red-500/40 hover:from-red-300 hover:to-red-500"
+              : "border-green-400 bg-gradient-to-b from-green-400 to-green-600 shadow-green-500/40 hover:from-green-300 hover:to-green-500"
+            }
+            ${pulsiert ? "scale-110" : "scale-100"}
+          `}
+          style={{
+            boxShadow: läuft
+              ? "0 6px 0 #b91c1c, 0 8px 16px rgba(239,68,68,0.4)"
+              : "0 6px 0 #15803d, 0 8px 16px rgba(34,197,94,0.4)",
+          }}
+        >
+          {/* Ripple-Effekte */}
+          {ripples.map((r) => (
+            <span
+              key={r.id}
+              className="pointer-events-none absolute rounded-full bg-white/30"
+              style={{
+                left: r.x - 50, top: r.y - 50,
+                width: 100, height: 100,
+                animation: "ripple 0.7s ease-out forwards",
+              }}
+            />
+          ))}
+
+          {/* Glanz-Effekt */}
+          <span className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-white/30 to-transparent" />
+
+          {/* Icon */}
+          <span className="relative z-10 flex flex-col items-center gap-0.5">
+            <span className="text-2xl">{läuft ? "⏹" : "▶"}</span>
+            <span className="text-[0.6rem] font-medium tracking-widest uppercase">
+              {läuft ? "Stop" : "Start"}
+            </span>
+          </span>
+        </button>
+      </div>
+
+      {/* Beschreibung (nur wenn Timer läuft) */}
+      {läuft && (
+        <input
+          type="text"
+          value={beschreibung}
+          onChange={(e) => setBeschreibung(e.target.value)}
+          placeholder="Was wird gerade gemacht? (optional)"
+          className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+        />
+      )}
+
+      {/* Manuelle Eingabe */}
+      {!läuft && (
+        <div>
           <button
-            onClick={timerStarten}
-            disabled={laedt}
-            className="w-full rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            onClick={() => setZeigeManuell(!zeigeManuell)}
+            className="w-full text-center text-xs text-[var(--text-faint)] hover:text-[var(--text-soft)]"
           >
-            Timer starten
+            {zeigeManuell ? "▲ Manuelle Eingabe ausblenden" : "▼ Zeit manuell eintragen"}
           </button>
-
-          <div className="flex items-center gap-2 text-xs text-[var(--text-faint)]">
-            <span className="h-px flex-1 bg-[var(--border)]" />
-            oder manuell
-            <span className="h-px flex-1 bg-[var(--border)]" />
-          </div>
-
-          <div className="flex gap-2">
-            <input
-              type="number"
-              min={1}
-              value={manuelleMinuten}
-              onChange={(e) => setManuelleMinuten(e.target.value)}
-              placeholder="Min."
-              className="w-20 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-2 py-2 text-sm"
-            />
-            <input
-              type="text"
-              value={beschreibung}
-              onChange={(e) => setBeschreibung(e.target.value)}
-              placeholder="Beschreibung"
-              className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
-            />
-            <button
-              onClick={manuellSpeichern}
-              disabled={laedt}
-              className="rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-            >
-              Speichern
-            </button>
-          </div>
+          {zeigeManuell && (
+            <div className="mt-2 flex gap-2">
+              <input
+                type="number" min={1} value={manuelleMin}
+                onChange={(e) => setManuelleMin(e.target.value)}
+                placeholder="Min."
+                className="w-20 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-2 text-sm"
+              />
+              <input
+                type="text" value={beschreibung}
+                onChange={(e) => setBeschreibung(e.target.value)}
+                placeholder="Beschreibung"
+                className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+              />
+              <button
+                onClick={manuellSpeichern} disabled={laedt}
+                className="rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              >
+                +
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
