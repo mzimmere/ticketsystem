@@ -18,6 +18,7 @@ import Abrechnung from "./components/Abrechnung";
 import RechnungDetail from "./components/RechnungDetail";
 import AdminPostfach from "./components/AdminPostfach";
 import Dashboard from "./components/Dashboard";
+import Startseite from "./components/Startseite";
 import KundenRegistrierung from "./components/KundenRegistrierung";
 import DatenschutzSeite from "./components/DatenschutzSeite";
 
@@ -70,6 +71,7 @@ export default function App() {
   const [zeigeAbrechnung, setZeigeAbrechnung] = useState(false);
   const [zeigePostfach, setZeigePostfach] = useState(false);
   const [zeigeDashboard, setZeigeDashboard] = useState(false);
+  const [zeigeStartseite, setZeigeStartseite] = useState(true);
   const [rechnungDetail, setRechnungDetail] = useState<
     { kundeId: string; jahr: number; monat: number } | null
   >(null);
@@ -95,6 +97,30 @@ export default function App() {
     setAusgewaehltesTicket(null);
     setZeigeNeuesTicket(false);
     setZeigeDashboard(false);
+    setZeigeStartseite(true);
+  }
+
+  function alleZustandsResets() {
+    setZeigeVerwaltung(false);
+    setZeigeAbrechnung(false);
+    setRechnungDetail(null);
+    setZeigePostfach(false);
+    setZeigeFirmenInfo(false);
+    setZeigeProfil(false);
+    setAusgewaehltesTicket(null);
+    setZeigeNeuesTicket(false);
+    setZeigeDashboard(false);
+    setZeigeStartseite(false);
+  }
+
+  function startseitenAktion(aktion: string) {
+    alleZustandsResets();
+    if (aktion === "tickets") return;
+    if (aktion === "neues-ticket") setZeigeNeuesTicket(true);
+    if (aktion === "dashboard") setZeigeDashboard(true);
+    if (aktion === "abrechnung") setZeigeAbrechnung(true);
+    if (aktion === "verwaltung") setZeigeVerwaltung(true);
+    if (aktion === "firmeninfo") setZeigeFirmenInfo(true);
   }
 
   // Beim Firmenwechsel (Super-Admin) alle offenen Detail-/Auswahl-Zustände
@@ -221,7 +247,7 @@ export default function App() {
         <div className="flex items-center gap-2">
           {istIntern && aktiveOrgId && (
             <button
-              onClick={zurueckZuTickets}
+              onClick={() => { alleZustandsResets(); }}
               className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
               title="Zur Ticketübersicht"
             >
@@ -368,7 +394,17 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-6 space-y-4">
-        {zeigeDashboard && aktiveOrgId ? (
+        {zeigeStartseite && !ausgewaehltesTicket && !zeigeNeuesTicket && !zeigeVerwaltung && !zeigeAbrechnung && !zeigeFirmenInfo && !zeigePostfach && !zeigeDashboard && !zeigeProfil ? (
+          <Startseite
+            name={profil.name}
+            rolle={profil.rolle}
+            organisationId={aktiveOrgId}
+            orgName={organisation?.name ?? null}
+            logoUrl={organisation?.logo_url ?? null}
+            akzentfarbe={organisation?.akzentfarbe ?? null}
+            onAktion={startseitenAktion}
+          />
+        ) : zeigeDashboard && aktiveOrgId ? (
           <>
             <button onClick={() => setZeigeDashboard(false)} className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]">
               ← Zurück
