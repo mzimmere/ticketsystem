@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import ApiVerwaltung from "./ApiVerwaltung";
+import KonfigurationsHilfe from "./KonfigurationsHilfe";
 
 interface IntegrationenProps {
   organisationId: string;
@@ -151,13 +152,46 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
                 </code>
                 <KopierenButton wert={`${webhookBaseUrl}/email-inbound`} />
               </div>
-              <p className="text-xs text-[var(--text-faint)]">
-                {konfig.inbound_email_anbieter === "resend" && "Resend → Domains → deine Domain → Inbound → Webhook URL eintragen + Signing Secret kopieren."}
-                {konfig.inbound_email_anbieter === "postmark" && "Postmark → Server → Settings → Inbound Webhook → URL eintragen. API-Key unter Account → API Tokens."}
-                {konfig.inbound_email_anbieter === "cloudflare" && "Cloudflare → Email Routing → Rules → Custom address → Worker eintragen."}
-              </p>
             </div>
           )}
+
+          <KonfigurationsHilfe
+            titel="E-Mail → Ticket einrichten"
+            schritte={[
+              {
+                nr: 1,
+                titel: "Domain kaufen und verifizieren",
+                beschreibung: "Du brauchst eine eigene Domain (z.B. firma.de). Bei deinem gewählten Anbieter (Resend, Postmark oder Cloudflare) die Domain verifizieren – das dauert meist 5–10 Minuten.",
+                link: { label: "Resend Domain-Einrichtung", url: "https://resend.com/docs/dashboard/domains/introduction" },
+              },
+              {
+                nr: 2,
+                titel: "E-Mail-Adresse festlegen",
+                beschreibung: "Wähle eine Support-Adresse, z.B. support@firma.de oder hilfe@firma.de. Diese Adresse gibst du deinen Kunden als Kontakt-E-Mail an – alle eingehenden Mails werden automatisch zu Tickets.",
+              },
+              {
+                nr: 3,
+                titel: "Webhook-URL beim Anbieter eintragen",
+                beschreibung: konfig.inbound_email_anbieter === "resend"
+                  ? "Resend Dashboard → Domains → deine Domain → Inbound → Webhook URL eintragen. Das Signing Secret unter diesem Webhook-Eintrag kopieren."
+                  : konfig.inbound_email_anbieter === "postmark"
+                  ? "Postmark → Server → Settings → Inbound Webhook → URL eintragen. Den API-Key findest du unter Account → API Tokens."
+                  : "Cloudflare → Email Routing → Rules → Custom address → Ziel-Worker eintragen.",
+                code: `${webhookBaseUrl}/email-inbound`,
+              },
+              {
+                nr: 4,
+                titel: "Secret hier eintragen und speichern",
+                beschreibung: "Das Signing Secret / den API-Key vom Anbieter in das Feld oben eintragen. Dann auf 'Integrationen speichern' klicken.",
+              },
+              {
+                nr: 5,
+                titel: "Test-Mail senden",
+                beschreibung: "Schicke eine E-Mail an deine Support-Adresse. Nach wenigen Sekunden sollte in der Ticket-Übersicht ein neues Ticket erscheinen.",
+              },
+            ]}
+            hinweis="Kunden, die per E-Mail schreiben, werden automatisch als Absender erkannt – ist die E-Mail-Adresse schon als Kunde angelegt, wird das Ticket direkt zugeordnet. Unbekannte Adressen erzeugen automatisch einen neuen Kunden-Account."
+          />
         </div>
       </div>
 
@@ -225,6 +259,46 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
               Abonniere das Feld "messages".
             </p>
           </div>
+
+          <KonfigurationsHilfe
+            titel="WhatsApp → Ticket einrichten"
+            schritte={[
+              {
+                nr: 1,
+                titel: "Meta Business Account erstellen",
+                beschreibung: "Du brauchst einen verifizierten Meta Business Account. Gehe zu business.facebook.com und verifiziere dein Unternehmen (Gewerbeschein oder Webseite reicht).",
+                link: { label: "Meta Business Suite", url: "https://business.facebook.com" },
+              },
+              {
+                nr: 2,
+                titel: "Meta Developer App anlegen",
+                beschreibung: "Gehe zu developers.facebook.com → Meine Apps → App erstellen → Business. Den App-Typ 'Business' wählen und dein Business verknüpfen.",
+                link: { label: "Meta for Developers", url: "https://developers.facebook.com/apps" },
+              },
+              {
+                nr: 3,
+                titel: "WhatsApp-Produkt zur App hinzufügen",
+                beschreibung: "In deiner App: Produkte hinzufügen → WhatsApp → Einrichten. Dann eine Telefonnummer hinzufügen (kann eine neue Nummer oder eine bestehende sein, die noch nicht bei WhatsApp registriert ist).",
+              },
+              {
+                nr: 4,
+                titel: "Phone Number ID und Access Token kopieren",
+                beschreibung: "WhatsApp → API Setup: Die 'Phone Number ID' und den 'Temporary Access Token' (oder einen permanenten System-User-Token) kopieren und oben eintragen.",
+              },
+              {
+                nr: 5,
+                titel: "Webhook konfigurieren",
+                beschreibung: "WhatsApp → Configuration → Webhook → Edit. Die Webhook-URL und deinen selbst gewählten Verify Token eintragen. Dann 'messages' abonnieren.",
+                code: `${webhookBaseUrl}/whatsapp-webhook`,
+              },
+              {
+                nr: 6,
+                titel: "Test-Nachricht senden",
+                beschreibung: "Schicke eine WhatsApp-Nachricht an deine registrierte Nummer. Nach wenigen Sekunden sollte ein neues Ticket erscheinen.",
+              },
+            ]}
+            hinweis="Für Produktionsbetrieb (mehr als 5 Test-Empfänger) musst du die WhatsApp Business API-Nutzung bei Meta beantragen und dein Unternehmen verifizieren. Im Testbetrieb kannst du bis zu 5 Testnummern freischalten."
+          />
         </div>
       </div>
 

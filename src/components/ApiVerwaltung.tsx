@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import KonfigurationsHilfe from "./KonfigurationsHilfe";
 
 interface ApiKey {
   id: string;
@@ -186,6 +187,65 @@ export default function ApiVerwaltung({ organisationId }: { organisationId: stri
           Header: <code className="font-mono">x-api-key: ts_xxxxxxxx…</code>
         </p>
       </div>
+
+      <KonfigurationsHilfe
+        titel="API-Key erstellen und verwenden"
+        schritte={[
+          {
+            nr: 1,
+            titel: "API-Key generieren",
+            beschreibung: "Unten einen Namen für den Key eingeben (z.B. den Namen des Systems, das sich verbindet), die benötigten Berechtigungen auswählen und auf 'API-Key generieren' klicken.",
+          },
+          {
+            nr: 2,
+            titel: "Key sicher speichern",
+            beschreibung: "Der generierte Key wird nur einmal angezeigt – sofort kopieren und sicher ablegen (z.B. in einem Passwortmanager). Danach ist nur noch ein Vorschau der ersten 8 Zeichen sichtbar.",
+          },
+          {
+            nr: 3,
+            titel: "In der Fremdsoftware eintragen",
+            beschreibung: "Den Key als HTTP-Header bei jedem API-Aufruf mitschicken:",
+            code: `curl -H "x-api-key: ts_deinkey..." ${apiBaseUrl}/tickets`,
+          },
+          {
+            nr: 4,
+            titel: "Ticket erstellen (Beispiel)",
+            beschreibung: "So erstellt ein externes System automatisch ein Ticket:",
+            code: `curl -X POST ${apiBaseUrl}/tickets \\\n  -H "x-api-key: ts_deinkey..." \\\n  -H "Content-Type: application/json" \\\n  -d '{"titel":"Server offline","kunde_email":"kunde@firma.de","prioritaet":"kritisch"}'`,
+          },
+        ]}
+        hinweis="Vergib Keys immer nur mit den minimal notwendigen Berechtigungen. Einen Key, der nur Tickets lesen soll, braucht keine Schreibberechtigung."
+      />
+
+      <KonfigurationsHilfe
+        titel="Webhook-Endpunkt einrichten"
+        schritte={[
+          {
+            nr: 1,
+            titel: "Empfänger-URL vorbereiten",
+            beschreibung: "Die URL muss öffentlich erreichbar sein und POST-Requests entgegennehmen. Gängige Optionen: Zapier Webhook, Make (Integromat), n8n, ein eigener Server oder Slack Incoming Webhooks.",
+            link: { label: "Zapier Webhooks", url: "https://zapier.com/apps/webhook/integrations" },
+          },
+          {
+            nr: 2,
+            titel: "Webhook hier anlegen",
+            beschreibung: "Name, URL und Ereignisse eintragen. Ein HMAC-Signing-Secret wird automatisch generiert – damit kann der Empfänger die Echtheit der Anfrage prüfen.",
+          },
+          {
+            nr: 3,
+            titel: "Signatur prüfen (optional, empfohlen)",
+            beschreibung: "Jede Anfrage enthält den Header X-Webhook-Signature: sha256=... – der Empfänger kann damit sicherstellen, dass die Anfrage wirklich vom Ticketsystem kommt.",
+            code: `HMAC-SHA256(body, dein-secret) == X-Webhook-Signature`,
+          },
+          {
+            nr: 4,
+            titel: "Payload-Format",
+            beschreibung: "Jede Webhook-Anfrage enthält JSON mit Ereignistyp, Daten und Zeitstempel:",
+            code: `{\n  "ereignis": "ticket.created",\n  "daten": { "id": "...", "ticket_nr": 42 },\n  "zeitstempel": "2026-01-01T12:00:00Z"\n}`,
+          },
+        ]}
+        hinweis="Der letzte HTTP-Statuscode wird direkt in der Liste angezeigt (grün = OK, rot = Fehler). Schlägt ein Webhook-Aufruf fehl, wird kein automatischer Retry versucht – überprüfe die URL und die Empfänger-Seite."
+      />
 
       {/* Generierter Key – einmalig anzeigen */}
       {generierterKey && (
