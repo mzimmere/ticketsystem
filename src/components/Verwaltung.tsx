@@ -14,6 +14,7 @@ import SlaVerwaltung from "./SlaVerwaltung";
 import FaqVerwaltung from "./FaqVerwaltung";
 import ReportingExport from "./ReportingExport";
 import IntegrationenVerwaltung from "./IntegrationenVerwaltung";
+import KonfigurationsHilfe from "./KonfigurationsHilfe";
 
 type Rolle = "super_admin" | "org_admin" | "techniker" | "kunde";
 
@@ -1141,38 +1142,91 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
       )}
 
       {aktiveTab === "werkzeuge" && organisationId && (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
           <VorlagenVerwaltung organisationId={organisationId} />
+          <KonfigurationsHilfe
+            titel="Ticket-Vorlagen verwenden"
+            schritte={[
+              { nr: 1, titel: "Vorlage anlegen", beschreibung: "Name, vorausgefüllten Titel, Beschreibung und Priorität eingeben. Typische Vorlagen: 'VPN-Problem', 'Drucker offline', 'Passwort zurücksetzen'." },
+              { nr: 2, titel: "Beim neuen Ticket auswählen", beschreibung: "Wenn ein Techniker oder Kunde ein neues Ticket anlegt, erscheint oben ein '📋 Vorlage auswählen…'-Dropdown. Nach der Auswahl werden Titel, Beschreibung und Priorität vorausgefüllt – alles bleibt danach bearbeitbar." },
+              { nr: 3, titel: "Spart Zeit bei Standardproblemen", beschreibung: "Für wiederkehrende Anfragen (Onboarding neuer Mitarbeiter, regelmäßige Wartungen) die immer gleiche Checkliste vorbereiten." },
+            ]}
+          />
         </div>
       )}
 
       {aktiveTab === "werkzeuge" && organisationId && (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
           <MakroVerwaltung organisationId={organisationId} />
+          <KonfigurationsHilfe
+            titel="Makros (Textbausteine) verwenden"
+            schritte={[
+              { nr: 1, titel: "Makro anlegen", beschreibung: "Einen Titel (z.B. 'Passwort zurückgesetzt') und den fertig formulierten Antworttext eingeben. Mehrere Makros für häufige Situationen anlegen." },
+              { nr: 2, titel: "Im Ticket einfügen", beschreibung: "Im Ticket-Verlauf erscheint über dem Antwortfeld ein '📋 Makro einfügen…'-Dropdown. Auswahl fügt den Text direkt ins Antwortfeld ein – danach noch personalisieren und senden." },
+            ]}
+            hinweis="Makros unterscheiden sich von Vorlagen: Vorlagen füllen ein neues Ticket vor, Makros fügen Text ins Antwortfeld eines bestehenden Tickets ein."
+          />
         </div>
       )}
 
       {aktiveTab === "werkzeuge" && organisationId && (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
           <TagVerwaltung organisationId={organisationId} />
+          <KonfigurationsHilfe
+            titel="Tags / Kategorien verwenden"
+            schritte={[
+              { nr: 1, titel: "Tags anlegen", beschreibung: "Name und Farbe wählen. Sinnvolle Tags: Hardware, Software, Netzwerk, Drucker, Passwort, Onboarding, Dringend." },
+              { nr: 2, titel: "Tickets taggen", beschreibung: "Im Ticket-Detail gibt es einen '+ Tag'-Button. Mehrere Tags pro Ticket möglich. Tags sind auch für Kunden sichtbar." },
+              { nr: 3, titel: "In der Übersicht filtern", beschreibung: "In der Ticket-Übersicht erscheinen alle vergebenen Tags als Filter-Buttons. Klick auf einen Tag zeigt nur Tickets mit diesem Tag." },
+            ]}
+          />
         </div>
       )}
 
       {aktiveTab === "werkzeuge" && organisationId && (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
           <SlaVerwaltung organisationId={organisationId} />
+          <KonfigurationsHilfe
+            titel="SLA & Automatisierung konfigurieren"
+            schritte={[
+              { nr: 1, titel: "Reaktionszeiten festlegen", beschreibung: "Für jede Priorität (Niedrig bis Kritisch) eine Reaktionszeit (erste Antwort) und Lösungszeit in Stunden eingeben. Beispiel: Kritisch = 1h Reaktion / 4h Lösung." },
+              { nr: 2, titel: "SLA aktivieren", beschreibung: "Checkbox 'SLA-Fristen aktiv' einschalten. Ab sofort bekommen neue Tickets automatisch Fälligkeitsdaten berechnet – direkt beim Anlegen." },
+              { nr: 3, titel: "Überfällige Tickets erkennen", beschreibung: "Im Ticket-Detail erscheint ein roter Hinweis wenn die Reaktions- oder Lösungsfrist überschritten ist." },
+              { nr: 4, titel: "Auto-Schließen (optional)", beschreibung: "Anzahl Tage eintragen, nach denen ein Ticket im Status 'Wartet auf Kunde' automatisch geschlossen wird. Leer lassen = deaktiviert. Läuft täglich um 02:00 Uhr." },
+            ]}
+            hinweis="SLA-Fristen gelten nur für Tickets die nach der Aktivierung erstellt werden – bestehende Tickets bleiben unverändert."
+          />
         </div>
       )}
 
       {aktiveTab === "werkzeuge" && organisationId && (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
           <FaqVerwaltung organisationId={organisationId} slug={organisation?.slug} />
+          <KonfigurationsHilfe
+            titel="FAQ / Wissensdatenbank befüllen"
+            schritte={[
+              { nr: 1, titel: "Einträge anlegen", beschreibung: "Häufig gestellte Fragen mit Antwort, optionaler Kategorie und öffentlich/intern-Kennzeichnung anlegen. Öffentliche Einträge sind für Kunden sichtbar, interne nur für dein Team." },
+              { nr: 2, titel: "Kategorien nutzen", beschreibung: "Einfach im Kategorie-Feld einen Namen eintippen (z.B. 'Passwörter', 'Hardware', 'Software'). Kunden können nach Kategorie filtern." },
+              { nr: 3, titel: "Öffentlicher Link", beschreibung: "Falls ein Firmen-Slug hinterlegt ist, gibt es oben einen kopierbaren Link zur öffentlichen FAQ-Seite – zum Einbinden auf der eigenen Website." },
+              { nr: 4, titel: "Kunden entlasten", beschreibung: "Gute FAQ reduziert Ticket-Volumen deutlich. Faustregel: die häufigsten 10 Fragen der letzten 3 Monate als Startpunkt nehmen." },
+            ]}
+          />
         </div>
       )}
 
       {aktiveTab === "werkzeuge" && organisationId && (
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
           <ReportingExport organisationId={organisationId} />
+          <KonfigurationsHilfe
+            titel="Daten exportieren und nutzen"
+            schritte={[
+              { nr: 1, titel: "Zeitraum wählen", beschreibung: "Von/Bis-Datum einstellen. Tipp: für Monatsberichte immer den 1. bis letzten des Monats wählen." },
+              { nr: 2, titel: "Tickets-Export", beschreibung: "Enthält alle Tickets mit Status, Priorität, SLA-Fälligkeiten, CSAT-Bewertung, Kunde und Techniker. Ideal für Monatsberichte an Kunden." },
+              { nr: 3, titel: "Zeiterfassungs-Export", beschreibung: "Alle Zeiteinträge mit Minuten, Stunden (dezimal), Beschreibung und Ticket-Zuordnung. Direkt in Excel für die Abrechnung nutzbar." },
+              { nr: 4, titel: "CSV in Excel öffnen", beschreibung: "Datei per Doppelklick öffnen oder in Excel via Daten → Aus Text/CSV importieren. Der Export ist UTF-8-kodiert mit Komma als Trennzeichen." },
+            ]}
+            hinweis="Alle Exporte enthalten eine UTF-8-BOM-Markierung, damit Excel deutsche Umlaute (ä, ö, ü) korrekt anzeigt."
+          />
         </div>
       )}
 
