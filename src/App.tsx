@@ -22,6 +22,7 @@ import SuperAdminDashboard from "./components/SuperAdminDashboard";
 import Startseite from "./components/Startseite";
 import KundenRegistrierung from "./components/KundenRegistrierung";
 import DatenschutzSeite from "./components/DatenschutzSeite";
+import FaqOeffentlich from "./components/FaqOeffentlich";
 
 function neukundeSlug(): string | null {
   return new URLSearchParams(window.location.search).get("neukunde");
@@ -29,6 +30,10 @@ function neukundeSlug(): string | null {
 
 function datenschutzSlug(): string | null {
   return new URLSearchParams(window.location.search).get("datenschutz");
+}
+
+function faqSlug(): string | null {
+  return new URLSearchParams(window.location.search).get("faq");
 }
 
 interface Organisation {
@@ -153,6 +158,11 @@ export default function App() {
 
   if (laedt) {
     return <div className="p-8 text-sm text-[var(--text-faint)]">Lädt…</div>;
+  }
+
+  const fSlug = faqSlug();
+  if (fSlug) {
+    return <FaqOeffentlich slug={fSlug} />;
   }
 
   const dsSlug = datenschutzSlug();

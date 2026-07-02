@@ -10,7 +10,7 @@ interface FaqEintrag {
   oeffentlich: boolean;
 }
 
-export default function FaqVerwaltung({ organisationId }: { organisationId: string }) {
+export default function FaqVerwaltung({ organisationId, slug }: { organisationId: string; slug?: string | null }) {
   const [eintraege, setEintraege] = useState<FaqEintrag[]>([]);
   const [offen, setOffen] = useState<string | null>(null);
   const [zeigeNeu, setZeigeNeu] = useState(false);
@@ -19,6 +19,8 @@ export default function FaqVerwaltung({ organisationId }: { organisationId: stri
   const [kategorie, setKategorie] = useState("");
   const [oeffentlich, setOeffentlich] = useState(true);
   const [laedt, setLaedt] = useState(false);
+  const [linkKopiert, setLinkKopiert] = useState(false);
+  const faqUrl = slug ? `${window.location.origin}/?faq=${slug}` : null;
   const [hinweis, setHinweis] = useState<string | null>(null);
 
   useEffect(() => { laden(); }, [organisationId]);
@@ -65,6 +67,27 @@ export default function FaqVerwaltung({ organisationId }: { organisationId: stri
           + Neuer Eintrag
         </button>
       </div>
+
+      {faqUrl ? (
+        <div className="flex items-center gap-2 rounded-lg bg-[var(--bg-muted)] px-3 py-2">
+          <span className="text-xs text-[var(--text-faint)]">🔗 Öffentlicher Link:</span>
+          <code className="flex-1 truncate text-xs text-[var(--text-soft)]">{faqUrl}</code>
+          <button
+            onClick={() => { navigator.clipboard.writeText(faqUrl); setLinkKopiert(true); setTimeout(() => setLinkKopiert(false), 2000); }}
+            className="shrink-0 rounded border border-[var(--border-input)] px-2 py-1 text-xs text-[var(--text-faint)] hover:bg-[var(--bg-muted)]"
+          >
+            {linkKopiert ? "✓ Kopiert" : "Kopieren"}
+          </button>
+          <a href={faqUrl} target="_blank" rel="noreferrer"
+            className="shrink-0 rounded border border-[var(--border-input)] px-2 py-1 text-xs text-[var(--text-faint)] hover:bg-[var(--bg-muted)]">
+            ↗ Vorschau
+          </a>
+        </div>
+      ) : (
+        <p className="text-xs text-[var(--text-faint)]">
+          Trage unter <strong>Firma → Registrierungslink</strong> einen Slug ein, damit der öffentliche FAQ-Link aktiviert wird.
+        </p>
+      )}
       <p className="text-xs text-[var(--text-faint)]">
         Öffentliche Einträge sind für Kunden im Portal sichtbar. Interne Einträge nur für dein Team.
       </p>

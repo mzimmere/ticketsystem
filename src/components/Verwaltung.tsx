@@ -1166,7 +1166,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
 
       {aktiveTab === "werkzeuge" && organisationId && (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
-          <FaqVerwaltung organisationId={organisationId} />
+          <FaqVerwaltung organisationId={organisationId} slug={organisation?.slug} />
         </div>
       )}
 
