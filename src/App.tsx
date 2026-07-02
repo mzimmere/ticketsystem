@@ -73,7 +73,7 @@ export default function App() {
   const [zeigePostfach, setZeigePostfach] = useState(false);
   const [zeigeDashboard, setZeigeDashboard] = useState(false);
   const [zeigeStartseite, setZeigeStartseite] = useState(true);
-  const [verwaltungsTab, setVerwaltungsTab] = useState<"firma" | "team" | "kunden" | "werkzeuge">("firma");
+  const [verwaltungsTab, setVerwaltungsTab] = useState<"firma" | "team" | "kunden" | "werkzeuge" | "integrationen">("firma");
   const [rechnungDetail, setRechnungDetail] = useState<
     { kundeId: string; jahr: number; monat: number } | null
   >(null);
@@ -126,6 +126,7 @@ export default function App() {
     if (aktion === "verwaltung-team") { setZeigeVerwaltung(true); setVerwaltungsTab("team"); }
     if (aktion === "verwaltung-kunden") { setZeigeVerwaltung(true); setVerwaltungsTab("kunden"); }
     if (aktion === "verwaltung-werkzeuge") { setZeigeVerwaltung(true); setVerwaltungsTab("werkzeuge"); }
+    if (aktion === "verwaltung-integrationen") { setZeigeVerwaltung(true); setVerwaltungsTab("integrationen"); }
   }
 
   // Beim Firmenwechsel (Super-Admin) alle offenen Detail-/Auswahl-Zustände

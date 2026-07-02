@@ -13,6 +13,7 @@ import TagVerwaltung from "./TagVerwaltung";
 import SlaVerwaltung from "./SlaVerwaltung";
 import FaqVerwaltung from "./FaqVerwaltung";
 import ReportingExport from "./ReportingExport";
+import IntegrationenVerwaltung from "./IntegrationenVerwaltung";
 
 type Rolle = "super_admin" | "org_admin" | "techniker" | "kunde";
 
@@ -39,7 +40,7 @@ interface Organisation extends OrganisationKurz {
   sla_stunden: number | null;
 }
 
-type VerwaltungsTab = "firma" | "team" | "kunden" | "werkzeuge";
+type VerwaltungsTab = "firma" | "team" | "kunden" | "werkzeuge" | "integrationen";
 
 interface VerwaltungProps {
   rolle: Rolle;
@@ -482,6 +483,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
           { id: "team", label: "👥 Team" },
           { id: "kunden", label: "🤝 Kunden" },
           { id: "werkzeuge", label: "🔧 Werkzeuge" },
+          { id: "integrationen", label: "🔌 Integrationen" },
         ] as { id: VerwaltungsTab; label: string }[]).map((t) => (
           <button
             key={t.id}
@@ -1171,6 +1173,12 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
       {aktiveTab === "werkzeuge" && organisationId && (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
           <ReportingExport organisationId={organisationId} />
+        </div>
+      )}
+
+      {aktiveTab === "integrationen" && organisationId && (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
+          <IntegrationenVerwaltung organisationId={organisationId} />
         </div>
       )}
 

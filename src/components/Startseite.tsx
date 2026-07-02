@@ -379,8 +379,16 @@ export default function Startseite({
               <AktionsButton
                 icon="🔧"
                 label="Werkzeuge"
-                sub="Makros, Tags, SLA"
+                sub="Makros, Tags, SLA, FAQ"
                 onClick={() => onAktion("verwaltung-werkzeuge")}
+              />
+            )}
+            {organisationId && (
+              <AktionsButton
+                icon="🔌"
+                label="Integrationen"
+                sub="E-Mail, WhatsApp"
+                onClick={() => onAktion("verwaltung-integrationen")}
               />
             )}
           </div>
