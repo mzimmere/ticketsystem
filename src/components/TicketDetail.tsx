@@ -228,12 +228,40 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
   }
 
   async function ladeNachrichten() {
-    const { data } = await supabase
-      .from("ticket_nachrichten")
-      .select("id, quelle, inhalt, erstellt_am, autor:autor_id(name), anhaenge(id, storage_path, dateityp)")
-      .eq("ticket_id", ticketId)
-      .order("erstellt_am", { ascending: false });
-    setNachrichten((data as unknown as Nachricht[]) ?? []);
+    const [nachrichtenRes, zeitRes] = await Promise.all([
+      supabase
+        .from("ticket_nachrichten")
+        .select("id, quelle, inhalt, erstellt_am, autor:autor_id(name), anhaenge(id, storage_path, dateityp)")
+        .eq("ticket_id", ticketId)
+        .order("erstellt_am", { ascending: false }),
+      supabase
+        .from("zeiteintraege")
+        .select("id, minuten, beschreibung, erfassungsart, erstellt_am, techniker:techniker_id(name)")
+        .eq("ticket_id", ticketId)
+        .not("minuten", "is", null)
+        .order("erstellt_am", { ascending: false }),
+    ]);
+
+    const echteNachrichten = (nachrichtenRes.data as unknown as Nachricht[]) ?? [];
+
+    // Zeiteinträge als Pseudo-Nachrichten in den Verlauf mischen
+    const zeitNachrichten: Nachricht[] = ((zeitRes.data ?? []) as unknown as {
+      id: string; minuten: number; beschreibung: string | null;
+      erfassungsart: string; erstellt_am: string;
+      techniker: { name: string | null } | null;
+    }[]).map((z) => ({
+      id: `zeit-${z.id}`,
+      quelle: "zeiterfassung",
+      inhalt: `${z.minuten} Min. erfasst${z.beschreibung ? ` – ${z.beschreibung}` : ""}${z.erfassungsart === "manuell" ? " (manuell)" : ""}`,
+      erstellt_am: z.erstellt_am,
+      autor: z.techniker,
+      anhaenge: [],
+    }));
+
+    const kombiniert = [...echteNachrichten, ...zeitNachrichten].sort(
+      (a, b) => new Date(b.erstellt_am).getTime() - new Date(a.erstellt_am).getTime()
+    );
+    setNachrichten(kombiniert);
   }
 
   async function anhangOeffnen(pfad: string) {
@@ -461,6 +489,21 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
         <h3 className="mb-3 text-sm font-medium text-[var(--text-strong)]">Verlauf</h3>
         <div className="max-h-96 space-y-3 overflow-y-auto lg:max-h-[32rem]">
           {nachrichten.map((n) => (
+            n.quelle === "zeiterfassung" ? (
+              <div
+                key={n.id}
+                className="flex items-center gap-2 rounded-md border border-dashed border-amber-300/60 bg-amber-50/50 px-3 py-1.5 text-xs dark:border-amber-700/40 dark:bg-amber-900/10"
+              >
+                <span>⏱</span>
+                <span className="font-medium text-amber-800 dark:text-amber-300">
+                  {n.autor?.name ?? "Techniker"}
+                </span>
+                <span className="text-[var(--text-soft)]">{n.inhalt}</span>
+                <span className="ml-auto font-mono text-[var(--text-faint)]">
+                  {formatDatum(n.erstellt_am)}
+                </span>
+              </div>
+            ) : (
             <div
               key={n.id}
               className={`rounded-md p-3 text-sm ${
@@ -497,6 +540,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
                 </div>
               )}
             </div>
+            )
           ))}
         </div>
 
@@ -561,6 +605,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
             kundeId={ticket.kunde_id}
             technikerId={technikerId}
             organisationId={ticket.organisation_id}
+            onZeitErfasst={ladeNachrichten}
           />
         </div>
       </div>

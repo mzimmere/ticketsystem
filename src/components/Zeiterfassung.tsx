@@ -8,6 +8,7 @@ interface ZeiterfassungProps {
   kundeId: string;
   technikerId: string;
   organisationId: string;
+  onZeitErfasst?: () => void;
 }
 
 // ─── Sound via Web Audio API ───────────────────────────────────────────────
@@ -66,7 +67,7 @@ function Ziffer({ wert, cls }: { wert: number; cls?: string }) {
 }
 
 export default function Zeiterfassung({
-  ticketId, kundeId, technikerId, organisationId,
+  ticketId, kundeId, technikerId, organisationId, onZeitErfasst,
 }: ZeiterfassungProps) {
   const [aktiverTimer, setAktiverTimer] = useState<AktiverTimer | null>(null);
   const [sek, setSek] = useState(0);
@@ -134,7 +135,7 @@ export default function Zeiterfassung({
       beschreibung: beschreibung || null,
     }).eq("id", aktiverTimer.id);
     setLaedt(false);
-    if (!error) { setAktiverTimer(null); setSek(0); setBeschreibung(""); }
+    if (!error) { setAktiverTimer(null); setSek(0); setBeschreibung(""); onZeitErfasst?.(); }
   }
 
   async function manuellSpeichern() {
@@ -147,7 +148,7 @@ export default function Zeiterfassung({
       minuten: min, beschreibung: beschreibung || null,
     });
     setLaedt(false);
-    if (!error) { setManuelleMin(""); setBeschreibung(""); setZeigeManuell(false); }
+    if (!error) { setManuelleMin(""); setBeschreibung(""); setZeigeManuell(false); onZeitErfasst?.(); }
   }
 
   const std = Math.floor(sek / 3600);
