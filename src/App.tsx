@@ -79,6 +79,7 @@ export default function App() {
   const [zeigeDashboard, setZeigeDashboard] = useState(false);
   const [zeigeStartseite, setZeigeStartseite] = useState(true);
   const [verwaltungsTab, setVerwaltungsTab] = useState<"firma" | "team" | "kunden" | "werkzeuge" | "integrationen">("firma");
+  const [ticketFilter, setTicketFilter] = useState<"meine" | "wartend" | null>(null);
   const [rechnungDetail, setRechnungDetail] = useState<
     { kundeId: string; jahr: number; monat: number } | null
   >(null);
@@ -122,7 +123,10 @@ export default function App() {
 
   function startseitenAktion(aktion: string) {
     alleZustandsResets();
+    setTicketFilter(null);
     if (aktion === "tickets") return;
+    if (aktion === "tickets-meine") { setTicketFilter("meine"); return; }
+    if (aktion === "tickets-wartend") { setTicketFilter("wartend"); return; }
     if (aktion === "neues-ticket") setZeigeNeuesTicket(true);
     if (aktion === "dashboard") setZeigeDashboard(true);
     if (aktion === "abrechnung") setZeigeAbrechnung(true);
@@ -548,12 +552,14 @@ export default function App() {
             </>
           ) : (
             <TicketUebersicht
+            key={ticketFilter ?? "standard"}
             onAuswahl={setAusgewaehltesTicket}
             organisationId={aktiveOrgId}
             technikerId={profil.id}
             motto={organisation?.motto}
             heroBildUrl={organisation?.hero_bild_url}
             slaStunden={organisation?.sla_stunden}
+            initialFilter={ticketFilter}
           />
           )
         ) : (

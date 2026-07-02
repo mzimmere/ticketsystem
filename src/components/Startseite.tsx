@@ -17,17 +17,32 @@ interface SchnellzahlProps {
   wert: number | null;
   label: string;
   farbe?: string;
+  onClick?: () => void;
 }
 
-function Schnellzahl({ wert, label, farbe }: SchnellzahlProps) {
-  return (
-    <div className="text-center">
+function Schnellzahl({ wert, label, farbe, onClick }: SchnellzahlProps) {
+  const inhalt = (
+    <>
       <p className={`text-2xl font-bold ${farbe ?? "text-[var(--text-strong)]"}`}>
         {wert === null ? "—" : wert}
       </p>
       <p className="mt-0.5 text-xs text-[var(--text-faint)]">{label}</p>
-    </div>
+    </>
   );
+
+  if (onClick) {
+    return (
+      <button
+        onClick={onClick}
+        className="rounded-lg text-center transition-colors hover:bg-[var(--bg-muted)] px-2 py-1 -mx-2 -my-1"
+        title={`Zu: ${label}`}
+      >
+        {inhalt}
+      </button>
+    );
+  }
+
+  return <div className="text-center">{inhalt}</div>;
 }
 
 interface AktionsButtonProps {
@@ -275,16 +290,19 @@ export default function Startseite({
                   wert={stats.alleOffenen}
                   label="Offene Tickets"
                   farbe={(stats.alleOffenen ?? 0) > 0 ? "text-orange-500" : "text-green-600"}
+                  onClick={() => onAktion("tickets")}
                 />
                 <Schnellzahl
                   wert={stats.meineOffenen}
                   label="Mir zugewiesen"
                   farbe={(stats.meineOffenen ?? 0) > 0 ? "text-blue-500" : "text-[var(--text-strong)]"}
+                  onClick={() => onAktion("tickets-meine")}
                 />
                 <Schnellzahl
                   wert={stats.wartenAufMich}
                   label="Wartet auf Antwort"
                   farbe={(stats.wartenAufMich ?? 0) > 0 ? "text-yellow-500" : "text-[var(--text-strong)]"}
+                  onClick={() => onAktion("tickets-wartend")}
                 />
               </>
             ) : (

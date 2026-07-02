@@ -104,6 +104,7 @@ interface TicketUebersichtProps {
   motto?: string | null;
   heroBildUrl?: string | null;
   slaStunden?: number | null;
+  initialFilter?: "meine" | "wartend" | null;
 }
 
 export default function TicketUebersicht({
@@ -113,10 +114,14 @@ export default function TicketUebersicht({
   motto,
   heroBildUrl,
   slaStunden,
+  initialFilter,
 }: TicketUebersichtProps) {
   const [tickets, setTickets] = useState<TicketZeile[]>([]);
   const [kundenOptionen, setKundenOptionen] = useState<KundeOption[]>([]);
-  const [statusFilter, setStatusFilter] = useState<Status | "alle" | "offene">("offene");
+  const [statusFilter, setStatusFilter] = useState<Status | "alle" | "offene">(
+    initialFilter === "wartend" ? "wartet_auf_kunde" : "offene"
+  );
+  const [nurMeine, setNurMeine] = useState(initialFilter === "meine");
   const [prioritaetFilter, setPrioritaetFilter] = useState<Prioritaet | "alle">("alle");
   const [kundeFilter, setKundeFilter] = useState<string>("alle");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
@@ -139,7 +144,7 @@ export default function TicketUebersicht({
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, prioritaetFilter, kundeFilter, organisationId]);
+  }, [statusFilter, prioritaetFilter, kundeFilter, organisationId, nurMeine]);
 
   useEffect(() => {
     if (!organisationId) return;
@@ -193,6 +198,7 @@ export default function TicketUebersicht({
     }
     if (prioritaetFilter !== "alle") query = query.eq("prioritaet", prioritaetFilter);
     if (kundeFilter !== "alle") query = query.eq("kunde_id", kundeFilter);
+    if (nurMeine) query = query.eq("zugewiesen_an", technikerId);
 
     const { data } = await query;
     setTickets((data as unknown as TicketZeile[]) ?? []);
@@ -308,6 +314,12 @@ export default function TicketUebersicht({
             </option>
           ))}
         </select>
+
+        <span className="h-4 w-px bg-[var(--border)]" />
+
+        <FilterChip aktiv={nurMeine} onClick={() => setNurMeine(!nurMeine)}>
+          👤 Nur meine
+        </FilterChip>
 
         <span className="h-4 w-px bg-[var(--border)]" />
 
