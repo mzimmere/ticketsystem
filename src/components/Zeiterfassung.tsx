@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { spieleBuzzerSound, type SoundPreset } from "../lib/buzzerSounds";
 
 type AktiverTimer = { id: string; start_zeit: string };
 
@@ -9,49 +10,6 @@ interface ZeiterfassungProps {
   technikerId: string;
   organisationId: string;
   onZeitErfasst?: () => void;
-}
-
-// ─── Sound via Web Audio API ───────────────────────────────────────────────
-function spieleStartSound() {
-  try {
-    const ctx = new AudioContext();
-    const noten = [440, 554, 659]; // A4 – C#5 – E5 (A-Dur)
-    noten.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = "sine";
-      osc.frequency.value = freq;
-      const t = ctx.currentTime + i * 0.12;
-      gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(0.18, t + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-      osc.start(t);
-      osc.stop(t + 0.3);
-    });
-  } catch (_) { /* Browser ohne AudioContext, kein Problem */ }
-}
-
-function spieleStopSound() {
-  try {
-    const ctx = new AudioContext();
-    const noten = [659, 554, 440]; // E5 – C#5 – A4 (absteigend)
-    noten.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = "sine";
-      osc.frequency.value = freq;
-      const t = ctx.currentTime + i * 0.1;
-      gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(0.15, t + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-      osc.start(t);
-      osc.stop(t + 0.25);
-    });
-  } catch (_) { /* ignore */ }
 }
 
 // ─── Ziffernrolle (mechanische Anzeigetafel-Animation) ─────────────────────
@@ -78,6 +36,9 @@ export default function Zeiterfassung({
   const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
   const [zeigeManuell, setZeigeManuell] = useState(false);
   const intervalRef = useRef<number | null>(null);
+  const soundRef = useRef<{ preset: SoundPreset; startUrl: string | null; stopUrl: string | null }>({
+    preset: "klassisch", startUrl: null, stopUrl: null,
+  });
   const buzzerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -85,6 +46,19 @@ export default function Zeiterfassung({
       .eq("techniker_id", technikerId).eq("erfassungsart", "timer")
       .is("end_zeit", null).maybeSingle()
       .then(({ data }) => { if (data) setAktiverTimer(data); });
+
+    supabase.from("profiles")
+      .select("buzzer_sound, buzzer_start_url, buzzer_stop_url")
+      .eq("id", technikerId).single()
+      .then(({ data }) => {
+        if (data) {
+          soundRef.current = {
+            preset: (data.buzzer_sound as SoundPreset) ?? "klassisch",
+            startUrl: data.buzzer_start_url,
+            stopUrl: data.buzzer_stop_url,
+          };
+        }
+      });
   }, [technikerId]);
 
   useEffect(() => {
@@ -112,7 +86,7 @@ export default function Zeiterfassung({
   async function timerStarten(e: React.MouseEvent<HTMLButtonElement>) {
     addRipple(e);
     setPulsiert(true);
-    spieleStartSound();
+    spieleBuzzerSound("start", soundRef.current.preset, { start: soundRef.current.startUrl, stop: soundRef.current.stopUrl });
     setTimeout(() => setPulsiert(false), 600);
     setLaedt(true);
     const { data, error } = await supabase.from("zeiteintraege").insert({
@@ -127,7 +101,7 @@ export default function Zeiterfassung({
   async function timerStoppen(e: React.MouseEvent<HTMLButtonElement>) {
     if (!aktiverTimer) return;
     addRipple(e);
-    spieleStopSound();
+    spieleBuzzerSound("stop", soundRef.current.preset, { start: soundRef.current.startUrl, stop: soundRef.current.stopUrl });
     setLaedt(true);
     const minuten = Math.max(1, Math.round(sek / 60));
     const { error } = await supabase.from("zeiteintraege").update({

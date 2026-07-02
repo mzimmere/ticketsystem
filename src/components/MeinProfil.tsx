@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
 import Avatar from "./Avatar";
+import BuzzerSoundEinstellung from "./BuzzerSoundEinstellung";
 
 type Verfuegbarkeit = "verfuegbar" | "abwesend" | "urlaub";
 
@@ -218,6 +219,8 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
 
         {hinweis && <p className="text-sm text-[var(--text-soft)]">{hinweis}</p>}
       </div>
+
+      {istIntern && <BuzzerSoundEinstellung profilId={profilId} />}
 
       {istIntern && kollegen.length > 0 && (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
