@@ -329,6 +329,9 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
         </div>
       )}
 
+      <div className="space-y-5 lg:grid lg:grid-cols-3 lg:items-start lg:gap-5 lg:space-y-0">
+        <div className="space-y-5 lg:col-span-2">
+
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-3">
         <div>
           <h2 className="text-base font-semibold text-[var(--text-strong)]">
@@ -456,7 +459,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
 
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
         <h3 className="mb-3 text-sm font-medium text-[var(--text-strong)]">Verlauf</h3>
-        <div className="max-h-96 space-y-3 overflow-y-auto">
+        <div className="max-h-96 space-y-3 overflow-y-auto lg:max-h-[32rem]">
           {nachrichten.map((n) => (
             <div
               key={n.id}
@@ -537,26 +540,30 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
           </div>
         </div>
       </div>
+        </div>
 
-      <KiAssistent
-        ticketId={ticket.id}
-        onAntwortVorschlag={(text) => setNeueNotiz((prev) => prev ? prev + "\n\n" + text : text)}
-        onTagsVorgeschlagen={async (vorgeschlageneTags) => {
-          const passende = alleTags.filter((t) => vorgeschlageneTags.includes(t.name));
-          for (const tag of passende) {
-            if (!ticketTags.find((tt) => tt.id === tag.id)) {
-              await tagHinzufuegen(tag);
-            }
-          }
-        }}
-      />
+        <div className="space-y-5 lg:sticky lg:top-4">
+          <KiAssistent
+            ticketId={ticket.id}
+            onAntwortVorschlag={(text) => setNeueNotiz((prev) => prev ? prev + "\n\n" + text : text)}
+            onTagsVorgeschlagen={async (vorgeschlageneTags) => {
+              const passende = alleTags.filter((t) => vorgeschlageneTags.includes(t.name));
+              for (const tag of passende) {
+                if (!ticketTags.find((tt) => tt.id === tag.id)) {
+                  await tagHinzufuegen(tag);
+                }
+              }
+            }}
+          />
 
-      <Zeiterfassung
-        ticketId={ticket.id}
-        kundeId={ticket.kunde_id}
-        technikerId={technikerId}
-        organisationId={ticket.organisation_id}
-      />
+          <Zeiterfassung
+            ticketId={ticket.id}
+            kundeId={ticket.kunde_id}
+            technikerId={technikerId}
+            organisationId={ticket.organisation_id}
+          />
+        </div>
+      </div>
     </div>
   );
 }

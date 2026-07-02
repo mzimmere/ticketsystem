@@ -251,7 +251,8 @@ export default function App() {
       className="min-h-screen bg-[var(--bg-muted)]"
       style={{ "--akzent": organisation?.akzentfarbe || "#f59e0b" } as React.CSSProperties}
     >
-      <header className="border-b border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3 flex items-center justify-between">
+      <header className="border-b border-[var(--border)] bg-[var(--bg-surface)]">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 lg:px-8">
         <div className="flex items-center gap-2">
           {profil.rolle === "super_admin" && superAdminFirma && (
             <button
@@ -419,9 +420,10 @@ export default function App() {
             Abmelden
           </button>
         </div>
+        </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 py-6 space-y-4">
+      <main className="mx-auto max-w-6xl px-4 py-6 space-y-4 lg:px-8">
         {zeigeStartseite && !ausgewaehltesTicket && !zeigeNeuesTicket && !zeigeVerwaltung && !zeigeAbrechnung && !zeigeFirmenInfo && !zeigePostfach && !zeigeDashboard && !zeigeProfil ? (
           <Startseite
             name={profil.name}

@@ -142,7 +142,7 @@ function SchnellNutzerAnlegen() {
         {firmen.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
       </select>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
         <input type="text" value={vorname} onChange={(e) => setVorname(e.target.value)}
           placeholder="Vorname *"
           className="rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
@@ -354,7 +354,7 @@ export default function Startseite({
         )}
 
         {istAdmin && (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
             <AktionsButton
               icon="📊"
               label="Dashboard"
