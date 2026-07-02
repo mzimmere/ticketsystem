@@ -3,6 +3,8 @@ import { supabase } from "../lib/supabaseClient";
 import Avatar from "./Avatar";
 import NeuesTicketIntern from "./NeuesTicketIntern";
 import StatusBadge from "./StatusBadge";
+import { TicketZeileSkeleton } from "./Skeleton";
+import LeerZustand from "./LeerZustand";
 
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
@@ -358,9 +360,21 @@ export default function TicketUebersicht({
           sehen.
         </p>
       ) : laedt ? (
-        <p className="text-sm text-[var(--text-faint)]">Lädt…</p>
+        <div className="animate-fade-in overflow-hidden rounded-lg border border-[var(--border)]">
+          {[...Array(5)].map((_, i) => <TicketZeileSkeleton key={i} />)}
+        </div>
       ) : gefilterteTickets.length === 0 ? (
-        <p className="text-sm text-[var(--text-faint)]">Keine Tickets gefunden.</p>
+        <LeerZustand
+          icon="🎫"
+          titel={suchbegriff || tagFilter ? "Keine Treffer" : "Keine offenen Tickets"}
+          beschreibung={
+            suchbegriff
+              ? `Kein Ticket enthält „${suchbegriff}" – weder im Titel noch im Verlauf.`
+              : tagFilter
+              ? `Kein Ticket ist mit dem Tag „${tagFilter}" versehen.`
+              : "Alles erledigt! Neue Tickets erscheinen hier sobald Kunden eine Anfrage stellen."
+          }
+        />
       ) : (
         <div className="overflow-hidden rounded-lg border border-[var(--border)]">
           <div className="hidden items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-muted)] px-4 py-1.5 text-[0.65rem] font-medium uppercase tracking-wide text-[var(--text-faint)] sm:flex">

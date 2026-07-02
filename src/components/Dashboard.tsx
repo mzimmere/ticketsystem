@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { supabase } from "../lib/supabaseClient";
+import { KpiSkeleton } from "./Skeleton";
 
 interface DashboardProps {
   organisationId: string;
@@ -221,7 +223,6 @@ export default function Dashboard({ organisationId }: DashboardProps) {
   const csatRate = csatGesamt > 0 ? Math.round((csat.positiv / csatGesamt) * 100) : null;
   const slaGesamt = sla.eingehalten + sla.verletzt;
   const slaRate = slaGesamt > 0 ? Math.round((sla.eingehalten / slaGesamt) * 100) : null;
-  const maxVolumen = Math.max(...volumen.map((v) => Math.max(v.neu, v.geloest)), 1);
 
   return (
     <div className="space-y-6">
@@ -242,22 +243,30 @@ export default function Dashboard({ organisationId }: DashboardProps) {
       ) : (
         <>
           {/* KPI-Zeile */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <KpiKarte titel="Tickets gesamt" wert={stats?.gesamt ?? 0} />
-            <KpiKarte titel="Offen / aktiv"
-              wert={(stats?.offen ?? 0) + (stats?.in_bearbeitung ?? 0) + (stats?.wartet_auf_kunde ?? 0)}
-              farbe={(stats?.offen ?? 0) + (stats?.in_bearbeitung ?? 0) > 10 ? "text-orange-600" : "text-[var(--text-strong)]"}
-            />
-            <KpiKarte titel="Kundenzufriedenheit"
-              wert={csatRate !== null ? `${csatRate}%` : "—"}
-              sub={csatGesamt > 0 ? `${csatGesamt} Bewertungen` : "Noch keine Bewertungen"}
-              farbe={csatRate !== null ? (csatRate >= 80 ? "text-green-600" : csatRate >= 60 ? "text-yellow-600" : "text-red-600") : undefined}
-            />
-            <KpiKarte titel="SLA-Einhaltung"
-              wert={slaRate !== null ? `${slaRate}%` : "—"}
-              sub={slaGesamt > 0 ? `${slaGesamt} Tickets mit SLA` : "Keine SLA konfiguriert"}
-              farbe={slaRate !== null ? (slaRate >= 90 ? "text-green-600" : slaRate >= 70 ? "text-yellow-600" : "text-red-600") : undefined}
-            />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 animate-fade-in">
+            {laedt ? (
+              <>
+                <KpiSkeleton /><KpiSkeleton /><KpiSkeleton /><KpiSkeleton />
+              </>
+            ) : (
+              <>
+                <KpiKarte titel="Tickets gesamt" wert={stats?.gesamt ?? 0} />
+                <KpiKarte titel="Offen / aktiv"
+                  wert={(stats?.offen ?? 0) + (stats?.in_bearbeitung ?? 0) + (stats?.wartet_auf_kunde ?? 0)}
+                  farbe={(stats?.offen ?? 0) + (stats?.in_bearbeitung ?? 0) > 10 ? "text-orange-600" : "text-[var(--text-strong)]"}
+                />
+                <KpiKarte titel="Kundenzufriedenheit"
+                  wert={csatRate !== null ? `${csatRate}%` : "—"}
+                  sub={csatGesamt > 0 ? `${csatGesamt} Bewertungen` : "Noch keine Bewertungen"}
+                  farbe={csatRate !== null ? (csatRate >= 80 ? "text-green-600" : csatRate >= 60 ? "text-yellow-600" : "text-red-600") : undefined}
+                />
+                <KpiKarte titel="SLA-Einhaltung"
+                  wert={slaRate !== null ? `${slaRate}%` : "—"}
+                  sub={slaGesamt > 0 ? `${slaGesamt} Tickets mit SLA` : "Keine SLA konfiguriert"}
+                  farbe={slaRate !== null ? (slaRate >= 90 ? "text-green-600" : slaRate >= 70 ? "text-yellow-600" : "text-red-600") : undefined}
+                />
+              </>
+            )}
           </div>
 
           {/* Status-Aufschlüsselung */}
@@ -282,36 +291,54 @@ export default function Dashboard({ organisationId }: DashboardProps) {
             </div>
           </div>
 
-          {/* Volumen-Chart (simples Balkendiagramm) */}
-          {volumen.length > 0 && (
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4">
+          {/* Volumen-Chart mit Recharts */}
+          {volumen.length > 0 && !laedt && (
+            <div className="animate-fade-in rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">Ticket-Volumen</p>
-                <div className="flex items-center gap-3 text-xs text-[var(--text-faint)]">
-                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" /> Neu</span>
-                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-500" /> Gelöst</span>
+                <div className="flex items-center gap-4 text-xs text-[var(--text-faint)]">
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-3 rounded-sm bg-blue-400" />Neu</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-3 rounded-sm bg-green-400" />Gelöst</span>
                 </div>
               </div>
-              <div className="flex h-24 items-end gap-0.5 overflow-hidden">
-                {volumen.map((v) => (
-                  <div key={v.tag} className="group relative flex flex-1 flex-col items-center gap-0.5">
-                    <div className="absolute -top-6 left-1/2 hidden -translate-x-1/2 rounded bg-[var(--bg-muted)] px-1.5 py-0.5 text-[0.6rem] whitespace-nowrap group-hover:block z-10">
-                      {v.tag.slice(5)}: {v.neu} neu, {v.geloest} gel.
-                    </div>
-                    <div className="flex w-full items-end gap-px h-24">
-                      <div className="flex-1 rounded-t bg-blue-500/70 transition-all"
-                        style={{ height: `${Math.max(2, (v.neu / maxVolumen) * 96)}px` }} />
-                      <div className="flex-1 rounded-t bg-green-500/70 transition-all"
-                        style={{ height: `${Math.max(2, (v.geloest / maxVolumen) * 96)}px` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-1 flex justify-between text-[0.6rem] text-[var(--text-faint)]">
-                <span>{volumen[0]?.tag.slice(5)}</span>
-                <span>{volumen[Math.floor(volumen.length / 2)]?.tag.slice(5)}</span>
-                <span>{volumen[volumen.length - 1]?.tag.slice(5)}</span>
-              </div>
+              <ResponsiveContainer width="100%" height={140}>
+                <BarChart data={volumen} barGap={2} barSize={zeitraum > 30 ? 4 : 8}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="tag" tickFormatter={(v: string) => v.slice(5)}
+                    tick={{ fontSize: 9, fill: "var(--text-faint)" }}
+                    tickLine={false} axisLine={false}
+                    interval={zeitraum <= 7 ? 0 : zeitraum <= 30 ? 4 : 9}
+                  />
+                  <YAxis tick={{ fontSize: 9, fill: "var(--text-faint)" }} tickLine={false} axisLine={false} width={20} />
+                  <Tooltip
+                    contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 11 }}
+                    labelFormatter={(v) => String(v)}
+                    formatter={(val) => [String(val ?? ""), (val === 0 || val) ? "" : ""]}
+                  />
+                  <Bar dataKey="neu" fill="#60a5fa" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="geloest" fill="#4ade80" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Reaktionszeit-Trend */}
+          {techniker.length > 0 && !laedt && techniker.some((t) => t.durchschnitt_minuten !== null) && (
+            <div className="animate-fade-in rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4">
+              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">Ø Reaktionszeit (Minuten)</p>
+              <ResponsiveContainer width="100%" height={100}>
+                <BarChart data={techniker.filter((t) => t.durchschnitt_minuten !== null)} barSize={24}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 9, fill: "var(--text-faint)" }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fontSize: 9, fill: "var(--text-faint)" }} tickLine={false} axisLine={false} width={30}
+                    tickFormatter={(v: number) => v >= 60 ? `${Math.round(v/60)}h` : `${v}m`} />
+                  <Tooltip
+                    contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 11 }}
+                    
+                  />
+                  <Bar dataKey="durchschnitt_minuten" fill="#f59e0b" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           )}
 

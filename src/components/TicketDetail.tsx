@@ -7,6 +7,7 @@ import Zeiterfassung from "./Zeiterfassung";
 import Avatar from "./Avatar";
 import StatusBadge from "./StatusBadge";
 import TicketMerge from "./TicketMerge";
+import KiAssistent from "./KiAssistent";
 
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
@@ -534,6 +535,19 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
           </div>
         </div>
       </div>
+
+      <KiAssistent
+        ticketId={ticket.id}
+        onAntwortVorschlag={(text) => setNeueNotiz((prev) => prev ? prev + "\n\n" + text : text)}
+        onTagsVorgeschlagen={async (vorgeschlageneTags) => {
+          const passende = alleTags.filter((t) => vorgeschlageneTags.includes(t.name));
+          for (const tag of passende) {
+            if (!ticketTags.find((tt) => tt.id === tag.id)) {
+              await tagHinzufuegen(tag);
+            }
+          }
+        }}
+      />
 
       <Zeiterfassung
         ticketId={ticket.id}
