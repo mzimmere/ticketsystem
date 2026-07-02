@@ -9,6 +9,7 @@ type Verfuegbarkeit = "verfuegbar" | "abwesend" | "urlaub";
 
 interface Mitglied {
   id: string;
+  email: string | null;
   name: string | null;
   vorname: string | null;
   nachname: string | null;
@@ -49,6 +50,8 @@ export default function MitarbeiterListe({
   const [zeigeArchivierte, setZeigeArchivierte] = useState(false);
   const [offenId, setOffenId] = useState<string | null>(null);
   const [entwurf, setEntwurf] = useState<Partial<Mitglied>>({});
+  const [emailEntwurf, setEmailEntwurf] = useState("");
+  const [emailLaedt, setEmailLaedt] = useState(false);
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [neuerZugang, setNeuerZugang] = useState<{
     email: string;
@@ -66,12 +69,8 @@ export default function MitarbeiterListe({
 
   async function ladeMitglieder() {
     const { data, error } = await supabase
-      .from("profiles")
-      .select("id, name, vorname, nachname, avatar_url, telefonnummer, rolle, verfuegbarkeit, deaktiviert")
-      .eq("organisation_id", organisationId)
-      .in("rolle", ["techniker", "org_admin", "super_admin"])
-      .eq("deaktiviert", zeigeArchivierte)
-      .order("rolle");
+      .rpc("get_team_mit_email", { p_organisation_id: organisationId })
+      .eq("deaktiviert", zeigeArchivierte);
     if (error) {
       console.error("[MitarbeiterListe] Laden fehlgeschlagen:", error);
       setHinweis("Team konnte nicht geladen werden (Details in der Browser-Konsole).");
@@ -97,6 +96,7 @@ export default function MitarbeiterListe({
     if (!darfBearbeiten) return;
     setOffenId(m.id);
     setEntwurf(m);
+    setEmailEntwurf(m.email ?? "");
     setHinweis(null);
   }
 
@@ -120,6 +120,35 @@ export default function MitarbeiterListe({
       return;
     }
     setOffenId(null);
+    ladeMitglieder();
+  }
+
+  async function emailAendern(mitgliedId: string) {
+    if (!emailEntwurf.trim() || !emailEntwurf.includes("@")) {
+      setHinweis("Bitte eine gültige E-Mail-Adresse eingeben.");
+      return;
+    }
+    setEmailLaedt(true);
+    const { data: session } = await supabase.auth.getSession();
+    const res = await fetch(
+      `${(supabase as unknown as { supabaseUrl: string }).supabaseUrl}/functions/v1/aendere-email`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+        body: JSON.stringify({ nutzerId: mitgliedId, neueEmail: emailEntwurf.trim() }),
+      }
+    );
+    const json = await res.json();
+    setEmailLaedt(false);
+    if (!res.ok) {
+      setHinweis(json.error ?? "E-Mail-Änderung fehlgeschlagen.");
+      return;
+    }
+    setEmailEntwurf("");
+    setHinweis("E-Mail geändert.");
     ladeMitglieder();
   }
 
@@ -223,6 +252,9 @@ export default function MitarbeiterListe({
             </span>
             <div className="min-w-0">
               <p className="truncate text-sm text-[var(--text-strong)]">{m.name ?? "Unbenannt"}</p>
+              {m.email && (
+                <p className="truncate text-xs text-[var(--text-faint)]">{m.email}</p>
+              )}
               {m.verfuegbarkeit !== "verfuegbar" && (
                 <p className="text-xs text-[var(--text-faint)]">
                   {m.verfuegbarkeit === "urlaub" ? "Urlaub" : "Abwesend"}
@@ -334,6 +366,30 @@ export default function MitarbeiterListe({
               >
                 Speichern
               </button>
+
+              {/* E-Mail-Adresse ändern */}
+              <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-muted)] p-3 space-y-2">
+                <p className="text-xs font-medium text-[var(--text-soft)]">E-Mail-Adresse ändern</p>
+                <p className="text-xs text-[var(--text-faint)]">
+                  Aktuell: <span className="font-mono">{m.email ?? "—"}</span>
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    value={emailEntwurf}
+                    onChange={(e) => setEmailEntwurf(e.target.value)}
+                    placeholder="neue@email.de"
+                    className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+                  />
+                  <button
+                    onClick={() => emailAendern(m.id)}
+                    disabled={emailLaedt || !emailEntwurf.includes("@") || emailEntwurf === m.email}
+                    className="rounded bg-slate-900 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
+                  >
+                    {emailLaedt ? "…" : "Ändern"}
+                  </button>
+                </div>
+              </div>
 
               <button
                 onClick={() => neuenLinkAnfordern(m.id, entwurf.telefonnummer ?? null)}
