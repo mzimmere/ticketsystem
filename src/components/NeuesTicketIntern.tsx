@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useUngespeichertWarnung } from "../lib/useUngespeichertWarnung";
 
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
 
@@ -34,6 +35,7 @@ export default function NeuesTicketIntern({
   const [beschreibung, setBeschreibung] = useState("");
   const [prioritaet, setPrioritaet] = useState<Prioritaet>("mittel");
   const [vorlagen, setVorlagen] = useState<{ id: string; titel: string; beschreibung: string; prioritaet: Prioritaet }[]>([]);
+  useUngespeichertWarnung(titel.trim().length > 0 || beschreibung.trim().length > 0);
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { benachrichtigeKunde } from "../lib/benachrichtigungen";
 import { sichererDateiname } from "../lib/dateiname";
+import { useUngespeichertWarnung } from "../lib/useUngespeichertWarnung";
 import DateiAuswahl from "./DateiAuswahl";
 import Zeiterfassung from "./Zeiterfassung";
 import Avatar from "./Avatar";
@@ -105,6 +106,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
   const [fuerKundeSichtbar, setFuerKundeSichtbar] = useState(false);
   const [zeigeTagMenu, setZeigeTagMenu] = useState(false);
   const [andereBetrachter, setAndereBetrachter] = useState<string[]>([]);
+  useUngespeichertWarnung(neueNotiz.trim().length > 0 || neueDateien.length > 0);
 
   useEffect(() => {
     ladeAlles();

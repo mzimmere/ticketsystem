@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
 import DateiAuswahl from "./DateiAuswahl";
+import { useUngespeichertWarnung } from "../lib/useUngespeichertWarnung";
 
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
 
@@ -24,6 +25,7 @@ export default function NeuesTicket({ onErstellt }: NeuesTicketProps) {
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [vorlagen, setVorlagen] = useState<Vorlage[]>([]);
+  useUngespeichertWarnung(titel.trim().length > 0 || beschreibung.trim().length > 0 || dateien.length > 0);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
