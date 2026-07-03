@@ -1025,3 +1025,92 @@ alter table rechnungsanpassungen
   add column art text default 'anpassung';
 
 grant execute on function ticket_ids_mit_nachricht(uuid, text) to authenticated;
+
+-- ============================================================
+-- 39. Plattform-Abrechnung: Super-Admin berechnet/verschickt Rechnungen
+-- an die Firmen (Tenants) selbst, nach Tarif mit Mitarbeiter-Staffeln.
+-- ============================================================
+create table tarife (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  grundpreis_cent integer not null default 0,
+  inklusive_mitarbeiter integer not null default 1,
+  mwst_satz numeric not null default 19,
+  aktiv boolean not null default true,
+  erstellt_am timestamptz default now()
+);
+
+-- Staffeln beziehen sich auf absolute Mitarbeiterzahlen (nicht relativ zum
+-- inklusiv-Kontingent): z.B. von=4 bis=10 -> 15€ je Mitarbeiter #4 bis #10.
+-- bis_mitarbeiter = null bedeutet "nach oben offen".
+create table tarif_staffeln (
+  id uuid primary key default gen_random_uuid(),
+  tarif_id uuid not null references tarife(id) on delete cascade,
+  von_mitarbeiter integer not null,
+  bis_mitarbeiter integer,
+  preis_pro_mitarbeiter_cent integer not null,
+  reihenfolge integer not null default 0
+);
+
+create index idx_tarif_staffeln_tarif on tarif_staffeln(tarif_id);
+
+alter table organisationen add column tarif_id uuid references tarife(id) on delete set null;
+
+-- Positionen/Betraege sind Snapshots zum Erstellungszeitpunkt, damit spaetere
+-- Tarifaenderungen bereits verschickte Rechnungen nicht ruckwirkend aendern.
+create table plattform_rechnungen (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  monat date not null,
+  rechnungsnummer text not null unique,
+  tarif_name text not null,
+  mitarbeiter_anzahl integer not null,
+  grundpreis_cent integer not null,
+  staffel_betrag_cent integer not null default 0,
+  positionen jsonb not null default '[]',
+  netto_cent integer not null,
+  mwst_satz numeric not null default 19,
+  mwst_cent integer not null,
+  brutto_cent integer not null,
+  status text not null default 'entwurf' check (status in ('entwurf', 'versendet')),
+  versendet_am timestamptz,
+  erstellt_am timestamptz default now(),
+  unique (organisation_id, monat)
+);
+
+create index idx_plattform_rechnungen_org on plattform_rechnungen(organisation_id, monat);
+
+-- Singleton-Tabelle (immer genau eine Zeile) mit den Absenderdaten der
+-- Plattform selbst fuer die Rechnungen an die Firmen.
+create table plattform_einstellungen (
+  id boolean primary key default true,
+  firmenname text not null default '',
+  adresse text,
+  email text,
+  telefon text,
+  ust_id text,
+  iban text,
+  check (id)
+);
+insert into plattform_einstellungen (id) values (true);
+
+alter table tarife enable row level security;
+alter table tarif_staffeln enable row level security;
+alter table plattform_rechnungen enable row level security;
+alter table plattform_einstellungen enable row level security;
+
+create policy tarife_all on tarife for all
+  using (current_user_rolle() = 'super_admin')
+  with check (current_user_rolle() = 'super_admin');
+
+create policy tarif_staffeln_all on tarif_staffeln for all
+  using (current_user_rolle() = 'super_admin')
+  with check (current_user_rolle() = 'super_admin');
+
+create policy plattform_rechnungen_all on plattform_rechnungen for all
+  using (current_user_rolle() = 'super_admin')
+  with check (current_user_rolle() = 'super_admin');
+
+create policy plattform_einstellungen_all on plattform_einstellungen for all
+  using (current_user_rolle() = 'super_admin')
+  with check (current_user_rolle() = 'super_admin');

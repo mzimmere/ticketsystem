@@ -86,6 +86,21 @@ Variables setzen, fertig.
 6. Vor dem Live-Schalten: `X-Hub-Signature-256`-Prüfung in der Function
    ergänzen (als TODO markiert).
 
+## 7. Plattform-Abrechnung (Super-Admin → Firmen)
+
+Über das 🏦-Icon im Header (nur Super-Admin) lassen sich Tarife mit
+Mitarbeiter-Staffeln anlegen, Firmen einem Tarif zuordnen und daraus
+monatliche Rechnungen erzeugen. Der E-Mail-Versand läuft über dieselbe
+Resend-Konfiguration wie die Kundenbenachrichtigungen:
+
+```bash
+supabase functions deploy sende-plattform-rechnung
+supabase secrets set RESEND_API_KEY=... ABSENDER_EMAIL=rechnung@deine-domain.de
+```
+
+Ohne gesetzte Secrets bleibt die Rechnung als Entwurf gespeichert; der Versand
+zeigt dann einen entsprechenden Hinweis statt eines Fehlers.
+
 ## Offene TODOs (bewusst für später zurückgestellt)
 
 - Admin-Auth-Prüfung in `invite-kunde` (aktuell kann jeder eingeloggte

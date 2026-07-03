@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sun, Moon, User, Settings, Building2, Receipt, Mail, Ticket as TicketIcon, BarChart2 } from "lucide-react";
+import { Sun, Moon, User, Settings, Building2, Receipt, Mail, Ticket as TicketIcon, BarChart2, Landmark } from "lucide-react";
 import { useProfil } from "./lib/useProfil";
 import { useTheme } from "./lib/useTheme";
 import { useOnlinePraesenz } from "./lib/praesenz";
@@ -24,6 +24,7 @@ import KundenRegistrierung from "./components/KundenRegistrierung";
 import DatenschutzSeite from "./components/DatenschutzSeite";
 import FaqOeffentlich from "./components/FaqOeffentlich";
 import Changelog from "./components/Changelog";
+import PlattformAbrechnung from "./components/PlattformAbrechnung";
 
 function neukundeSlug(): string | null {
   return new URLSearchParams(window.location.search).get("neukunde");
@@ -78,6 +79,7 @@ export default function App() {
   const [zeigeAbrechnung, setZeigeAbrechnung] = useState(false);
   const [zeigePostfach, setZeigePostfach] = useState(false);
   const [zeigeDashboard, setZeigeDashboard] = useState(false);
+  const [zeigePlattformAbrechnung, setZeigePlattformAbrechnung] = useState(false);
   const [zeigeStartseite, setZeigeStartseite] = useState(true);
   const [verwaltungsTab, setVerwaltungsTab] = useState<"firma" | "team" | "kunden" | "werkzeuge" | "integrationen">("firma");
   const [ticketFilter, setTicketFilter] = useState<"meine" | "wartend" | null>(null);
@@ -106,6 +108,7 @@ export default function App() {
     setAusgewaehltesTicket(null);
     setZeigeNeuesTicket(false);
     setZeigeDashboard(false);
+    setZeigePlattformAbrechnung(false);
     setZeigeStartseite(true);
   }
 
@@ -119,6 +122,7 @@ export default function App() {
     setAusgewaehltesTicket(null);
     setZeigeNeuesTicket(false);
     setZeigeDashboard(false);
+    setZeigePlattformAbrechnung(false);
     setZeigeStartseite(false);
   }
 
@@ -380,6 +384,26 @@ export default function App() {
               <Mail size={16} />
             </button>
           )}
+          {profil.rolle === "super_admin" && (
+            <button
+              onClick={() => {
+                setZeigePlattformAbrechnung(true);
+                setZeigeAbrechnung(false);
+                setZeigePostfach(false);
+                setRechnungDetail(null);
+                setZeigeFirmenInfo(false);
+                setZeigeVerwaltung(false);
+                setZeigeProfil(false);
+                setAusgewaehltesTicket(null);
+                setZeigeNeuesTicket(false);
+                setZeigeDashboard(false);
+              }}
+              className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+              title="Plattform-Abrechnung (Firmen-Rechnungen)"
+            >
+              <Landmark size={16} />
+            </button>
+          )}
           {istAdmin && (
             <button
               onClick={() => {
@@ -426,7 +450,7 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-6 space-y-4 lg:px-8">
-        {zeigeStartseite && !ausgewaehltesTicket && !zeigeNeuesTicket && !zeigeVerwaltung && !zeigeAbrechnung && !zeigeFirmenInfo && !zeigePostfach && !zeigeDashboard && !zeigeProfil ? (
+        {zeigeStartseite && !ausgewaehltesTicket && !zeigeNeuesTicket && !zeigeVerwaltung && !zeigeAbrechnung && !zeigeFirmenInfo && !zeigePostfach && !zeigeDashboard && !zeigePlattformAbrechnung && !zeigeProfil ? (
           <Startseite
             name={profil.name}
             rolle={profil.rolle}
@@ -451,6 +475,16 @@ export default function App() {
             ) : (
               <SuperAdminDashboard onFirmaOeffnen={(id) => { setSuperAdminFirma(id); setZeigeDashboard(false); setZeigeStartseite(true); }} />
             )}
+          </>
+        ) : zeigePlattformAbrechnung ? (
+          <>
+            <button
+              onClick={() => setZeigePlattformAbrechnung(false)}
+              className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
+            >
+              ← Zurück
+            </button>
+            <PlattformAbrechnung />
           </>
         ) : zeigePostfach ? (
           <>

@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-03", titel: "Plattform-Abrechnung: Tarife mit Mitarbeiter-Staffeln, Rechnungen an Firmen per E-Mail" },
   { datum: "2026-07-03", titel: "Dashboard-Charts: Neon-Hover statt grauem Kasten, sanftes Aufbau-Animation" },
   { datum: "2026-07-03", titel: "Kunden-Filter in Ticketübersicht mit Suchfeld durchsuchbar" },
   { datum: "2026-07-03", titel: "Fix: Produkte speichern als Super-Admin blockiert (RLS-Policy korrigiert)" },
