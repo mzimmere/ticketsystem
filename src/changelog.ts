@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-03", titel: "Plattform-Rechnungen: Zahlungsziel, rechtlicher Hinweis, Freitext, Steuernummer" },
   { datum: "2026-07-03", titel: "Header-Icons größer und mit Gruppen-Trennern (bessere Klick-Trefferquote)" },
   { datum: "2026-07-03", titel: "Plattform-Abrechnung: Tarife mit Mitarbeiter-Staffeln, Rechnungen an Firmen per E-Mail" },
   { datum: "2026-07-03", titel: "Dashboard-Charts: Neon-Hover statt grauem Kasten, sanftes Aufbau-Animation" },

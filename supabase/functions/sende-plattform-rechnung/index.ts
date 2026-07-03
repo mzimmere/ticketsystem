@@ -86,7 +86,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: absender } = await supabaseAdmin
       .from("plattform_einstellungen")
-      .select("firmenname, adresse, email, telefon, ust_id, iban")
+      .select("firmenname, adresse, email, telefon, ust_id, steuernummer, iban")
       .eq("id", true)
       .single();
 
@@ -95,11 +95,16 @@ Deno.serve(async (req: Request) => {
       .map((p) => `  - ${p.label}: ${formatEuro(p.betrag_cent)}`)
       .join("\n");
 
+    const faelligLabel = rechnung.faellig_am
+      ? new Date(rechnung.faellig_am).toLocaleDateString("de-DE")
+      : null;
+    const rechnungsdatumLabel = new Date(rechnung.rechnungsdatum).toLocaleDateString("de-DE");
+
     const betreff = `Rechnung ${rechnung.rechnungsnummer} – ${monatLabel(rechnung.monat)}`;
     const text = [
       `Hallo,`,
       ``,
-      `anbei die Rechnung ${rechnung.rechnungsnummer} für ${monatLabel(rechnung.monat)} (Tarif "${rechnung.tarif_name}", ${rechnung.mitarbeiter_anzahl} Mitarbeiter):`,
+      `anbei die Rechnung ${rechnung.rechnungsnummer} vom ${rechnungsdatumLabel} für ${monatLabel(rechnung.monat)} (Tarif "${rechnung.tarif_name}", ${rechnung.mitarbeiter_anzahl} Mitarbeiter):`,
       ``,
       positionenText,
       ``,
@@ -107,12 +112,16 @@ Deno.serve(async (req: Request) => {
       `MwSt. (${Number(rechnung.mwst_satz).toLocaleString("de-DE")} %): ${formatEuro(rechnung.mwst_cent)}`,
       `Gesamt (Brutto): ${formatEuro(rechnung.brutto_cent)}`,
       ``,
+      faelligLabel ? `Fällig am ${faelligLabel} (${rechnung.zahlungsziel_tage} Tage Zahlungsziel).` : ``,
       absender?.iban ? `Bitte überweise den Betrag auf IBAN ${absender.iban}.` : ``,
+      ``,
+      rechnung.freitext ?? "",
+      rechnung.rechtlicher_hinweis ?? "",
       ``,
       `— ${absender?.firmenname ?? "Ticketsystem"}`,
       absender?.adresse ?? "",
       [absender?.email, absender?.telefon].filter(Boolean).join(" · "),
-      absender?.ust_id ? `USt-IdNr.: ${absender.ust_id}` : "",
+      absender?.ust_id ? `USt-IdNr.: ${absender.ust_id}` : absender?.steuernummer ? `Steuernummer: ${absender.steuernummer}` : "",
     ]
       .filter((zeile) => zeile !== null && zeile !== undefined)
       .join("\n");

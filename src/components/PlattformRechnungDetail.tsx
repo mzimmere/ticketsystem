@@ -20,6 +20,11 @@ interface Rechnung {
   brutto_cent: number;
   status: "entwurf" | "versendet";
   versendet_am: string | null;
+  rechnungsdatum: string;
+  faellig_am: string | null;
+  zahlungsziel_tage: number;
+  rechtlicher_hinweis: string | null;
+  freitext: string | null;
 }
 
 interface Organisation {
@@ -34,6 +39,7 @@ interface Absender {
   email: string | null;
   telefon: string | null;
   ust_id: string | null;
+  steuernummer: string | null;
   iban: string | null;
 }
 
@@ -44,6 +50,10 @@ function formatEuro(cent: number): string {
 function monatLabel(monatIso: string): string {
   const [jahr, monat] = monatIso.split("-").map(Number);
   return new Date(jahr, monat - 1, 1).toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+}
+
+function formatDatum(iso: string): string {
+  return new Date(iso).toLocaleDateString("de-DE");
 }
 
 export default function PlattformRechnungDetail({
@@ -72,7 +82,7 @@ export default function PlattformRechnungDetail({
       setRechnung(r as unknown as Rechnung);
       const [{ data: org }, { data: abs }] = await Promise.all([
         supabase.from("organisationen").select("name, adresse, email").eq("id", r.organisation_id).single(),
-        supabase.from("plattform_einstellungen").select("firmenname, adresse, email, telefon, ust_id, iban").eq("id", true).single(),
+        supabase.from("plattform_einstellungen").select("firmenname, adresse, email, telefon, ust_id, steuernummer, iban").eq("id", true).single(),
       ]);
       setOrganisation(org as Organisation);
       setAbsender(abs as Absender);
@@ -151,13 +161,20 @@ export default function PlattformRechnungDetail({
               <p className="text-xs text-[var(--text-soft)]">{[absender?.telefon, absender?.email].filter(Boolean).join(" · ")}</p>
             )}
             {absender?.ust_id && <p className="text-xs text-[var(--text-soft)]">USt-IdNr.: {absender.ust_id}</p>}
+            {!absender?.ust_id && absender?.steuernummer && <p className="text-xs text-[var(--text-soft)]">Steuernummer: {absender.steuernummer}</p>}
           </div>
           <div className="text-right">
             <h2 className="text-lg font-semibold text-[var(--text-strong)]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
               Rechnung
             </h2>
             <p className="text-sm text-[var(--text-soft)]">{rechnung.rechnungsnummer}</p>
-            <p className="text-sm text-[var(--text-soft)]">{monatLabel(rechnung.monat)}</p>
+            <p className="text-sm text-[var(--text-soft)]">Leistungszeitraum: {monatLabel(rechnung.monat)}</p>
+            <p className="text-sm text-[var(--text-soft)]">Rechnungsdatum: {formatDatum(rechnung.rechnungsdatum)}</p>
+            {rechnung.faellig_am && (
+              <p className="text-sm text-[var(--text-soft)]">
+                Fällig am: {formatDatum(rechnung.faellig_am)} ({rechnung.zahlungsziel_tage} Tage)
+              </p>
+            )}
           </div>
         </div>
 
@@ -205,9 +222,15 @@ export default function PlattformRechnungDetail({
           </div>
         </div>
 
-        {absender?.iban && (
-          <div className="mt-4 border-t border-[var(--border)] pt-3 text-xs text-[var(--text-faint)]">
-            <p>Bitte überweise den Betrag auf IBAN {absender.iban}.</p>
+        {(absender?.iban || rechnung.freitext || rechnung.rechtlicher_hinweis) && (
+          <div className="mt-4 space-y-1 border-t border-[var(--border)] pt-3 text-xs text-[var(--text-faint)]">
+            {absender?.iban && (
+              <p>
+                Bitte überweise den Betrag bis zum {rechnung.faellig_am ? formatDatum(rechnung.faellig_am) : "Fälligkeitsdatum"} auf IBAN {absender.iban}.
+              </p>
+            )}
+            {rechnung.freitext && <p className="whitespace-pre-line">{rechnung.freitext}</p>}
+            {rechnung.rechtlicher_hinweis && <p className="whitespace-pre-line">{rechnung.rechtlicher_hinweis}</p>}
           </div>
         )}
       </div>

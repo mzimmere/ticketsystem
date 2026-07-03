@@ -1094,6 +1094,24 @@ create table plattform_einstellungen (
 );
 insert into plattform_einstellungen (id) values (true);
 
+-- ============================================================
+-- 40. Zahlungsziel, rechtlicher Hinweis und Freitext fuer Plattform-
+-- Rechnungen: global als Vorgabe in plattform_einstellungen, pro
+-- Rechnung als Snapshot (spaetere Aenderungen wirken nicht rueckwirkend).
+-- ============================================================
+alter table plattform_einstellungen
+  add column zahlungsziel_tage integer not null default 14,
+  add column rechtlicher_hinweis text not null default 'Rechnungsdatum ist Lieferdatum.',
+  add column freitext text,
+  add column steuernummer text;
+
+alter table plattform_rechnungen
+  add column rechnungsdatum date not null default current_date,
+  add column faellig_am date,
+  add column zahlungsziel_tage integer not null default 14,
+  add column rechtlicher_hinweis text,
+  add column freitext text;
+
 alter table tarife enable row level security;
 alter table tarif_staffeln enable row level security;
 alter table plattform_rechnungen enable row level security;

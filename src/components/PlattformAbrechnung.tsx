@@ -42,7 +42,10 @@ export default function PlattformAbrechnung() {
   const [laedt, setLaedt] = useState(true);
   const [erstellenLaeuft, setErstellenLaeuft] = useState<string | null>(null);
   const [offeneRechnung, setOffeneRechnung] = useState<string | null>(null);
-  const [absender, setAbsender] = useState({ firmenname: "", adresse: "", email: "", telefon: "", ust_id: "", iban: "" });
+  const [absender, setAbsender] = useState({
+    firmenname: "", adresse: "", email: "", telefon: "", ust_id: "", steuernummer: "", iban: "",
+    zahlungsziel_tage: "14", rechtlicher_hinweis: "Rechnungsdatum ist Lieferdatum.", freitext: "",
+  });
   const [absenderGespeichert, setAbsenderGespeichert] = useState(false);
 
   const monatsErster = useMemo(() => `${jahr}-${String(monat).padStart(2, "0")}-01`, [jahr, monat]);
@@ -96,7 +99,11 @@ export default function PlattformAbrechnung() {
   }
 
   async function ladeAbsender() {
-    const { data } = await supabase.from("plattform_einstellungen").select("firmenname, adresse, email, telefon, ust_id, iban").eq("id", true).single();
+    const { data } = await supabase
+      .from("plattform_einstellungen")
+      .select("firmenname, adresse, email, telefon, ust_id, steuernummer, iban, zahlungsziel_tage, rechtlicher_hinweis, freitext")
+      .eq("id", true)
+      .single();
     if (data) {
       setAbsender({
         firmenname: data.firmenname ?? "",
@@ -104,13 +111,20 @@ export default function PlattformAbrechnung() {
         email: data.email ?? "",
         telefon: data.telefon ?? "",
         ust_id: data.ust_id ?? "",
+        steuernummer: data.steuernummer ?? "",
         iban: data.iban ?? "",
+        zahlungsziel_tage: String(data.zahlungsziel_tage ?? 14),
+        rechtlicher_hinweis: data.rechtlicher_hinweis ?? "",
+        freitext: data.freitext ?? "",
       });
     }
   }
 
   async function absenderSpeichern() {
-    await supabase.from("plattform_einstellungen").update(absender).eq("id", true);
+    await supabase.from("plattform_einstellungen").update({
+      ...absender,
+      zahlungsziel_tage: parseInt(absender.zahlungsziel_tage, 10) || 0,
+    }).eq("id", true);
     setAbsenderGespeichert(true);
     setTimeout(() => setAbsenderGespeichert(false), 2000);
   }
@@ -145,6 +159,16 @@ export default function PlattformAbrechnung() {
     const berechnung = berechneTarifpreis(tarif, staffeln, zeile.mitarbeiter_anzahl);
     const rechnungsnummer = await naechsteRechnungsnummer();
 
+    const { data: einstellungen } = await supabase
+      .from("plattform_einstellungen")
+      .select("zahlungsziel_tage, rechtlicher_hinweis, freitext")
+      .eq("id", true)
+      .single();
+    const zahlungszielTage = einstellungen?.zahlungsziel_tage ?? 14;
+    const heute = new Date();
+    const faelligAm = new Date(heute);
+    faelligAm.setDate(faelligAm.getDate() + zahlungszielTage);
+
     const { data, error } = await supabase.from("plattform_rechnungen").insert({
       organisation_id: zeile.id,
       monat: monatsErster,
@@ -158,6 +182,11 @@ export default function PlattformAbrechnung() {
       mwst_satz: tarif.mwst_satz,
       mwst_cent: berechnung.mwstCent,
       brutto_cent: berechnung.bruttoCent,
+      rechnungsdatum: heute.toISOString().slice(0, 10),
+      faellig_am: faelligAm.toISOString().slice(0, 10),
+      zahlungsziel_tage: zahlungszielTage,
+      rechtlicher_hinweis: einstellungen?.rechtlicher_hinweis ?? null,
+      freitext: einstellungen?.freitext ?? null,
     }).select("id").single();
 
     setErstellenLaeuft(null);
@@ -200,6 +229,7 @@ export default function PlattformAbrechnung() {
             ["email", "E-Mail"],
             ["telefon", "Telefon"],
             ["ust_id", "USt-IdNr."],
+            ["steuernummer", "Steuernummer (falls keine USt-IdNr. vorhanden)"],
             ["iban", "IBAN"],
           ] as const).map(([feld, label]) => (
             <div key={feld}>
@@ -212,6 +242,36 @@ export default function PlattformAbrechnung() {
               />
             </div>
           ))}
+
+          <div className="border-t border-[var(--border)] pt-2.5">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">Rechnungsangaben</p>
+
+            <label className="mb-1 block text-xs text-[var(--text-faint)]">Zahlungsziel (Tage)</label>
+            <input
+              type="number" min={0}
+              value={absender.zahlungsziel_tage}
+              onChange={(e) => setAbsender({ ...absender, zahlungsziel_tage: e.target.value })}
+              className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm"
+            />
+
+            <label className="mb-1 mt-2.5 block text-xs text-[var(--text-faint)]">Rechtlicher Hinweis (z.B. "Rechnungsdatum ist Lieferdatum")</label>
+            <textarea
+              value={absender.rechtlicher_hinweis}
+              onChange={(e) => setAbsender({ ...absender, rechtlicher_hinweis: e.target.value })}
+              rows={2}
+              className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm"
+            />
+
+            <label className="mb-1 mt-2.5 block text-xs text-[var(--text-faint)]">Freitext / Wunschtext (optional, z.B. Gruß oder Skonto-Hinweis)</label>
+            <textarea
+              value={absender.freitext}
+              onChange={(e) => setAbsender({ ...absender, freitext: e.target.value })}
+              rows={2}
+              placeholder="Vielen Dank für die gute Zusammenarbeit!"
+              className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm"
+            />
+          </div>
+
           <button onClick={absenderSpeichern} className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white">
             {absenderGespeichert ? "Gespeichert ✓" : "Speichern"}
           </button>
