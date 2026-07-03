@@ -17,24 +17,36 @@ interface SchnellzahlProps {
   wert: number | null;
   label: string;
   farbe?: string;
+  icon?: string;
+  iconBg?: string;
   onClick?: () => void;
 }
 
-function Schnellzahl({ wert, label, farbe, onClick }: SchnellzahlProps) {
+function Schnellzahl({ wert, label, farbe, icon, iconBg, onClick }: SchnellzahlProps) {
   const inhalt = (
-    <>
-      <p className={`text-2xl font-bold ${farbe ?? "text-[var(--text-strong)]"}`}>
-        {wert === null ? "—" : wert}
-      </p>
-      <p className="mt-0.5 text-xs text-[var(--text-faint)]">{label}</p>
-    </>
+    <div className="flex items-center gap-3">
+      {icon && (
+        <span
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg"
+          style={{ background: iconBg ?? "var(--bg-muted)" }}
+        >
+          {icon}
+        </span>
+      )}
+      <div className="text-left">
+        <p className={`text-2xl font-bold leading-tight ${farbe ?? "text-[var(--text-strong)]"}`}>
+          {wert === null ? "—" : wert}
+        </p>
+        <p className="text-xs text-[var(--text-faint)]">{label}</p>
+      </div>
+    </div>
   );
 
   if (onClick) {
     return (
       <button
         onClick={onClick}
-        className="rounded-lg text-center transition-colors hover:bg-[var(--bg-muted)] px-2 py-1 -mx-2 -my-1"
+        className="rounded-xl px-2 py-1.5 transition-all hover:bg-[var(--bg-muted)] hover:scale-[1.02] active:scale-[0.98]"
         title={`Zu: ${label}`}
       >
         {inhalt}
@@ -42,7 +54,7 @@ function Schnellzahl({ wert, label, farbe, onClick }: SchnellzahlProps) {
     );
   }
 
-  return <div className="text-center">{inhalt}</div>;
+  return <div className="px-2 py-1.5">{inhalt}</div>;
 }
 
 interface AktionsButtonProps {
@@ -51,26 +63,32 @@ interface AktionsButtonProps {
   sub?: string;
   onClick: () => void;
   hervorgehoben?: boolean;
+  iconBg?: string;
 }
 
-function AktionsButton({ icon, label, sub, onClick, hervorgehoben }: AktionsButtonProps) {
+function AktionsButton({ icon, label, sub, onClick, hervorgehoben, iconBg }: AktionsButtonProps) {
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-all hover:scale-[1.01] active:scale-[0.99] ${
+      className={`group flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-all hover:scale-[1.01] hover:shadow-md active:scale-[0.99] ${
         hervorgehoben
           ? "border-[var(--akzent)] bg-akzent/10 hover:bg-akzent/15"
           : "border-[var(--border)] bg-[var(--bg-surface)] hover:bg-[var(--bg-muted)]"
       }`}
     >
-      <span className="text-2xl">{icon}</span>
+      <span
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl transition-transform group-hover:scale-110"
+        style={{ background: hervorgehoben ? "var(--akzent)" : (iconBg ?? "var(--bg-muted)") }}
+      >
+        {icon}
+      </span>
       <div className="min-w-0">
         <p className={`text-sm font-medium ${hervorgehoben ? "text-akzent" : "text-[var(--text-strong)]"}`}>
           {label}
         </p>
         {sub && <p className="mt-0.5 truncate text-xs text-[var(--text-faint)]">{sub}</p>}
       </div>
-      <span className="ml-auto text-[var(--text-faint)]">›</span>
+      <span className="ml-auto text-[var(--text-faint)] transition-transform group-hover:translate-x-0.5">›</span>
     </button>
   );
 }
@@ -289,28 +307,36 @@ export default function Startseite({
                 <Schnellzahl
                   wert={stats.alleOffenen}
                   label="Offene Tickets"
+                  icon="🎫"
+                  iconBg="rgba(249,115,22,0.12)"
                   farbe={(stats.alleOffenen ?? 0) > 0 ? "text-orange-500" : "text-green-600"}
                   onClick={() => onAktion("tickets")}
                 />
                 <Schnellzahl
                   wert={stats.meineOffenen}
                   label="Mir zugewiesen"
+                  icon="👤"
+                  iconBg="rgba(59,130,246,0.12)"
                   farbe={(stats.meineOffenen ?? 0) > 0 ? "text-blue-500" : "text-[var(--text-strong)]"}
                   onClick={() => onAktion("tickets-meine")}
                 />
                 <Schnellzahl
                   wert={stats.wartenAufMich}
                   label="Wartet auf Antwort"
+                  icon="⏳"
+                  iconBg="rgba(234,179,8,0.12)"
                   farbe={(stats.wartenAufMich ?? 0) > 0 ? "text-yellow-500" : "text-[var(--text-strong)]"}
                   onClick={() => onAktion("tickets-wartend")}
                 />
               </>
             ) : (
               <>
-                <Schnellzahl wert={stats.meineTickets} label="Meine Anfragen" />
+                <Schnellzahl wert={stats.meineTickets} label="Meine Anfragen" icon="📋" iconBg="rgba(99,102,241,0.12)" />
                 <Schnellzahl
                   wert={stats.wartenAufMich}
                   label="Warten auf mich"
+                  icon="⏳"
+                  iconBg="rgba(234,179,8,0.12)"
                   farbe={(stats.wartenAufMich ?? 0) > 0 ? "text-yellow-500" : "text-[var(--text-strong)]"}
                 />
               </>
@@ -346,6 +372,7 @@ export default function Startseite({
             />
             <AktionsButton
               icon="📋"
+              iconBg="rgba(99,102,241,0.15)"
               label="Meine Anfragen"
               sub="Status und Verlauf aller deiner Tickets"
               onClick={() => onAktion("tickets")}
@@ -357,6 +384,7 @@ export default function Startseite({
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
             <AktionsButton
               icon="📊"
+              iconBg="rgba(59,130,246,0.15)"
               label="Dashboard"
               sub={rolle === "super_admin" && !organisationId ? "Alle Firmen im Überblick" : "Auswertungen & KPIs"}
               onClick={() => onAktion("dashboard")}
@@ -364,6 +392,7 @@ export default function Startseite({
             {organisationId && (
               <AktionsButton
                 icon="💶"
+                iconBg="rgba(34,197,94,0.15)"
                 label="Abrechnung"
                 sub="Rechnungen & Zeiterfassung"
                 onClick={() => onAktion("abrechnung")}
@@ -372,6 +401,7 @@ export default function Startseite({
             {organisationId && (
               <AktionsButton
                 icon="👤"
+                iconBg="rgba(99,102,241,0.15)"
                 label="Team"
                 sub="Mitarbeiter & Techniker"
                 onClick={() => onAktion("verwaltung-team")}
@@ -380,6 +410,7 @@ export default function Startseite({
             {organisationId && (
               <AktionsButton
                 icon="🤝"
+                iconBg="rgba(236,72,153,0.15)"
                 label="Kunden"
                 sub="Kundenstamm verwalten"
                 onClick={() => onAktion("verwaltung-kunden")}
@@ -388,6 +419,7 @@ export default function Startseite({
             {organisationId && (
               <AktionsButton
                 icon="🏢"
+                iconBg="rgba(148,163,184,0.2)"
                 label="Firmenprofil"
                 sub="Einstellungen & Branding"
                 onClick={() => onAktion("verwaltung-firma")}
@@ -396,6 +428,7 @@ export default function Startseite({
             {organisationId && (
               <AktionsButton
                 icon="🔧"
+                iconBg="rgba(249,115,22,0.15)"
                 label="Werkzeuge"
                 sub="Makros, Tags, SLA, FAQ"
                 onClick={() => onAktion("verwaltung-werkzeuge")}
@@ -404,6 +437,7 @@ export default function Startseite({
             {organisationId && (
               <AktionsButton
                 icon="🔌"
+                iconBg="rgba(168,85,247,0.15)"
                 label="Integrationen"
                 sub="E-Mail, WhatsApp"
                 onClick={() => onAktion("verwaltung-integrationen")}
@@ -415,6 +449,7 @@ export default function Startseite({
         {istIntern && !istAdmin && (
           <AktionsButton
             icon="🏢"
+            iconBg="rgba(148,163,184,0.2)"
             label="Über uns"
             sub="Kontakt & Öffnungszeiten"
             onClick={() => onAktion("firmeninfo")}

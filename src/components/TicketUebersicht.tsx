@@ -404,12 +404,13 @@ export default function TicketUebersicht({
             <button
               key={ticket.id}
               onClick={() => onAuswahl(ticket.id)}
-              className={`flex w-full items-center gap-3 border-b border-[var(--border)] px-4 py-3 text-left last:border-b-0 hover:bg-[var(--bg-muted)] ${
+              className={`relative flex w-full items-center gap-3 border-b border-[var(--border)] py-3 pl-5 pr-4 text-left last:border-b-0 hover:bg-[var(--bg-muted)] ${
                 ungelesen ? "bg-amber-50/60 dark:bg-akzent/10" : "bg-[var(--bg-surface)]"
               }`}
             >
+              {/* Prioritäts-Farbstreifen */}
               <span
-                className="h-2 w-2 shrink-0 rounded-full"
+                className="absolute bottom-0 left-0 top-0 w-1"
                 style={{ background: PRIORITAET_AKZENT[ticket.prioritaet] }}
                 title={PRIORITAET_LABEL[ticket.prioritaet]}
               />
