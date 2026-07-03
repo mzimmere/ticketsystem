@@ -303,6 +303,14 @@ export default function Dashboard({ organisationId }: DashboardProps) {
               </div>
               <ResponsiveContainer width="100%" height={140}>
                 <BarChart data={volumen} barGap={2} barSize={zeitraum > 30 ? 4 : 8}>
+                  <defs>
+                    <filter id="neonBlau" x="-75%" y="-75%" width="250%" height="250%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#60a5fa" floodOpacity="0.9" />
+                    </filter>
+                    <filter id="neonGruen" x="-75%" y="-75%" width="250%" height="250%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#4ade80" floodOpacity="0.9" />
+                    </filter>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                   <XAxis dataKey="tag" tickFormatter={(v: string) => v.slice(5)}
                     tick={{ fontSize: 9, fill: "var(--text-faint)" }}
@@ -311,12 +319,17 @@ export default function Dashboard({ organisationId }: DashboardProps) {
                   />
                   <YAxis tick={{ fontSize: 9, fill: "var(--text-faint)" }} tickLine={false} axisLine={false} width={20} />
                   <Tooltip
+                    cursor={false}
                     contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 11 }}
                     labelFormatter={(v) => String(v)}
                     formatter={(val) => [String(val ?? ""), (val === 0 || val) ? "" : ""]}
                   />
-                  <Bar dataKey="neu" fill="#60a5fa" radius={[3, 3, 0, 0]} />
-                  <Bar dataKey="geloest" fill="#4ade80" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="neu" fill="#60a5fa" radius={[3, 3, 0, 0]}
+                    activeBar={{ fill: "#93c5fd", style: { filter: "url(#neonBlau)" } }}
+                    animationDuration={1400} animationEasing="ease-out" />
+                  <Bar dataKey="geloest" fill="#4ade80" radius={[3, 3, 0, 0]}
+                    activeBar={{ fill: "#86efac", style: { filter: "url(#neonGruen)" } }}
+                    animationDuration={1400} animationBegin={150} animationEasing="ease-out" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -328,15 +341,22 @@ export default function Dashboard({ organisationId }: DashboardProps) {
               <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">Ø Reaktionszeit (Minuten)</p>
               <ResponsiveContainer width="100%" height={100}>
                 <BarChart data={techniker.filter((t) => t.durchschnitt_minuten !== null)} barSize={24}>
+                  <defs>
+                    <filter id="neonAmber" x="-75%" y="-75%" width="250%" height="250%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#f59e0b" floodOpacity="0.9" />
+                    </filter>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 9, fill: "var(--text-faint)" }} tickLine={false} axisLine={false} />
                   <YAxis tick={{ fontSize: 9, fill: "var(--text-faint)" }} tickLine={false} axisLine={false} width={30}
                     tickFormatter={(v: number) => v >= 60 ? `${Math.round(v/60)}h` : `${v}m`} />
                   <Tooltip
+                    cursor={false}
                     contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 11 }}
-                    
                   />
-                  <Bar dataKey="durchschnitt_minuten" fill="#f59e0b" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="durchschnitt_minuten" fill="#f59e0b" radius={[3, 3, 0, 0]}
+                    activeBar={{ fill: "#fcd34d", style: { filter: "url(#neonAmber)" } }}
+                    animationDuration={1400} animationEasing="ease-out" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
