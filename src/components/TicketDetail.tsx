@@ -547,12 +547,18 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
         <div className="mt-4 space-y-2">
           {makros.length > 0 && (
             <select
-              onChange={(e) => { if (e.target.value) { setNeueNotiz((prev) => prev ? prev + "\n\n" + e.target.value : e.target.value); e.target.value = ""; } }}
+              value=""
+              onChange={(e) => {
+                const makro = makros.find((m) => m.id === e.target.value);
+                if (makro) {
+                  setNeueNotiz((prev) => prev ? prev + "\n\n" + makro.inhalt : makro.inhalt);
+                }
+              }}
               className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-soft)]"
             >
               <option value="">📋 Makro einfügen…</option>
               {makros.map((m) => (
-                <option key={m.id} value={m.inhalt}>{m.titel}</option>
+                <option key={m.id} value={m.id}>{m.titel}</option>
               ))}
             </select>
           )}

@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
 import Avatar from "./Avatar";
 import BuzzerSoundEinstellung from "./BuzzerSoundEinstellung";
+import ProduktVerwaltung from "./ProduktVerwaltung";
 
 type Verfuegbarkeit = "verfuegbar" | "abwesend" | "urlaub";
 
@@ -221,6 +222,8 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
       </div>
 
       {istIntern && <BuzzerSoundEinstellung profilId={profilId} />}
+
+      {istIntern && organisationId && <ProduktVerwaltung organisationId={organisationId} profilId={profilId} />}
 
       {istIntern && kollegen.length > 0 && (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">

@@ -14,6 +14,16 @@ interface Anpassung {
   betrag_cent: number;
   beschreibung: string;
   erstellt_am: string;
+  menge: number | null;
+  einzelpreis_cent: number | null;
+  art: string | null;
+}
+
+interface Produkt {
+  id: string;
+  bezeichnung: string;
+  einzelpreis_cent: number;
+  einheit: string;
 }
 
 interface Kunde {
@@ -66,6 +76,11 @@ export default function RechnungDetail({
   const [anpassungen, setAnpassungen] = useState<Anpassung[]>([]);
   const [neueBeschreibung, setNeueBeschreibung] = useState("");
   const [neuerBetragEuro, setNeuerBetragEuro] = useState("");
+  const [produkte, setProdukte] = useState<Produkt[]>([]);
+  const [posProduktId, setPosProduktId] = useState("");
+  const [posBezeichnung, setPosBezeichnung] = useState("");
+  const [posMenge, setPosMenge] = useState("1");
+  const [posEinzelpreisEuro, setPosEinzelpreisEuro] = useState("");
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(true);
 
@@ -114,7 +129,7 @@ export default function RechnungDetail({
           .order("erstellt_am", { ascending: true }),
         supabase
           .from("rechnungsanpassungen")
-          .select("id, betrag_cent, beschreibung, erstellt_am")
+          .select("id, betrag_cent, beschreibung, erstellt_am, menge, einzelpreis_cent, art")
           .eq("kunde_id", kundeId)
           .eq("monat", monatsErster)
           .order("erstellt_am", { ascending: true }),
@@ -125,6 +140,18 @@ export default function RechnungDetail({
     setEintraege((zeitDaten as ZeitEintrag[]) ?? []);
     setAnpassungen((anpassungDaten as Anpassung[]) ?? []);
     setLaedt(false);
+
+    // Produkte des aktuellen Nutzers laden
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData.user) {
+      const { data: produktDaten } = await supabase
+        .from("produkte")
+        .select("id, bezeichnung, einzelpreis_cent, einheit")
+        .eq("ersteller_id", authData.user.id)
+        .eq("aktiv", true)
+        .order("bezeichnung");
+      setProdukte(produktDaten ?? []);
+    }
   }
 
   async function anpassungHinzufuegen() {
@@ -154,6 +181,39 @@ export default function RechnungDetail({
 
   async function anpassungLoeschen(id: string) {
     await supabase.from("rechnungsanpassungen").delete().eq("id", id);
+    ladeAlles();
+  }
+
+  function produktGewaehlt(id: string) {
+    setPosProduktId(id);
+    const p = produkte.find((p) => p.id === id);
+    if (p) {
+      setPosBezeichnung(p.bezeichnung);
+      setPosEinzelpreisEuro((p.einzelpreis_cent / 100).toFixed(2).replace(".", ","));
+    }
+  }
+
+  async function positionHinzufuegen() {
+    if (!posBezeichnung.trim()) { setHinweis("Bitte eine Bezeichnung angeben."); return; }
+    const menge = parseFloat(posMenge.replace(",", ".")) || 1;
+    const einzel = Math.round(parseFloat(posEinzelpreisEuro.replace(",", ".")) * 100);
+    if (isNaN(einzel)) { setHinweis("Ungültiger Einzelpreis."); return; }
+
+    const gesamt = Math.round(menge * einzel);
+    const { error } = await supabase.from("rechnungsanpassungen").insert({
+      organisation_id: organisationId,
+      kunde_id: kundeId,
+      monat: monatsErster,
+      betrag_cent: gesamt,
+      beschreibung: posBezeichnung.trim(),
+      menge,
+      einzelpreis_cent: einzel,
+      produkt_id: posProduktId || null,
+      art: "position",
+    });
+    if (error) { console.error(error); setHinweis("Position konnte nicht hinzugefügt werden."); return; }
+    setPosProduktId(""); setPosBezeichnung(""); setPosMenge("1"); setPosEinzelpreisEuro("");
+    setHinweis(null);
     ladeAlles();
   }
 
@@ -281,6 +341,34 @@ export default function RechnungDetail({
                   </td>
                 </tr>
               ))}
+              {anpassungen.filter((a) => a.art === "position").map((a) => (
+                <tr key={a.id} className="border-b border-[var(--border)]">
+                  <td className="py-1.5 pr-2 align-top font-mono text-xs text-[var(--text-soft)]">
+                    {formatDatum(a.erstellt_am)}
+                  </td>
+                  <td className="py-1.5 pr-2 align-top text-[var(--text-strong)]">
+                    {a.beschreibung}
+                  </td>
+                  <td className="py-1.5 pr-2 align-top text-right font-mono text-[var(--text-soft)]">
+                    {a.menge ?? 1}×
+                  </td>
+                  <td className="py-1.5 pr-2 align-top text-right font-mono text-[var(--text-soft)]">
+                    {a.einzelpreis_cent != null ? formatEuro(a.einzelpreis_cent) : "–"}
+                  </td>
+                  <td className="py-1.5 align-top text-right font-mono text-[var(--text-strong)]">
+                    <span className="flex items-center justify-end gap-1.5">
+                      {formatEuro(a.betrag_cent)}
+                      <button
+                        onClick={() => anpassungLoeschen(a.id)}
+                        className="keine-druckansicht text-[var(--text-faint)] hover:text-red-600"
+                        title="Entfernen"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}
@@ -292,7 +380,7 @@ export default function RechnungDetail({
               <span className="font-mono">{formatEuro(zwischensumme)}</span>
             </div>
 
-            {anpassungen.map((a) => (
+            {anpassungen.filter((a) => a.art !== "position").map((a) => (
               <div key={a.id} className="flex items-center justify-between text-[var(--text-soft)]">
                 <span className="truncate pr-2">{a.beschreibung}</span>
                 <span className="flex items-center gap-1.5 font-mono">
@@ -332,6 +420,72 @@ export default function RechnungDetail({
           )}
           <p>Rechnungsdatum ist Lieferdatum.</p>
         </div>
+      </div>
+
+      <div className="keine-druckansicht rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-2.5">
+        <h3 className="text-sm font-medium text-[var(--text-strong)]">
+          Rechnungsposition hinzufügen
+        </h3>
+        <p className="text-xs text-[var(--text-faint)]">
+          Produkt/Leistung aus deiner Liste wählen oder frei eingeben. Menge × Einzelpreis wird als Position verrechnet.
+        </p>
+
+        {produkte.length > 0 && (
+          <select
+            value={posProduktId}
+            onChange={(e) => produktGewaehlt(e.target.value)}
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-soft)]"
+          >
+            <option value="">🛒 Produkt auswählen…</option>
+            {produkte.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.bezeichnung} – {formatEuro(p.einzelpreis_cent)} / {p.einheit}
+              </option>
+            ))}
+          </select>
+        )}
+
+        <input
+          type="text"
+          value={posBezeichnung}
+          onChange={(e) => setPosBezeichnung(e.target.value)}
+          placeholder="Bezeichnung"
+          className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+        />
+        <div className="flex gap-2">
+          <div className="w-20">
+            <label className="mb-1 block text-xs text-[var(--text-faint)]">Menge</label>
+            <input
+              type="text" inputMode="decimal"
+              value={posMenge}
+              onChange={(e) => setPosMenge(e.target.value)}
+              className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="mb-1 block text-xs text-[var(--text-faint)]">Einzelpreis (€, netto)</label>
+            <input
+              type="text" inputMode="decimal"
+              value={posEinzelpreisEuro}
+              onChange={(e) => setPosEinzelpreisEuro(e.target.value)}
+              placeholder="0,00"
+              className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="flex items-end">
+            <button
+              onClick={positionHinzufuegen}
+              className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+            >
+              + Position
+            </button>
+          </div>
+        </div>
+        {posMenge && posEinzelpreisEuro && (
+          <p className="text-right text-xs text-[var(--text-faint)]">
+            Gesamt: {formatEuro(Math.round((parseFloat(posMenge.replace(",", ".")) || 0) * (parseFloat(posEinzelpreisEuro.replace(",", ".")) || 0) * 100))}
+          </p>
+        )}
       </div>
 
       <div className="keine-druckansicht rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-2.5">
