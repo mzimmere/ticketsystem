@@ -23,6 +23,7 @@ import Startseite from "./components/Startseite";
 import KundenRegistrierung from "./components/KundenRegistrierung";
 import DatenschutzSeite from "./components/DatenschutzSeite";
 import FaqOeffentlich from "./components/FaqOeffentlich";
+import Changelog from "./components/Changelog";
 
 function neukundeSlug(): string | null {
   return new URLSearchParams(window.location.search).get("neukunde");
@@ -287,6 +288,7 @@ export default function App() {
               {organisation?.name ?? "IT-Ticketsystem"}
             </span>
           </button>
+          <Changelog />
         </div>
         <div className="flex items-center gap-2">
           {istIntern && aktiveOrgId && (
