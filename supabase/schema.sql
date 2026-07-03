@@ -966,4 +966,60 @@ returns setof uuid as $$
     );
 $$ language sql stable security definer set search_path = public;
 
+-- ============================================================
+-- 37. Produktdatenbank (persönliche Leistungen/Produkte pro Mitarbeiter)
+-- ============================================================
+create table produkte (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  ersteller_id uuid not null references profiles(id),
+  bezeichnung text not null,
+  beschreibung text,
+  einzelpreis_cent integer not null,
+  einheit text not null default 'Stück',
+  aktiv boolean not null default true,
+  erstellt_am timestamptz default now()
+);
+
+create index idx_produkte_ersteller on produkte(ersteller_id);
+
+alter table produkte enable row level security;
+
+create policy produkte_select on produkte for select
+  using (
+    ersteller_id = auth.uid()
+    or current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+  );
+
+create policy produkte_insert on produkte for insert
+  with check (
+    ersteller_id = auth.uid()
+    and organisation_id = current_user_org()
+    and current_user_rolle() in ('org_admin', 'techniker')
+  );
+
+create policy produkte_update on produkte for update
+  using (
+    ersteller_id = auth.uid()
+    or current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+  );
+
+create policy produkte_delete on produkte for delete
+  using (
+    ersteller_id = auth.uid()
+    or current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+  );
+
+-- ============================================================
+-- 38. Rechnungspositionen: rechnungsanpassungen um Produkt-Positionsfelder erweitern
+-- ============================================================
+alter table rechnungsanpassungen
+  add column menge numeric,
+  add column einzelpreis_cent integer,
+  add column produkt_id uuid references produkte(id),
+  add column art text default 'anpassung';
+
 grant execute on function ticket_ids_mit_nachricht(uuid, text) to authenticated;

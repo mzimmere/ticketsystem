@@ -8,6 +8,9 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-03", titel: "Fix: Produkte ließen sich nicht speichern (fehlende Datenbanktabelle nachgezogen)" },
+  { datum: "2026-07-03", titel: "Änderungsverlauf: anklickbare Versionsnummer im Header" },
+  { datum: "2026-07-03", titel: "Einheit \"Minute\" bei Produkten ergänzt" },
   { datum: "2026-07-03", titel: "Makro-Bug behoben, Produktdatenbank + Rechnungspositionen" },
   { datum: "2026-07-03", titel: "UI grafischer: Prioritäts-Farbstreifen, Icon-Boxen, KPI-Icons" },
   { datum: "2026-07-02", titel: "Buzzer-Sounds: 4 Presets + eigene Sounds hochladbar" },

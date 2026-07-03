@@ -10,7 +10,7 @@ interface Produkt {
   aktiv: boolean;
 }
 
-const EINHEITEN = ["Stück", "Stunde", "Pauschale", "Lizenz", "Monat", "Tag", "km"];
+const EINHEITEN = ["Stück", "Minute", "Stunde", "Pauschale", "Lizenz", "Monat", "Tag", "km"];
 
 function euro(cent: number): string {
   return (cent / 100).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
