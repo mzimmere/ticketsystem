@@ -995,8 +995,10 @@ create policy produkte_select on produkte for select
 create policy produkte_insert on produkte for insert
   with check (
     ersteller_id = auth.uid()
-    and organisation_id = current_user_org()
-    and current_user_rolle() in ('org_admin', 'techniker')
+    and (
+      current_user_rolle() = 'super_admin'
+      or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    )
   );
 
 create policy produkte_update on produkte for update

@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-03", titel: "Fix: Produkte speichern als Super-Admin blockiert (RLS-Policy korrigiert)" },
   { datum: "2026-07-03", titel: "Fix: Produkte ließen sich nicht speichern (fehlende Datenbanktabelle nachgezogen)" },
   { datum: "2026-07-03", titel: "Änderungsverlauf: anklickbare Versionsnummer im Header" },
   { datum: "2026-07-03", titel: "Einheit \"Minute\" bei Produkten ergänzt" },
