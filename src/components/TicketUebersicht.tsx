@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { ChevronDown } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import Avatar from "./Avatar";
 import NeuesTicketIntern from "./NeuesTicketIntern";
@@ -94,6 +95,92 @@ function FilterChip({
     >
       {children}
     </button>
+  );
+}
+
+function KundenFilter({
+  kundenOptionen,
+  wert,
+  onChange,
+}: {
+  kundenOptionen: KundeOption[];
+  wert: string;
+  onChange: (id: string) => void;
+}) {
+  const [offen, setOffen] = useState(false);
+  const [suche, setSuche] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOffen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const ausgewaehlterName =
+    wert === "alle" ? "Alle Kunden" : kundenOptionen.find((k) => k.id === wert)?.name ?? "Unbenannt";
+
+  const gefiltert = useMemo(() => {
+    const begriff = suche.trim().toLowerCase();
+    if (!begriff) return kundenOptionen;
+    return kundenOptionen.filter((k) => (k.name ?? "").toLowerCase().includes(begriff));
+  }, [kundenOptionen, suche]);
+
+  function auswaehlen(id: string) {
+    onChange(id);
+    setOffen(false);
+    setSuche("");
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOffen(!offen)}
+        className="flex items-center gap-1 rounded-full border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-1 text-xs text-[var(--text-strong)]"
+      >
+        <span className="max-w-[10rem] truncate">{ausgewaehlterName}</span>
+        <ChevronDown size={12} className="shrink-0 text-[var(--text-faint)]" />
+      </button>
+
+      {offen && (
+        <div className="absolute left-0 top-full z-20 mt-1 w-56 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-2 shadow-lg">
+          <input
+            type="text"
+            autoFocus
+            value={suche}
+            onChange={(e) => setSuche(e.target.value)}
+            placeholder="Kunde suchen…"
+            className="mb-2 w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2 py-1.5 text-xs text-[var(--text-strong)]"
+          />
+          <div className="max-h-56 space-y-0.5 overflow-y-auto">
+            <button
+              onClick={() => auswaehlen("alle")}
+              className={`block w-full rounded px-2 py-1 text-left text-xs hover:bg-[var(--bg-muted)] ${
+                wert === "alle" ? "font-semibold text-akzent" : "text-[var(--text-strong)]"
+              }`}
+            >
+              Alle Kunden
+            </button>
+            {gefiltert.map((k) => (
+              <button
+                key={k.id}
+                onClick={() => auswaehlen(k.id)}
+                className={`block w-full truncate rounded px-2 py-1 text-left text-xs hover:bg-[var(--bg-muted)] ${
+                  wert === k.id ? "font-semibold text-akzent" : "text-[var(--text-strong)]"
+                }`}
+              >
+                {k.name ?? "Unbenannt"}
+              </button>
+            ))}
+            {gefiltert.length === 0 && (
+              <p className="px-2 py-1 text-xs text-[var(--text-faint)]">Keine Treffer.</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -302,18 +389,7 @@ export default function TicketUebersicht({
 
       {/* Filter */}
       <div className="flex flex-wrap items-center gap-2">
-        <select
-          value={kundeFilter}
-          onChange={(e) => setKundeFilter(e.target.value)}
-          className="rounded-full border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-1 text-xs text-[var(--text-strong)]"
-        >
-          <option value="alle">Alle Kunden</option>
-          {kundenOptionen.map((k) => (
-            <option key={k.id} value={k.id}>
-              {k.name ?? "Unbenannt"}
-            </option>
-          ))}
-        </select>
+        <KundenFilter kundenOptionen={kundenOptionen} wert={kundeFilter} onChange={setKundeFilter} />
 
         <span className="h-4 w-px bg-[var(--border)]" />
 
