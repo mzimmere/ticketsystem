@@ -298,19 +298,20 @@ export default function App() {
           {istIntern && aktiveOrgId && (
             <button
               onClick={() => { alleZustandsResets(); }}
-              className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+              className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
               title="Zur Ticketübersicht"
             >
-              <TicketIcon size={16} />
+              <TicketIcon size={18} />
             </button>
           )}
           <button
             onClick={umschalten}
-            className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+            className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
             title={dunkel ? "Helles Design" : "Dunkles Design"}
           >
-            {dunkel ? <Sun size={16} /> : <Moon size={16} />}
+            {dunkel ? <Sun size={18} /> : <Moon size={18} />}
           </button>
+          <span className="mx-0.5 h-5 w-px bg-[var(--border)]" />
           {aktiveOrgId && (
             <button
               onClick={() => {
@@ -323,10 +324,10 @@ export default function App() {
                 setAusgewaehltesTicket(null);
                 setZeigeNeuesTicket(false);
               }}
-              className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+              className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
               title="Über uns / Kontakt"
             >
-              <Building2 size={16} />
+              <Building2 size={18} />
             </button>
           )}
           {istAdmin && (
@@ -341,10 +342,10 @@ export default function App() {
                 setZeigeNeuesTicket(false);
                 setZeigeDashboard(false);
               }}
-              className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+              className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
               title="Abrechnung"
             >
-              <Receipt size={16} />
+              <Receipt size={18} />
             </button>
           )}
           {(istAdmin || profil.rolle === "super_admin") && (aktiveOrgId || profil.rolle === "super_admin") && (
@@ -360,10 +361,10 @@ export default function App() {
                 setZeigeNeuesTicket(false);
                 setZeigeStartseite(false);
               }}
-              className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+              className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
               title="Dashboard"
             >
-              <BarChart2 size={16} />
+              <BarChart2 size={18} />
             </button>
           )}
           {istAdmin && (
@@ -378,10 +379,10 @@ export default function App() {
                 setAusgewaehltesTicket(null);
                 setZeigeNeuesTicket(false);
               }}
-              className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+              className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
               title={profil.rolle === "super_admin" ? "Nachrichten von Firmen" : "Nachricht an Super-Admin"}
             >
-              <Mail size={16} />
+              <Mail size={18} />
             </button>
           )}
           {profil.rolle === "super_admin" && (
@@ -398,10 +399,10 @@ export default function App() {
                 setZeigeNeuesTicket(false);
                 setZeigeDashboard(false);
               }}
-              className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+              className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
               title="Plattform-Abrechnung (Firmen-Rechnungen)"
             >
-              <Landmark size={16} />
+              <Landmark size={18} />
             </button>
           )}
           {istAdmin && (
@@ -416,12 +417,13 @@ export default function App() {
                 setAusgewaehltesTicket(null);
                 setZeigeNeuesTicket(false);
               }}
-              className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+              className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
               title="Verwaltung"
             >
-              <Settings size={16} />
+              <Settings size={18} />
             </button>
           )}
+          <span className="mx-0.5 h-5 w-px bg-[var(--border)]" />
           <button
             onClick={() => {
               setZeigeProfil(true);
@@ -433,12 +435,12 @@ export default function App() {
               setAusgewaehltesTicket(null);
               setZeigeNeuesTicket(false);
             }}
-            className="rounded p-1.5 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+            className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
             title="Mein Profil"
           >
-            <User size={16} />
+            <User size={18} />
           </button>
-          <span className="text-xs text-[var(--text-soft)]">{profil.name ?? "Eingeloggt"}</span>
+          <span className="hidden text-xs text-[var(--text-soft)] sm:inline">{profil.name ?? "Eingeloggt"}</span>
           <button
             onClick={() => supabase.auth.signOut()}
             className="text-xs text-[var(--text-faint)] hover:text-[var(--text-soft)]"
