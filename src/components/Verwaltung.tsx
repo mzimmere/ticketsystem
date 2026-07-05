@@ -430,7 +430,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
     }
   }
 
-  async function nutzerZuweisen() {
+  async function nutzerZuweisen(bestaetigt = false) {
     if (!zuweisenEmail.trim() || !organisationId) return;
     setLaedt(true);
     setHinweis(null);
@@ -451,11 +451,24 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
             email: zuweisenEmail.trim(),
             organisationId,
             rolle: zuweisenRolle,
+            bestaetigt,
           }),
         },
       );
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Zuweisen fehlgeschlagen");
+
+      if (!res.ok) {
+        if (json.warnung) {
+          setLaedt(false);
+          if (confirm(`${json.meldung}\n\nTrotzdem zuweisen?`)) {
+            await nutzerZuweisen(true);
+          } else {
+            setHinweis("Abgebrochen – niemand wurde umgezogen.");
+          }
+          return;
+        }
+        throw new Error(json.error ?? "Zuweisen fehlgeschlagen");
+      }
 
       setHinweis(`${json.name ?? zuweisenEmail} ist jetzt Teil dieser Firma.`);
       setZuweisenEmail("");
@@ -831,7 +844,9 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
             <div className="space-y-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
               <p className="text-xs text-[var(--text-faint)]">
                 Für Personen, die schon einen Account haben (z.B. bei einer anderen Firma oder
-                bereits als Kunde) – wird hier neu zugeordnet, kein neuer Account nötig.
+                bereits als Kunde) – wird hier neu zugeordnet, kein neuer Account nötig. Achtung:
+                Ein Account gehört immer nur zu einer Firma gleichzeitig – gehört die Person schon
+                zu einer anderen Firma, wird sie dort entfernt (du bekommst vorher eine Warnung).
               </p>
               <input
                 type="email"
@@ -849,7 +864,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                 <option value="org_admin">Org-Admin</option>
               </select>
               <button
-                onClick={nutzerZuweisen}
+                onClick={() => nutzerZuweisen()}
                 disabled={laedt}
                 className="w-full rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
