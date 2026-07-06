@@ -220,14 +220,15 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
       </div>
 
       <div className="space-y-2">
-        <textarea
-          value={antwort}
-          onChange={(e) => setAntwort(e.target.value)}
-          rows={3}
-          placeholder="Antworten…"
-          className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
-        />
-        <DateiAuswahl dateien={dateien} onAendern={setDateien} />
+        <DateiAuswahl dateien={dateien} onAendern={setDateien}>
+          <textarea
+            value={antwort}
+            onChange={(e) => setAntwort(e.target.value)}
+            rows={3}
+            placeholder="Antworten…"
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
+          />
+        </DateiAuswahl>
         <div className="flex items-center justify-between gap-2">
           <button
             onClick={antwortSenden}

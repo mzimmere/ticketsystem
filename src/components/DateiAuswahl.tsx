@@ -1,10 +1,11 @@
-import { useRef } from "react";
+import { useRef, useState, type ReactNode } from "react";
 
 interface DateiAuswahlProps {
   dateien: File[];
   onAendern: (dateien: File[]) => void;
   mehrfach?: boolean;
   label?: string;
+  children?: ReactNode;
 }
 
 export default function DateiAuswahl({
@@ -12,14 +13,29 @@ export default function DateiAuswahl({
   onAendern,
   mehrfach = true,
   label = "Datei anhängen",
+  children,
 }: DateiAuswahlProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [wirdUebergezogen, setWirdUebergezogen] = useState(false);
 
-  function dateienHinzufuegen(neu: FileList | null) {
-    if (!neu) return;
+  function dateienHinzufuegen(neu: FileList | File[] | null) {
+    if (!neu || neu.length === 0) return;
     const liste = Array.from(neu);
     onAendern(mehrfach ? [...dateien, ...liste] : liste.slice(0, 1));
     if (inputRef.current) inputRef.current.value = "";
+  }
+
+  function onDragOver(e: React.DragEvent) {
+    if (!e.dataTransfer.types.includes("Files")) return;
+    e.preventDefault();
+    setWirdUebergezogen(true);
+  }
+
+  function onDrop(e: React.DragEvent) {
+    if (!e.dataTransfer.types.includes("Files")) return;
+    e.preventDefault();
+    setWirdUebergezogen(false);
+    dateienHinzufuegen(e.dataTransfer.files);
   }
 
   function entfernen(index: number) {
@@ -32,7 +48,20 @@ export default function DateiAuswahl({
   }
 
   return (
-    <div className="space-y-1.5">
+    <div
+      onDragOver={onDragOver}
+      onDragLeave={() => setWirdUebergezogen(false)}
+      onDrop={onDrop}
+      className={`relative space-y-1.5 rounded-lg border-2 border-transparent transition-colors ${
+        wirdUebergezogen ? "border-dashed border-akzent bg-akzent/5" : ""
+      }`}
+    >
+      {wirdUebergezogen && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-[var(--bg-surface)]/90 text-sm font-medium text-akzent">
+          Datei hier loslassen zum Anhängen…
+        </div>
+      )}
+      {children}
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
@@ -46,7 +75,7 @@ export default function DateiAuswahl({
             d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
           />
         </svg>
-        {label}
+        {label} <span className="text-[var(--text-faint)]">(oder hierher ziehen)</span>
       </button>
       <input
         ref={inputRef}

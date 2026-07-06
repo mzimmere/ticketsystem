@@ -562,14 +562,15 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
               ))}
             </select>
           )}
-          <textarea
-            value={neueNotiz}
-            onChange={(e) => setNeueNotiz(e.target.value)}
-            rows={3}
-            placeholder="Notiz oder Antwort schreiben…"
-            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
-          />
-          <DateiAuswahl dateien={neueDateien} onAendern={setNeueDateien} />
+          <DateiAuswahl dateien={neueDateien} onAendern={setNeueDateien}>
+            <textarea
+              value={neueNotiz}
+              onChange={(e) => setNeueNotiz(e.target.value)}
+              rows={3}
+              placeholder="Notiz oder Antwort schreiben…"
+              className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
+            />
+          </DateiAuswahl>
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 text-xs text-[var(--text-soft)]">
               <input
