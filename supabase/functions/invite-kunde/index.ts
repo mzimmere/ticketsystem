@@ -25,6 +25,15 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// Verpackt den rohen (einmaligen) Supabase-Link als Query-Parameter einer
+// eigenen App-Seite, die erst per Klick weiterleitet - Messenger wie
+// WhatsApp rufen geteilte Links selbst auf (Link-Vorschau) und wuerden den
+// Einmal-Link sonst schon vor dem eigentlichen Klick verbrauchen.
+function vorladeSichererLink(actionLink: string): string {
+  const basis = Deno.env.get("PUBLIC_SITE_URL") ?? "";
+  return `${basis}/?zugang=${encodeURIComponent(actionLink)}`;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -94,7 +103,7 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({
         ok: true,
         userId: data.user?.id,
-        link: data.properties?.action_link,
+        link: data.properties?.action_link ? vorladeSichererLink(data.properties.action_link) : undefined,
       }),
       {
         status: 200,

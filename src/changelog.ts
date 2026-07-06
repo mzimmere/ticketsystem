@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-03", titel: "Fix: Zugangslinks vorlade-sicher – WhatsApp & Co. können Einmal-Links nicht mehr vorzeitig verbrauchen" },
   { datum: "2026-07-03", titel: "Mehrfach-Mitgliedschaft: Mitarbeiter können bei mehreren Firmen gleichzeitig aktiv sein, Firmen-Umschalter im Header" },
   { datum: "2026-07-03", titel: "Fix: Nutzer-Zuweisung entfernte Person unbemerkt aus anderer Firma – jetzt mit Warnung" },
   { datum: "2026-07-03", titel: "Plattform-Rechnungen: Zahlungsziel, rechtlicher Hinweis, Freitext, Steuernummer" },

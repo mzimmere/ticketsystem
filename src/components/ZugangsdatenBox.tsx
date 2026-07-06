@@ -61,12 +61,6 @@ export default function ZugangsdatenBox({
   }
 
   function perWhatsapp() {
-    if (link && !passwort) {
-      const weiter = window.confirm(
-        "Achtung: WhatsApp ruft Links oft selbst auf, um eine Vorschau zu erzeugen - dabei kann ein Einmal-Link schon verbraucht werden, bevor die Person klickt. Zuverlässiger wäre die Passwort-Variante.\n\nTrotzdem per WhatsApp senden?",
-      );
-      if (!weiter) return;
-    }
     const nummer = telefon?.replace(/[^0-9]/g, "");
     const url = nummer
       ? `https://wa.me/${nummer}?text=${encodeURIComponent(text)}`
@@ -97,9 +91,9 @@ export default function ZugangsdatenBox({
       )}
 
       {link && !passwort && (
-        <p className="mb-2 text-xs text-amber-700 dark:text-amber-400">
-          Für WhatsApp-Versand ist die Passwort-Variante zuverlässiger – WhatsApp kann den Link
-          beim Erzeugen der Vorschau vorab verbrauchen.
+        <p className="mb-2 text-xs text-[var(--text-faint)]">
+          Der Link öffnet zuerst eine Bestätigungsseite – so verbraucht eine WhatsApp-Vorschau ihn
+          nicht versehentlich, bevor die Person selbst klickt.
         </p>
       )}
 

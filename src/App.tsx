@@ -23,6 +23,7 @@ import Startseite from "./components/Startseite";
 import KundenRegistrierung from "./components/KundenRegistrierung";
 import DatenschutzSeite from "./components/DatenschutzSeite";
 import FaqOeffentlich from "./components/FaqOeffentlich";
+import ZugangsBestaetigen from "./components/ZugangsBestaetigen";
 import Changelog from "./components/Changelog";
 import PlattformAbrechnung from "./components/PlattformAbrechnung";
 
@@ -36,6 +37,14 @@ function datenschutzSlug(): string | null {
 
 function faqSlug(): string | null {
   return new URLSearchParams(window.location.search).get("faq");
+}
+
+// Zwischenseite fuer Zugangs-/Einladungslinks (siehe ZugangsBestaetigen.tsx) -
+// enthaelt den eigentlichen Supabase-Link nur verpackt als Query-Parameter,
+// damit Messenger-Vorschau-Bots ihn nicht versehentlich verbrauchen.
+function zugangsZiel(): string | null {
+  const wert = new URLSearchParams(window.location.search).get("zugang");
+  return wert ? decodeURIComponent(wert) : null;
 }
 
 interface Organisation {
@@ -192,6 +201,11 @@ export default function App() {
 
   if (laedt) {
     return <div className="p-8 text-sm text-[var(--text-faint)]">Lädt…</div>;
+  }
+
+  const zugangZiel = zugangsZiel();
+  if (zugangZiel) {
+    return <ZugangsBestaetigen ziel={zugangZiel} />;
   }
 
   const fSlug = faqSlug();
