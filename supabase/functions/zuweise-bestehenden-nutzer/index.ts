@@ -2,10 +2,14 @@
 // vorher Kunde, Mitarbeiter einer anderen Firma, oder noch ohne
 // Organisation) der angegebenen Firma mit einer Rolle zuweisen.
 //
-// Ein Profil gehoert immer nur zu genau einer Organisation - wer schon
-// bei einer anderen Firma ist, wird dort automatisch entfernt. Deshalb
-// wird das vor dem eigentlichen Umzug abgefragt (bestaetigt=false liefert
-// erst eine Warnung zurueck, bestaetigt=true fuehrt die Zuweisung aus).
+// Techniker/Org-Admin: fuegt eine zusaetzliche Mitgliedschaft hinzu
+// (firmen_mitgliedschaften) - bestehende Mitgliedschaften bei anderen
+// Firmen bleiben unangetastet, eine Person kann gleichzeitig bei
+// mehreren Firmen aktiv sein.
+//
+// Kunde: bleibt strikt 1:1 (ein Kunden-Account gehoert genau einer
+// Firma) - hier wird weiterhin profiles.organisation_id ueberschrieben,
+// mit Warnung falls der Account gerade woanders Kunde ist.
 //
 // Projektpfad: supabase/functions/zuweise-bestehenden-nutzer/index.ts
 // Deploy: supabase functions deploy zuweise-bestehenden-nutzer
@@ -59,9 +63,21 @@ Deno.serve(async (req: Request) => {
       return fehlerAntwort(400, "email, organisationId und rolle sind erforderlich");
     }
 
-    // Org-Admin darf nur innerhalb der eigenen Firma zuweisen.
+    // Org-Admin darf nur innerhalb der eigenen Firma zuweisen. Bei
+    // Mehrfach-Mitgliedschaft reicht "irgendeine eigene Firma" -
+    // deshalb zusaetzlich ueber firmen_mitgliedschaften pruefen.
     if (anfragendesProfil.rolle === "org_admin" && organisationId !== anfragendesProfil.organisation_id) {
-      return fehlerAntwort(403, "Du kannst Personen nur deiner eigenen Firma zuweisen.");
+      const { data: eigeneMitgliedschaft } = await supabaseAdmin
+        .from("firmen_mitgliedschaften")
+        .select("id")
+        .eq("profil_id", authData.user.id)
+        .eq("organisation_id", organisationId)
+        .eq("rolle", "org_admin")
+        .eq("deaktiviert", false)
+        .maybeSingle();
+      if (!eigeneMitgliedschaft) {
+        return fehlerAntwort(403, "Du kannst Personen nur einer Firma zuweisen, bei der du selbst Org-Admin bist.");
+      }
     }
 
     const erlaubteRollen = ["kunde", "techniker", "org_admin"];
@@ -95,16 +111,49 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Warnung statt stillschweigendem Umzug: wer schon einer ANDEREN Firma
-    // angehört, wird dort durch die Zuweisung automatisch entfernt (ein
-    // Profil hat immer nur eine organisation_id). Ohne Bestaetigung erst
-    // nachfragen statt einfach durchzuziehen.
+    const name = bestehendesProfil?.name ?? email;
+
+    // ---- Techniker / Org-Admin: additive Mitgliedschaft ----
+    // Bestehende Mitgliedschaften bei anderen Firmen bleiben unberuehrt -
+    // die Person arbeitet danach einfach bei mehreren Firmen gleichzeitig.
+    if (rolle === "techniker" || rolle === "org_admin") {
+      const { error: upsertFehler } = await supabaseAdmin
+        .from("firmen_mitgliedschaften")
+        .upsert(
+          { profil_id: userId, organisation_id: organisationId, rolle, deaktiviert: false },
+          { onConflict: "profil_id,organisation_id" },
+        );
+      if (upsertFehler) throw upsertFehler;
+
+      // War der Account bisher nur Kunde (oder ganz ohne Firma), auf
+      // "intern" hochstufen, damit er die interne Ansicht sieht. Ist er
+      // bereits Techniker/Org-Admin (z.B. bei einer anderen Firma), bleibt
+      // die globale Rolle unangetastet - massgeblich ist ab jetzt die
+      // Mitgliedschaft der jeweils aktiven Firma.
+      const updates: Record<string, unknown> = {};
+      if (!bestehendesProfil || !["techniker", "org_admin"].includes(bestehendesProfil.rolle)) {
+        updates.rolle = rolle;
+      }
+      if (!bestehendesProfil?.organisation_id) {
+        updates.organisation_id = organisationId;
+      }
+      if (Object.keys(updates).length > 0) {
+        await supabaseAdmin.from("profiles").update(updates).eq("id", userId);
+      }
+
+      return new Response(JSON.stringify({ ok: true, userId, name }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ---- Kunde: bleibt strikt 1:1, wie bisher ----
     if (
       !bestaetigt &&
       bestehendesProfil?.organisation_id &&
-      bestehendesProfil.organisation_id !== organisationId
+      bestehendesProfil.organisation_id !== organisationId &&
+      bestehendesProfil.rolle === "kunde"
     ) {
-      const name = bestehendesProfil.name ?? email;
       if (anfragendesProfil.rolle === "super_admin") {
         const { data: bisherigeFirma } = await supabaseAdmin
           .from("organisationen")
@@ -114,17 +163,15 @@ Deno.serve(async (req: Request) => {
         return new Response(
           JSON.stringify({
             warnung: true,
-            meldung: `${name} gehört aktuell zu "${bisherigeFirma?.name ?? "einer anderen Firma"}" (Rolle: ${bestehendesProfil.rolle}). Bei Zuweisung wird der Account dort entfernt.`,
+            meldung: `${name} ist aktuell Kunde bei "${bisherigeFirma?.name ?? "einer anderen Firma"}". Bei Zuweisung wird der Account dort entfernt.`,
           }),
           { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
-      // Org-Admin sieht den Namen der fremden Firma nicht (keine Einsicht
-      // in andere Mandanten), nur die generelle Warnung.
       return new Response(
         JSON.stringify({
           warnung: true,
-          meldung: `${name} gehört bereits zu einer anderen Firma. Bei Zuweisung wird der Account dort entfernt.`,
+          meldung: `${name} ist bereits Kunde bei einer anderen Firma. Bei Zuweisung wird der Account dort entfernt.`,
         }),
         { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );

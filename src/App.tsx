@@ -67,7 +67,7 @@ function authLinkFehler(): string | null {
 }
 
 export default function App() {
-  const { profil, eingeloggt, laedt } = useProfil();
+  const { profil, mitgliedschaften, eingeloggt, laedt } = useProfil();
   const { dunkel, umschalten } = useTheme();
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [ausgewaehltesTicket, setAusgewaehltesTicket] = useState<string | null>(null);
@@ -75,6 +75,7 @@ export default function App() {
   const [zeigeProfil, setZeigeProfil] = useState(false);
   const [zeigeVerwaltung, setZeigeVerwaltung] = useState(false);
   const [superAdminFirma, setSuperAdminFirma] = useState<string | null>(null);
+  const [aktiveFirmaId, setAktiveFirmaId] = useState<string | null>(null);
   const [zeigeFirmenInfo, setZeigeFirmenInfo] = useState(false);
   const [zeigeAbrechnung, setZeigeAbrechnung] = useState(false);
   const [zeigePostfach, setZeigePostfach] = useState(false);
@@ -90,10 +91,33 @@ export default function App() {
   // Für Super-Admin: sobald eine Firma in "Alle Firmen" ausgewählt wurde,
   // gilt sie als aktiver Kontext für Tickets/Abrechnung/Postfach/Firmeninfo -
   // ohne dass die eigene super_admin-Rolle dafür geändert werden muss.
+  // Wer bei mehreren Firmen gleichzeitig Mitglied ist (Mehrfach-
+  // Mitgliedschaft), wählt stattdessen über aktiveFirmaId, welche Firma
+  // gerade der aktive Kontext ist.
   const aktiveOrgId =
-    profil?.rolle === "super_admin" ? superAdminFirma : profil?.organisation_id ?? null;
+    profil?.rolle === "super_admin"
+      ? superAdminFirma
+      : mitgliedschaften.length > 0
+      ? aktiveFirmaId
+      : profil?.organisation_id ?? null;
+
+  const aktiveMitgliedschaft = mitgliedschaften.find((m) => m.organisation_id === aktiveFirmaId) ?? null;
 
   const onlineIds = useOnlinePraesenz(aktiveOrgId, profil?.id);
+
+  // Sinnvollen Startwert fuer aktiveFirmaId setzen, sobald die
+  // Mitgliedschaften geladen sind: bevorzugt die "Home"-Firma aus dem
+  // Profil, sonst die erste Mitgliedschaft.
+  useEffect(() => {
+    if (mitgliedschaften.length === 0) { setAktiveFirmaId(null); return; }
+    setAktiveFirmaId((vorher) => {
+      if (vorher && mitgliedschaften.some((m) => m.organisation_id === vorher)) return vorher;
+      const home = profil?.organisation_id;
+      if (home && mitgliedschaften.some((m) => m.organisation_id === home)) return home;
+      return mitgliedschaften[0].organisation_id;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mitgliedschaften, profil?.organisation_id]);
 
   // Direkter Sprung zur Ticketübersicht von überall aus, ohne den
   // gewählten Firmenkontext (superAdminFirma) zu verlieren - kein Umweg
@@ -143,14 +167,15 @@ export default function App() {
     if (aktion === "verwaltung-integrationen") { setZeigeVerwaltung(true); setVerwaltungsTab("integrationen"); }
   }
 
-  // Beim Firmenwechsel (Super-Admin) alle offenen Detail-/Auswahl-Zustände
-  // zurücksetzen - sonst bliebe z.B. ein offenes Ticket der vorherigen
-  // Firma sichtbar, weil RLS dem Super-Admin technisch jedes Ticket erlaubt.
+  // Beim Firmenwechsel (Super-Admin "Alle Firmen" ODER eigener Firmen-
+  // Umschalter bei Mehrfach-Mitgliedschaft) alle offenen Detail-/Auswahl-
+  // Zustände zurücksetzen - sonst bliebe z.B. ein offenes Ticket der
+  // vorherigen Firma sichtbar.
   useEffect(() => {
     setAusgewaehltesTicket(null);
     setZeigeNeuesTicket(false);
     setRechnungDetail(null);
-  }, [superAdminFirma]);
+  }, [superAdminFirma, aktiveFirmaId]);
 
   useEffect(() => {
     if (aktiveOrgId) {
@@ -247,9 +272,19 @@ export default function App() {
     );
   }
 
-  const istIntern =
-    profil.rolle === "super_admin" || profil.rolle === "org_admin" || profil.rolle === "techniker";
-  const istAdmin = profil.rolle === "super_admin" || profil.rolle === "org_admin";
+  // Massgeblich ist bei Mehrfach-Mitgliedschaft die Rolle in der gerade
+  // aktiven Firma (aktiveMitgliedschaft), nicht mehr profil.rolle global -
+  // eine Person kann z.B. bei Firma A Techniker und bei Firma B Org-Admin
+  // sein. profil.rolle bleibt nur als "hat ueberhaupt einen internen
+  // Zugang" (mitgliedschaften.length > 0) und fuer super_admin relevant.
+  const istIntern = profil.rolle === "super_admin" || mitgliedschaften.length > 0;
+  const istAdmin = profil.rolle === "super_admin" || aktiveMitgliedschaft?.rolle === "org_admin";
+
+  // Fuer Unterkomponenten, die eine einzelne "Rolle" erwarten (Startseite,
+  // Verwaltung, AdminPostfach): die Rolle der gerade aktiven Firma, nicht
+  // die globale profil.rolle - sonst wuerde z.B. Org-Admin-Sein bei Firma B
+  // ignoriert, weil profil.rolle noch "techniker" von Firma A ist.
+  const effektiveRolle = profil.rolle === "super_admin" ? "super_admin" : aktiveMitgliedschaft?.rolle ?? profil.rolle;
 
   return (
     <div
@@ -292,6 +327,20 @@ export default function App() {
               {organisation?.name ?? "IT-Ticketsystem"}
             </span>
           </button>
+          {mitgliedschaften.length > 1 && (
+            <select
+              value={aktiveFirmaId ?? ""}
+              onChange={(e) => setAktiveFirmaId(e.target.value)}
+              title="Aktive Firma wechseln"
+              className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-1.5 py-0.5 text-xs text-[var(--text-soft)]"
+            >
+              {mitgliedschaften.map((m) => (
+                <option key={m.organisation_id} value={m.organisation_id}>
+                  {m.organisation_name}
+                </option>
+              ))}
+            </select>
+          )}
           <Changelog />
         </div>
         <div className="flex items-center gap-2">
@@ -455,7 +504,7 @@ export default function App() {
         {zeigeStartseite && !ausgewaehltesTicket && !zeigeNeuesTicket && !zeigeVerwaltung && !zeigeAbrechnung && !zeigeFirmenInfo && !zeigePostfach && !zeigeDashboard && !zeigePlattformAbrechnung && !zeigeProfil ? (
           <Startseite
             name={profil.name}
-            rolle={profil.rolle}
+            rolle={effektiveRolle}
             organisationId={aktiveOrgId}
             orgName={organisation?.name ?? null}
             logoUrl={organisation?.logo_url ?? null}
@@ -496,7 +545,7 @@ export default function App() {
             >
               ← Zurück
             </button>
-            <AdminPostfach rolle={profil.rolle} organisationId={aktiveOrgId} />
+            <AdminPostfach rolle={effektiveRolle} organisationId={aktiveOrgId} />
           </>
         ) : zeigeAbrechnung ? (
           rechnungDetail ? (
@@ -555,10 +604,8 @@ export default function App() {
               <SuperAdminUebersicht onFirmaOeffnen={setSuperAdminFirma} />
             ) : (
               <Verwaltung
-                rolle={profil.rolle}
-                organisationId={
-                  profil.rolle === "super_admin" ? superAdminFirma : profil.organisation_id
-                }
+                rolle={effektiveRolle}
+                organisationId={aktiveOrgId}
                 onlineIds={onlineIds}
                 initialTab={verwaltungsTab}
               />

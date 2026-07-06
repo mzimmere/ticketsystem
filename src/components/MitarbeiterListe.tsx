@@ -5,17 +5,19 @@ import Avatar from "./Avatar";
 import ZugangsdatenBox from "./ZugangsdatenBox";
 
 type Rolle = "super_admin" | "org_admin" | "techniker" | "kunde";
+type MitgliedRolle = "techniker" | "org_admin";
 type Verfuegbarkeit = "verfuegbar" | "abwesend" | "urlaub";
 
 interface Mitglied {
   id: string;
+  mitgliedschaft_id: string;
   email: string | null;
   name: string | null;
   vorname: string | null;
   nachname: string | null;
   avatar_url: string | null;
   telefonnummer: string | null;
-  rolle: Rolle;
+  rolle: MitgliedRolle;
   verfuegbarkeit: Verfuegbarkeit;
   deaktiviert: boolean;
 }
@@ -78,11 +80,14 @@ export default function MitarbeiterListe({
     setMitglieder((data as Mitglied[]) ?? []);
   }
 
-  async function statusUmschalten(mitgliedId: string, deaktivieren: boolean) {
+  // Deaktiviert/reaktiviert nur die Mitgliedschaft bei DIESER Firma - nicht
+  // den ganzen Account, der bei Mehrfach-Mitgliedschaft ja evtl. bei einer
+  // anderen Firma weiterhin aktiv sein soll.
+  async function statusUmschalten(mitgliedschaftId: string, deaktivieren: boolean) {
     const { error } = await supabase
-      .from("profiles")
+      .from("firmen_mitgliedschaften")
       .update({ deaktiviert: deaktivieren })
-      .eq("id", mitgliedId);
+      .eq("id", mitgliedschaftId);
     if (error) {
       console.error(error);
       setHinweis("Aktion fehlgeschlagen.");
@@ -101,21 +106,29 @@ export default function MitarbeiterListe({
   }
 
   async function speichern() {
-    if (!offenId) return;
+    if (!offenId || !entwurf.mitgliedschaft_id) return;
     setLaedt(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        vorname: entwurf.vorname?.trim() || null,
-        nachname: entwurf.nachname?.trim() || null,
-        telefonnummer: entwurf.telefonnummer?.trim() || null,
-        rolle: entwurf.rolle,
-        verfuegbarkeit: entwurf.verfuegbarkeit,
-      })
-      .eq("id", offenId);
+    // Persönliche Angaben gelten firmenübergreifend (ein Name/Telefon pro
+    // Person), die Rolle dagegen ist pro Firma - deshalb zwei Updates auf
+    // unterschiedliche Tabellen.
+    const [{ error: profilFehler }, { error: mitgliedFehler }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .update({
+          vorname: entwurf.vorname?.trim() || null,
+          nachname: entwurf.nachname?.trim() || null,
+          telefonnummer: entwurf.telefonnummer?.trim() || null,
+          verfuegbarkeit: entwurf.verfuegbarkeit,
+        })
+        .eq("id", offenId),
+      supabase
+        .from("firmen_mitgliedschaften")
+        .update({ rolle: entwurf.rolle })
+        .eq("id", entwurf.mitgliedschaft_id),
+    ]);
     setLaedt(false);
-    if (error) {
-      console.error(error);
+    if (profilFehler || mitgliedFehler) {
+      console.error(profilFehler ?? mitgliedFehler);
       setHinweis("Speichern fehlgeschlagen.");
       return;
     }
@@ -331,12 +344,11 @@ export default function MitarbeiterListe({
                   </label>
                   <select
                     value={entwurf.rolle}
-                    onChange={(e) => setEntwurf({ ...entwurf, rolle: e.target.value as Rolle })}
+                    onChange={(e) => setEntwurf({ ...entwurf, rolle: e.target.value as MitgliedRolle })}
                     className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                   >
                     <option value="techniker">Techniker</option>
                     <option value="org_admin">Org-Admin</option>
-                    <option value="kunde">Kunde</option>
                   </select>
                 </div>
                 <div className="flex-1">
@@ -414,17 +426,18 @@ export default function MitarbeiterListe({
               <div className="border-t border-[var(--border)] pt-3">
                 {zeigeArchivierte ? (
                   <button
-                    onClick={() => statusUmschalten(m.id, false)}
+                    onClick={() => statusUmschalten(m.mitgliedschaft_id, false)}
                     className="w-full rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
                   >
                     Wieder aktivieren
                   </button>
                 ) : (
                   <button
-                    onClick={() => statusUmschalten(m.id, true)}
+                    onClick={() => statusUmschalten(m.mitgliedschaft_id, true)}
                     className="w-full rounded border border-red-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30"
+                    title="Entfernt die Person nur aus DIESER Firma - andere Mitgliedschaften bleiben bestehen."
                   >
-                    Mitarbeiter deaktivieren
+                    Aus dieser Firma entfernen
                   </button>
                 )}
               </div>

@@ -11,6 +11,10 @@ standardmäßig inaktiv (siehe unten).
 - Verwaltungsbereich (Zahnrad-Icon, nur für Org-Admin/Super-Admin):
   Firmenname/Logo, Personen einladen (Kunde/Techniker/Org-Admin),
   bei Super-Admin zusätzlich Organisationen anlegen
+- Mehrfach-Mitgliedschaft: ein Techniker/Org-Admin-Account kann bei mehreren
+  Firmen gleichzeitig aktiv sein (mit jeweils eigener Rolle), Umschalter
+  dafür im Header sobald mehr als eine Mitgliedschaft besteht. Kunden-
+  Accounts bleiben bewusst strikt einer Firma zugeordnet.
 
 ## 1. Supabase-Projekt einrichten
 

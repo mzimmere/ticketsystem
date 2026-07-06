@@ -1132,3 +1132,685 @@ create policy plattform_rechnungen_all on plattform_rechnungen for all
 create policy plattform_einstellungen_all on plattform_einstellungen for all
   using (current_user_rolle() = 'super_admin')
   with check (current_user_rolle() = 'super_admin');
+
+-- ============================================================
+-- 41. Echte Mehrfach-Mitgliedschaft: eine Person (ein Login) kann
+-- Techniker/Org-Admin bei mehreren Firmen gleichzeitig sein, mit jeweils
+-- eigener Rolle. profiles.organisation_id/rolle bleiben als "Home"-Werte
+-- fuer Kunden (weiterhin strikt 1:1) und Super-Admin-Sonderfaelle
+-- bestehen, fuer Techniker/Org-Admin ist firmen_mitgliedschaften die
+-- Quelle der Wahrheit fuer Firmenzugehoerigkeit.
+-- ============================================================
+create table firmen_mitgliedschaften (
+  id uuid primary key default gen_random_uuid(),
+  profil_id uuid not null references profiles(id) on delete cascade,
+  organisation_id uuid not null references organisationen(id) on delete cascade,
+  rolle user_rolle not null,
+  deaktiviert boolean not null default false,
+  erstellt_am timestamptz default now(),
+  constraint firmen_mitgliedschaften_rolle_check check (rolle in ('techniker', 'org_admin')),
+  unique (profil_id, organisation_id)
+);
+
+create index idx_mitgliedschaften_profil on firmen_mitgliedschaften(profil_id);
+create index idx_mitgliedschaften_org on firmen_mitgliedschaften(organisation_id);
+
+-- Backfill: bestehende Techniker/Org-Admins bekommen eine Mitgliedschaft
+-- fuer ihre bisherige "Home"-Firma, damit sich am Zugriff nichts aendert.
+insert into firmen_mitgliedschaften (profil_id, organisation_id, rolle, deaktiviert)
+select id, organisation_id, rolle, deaktiviert
+from profiles
+where organisation_id is not null and rolle in ('techniker', 'org_admin')
+on conflict (profil_id, organisation_id) do nothing;
+
+alter table firmen_mitgliedschaften enable row level security;
+
+-- Ist der eingeloggte User Mitglied dieser Firma mit einer der angegebenen
+-- Rollen? (security definer, um RLS-Rekursion zu vermeiden - gleiches
+-- Muster wie current_user_org()/current_user_rolle()).
+create or replace function hat_firmenzugriff(p_organisation_id uuid, p_rollen user_rolle[])
+returns boolean as $$
+  select exists (
+    select 1 from firmen_mitgliedschaften m
+    where m.profil_id = auth.uid()
+      and m.organisation_id = p_organisation_id
+      and m.rolle = any(p_rollen)
+      and not m.deaktiviert
+  )
+$$ language sql stable security definer set search_path = public;
+
+-- Ist der eingeloggte User ueberhaupt Mitglied dieser Firma (egal welche
+-- Rolle)?
+create or replace function ist_firmenmitglied(p_organisation_id uuid)
+returns boolean as $$
+  select exists (
+    select 1 from firmen_mitgliedschaften m
+    where m.profil_id = auth.uid()
+      and m.organisation_id = p_organisation_id
+      and not m.deaktiviert
+  )
+$$ language sql stable security definer set search_path = public;
+
+create policy mitgliedschaften_select on firmen_mitgliedschaften for select
+  using (
+    profil_id = auth.uid()
+    or current_user_rolle() = 'super_admin'
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+create policy mitgliedschaften_insert on firmen_mitgliedschaften for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+create policy mitgliedschaften_update on firmen_mitgliedschaften for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+create policy mitgliedschaften_delete on firmen_mitgliedschaften for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+-- ============================================================
+-- 42. RLS-Policies auf Mitgliedschaft umgestellt (44 Policies, 20
+-- Tabellen). Additiv: die urspruengliche organisation_id/rolle-Bedingung
+-- bleibt in jeder Policy erhalten, hat_firmenzugriff()/ist_firmenmitglied()
+-- wird jeweils per OR ergaenzt - zusaetzliche Mitgliedschaften gewaehren
+-- Zugriff, ohne bestehenden Zugriff zu veraendern.
+-- ============================================================
+drop policy tickets_select_intern on tickets;
+create policy tickets_select_intern on tickets for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (current_user_rolle() in ('org_admin', 'techniker') and organisation_id = current_user_org())
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy tickets_insert on tickets;
+create policy tickets_insert on tickets for insert
+  with check (
+    organisation_id = current_user_org()
+    or current_user_rolle() = 'super_admin'
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy tickets_update on tickets;
+create policy tickets_update on tickets for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy nachrichten_insert on ticket_nachrichten;
+create policy nachrichten_insert on ticket_nachrichten for insert
+  with check (
+    exists (
+      select 1 from tickets t
+      where t.id = ticket_nachrichten.ticket_id
+        and (
+          current_user_rolle() = 'super_admin'
+          or (t.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+          or hat_firmenzugriff(t.organisation_id, array['org_admin', 'techniker']::user_rolle[])
+          or (t.kunde_id = auth.uid() and ticket_nachrichten.quelle <> 'intern')
+        )
+    )
+  );
+
+drop policy ticket_tags_select on ticket_tags;
+create policy ticket_tags_select on ticket_tags for select
+  using (
+    exists (
+      select 1 from tickets t
+      where t.id = ticket_tags.ticket_id
+        and (
+          current_user_rolle() = 'super_admin'
+          or t.organisation_id = current_user_org()
+          or ist_firmenmitglied(t.organisation_id)
+          or t.kunde_id = auth.uid()
+        )
+    )
+  );
+
+drop policy ticket_tags_insert on ticket_tags;
+create policy ticket_tags_insert on ticket_tags for insert
+  with check (
+    exists (
+      select 1 from tickets t
+      where t.id = ticket_tags.ticket_id
+        and (
+          current_user_rolle() = 'super_admin'
+          or t.organisation_id = current_user_org()
+          or ist_firmenmitglied(t.organisation_id)
+        )
+    )
+  );
+
+drop policy ticket_tags_delete on ticket_tags;
+create policy ticket_tags_delete on ticket_tags for delete
+  using (
+    exists (
+      select 1 from tickets t
+      where t.id = ticket_tags.ticket_id
+        and (
+          current_user_rolle() = 'super_admin'
+          or t.organisation_id = current_user_org()
+          or ist_firmenmitglied(t.organisation_id)
+        )
+    )
+  );
+
+drop policy anhaenge_select on anhaenge;
+create policy anhaenge_select on anhaenge for select
+  using (
+    exists (
+      select 1 from ticket_nachrichten n join tickets t on t.id = n.ticket_id
+      where n.id = anhaenge.nachricht_id
+        and (
+          current_user_rolle() = 'super_admin'
+          or (t.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+          or hat_firmenzugriff(t.organisation_id, array['org_admin', 'techniker']::user_rolle[])
+          or (t.kunde_id = auth.uid() and n.quelle <> 'intern')
+        )
+    )
+  );
+
+drop policy anhaenge_insert on anhaenge;
+create policy anhaenge_insert on anhaenge for insert
+  with check (
+    exists (
+      select 1 from ticket_nachrichten n join tickets t on t.id = n.ticket_id
+      where n.id = anhaenge.nachricht_id
+        and (
+          current_user_rolle() = 'super_admin'
+          or (t.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+          or hat_firmenzugriff(t.organisation_id, array['org_admin', 'techniker']::user_rolle[])
+          or (t.kunde_id = auth.uid())
+        )
+    )
+  );
+
+drop policy zeiteintraege_insert on zeiteintraege;
+create policy zeiteintraege_insert on zeiteintraege for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy zeiteintraege_select on zeiteintraege;
+create policy zeiteintraege_select on zeiteintraege for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (current_user_rolle() in ('org_admin', 'techniker') and organisation_id = current_user_org())
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy zeiteintraege_update on zeiteintraege;
+create policy zeiteintraege_update on zeiteintraege for update
+  using (
+    techniker_id = auth.uid()
+    or current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+drop policy produkte_select on produkte;
+create policy produkte_select on produkte for select
+  using (
+    ersteller_id = auth.uid()
+    or current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+drop policy produkte_insert on produkte;
+create policy produkte_insert on produkte for insert
+  with check (
+    ersteller_id = auth.uid()
+    and (
+      current_user_rolle() = 'super_admin'
+      or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+      or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+    )
+  );
+
+drop policy produkte_update on produkte;
+create policy produkte_update on produkte for update
+  using (
+    ersteller_id = auth.uid()
+    or current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+drop policy produkte_delete on produkte;
+create policy produkte_delete on produkte for delete
+  using (
+    ersteller_id = auth.uid()
+    or current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+drop policy admin_nachrichten_insert on admin_nachrichten;
+create policy admin_nachrichten_insert on admin_nachrichten for insert
+  with check (
+    (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy admin_nachrichten_select on admin_nachrichten;
+create policy admin_nachrichten_select on admin_nachrichten for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy rechnungsanpassungen_select on rechnungsanpassungen;
+create policy rechnungsanpassungen_select on rechnungsanpassungen for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy rechnungsanpassungen_insert on rechnungsanpassungen;
+create policy rechnungsanpassungen_insert on rechnungsanpassungen for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy rechnungsanpassungen_delete on rechnungsanpassungen;
+create policy rechnungsanpassungen_delete on rechnungsanpassungen for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy kunden_dokumente_select on kunden_dokumente;
+create policy kunden_dokumente_select on kunden_dokumente for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy kunden_dokumente_insert on kunden_dokumente;
+create policy kunden_dokumente_insert on kunden_dokumente for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy kunden_dokumente_delete on kunden_dokumente;
+create policy kunden_dokumente_delete on kunden_dokumente for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy vorlagen_select on vorlagen;
+create policy vorlagen_select on vorlagen for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or organisation_id = current_user_org()
+    or ist_firmenmitglied(organisation_id)
+  );
+
+drop policy vorlagen_insert on vorlagen;
+create policy vorlagen_insert on vorlagen for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy vorlagen_delete on vorlagen;
+create policy vorlagen_delete on vorlagen for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy makros_select on makros;
+create policy makros_select on makros for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or organisation_id = current_user_org()
+    or ist_firmenmitglied(organisation_id)
+  );
+
+drop policy makros_insert on makros;
+create policy makros_insert on makros for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy makros_update on makros;
+create policy makros_update on makros for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy makros_delete on makros;
+create policy makros_delete on makros for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+drop policy tags_select on tags;
+create policy tags_select on tags for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or organisation_id = current_user_org()
+    or ist_firmenmitglied(organisation_id)
+  );
+
+drop policy tags_insert on tags;
+create policy tags_insert on tags for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy tags_delete on tags;
+create policy tags_delete on tags for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+drop policy sla_select on sla_konfiguration;
+create policy sla_select on sla_konfiguration for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or organisation_id = current_user_org()
+    or ist_firmenmitglied(organisation_id)
+  );
+
+drop policy sla_insert on sla_konfiguration;
+create policy sla_insert on sla_konfiguration for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+drop policy sla_update on sla_konfiguration;
+create policy sla_update on sla_konfiguration for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+drop policy faq_insert on faq_eintraege;
+create policy faq_insert on faq_eintraege for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy faq_update on faq_eintraege;
+create policy faq_update on faq_eintraege for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+drop policy faq_delete on faq_eintraege;
+create policy faq_delete on faq_eintraege for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+drop policy api_keys_select on api_keys;
+create policy api_keys_select on api_keys for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or organisation_id = current_user_org()
+    or ist_firmenmitglied(organisation_id)
+  );
+
+drop policy api_keys_insert on api_keys;
+create policy api_keys_insert on api_keys for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+drop policy api_keys_update on api_keys;
+create policy api_keys_update on api_keys for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+drop policy api_keys_delete on api_keys;
+create policy api_keys_delete on api_keys for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+drop policy webhooks_select on webhook_endpunkte;
+create policy webhooks_select on webhook_endpunkte for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or organisation_id = current_user_org()
+    or ist_firmenmitglied(organisation_id)
+  );
+
+drop policy webhooks_insert on webhook_endpunkte;
+create policy webhooks_insert on webhook_endpunkte for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+drop policy webhooks_update on webhook_endpunkte;
+create policy webhooks_update on webhook_endpunkte for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+drop policy webhooks_delete on webhook_endpunkte;
+create policy webhooks_delete on webhook_endpunkte for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+drop policy organisationen_select on organisationen;
+create policy organisationen_select on organisationen for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or id = current_user_org()
+    or ist_firmenmitglied(id)
+  );
+
+drop policy organisationen_update on organisationen;
+create policy organisationen_update on organisationen for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(id, array['org_admin']::user_rolle[])
+  );
+
+drop policy profiles_select on profiles;
+create policy profiles_select on profiles for select
+  using (
+    id = auth.uid()
+    or current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or (organisation_id = current_user_org() and current_user_rolle() = 'kunde' and rolle in ('techniker', 'org_admin'))
+    or exists (
+      select 1 from firmen_mitgliedschaften vm
+      where vm.profil_id = profiles.id
+        and hat_firmenzugriff(vm.organisation_id, array['org_admin', 'techniker']::user_rolle[])
+    )
+  );
+
+drop policy profiles_update on profiles;
+create policy profiles_update on profiles for update
+  using (
+    id = auth.uid()
+    or current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or exists (
+      select 1 from firmen_mitgliedschaften vm
+      where vm.profil_id = profiles.id
+        and hat_firmenzugriff(vm.organisation_id, array['org_admin']::user_rolle[])
+    )
+  );
+
+-- storage.objects (Bucket "anhaenge") - bisher ohne Rollenpruefung, nur
+-- Firmenzugehoerigkeit, additiv um Mitgliedschaften erweitert.
+drop policy anhaenge_select on storage.objects;
+create policy anhaenge_select on storage.objects for select
+  using (
+    bucket_id = 'anhaenge'
+    and exists (
+      select 1 from tickets t
+      where t.id::text = (storage.foldername(objects.name))[1]
+        and (
+          current_user_rolle() = 'super_admin'
+          or t.organisation_id = current_user_org()
+          or ist_firmenmitglied(t.organisation_id)
+          or t.kunde_id = auth.uid()
+        )
+    )
+  );
+
+drop policy anhaenge_insert on storage.objects;
+create policy anhaenge_insert on storage.objects for insert
+  with check (
+    bucket_id = 'anhaenge'
+    and exists (
+      select 1 from tickets t
+      where t.id::text = (storage.foldername(objects.name))[1]
+        and (
+          current_user_rolle() = 'super_admin'
+          or t.organisation_id = current_user_org()
+          or ist_firmenmitglied(t.organisation_id)
+          or t.kunde_id = auth.uid()
+        )
+    )
+  );
+
+-- ============================================================
+-- 43. handle_new_user(): neu eingeladene Techniker/Org-Admins bekommen
+-- direkt auch eine Mitgliedschaft fuer ihre erste Firma.
+-- ============================================================
+create or replace function handle_new_user() returns trigger as $$
+begin
+  insert into public.profiles (
+    id, organisation_id, rolle, vorname, nachname, telefonnummer,
+    strasse, hausnummer, plz, ort
+  )
+  values (
+    new.id,
+    (new.raw_user_meta_data->>'organisation_id')::uuid,
+    coalesce((new.raw_user_meta_data->>'rolle')::public.user_rolle, 'kunde'),
+    new.raw_user_meta_data->>'vorname',
+    new.raw_user_meta_data->>'nachname',
+    new.raw_user_meta_data->>'telefonnummer',
+    new.raw_user_meta_data->>'strasse',
+    new.raw_user_meta_data->>'hausnummer',
+    new.raw_user_meta_data->>'plz',
+    new.raw_user_meta_data->>'ort'
+  );
+
+  if (new.raw_user_meta_data->>'organisation_id') is not null
+     and (new.raw_user_meta_data->>'rolle') in ('techniker', 'org_admin') then
+    insert into public.firmen_mitgliedschaften (profil_id, organisation_id, rolle)
+    values (
+      new.id,
+      (new.raw_user_meta_data->>'organisation_id')::uuid,
+      (new.raw_user_meta_data->>'rolle')::public.user_rolle
+    )
+    on conflict (profil_id, organisation_id) do nothing;
+  end if;
+
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+-- ============================================================
+-- 44. Team-Liste liest jetzt aus firmen_mitgliedschaften statt aus dem
+-- fixen profiles.organisation_id-Feld, damit Personen mit mehreren
+-- Mitgliedschaften in jeder ihrer Firmen im Team auftauchen - mit der
+-- fuer GENAU DIESE Firma geltenden Rolle und Aktiv/Deaktiviert-Status.
+-- ============================================================
+drop function get_team_mit_email(uuid);
+
+create function get_team_mit_email(p_organisation_id uuid)
+returns table(
+  id uuid,
+  mitgliedschaft_id uuid,
+  email text,
+  name text,
+  vorname text,
+  nachname text,
+  avatar_url text,
+  telefonnummer text,
+  rolle text,
+  verfuegbarkeit text,
+  deaktiviert boolean
+)
+language sql
+security definer
+set search_path to 'public', 'auth'
+as $$
+  select
+    p.id,
+    m.id as mitgliedschaft_id,
+    u.email,
+    p.name,
+    p.vorname,
+    p.nachname,
+    p.avatar_url,
+    p.telefonnummer,
+    m.rolle::text,
+    p.verfuegbarkeit::text,
+    m.deaktiviert
+  from firmen_mitgliedschaften m
+  join profiles p on p.id = m.profil_id
+  join auth.users u on u.id = p.id
+  where m.organisation_id = p_organisation_id
+  order by m.rolle, p.name;
+$$;
+
+grant execute on function get_team_mit_email(uuid) to authenticated;

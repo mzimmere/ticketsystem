@@ -843,10 +843,11 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
           {zeigeNutzerZuweisen && (
             <div className="space-y-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
               <p className="text-xs text-[var(--text-faint)]">
-                Für Personen, die schon einen Account haben (z.B. bei einer anderen Firma oder
-                bereits als Kunde) – wird hier neu zugeordnet, kein neuer Account nötig. Achtung:
-                Ein Account gehört immer nur zu einer Firma gleichzeitig – gehört die Person schon
-                zu einer anderen Firma, wird sie dort entfernt (du bekommst vorher eine Warnung).
+                Für Personen, die schon einen Account haben – kein neuer Account nötig. Als
+                Techniker/Org-Admin arbeitet die Person danach zusätzlich hier, bestehende
+                Mitgliedschaften bei anderen Firmen bleiben bestehen. Nur als Kunde ist ein Account
+                weiterhin nur einer Firma zugeordnet (du bekommst dort vorher eine Warnung, falls
+                die Person schon Kunde woanders ist).
               </p>
               <input
                 type="email"
