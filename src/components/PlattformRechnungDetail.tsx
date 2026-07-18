@@ -164,7 +164,7 @@ export default function PlattformRechnungDetail({
             {!absender?.ust_id && absender?.steuernummer && <p className="text-xs text-[var(--text-soft)]">Steuernummer: {absender.steuernummer}</p>}
           </div>
           <div className="text-right">
-            <h2 className="text-lg font-semibold text-[var(--text-strong)]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            <h2 className="text-lg font-semibold text-[var(--text-strong)]" style={{ fontFamily: "Roboto, sans-serif" }}>
               Rechnung
             </h2>
             <p className="text-sm text-[var(--text-soft)]">{rechnung.rechnungsnummer}</p>

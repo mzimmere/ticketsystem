@@ -300,53 +300,185 @@ export default function App() {
   // ignoriert, weil profil.rolle noch "techniker" von Firma A ist.
   const effektiveRolle = profil.rolle === "super_admin" ? "super_admin" : aktiveMitgliedschaft?.rolle ?? profil.rolle;
 
+  const railItem = (
+    key: string,
+    aktiv: boolean,
+    titel: string,
+    icon: React.ReactNode,
+    onClick: () => void,
+  ) => (
+    <button
+      key={key}
+      onClick={onClick}
+      title={titel}
+      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-colors active:scale-95 ${
+        aktiv
+          ? "bg-akzent text-white"
+          : "text-[var(--text-soft)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)]"
+      }`}
+    >
+      {icon}
+    </button>
+  );
+
   return (
     <div
-      className="min-h-screen bg-[var(--bg-muted)]"
+      className="grid min-h-screen grid-cols-[72px_1fr] bg-[var(--bg-muted)]"
       style={{ "--akzent": organisation?.akzentfarbe || "#f59e0b" } as React.CSSProperties}
     >
-      <header className="border-b border-[var(--border)] bg-[var(--bg-surface)]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 lg:px-8">
-        <div className="flex items-center gap-2">
-          {profil.rolle === "super_admin" && superAdminFirma && (
-            <button
-              onClick={() => {
-                setSuperAdminFirma(null);
-                setZeigeVerwaltung(false);
-                setZeigeAbrechnung(false);
-                setZeigePostfach(false);
-                setZeigeFirmenInfo(false);
-                setAusgewaehltesTicket(null);
-                setZeigeStartseite(true);
-                setZeigeDashboard(false);
-              }}
-              title="Zurück zur Gesamt-Übersicht"
-              className="group relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-b from-blue-500 to-blue-700 text-base shadow-md shadow-blue-500/40 transition-all hover:scale-110 hover:shadow-blue-500/60 active:scale-95"
-            >
-              {/* Cape-Wellen-Animation */}
-              <span className="absolute -right-0.5 -top-0.5 h-3 w-3 animate-ping rounded-full bg-yellow-400 opacity-75" />
-              <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full bg-yellow-400" />
-              🦸
-            </button>
+      {/* Navigation Rail */}
+      <nav className="flex flex-col items-center gap-1 border-r border-[var(--border)] bg-[var(--bg-surface)] py-4">
+        <button
+          onClick={zurueckZuTickets}
+          title="Zur Startseite"
+          className="mb-3 flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-akzent text-sm font-bold text-white transition-transform active:scale-95"
+        >
+          {organisation?.logo_url ? (
+            <img src={organisation.logo_url} alt={organisation.name} className="h-full w-full object-contain" />
+          ) : (
+            (organisation?.name ?? "IT").slice(0, 2).toUpperCase()
           )}
+        </button>
+
+        {istIntern && aktiveOrgId &&
+          railItem("tickets", false, "Zur Ticketübersicht", <TicketIcon size={20} />, alleZustandsResets)}
+
+        {(istAdmin || profil.rolle === "super_admin") && (aktiveOrgId || profil.rolle === "super_admin") &&
+          railItem("dashboard", zeigeDashboard, "Dashboard", <BarChart2 size={20} />, () => {
+            setZeigeDashboard(true);
+            setZeigeAbrechnung(false);
+            setZeigePostfach(false);
+            setZeigeFirmenInfo(false);
+            setZeigeVerwaltung(false);
+            setZeigeProfil(false);
+            setAusgewaehltesTicket(null);
+            setZeigeNeuesTicket(false);
+            setZeigeStartseite(false);
+          })}
+
+        {istAdmin &&
+          railItem("abrechnung", zeigeAbrechnung, "Abrechnung", <Receipt size={20} />, () => {
+            setZeigeAbrechnung(true);
+            setZeigePostfach(false);
+            setZeigeFirmenInfo(false);
+            setZeigeVerwaltung(false);
+            setZeigeProfil(false);
+            setAusgewaehltesTicket(null);
+            setZeigeNeuesTicket(false);
+            setZeigeDashboard(false);
+          })}
+
+        {istAdmin &&
+          railItem(
+            "postfach",
+            zeigePostfach,
+            profil.rolle === "super_admin" ? "Nachrichten von Firmen" : "Nachricht an Super-Admin",
+            <Mail size={20} />,
+            () => {
+              setZeigePostfach(true);
+              setZeigeAbrechnung(false);
+              setRechnungDetail(null);
+              setZeigeVerwaltung(false);
+              setZeigeFirmenInfo(false);
+              setZeigeProfil(false);
+              setAusgewaehltesTicket(null);
+              setZeigeNeuesTicket(false);
+            },
+          )}
+
+        {profil.rolle === "super_admin" &&
+          railItem(
+            "plattform-abrechnung",
+            zeigePlattformAbrechnung,
+            "Plattform-Abrechnung (Firmen-Rechnungen)",
+            <Landmark size={20} />,
+            () => {
+              setZeigePlattformAbrechnung(true);
+              setZeigeAbrechnung(false);
+              setZeigePostfach(false);
+              setRechnungDetail(null);
+              setZeigeFirmenInfo(false);
+              setZeigeVerwaltung(false);
+              setZeigeProfil(false);
+              setAusgewaehltesTicket(null);
+              setZeigeNeuesTicket(false);
+              setZeigeDashboard(false);
+            },
+          )}
+
+        {istAdmin &&
+          railItem("verwaltung", zeigeVerwaltung, "Verwaltung", <Settings size={20} />, () => {
+            setZeigeVerwaltung(true);
+            setZeigeAbrechnung(false);
+            setZeigePostfach(false);
+            setRechnungDetail(null);
+            setZeigeFirmenInfo(false);
+            setZeigeProfil(false);
+            setAusgewaehltesTicket(null);
+            setZeigeNeuesTicket(false);
+          })}
+
+        {aktiveOrgId &&
+          railItem("firmeninfo", zeigeFirmenInfo, "Über uns / Kontakt", <Building2 size={20} />, () => {
+            setZeigeFirmenInfo(true);
+            setZeigePostfach(false);
+            setZeigeAbrechnung(false);
+            setRechnungDetail(null);
+            setZeigeVerwaltung(false);
+            setZeigeProfil(false);
+            setAusgewaehltesTicket(null);
+            setZeigeNeuesTicket(false);
+          })}
+
+        <div className="flex-1" />
+
+        {profil.rolle === "super_admin" && superAdminFirma && (
           <button
-            onClick={zurueckZuTickets}
-            className="flex items-center gap-2 rounded hover:opacity-75"
-            title="Zur Startseite"
+            onClick={() => {
+              setSuperAdminFirma(null);
+              setZeigeVerwaltung(false);
+              setZeigeAbrechnung(false);
+              setZeigePostfach(false);
+              setZeigeFirmenInfo(false);
+              setAusgewaehltesTicket(null);
+              setZeigeStartseite(true);
+              setZeigeDashboard(false);
+            }}
+            title="Zurück zur Gesamt-Übersicht"
+            className="group relative mb-1 flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-b from-blue-500 to-blue-700 text-base shadow-md shadow-blue-500/40 transition-all hover:scale-105 active:scale-95"
           >
-            {organisation?.logo_url && (
-              <img src={organisation.logo_url} alt={organisation.name} className="h-6 w-6 shrink-0 rounded object-contain" />
-            )}
-            <span className="text-sm font-semibold text-[var(--text-strong)]">
-              {organisation?.name ?? "IT-Ticketsystem"}
-            </span>
+            <span className="absolute -right-0.5 -top-0.5 h-3 w-3 animate-ping rounded-full bg-yellow-400 opacity-75" />
+            <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full bg-yellow-400" />
+            🦸
           </button>
+        )}
+
+        {railItem("theme", false, dunkel ? "Helles Design" : "Dunkles Design", dunkel ? <Sun size={20} /> : <Moon size={20} />, umschalten)}
+
+        {railItem("profil", zeigeProfil, "Mein Profil", <User size={20} />, () => {
+          setZeigeProfil(true);
+          setZeigeAbrechnung(false);
+          setZeigePostfach(false);
+          setRechnungDetail(null);
+          setZeigeFirmenInfo(false);
+          setZeigeVerwaltung(false);
+          setAusgewaehltesTicket(null);
+          setZeigeNeuesTicket(false);
+        })}
+      </nav>
+
+      <div className="flex min-w-0 flex-col">
+        {/* Kontext-Leiste: Firmenname, Firmen-Umschalter, Changelog, Account */}
+        <header className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-surface)] px-5 py-2.5">
+          <span className="truncate text-sm font-medium text-[var(--text-strong)]">
+            {organisation?.name ?? "IT-Ticketsystem"}
+          </span>
           {mitgliedschaften.length > 1 && (
             <select
               value={aktiveFirmaId ?? ""}
               onChange={(e) => setAktiveFirmaId(e.target.value)}
               title="Aktive Firma wechseln"
-              className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-1.5 py-0.5 text-xs text-[var(--text-soft)]"
+              className="rounded-full border border-[var(--border-input)] bg-[var(--bg-muted)] px-2.5 py-1 text-xs text-[var(--text-soft)]"
             >
               {mitgliedschaften.map((m) => (
                 <option key={m.organisation_id} value={m.organisation_id}>
@@ -356,165 +488,18 @@ export default function App() {
             </select>
           )}
           <Changelog />
-        </div>
-        <div className="flex items-center gap-2">
-          {istIntern && aktiveOrgId && (
+          <div className="ml-auto flex items-center gap-2.5">
+            <span className="hidden text-xs text-[var(--text-soft)] sm:inline">{profil.name ?? "Eingeloggt"}</span>
             <button
-              onClick={() => { alleZustandsResets(); }}
-              className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
-              title="Zur Ticketübersicht"
+              onClick={() => supabase.auth.signOut()}
+              className="rounded-full border border-[var(--border-input)] px-3 py-1 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)]"
             >
-              <TicketIcon size={18} />
+              Abmelden
             </button>
-          )}
-          <button
-            onClick={umschalten}
-            className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
-            title={dunkel ? "Helles Design" : "Dunkles Design"}
-          >
-            {dunkel ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-          <span className="mx-0.5 h-5 w-px bg-[var(--border)]" />
-          {aktiveOrgId && (
-            <button
-              onClick={() => {
-                setZeigeFirmenInfo(true);
-                setZeigePostfach(false);
-                setZeigeAbrechnung(false);
-                setRechnungDetail(null);
-                setZeigeVerwaltung(false);
-                setZeigeProfil(false);
-                setAusgewaehltesTicket(null);
-                setZeigeNeuesTicket(false);
-              }}
-              className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
-              title="Über uns / Kontakt"
-            >
-              <Building2 size={18} />
-            </button>
-          )}
-          {istAdmin && (
-            <button
-              onClick={() => {
-                setZeigeAbrechnung(true);
-                setZeigePostfach(false);
-                setZeigeFirmenInfo(false);
-                setZeigeVerwaltung(false);
-                setZeigeProfil(false);
-                setAusgewaehltesTicket(null);
-                setZeigeNeuesTicket(false);
-                setZeigeDashboard(false);
-              }}
-              className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
-              title="Abrechnung"
-            >
-              <Receipt size={18} />
-            </button>
-          )}
-          {(istAdmin || profil.rolle === "super_admin") && (aktiveOrgId || profil.rolle === "super_admin") && (
-            <button
-              onClick={() => {
-                setZeigeDashboard(true);
-                setZeigeAbrechnung(false);
-                setZeigePostfach(false);
-                setZeigeFirmenInfo(false);
-                setZeigeVerwaltung(false);
-                setZeigeProfil(false);
-                setAusgewaehltesTicket(null);
-                setZeigeNeuesTicket(false);
-                setZeigeStartseite(false);
-              }}
-              className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
-              title="Dashboard"
-            >
-              <BarChart2 size={18} />
-            </button>
-          )}
-          {istAdmin && (
-            <button
-              onClick={() => {
-                setZeigePostfach(true);
-                setZeigeAbrechnung(false);
-                setRechnungDetail(null);
-                setZeigeVerwaltung(false);
-                setZeigeFirmenInfo(false);
-                setZeigeProfil(false);
-                setAusgewaehltesTicket(null);
-                setZeigeNeuesTicket(false);
-              }}
-              className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
-              title={profil.rolle === "super_admin" ? "Nachrichten von Firmen" : "Nachricht an Super-Admin"}
-            >
-              <Mail size={18} />
-            </button>
-          )}
-          {profil.rolle === "super_admin" && (
-            <button
-              onClick={() => {
-                setZeigePlattformAbrechnung(true);
-                setZeigeAbrechnung(false);
-                setZeigePostfach(false);
-                setRechnungDetail(null);
-                setZeigeFirmenInfo(false);
-                setZeigeVerwaltung(false);
-                setZeigeProfil(false);
-                setAusgewaehltesTicket(null);
-                setZeigeNeuesTicket(false);
-                setZeigeDashboard(false);
-              }}
-              className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
-              title="Plattform-Abrechnung (Firmen-Rechnungen)"
-            >
-              <Landmark size={18} />
-            </button>
-          )}
-          {istAdmin && (
-            <button
-              onClick={() => {
-                setZeigeVerwaltung(true);
-                setZeigeAbrechnung(false);
-                setZeigePostfach(false);
-                setRechnungDetail(null);
-                setZeigeFirmenInfo(false);
-                setZeigeProfil(false);
-                setAusgewaehltesTicket(null);
-                setZeigeNeuesTicket(false);
-              }}
-              className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
-              title="Verwaltung"
-            >
-              <Settings size={18} />
-            </button>
-          )}
-          <span className="mx-0.5 h-5 w-px bg-[var(--border)]" />
-          <button
-            onClick={() => {
-              setZeigeProfil(true);
-              setZeigeAbrechnung(false);
-              setZeigePostfach(false);
-                setRechnungDetail(null);
-              setZeigeFirmenInfo(false);
-              setZeigeVerwaltung(false);
-              setAusgewaehltesTicket(null);
-              setZeigeNeuesTicket(false);
-            }}
-            className="rounded-lg p-2.5 text-[var(--text-soft)] transition-colors hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)] active:scale-95"
-            title="Mein Profil"
-          >
-            <User size={18} />
-          </button>
-          <span className="hidden text-xs text-[var(--text-soft)] sm:inline">{profil.name ?? "Eingeloggt"}</span>
-          <button
-            onClick={() => supabase.auth.signOut()}
-            className="text-xs text-[var(--text-faint)] hover:text-[var(--text-soft)]"
-          >
-            Abmelden
-          </button>
-        </div>
-        </div>
-      </header>
+          </div>
+        </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6 space-y-4 lg:px-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 space-y-4 px-4 py-6 lg:px-8">
         {zeigeStartseite && !ausgewaehltesTicket && !zeigeNeuesTicket && !zeigeVerwaltung && !zeigeAbrechnung && !zeigeFirmenInfo && !zeigePostfach && !zeigeDashboard && !zeigePlattformAbrechnung && !zeigeProfil ? (
           <Startseite
             name={profil.name}
@@ -719,6 +704,7 @@ export default function App() {
           )
         )}
       </main>
+      </div>
     </div>
   );
 }

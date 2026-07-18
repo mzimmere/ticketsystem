@@ -1,59 +1,60 @@
 @import "tailwindcss";
 
 :root {
-  --akzent: #f59e0b;
+  /* Material 3, seeded from Google Blue */
+  --akzent: #1a73e8;
   color-scheme: light;
-  --bg-surface: #ffffff;
-  --bg-muted: #f1f5f9;
-  --border: #e2e8f0;
-  --border-input: #cbd5e1;
-  --text-strong: #0f172a;
-  --text-soft: #64748b;
-  --text-faint: #94a3b8;
+  --bg-surface: #fefbff;
+  --bg-muted: #f0eef7;
+  --border: #e2e0ea;
+  --border-input: #c9c6d0;
+  --text-strong: #1b1b21;
+  --text-soft: #46464f;
+  --text-faint: #79747e;
 
-  --badge-mittel-bg: #dbeafe;
-  --badge-mittel-text: #1d4ed8;
-  --badge-hoch-bg: #fef3c7;
-  --badge-hoch-text: #b45309;
-  --badge-kritisch-bg: #fee2e2;
-  --badge-kritisch-text: #b91c1c;
+  --badge-mittel-bg: #d3e3fd;
+  --badge-mittel-text: #0b57d0;
+  --badge-hoch-bg: #fbe3cf;
+  --badge-hoch-text: #8f4600;
+  --badge-kritisch-bg: #fce8e6;
+  --badge-kritisch-text: #b3261e;
 
-  --bubble-intern-bg: #fffbeb;
-  --bubble-intern-border: #fde68a;
-  --bubble-whatsapp-bg: #ecfdf5;
-  --bubble-whatsapp-border: #a7f3d0;
+  --bubble-intern-bg: #fef3d6;
+  --bubble-intern-border: #f2c94c;
+  --bubble-whatsapp-bg: #e6f4ea;
+  --bubble-whatsapp-border: #a8dab5;
 }
 
 .dark {
   color-scheme: dark;
-  --bg-surface: #1e293b;
-  --bg-muted: #0f172a;
-  --border: #334155;
-  --border-input: #475569;
-  --text-strong: #f1f5f9;
-  --text-soft: #94a3b8;
-  --text-faint: #64748b;
+  --bg-surface: #1e1f25;
+  --bg-muted: #131318;
+  --border: #46464f;
+  --border-input: #5a5960;
+  --text-strong: #e4e2e6;
+  --text-soft: #c7c5d0;
+  --text-faint: #938f99;
 
-  --badge-mittel-bg: #1e3a8a;
-  --badge-mittel-text: #bfdbfe;
-  --badge-hoch-bg: #78350f;
-  --badge-hoch-text: #fde68a;
-  --badge-kritisch-bg: #7f1d1d;
-  --badge-kritisch-text: #fecaca;
+  --badge-mittel-bg: #0f3260;
+  --badge-mittel-text: #a8c7fa;
+  --badge-hoch-bg: #4a2b04;
+  --badge-hoch-text: #f5a25d;
+  --badge-kritisch-bg: #601410;
+  --badge-kritisch-text: #f2897e;
 
-  --bubble-intern-bg: #422006;
-  --bubble-intern-border: #92400e;
-  --bubble-whatsapp-bg: #022c22;
-  --bubble-whatsapp-border: #065f46;
+  --bubble-intern-bg: #3a2e05;
+  --bubble-intern-border: #7a5c00;
+  --bubble-whatsapp-bg: #0e3320;
+  --bubble-whatsapp-border: #1f5c3d;
 }
 
 body {
   background-color: var(--bg-muted);
-  transition: background-color 0.15s ease;
+  font-family: Roboto, -apple-system, "Segoe UI", "Google Sans", Helvetica, Arial, sans-serif;
 }
 
 .font-mono {
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: "Roboto Mono", ui-monospace, monospace;
 }
 
 .bg-akzent {
@@ -70,48 +71,151 @@ body {
 }
 
 :root {
-  --status-offen-bg: #fee2e2;
-  --status-offen-text: #b91c1c;
-  --status-bearbeitung-bg: #dbeafe;
-  --status-bearbeitung-text: #1d4ed8;
-  --status-warten-bg: #fef3c7;
-  --status-warten-text: #b45309;
-  --status-geloest-bg: #dcfce7;
-  --status-geloest-text: #15803d;
+  --status-offen-bg: #fdecd1;
+  --status-offen-text: #8a5300;
+  --status-bearbeitung-bg: #d3e3fd;
+  --status-bearbeitung-text: #0b57d0;
+  --status-warten-bg: #f3e8fd;
+  --status-warten-text: #6b2fa0;
+  --status-geloest-bg: #dcf0e1;
+  --status-geloest-text: #146c2e;
   --status-geschlossen-bg: var(--bg-muted);
   --status-geschlossen-text: var(--text-faint);
 }
 
 .dark {
-  --status-offen-bg: #7f1d1d;
-  --status-offen-text: #fecaca;
-  --status-bearbeitung-bg: #1e3a8a;
-  --status-bearbeitung-text: #bfdbfe;
-  --status-warten-bg: #78350f;
-  --status-warten-text: #fde68a;
-  --status-geloest-bg: #14532d;
-  --status-geloest-text: #bbf7d0;
+  --status-offen-bg: #4a3610;
+  --status-offen-text: #fdba5c;
+  --status-bearbeitung-bg: #0f3260;
+  --status-bearbeitung-text: #a8c7fa;
+  --status-warten-bg: #3a1a5c;
+  --status-warten-text: #d5b4fa;
+  --status-geloest-bg: #103a1e;
+  --status-geloest-text: #86d999;
+}
+
+/* ============================================================
+   Material-3-Formsprache: ueberschreibt Tailwinds rounded-Klassen,
+   bg-slate-900 und die shadow-Klassen global. Unlayered CSS-Regeln
+   schlagen IMMER Tailwinds @layer utilities (Cascade-Layer-Regel),
+   unabhaengig von Reihenfolge/Spezifitaet - deshalb reicht das hier,
+   statt jede der 40+ Komponenten einzeln umzubauen. rounded-full
+   (Pills/Avatare/Chips) bleibt bewusst unveraendert.
+   ============================================================ */
+.rounded {
+  border-radius: 10px;
+}
+.rounded-md {
+  border-radius: 10px;
+}
+.rounded-lg {
+  border-radius: 16px;
+}
+.rounded-xl {
+  border-radius: 20px;
+}
+.rounded-2xl {
+  border-radius: 28px;
+}
+
+/* "Primaerbutton"-Konvention der App war bisher immer bg-slate-900 +
+   text-white - global auf die Material-Primaerfarbe umgelenkt. */
+.bg-slate-900 {
+  background-color: var(--akzent);
+}
+
+/* Material-Elevation statt Tailwinds Standard-Schatten. */
+.shadow-sm {
+  box-shadow: 0 1px 2px rgba(27, 27, 33, 0.08);
+}
+.shadow {
+  box-shadow:
+    0 1px 2px rgba(27, 27, 33, 0.08),
+    0 1px 3px 1px rgba(27, 27, 33, 0.06);
+}
+.shadow-md {
+  box-shadow:
+    0 1px 2px rgba(27, 27, 33, 0.1),
+    0 2px 6px 2px rgba(27, 27, 33, 0.08);
+}
+.shadow-lg {
+  box-shadow:
+    0 1px 3px rgba(27, 27, 33, 0.12),
+    0 4px 8px 3px rgba(27, 27, 33, 0.1);
+}
+.shadow-xl {
+  box-shadow:
+    0 2px 3px rgba(27, 27, 33, 0.12),
+    0 6px 10px 4px rgba(27, 27, 33, 0.12);
+}
+.dark .shadow-sm {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.dark .shadow {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 1px 3px 1px rgba(0, 0, 0, 0.3);
+}
+.dark .shadow-md {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.45),
+    0 2px 6px 2px rgba(0, 0, 0, 0.35);
+}
+.dark .shadow-lg {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.5),
+    0 4px 8px 3px rgba(0, 0, 0, 0.4);
+}
+.dark .shadow-xl {
+  box-shadow:
+    0 2px 3px rgba(0, 0, 0, 0.5),
+    0 6px 10px 4px rgba(0, 0, 0, 0.45);
 }
 
 @keyframes status-puls {
-  0% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
-  70% { box-shadow: 0 0 0 5px transparent; opacity: 0.4; }
-  100% { box-shadow: 0 0 0 0 transparent; opacity: 1; }
+  0% {
+    box-shadow: 0 0 0 0 currentColor;
+    opacity: 1;
+  }
+  70% {
+    box-shadow: 0 0 0 5px transparent;
+    opacity: 0.4;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    opacity: 1;
+  }
 }
 
 @keyframes ripple {
-  0% { transform: scale(0); opacity: 1; }
-  100% { transform: scale(4); opacity: 0; }
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in {

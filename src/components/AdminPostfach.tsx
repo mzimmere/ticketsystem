@@ -112,7 +112,7 @@ export default function AdminPostfach({ rolle, organisationId }: AdminPostfachPr
     <div className="space-y-4">
       <h2
         className="text-lg font-semibold text-[var(--text-strong)]"
-        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+        style={{ fontFamily: "Roboto, sans-serif" }}
       >
         {istSuperAdmin ? "Nachrichten von Firmen" : "Nachricht an Super-Admin"}
       </h2>

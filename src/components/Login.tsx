@@ -65,20 +65,20 @@ export default function Login() {
     <div className="login-shell">
       <style>{`
         .login-shell {
-          --ink: #10172a;
-          --ink-panel: #1a2440;
-          --ink-line: #2c3a63;
-          --ink-text: #e7ecf8;
-          --ink-text-soft: #93a0c2;
-          --signal: #f0a23a;
-          --paper: #faf9f5;
-          --paper-text: #14171f;
-          --paper-soft: #6b7180;
-          --paper-border: #e4e1d8;
+          --ink: #131318;
+          --ink-panel: #1e1f25;
+          --ink-line: #46464f;
+          --ink-text: #e4e2e6;
+          --ink-text-soft: #c7c5d0;
+          --signal: #1a73e8;
+          --paper: #fefbff;
+          --paper-text: #1b1b21;
+          --paper-soft: #46464f;
+          --paper-border: #c9c6d0;
           min-height: 100vh;
           display: grid;
           grid-template-columns: 1fr;
-          font-family: 'Inter', system-ui, sans-serif;
+          font-family: 'Roboto', system-ui, sans-serif;
         }
         @media (min-width: 860px) {
           .login-shell { grid-template-columns: 1fr 1fr; }
@@ -99,11 +99,11 @@ export default function Login() {
           inset: -40% -10% auto auto;
           width: 420px;
           height: 420px;
-          background: radial-gradient(circle, rgba(240,162,58,0.16), transparent 70%);
+          background: radial-gradient(circle, rgba(26,115,232,0.18), transparent 70%);
           pointer-events: none;
         }
         .login-wordmark {
-          font-family: 'Space Grotesk', sans-serif;
+          font-family: 'Roboto', sans-serif;
           font-weight: 600;
           font-size: 1.5rem;
           letter-spacing: -0.01em;
@@ -116,7 +116,7 @@ export default function Login() {
           font-size: 1.5rem;
         }
         .login-tagline {
-          font-family: 'Space Grotesk', sans-serif;
+          font-family: 'Roboto', sans-serif;
           font-weight: 600;
           font-size: clamp(1.6rem, 3.4vw, 2.4rem);
           line-height: 1.15;
@@ -125,7 +125,7 @@ export default function Login() {
           margin-top: 32px;
         }
         .status-block {
-          font-family: 'JetBrains Mono', monospace;
+          font-family: 'Roboto Mono', monospace;
           font-size: 0.78rem;
           border-top: 1px solid var(--ink-line);
           padding-top: 18px;
@@ -177,7 +177,7 @@ export default function Login() {
           max-width: 360px;
         }
         .login-card h1 {
-          font-family: 'Space Grotesk', sans-serif;
+          font-family: 'Roboto', sans-serif;
           font-weight: 600;
           font-size: 1.3rem;
           color: var(--paper-text);
@@ -204,7 +204,7 @@ export default function Login() {
           width: 100%;
           padding: 10px 12px;
           border: 1px solid var(--paper-border);
-          border-radius: 6px;
+          border-radius: 10px;
           font-size: 0.92rem;
           color: var(--paper-text);
           background: #fff;
@@ -221,18 +221,18 @@ export default function Login() {
         }
         .login-submit {
           width: 100%;
-          padding: 11px;
+          padding: 12px;
           margin-top: 6px;
-          border-radius: 6px;
+          border-radius: 24px;
           border: none;
-          background: var(--ink);
+          background: var(--signal);
           color: #fff;
           font-size: 0.92rem;
           font-weight: 500;
           cursor: pointer;
         }
         .login-submit:disabled { opacity: 0.5; cursor: default; }
-        .login-submit:hover:not(:disabled) { background: #1a2440; }
+        .login-submit:hover:not(:disabled) { background: #0b5fcc; }
       `}</style>
 
       <div className="login-panel">

@@ -68,7 +68,7 @@ export default function FirmenInfo({ organisationId }: FirmenInfoProps) {
           )}
           <h2
             className="text-lg font-semibold text-[var(--text-strong)]"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+            style={{ fontFamily: "Roboto, sans-serif" }}
           >
             {organisation.name}
           </h2>

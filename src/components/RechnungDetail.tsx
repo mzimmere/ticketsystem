@@ -276,7 +276,7 @@ export default function RechnungDetail({
           <div className="text-right">
             <h2
               className="text-lg font-semibold text-[var(--text-strong)]"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+              style={{ fontFamily: "Roboto, sans-serif" }}
             >
               Abrechnung
             </h2>
