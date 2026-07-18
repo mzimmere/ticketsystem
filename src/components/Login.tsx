@@ -15,11 +15,21 @@ export default function Login() {
   const [passwort, setPasswort] = useState("");
   const [fehler, setFehler] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
+  const [titel, setTitel] = useState("Ticketsystem");
+  const [spruch, setSpruch] = useState("Anfragen ankommen lassen,\nohne dass etwas verloren geht.");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setModus(data.session ? "passwort-setzen" : "anmelden");
     });
+
+    supabase.from("app_branding").select("login_titel, login_spruch").eq("id", true).single()
+      .then(({ data }) => {
+        if (data) {
+          setTitel(data.login_titel);
+          setSpruch(data.login_spruch);
+        }
+      });
 
     // Bewusst auf JEDE Änderung reagieren, nicht nur auf "PASSWORD_RECOVERY" -
     // bei Einladungs-Links feuert oft ein anderes Event (z.B. "SIGNED_IN"),
@@ -238,10 +248,15 @@ export default function Login() {
       <div className="login-panel">
         <div>
           <div className="login-wordmark">
-            <span>●</span> Ticketsystem
+            <span>●</span> {titel}
           </div>
           <p className="login-tagline">
-            Anfragen ankommen lassen,<br />ohne dass etwas verloren geht.
+            {spruch.split("\n").map((zeile, i) => (
+              <span key={i}>
+                {i > 0 && <br />}
+                {zeile}
+              </span>
+            ))}
           </p>
         </div>
 

@@ -29,7 +29,7 @@ function monatLabel(jahr: number, monat: number): string {
   return new Date(jahr, monat - 1, 1).toLocaleDateString("de-DE", { month: "long", year: "numeric" });
 }
 
-type Tab = "rechnungen" | "tarife" | "absender";
+type Tab = "rechnungen" | "tarife" | "absender" | "login";
 
 export default function PlattformAbrechnung() {
   const heute = new Date();
@@ -47,6 +47,8 @@ export default function PlattformAbrechnung() {
     zahlungsziel_tage: "14", rechtlicher_hinweis: "Rechnungsdatum ist Lieferdatum.", freitext: "",
   });
   const [absenderGespeichert, setAbsenderGespeichert] = useState(false);
+  const [branding, setBranding] = useState({ login_titel: "", login_spruch: "" });
+  const [brandingGespeichert, setBrandingGespeichert] = useState(false);
 
   const monatsErster = useMemo(() => `${jahr}-${String(monat).padStart(2, "0")}-01`, [jahr, monat]);
 
@@ -57,6 +59,11 @@ export default function PlattformAbrechnung() {
 
   useEffect(() => {
     if (tab === "absender") ladeAbsender();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+
+  useEffect(() => {
+    if (tab === "login") ladeBranding();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
@@ -127,6 +134,21 @@ export default function PlattformAbrechnung() {
     }).eq("id", true);
     setAbsenderGespeichert(true);
     setTimeout(() => setAbsenderGespeichert(false), 2000);
+  }
+
+  async function ladeBranding() {
+    const { data } = await supabase
+      .from("app_branding")
+      .select("login_titel, login_spruch")
+      .eq("id", true)
+      .single();
+    if (data) setBranding(data);
+  }
+
+  async function brandingSpeichern() {
+    await supabase.from("app_branding").update(branding).eq("id", true);
+    setBrandingGespeichert(true);
+    setTimeout(() => setBrandingGespeichert(false), 2000);
   }
 
   async function tarifZuweisen(orgId: string, tarifId: string) {
@@ -207,7 +229,7 @@ export default function PlattformAbrechnung() {
       </div>
 
       <div className="flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--bg-muted)] p-0.5 w-fit">
-        {([["rechnungen", "Rechnungen"], ["tarife", "Tarife"], ["absender", "Absender"]] as const).map(([k, label]) => (
+        {([["rechnungen", "Rechnungen"], ["tarife", "Tarife"], ["absender", "Absender"], ["login", "Anmeldeseite"]] as const).map(([k, label]) => (
           <button
             key={k}
             onClick={() => setTab(k)}
@@ -274,6 +296,32 @@ export default function PlattformAbrechnung() {
 
           <button onClick={absenderSpeichern} className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white">
             {absenderGespeichert ? "Gespeichert ✓" : "Speichern"}
+          </button>
+        </div>
+      )}
+
+      {tab === "login" && (
+        <div className="max-w-md space-y-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
+          <p className="text-xs text-[var(--text-faint)]">Titel und Spruch, die auf der Anmeldeseite (vor dem Login) angezeigt werden.</p>
+
+          <label className="mb-1 block text-xs text-[var(--text-faint)]">Titel</label>
+          <input
+            type="text"
+            value={branding.login_titel}
+            onChange={(e) => setBranding({ ...branding, login_titel: e.target.value })}
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm"
+          />
+
+          <label className="mb-1 mt-2.5 block text-xs text-[var(--text-faint)]">Spruch</label>
+          <textarea
+            value={branding.login_spruch}
+            onChange={(e) => setBranding({ ...branding, login_spruch: e.target.value })}
+            rows={2}
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm"
+          />
+
+          <button onClick={brandingSpeichern} className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white">
+            {brandingGespeichert ? "Gespeichert ✓" : "Speichern"}
           </button>
         </div>
       )}

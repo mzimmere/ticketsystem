@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-18", titel: "Titel & Spruch der Anmeldeseite jetzt vom Super-Admin änderbar (Plattform-Abrechnung → Anmeldeseite)" },
   { datum: "2026-07-18", titel: "Neues Design: Google Material 3 – Navigation Rail, Roboto-Schrift, neue Formsprache und Farben (hell & dunkel)" },
   { datum: "2026-07-06", titel: "KI-Assistent nutzt jetzt claude-sonnet-5 statt des veralteten claude-sonnet-4-6" },
   { datum: "2026-07-03", titel: "Dateien per Drag & Drop ins Kommentarfeld ziehen (Techniker- und Kunden-Antworten)" },

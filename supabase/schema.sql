@@ -1814,3 +1814,26 @@ as $$
 $$;
 
 grant execute on function get_team_mit_email(uuid) to authenticated;
+
+-- ============================================================
+-- 42. app_branding: Texte fuer die Login-Seite (Titel/Spruch), vom
+-- Super-Admin aenderbar. Oeffentlich lesbar (select using true), da die
+-- Login-Seite VOR der Anmeldung angezeigt wird und noch keine Session hat.
+-- ============================================================
+create table app_branding (
+  id boolean primary key default true,
+  login_titel text not null default 'Ticketsystem',
+  login_spruch text not null default 'Anfragen ankommen lassen,
+ohne dass etwas verloren geht.',
+  check (id)
+);
+insert into app_branding (id) values (true);
+
+alter table app_branding enable row level security;
+
+create policy app_branding_select on app_branding for select
+  using (true);
+
+create policy app_branding_update on app_branding for update
+  using (current_user_rolle() = 'super_admin')
+  with check (current_user_rolle() = 'super_admin');
