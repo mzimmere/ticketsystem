@@ -346,8 +346,10 @@ export default function App() {
         {(istAdmin || profil.rolle === "super_admin") && (aktiveOrgId || profil.rolle === "super_admin") &&
           railItem("dashboard", zeigeDashboard, "Dashboard", <BarChart2 size={20} />, () => {
             setZeigeDashboard(true);
+            setZeigePlattformAbrechnung(false);
             setZeigeAbrechnung(false);
             setZeigePostfach(false);
+            setRechnungDetail(null);
             setZeigeFirmenInfo(false);
             setZeigeVerwaltung(false);
             setZeigeProfil(false);
@@ -359,13 +361,16 @@ export default function App() {
         {istAdmin &&
           railItem("abrechnung", zeigeAbrechnung, "Abrechnung", <Receipt size={20} />, () => {
             setZeigeAbrechnung(true);
+            setZeigeDashboard(false);
+            setZeigePlattformAbrechnung(false);
             setZeigePostfach(false);
+            setRechnungDetail(null);
             setZeigeFirmenInfo(false);
             setZeigeVerwaltung(false);
             setZeigeProfil(false);
             setAusgewaehltesTicket(null);
             setZeigeNeuesTicket(false);
-            setZeigeDashboard(false);
+            setZeigeStartseite(false);
           })}
 
         {istAdmin &&
@@ -376,6 +381,8 @@ export default function App() {
             <Mail size={20} />,
             () => {
               setZeigePostfach(true);
+              setZeigeDashboard(false);
+              setZeigePlattformAbrechnung(false);
               setZeigeAbrechnung(false);
               setRechnungDetail(null);
               setZeigeVerwaltung(false);
@@ -383,6 +390,7 @@ export default function App() {
               setZeigeProfil(false);
               setAusgewaehltesTicket(null);
               setZeigeNeuesTicket(false);
+              setZeigeStartseite(false);
             },
           )}
 
@@ -394,6 +402,7 @@ export default function App() {
             <Landmark size={20} />,
             () => {
               setZeigePlattformAbrechnung(true);
+              setZeigeDashboard(false);
               setZeigeAbrechnung(false);
               setZeigePostfach(false);
               setRechnungDetail(null);
@@ -402,13 +411,15 @@ export default function App() {
               setZeigeProfil(false);
               setAusgewaehltesTicket(null);
               setZeigeNeuesTicket(false);
-              setZeigeDashboard(false);
+              setZeigeStartseite(false);
             },
           )}
 
         {istAdmin &&
           railItem("verwaltung", zeigeVerwaltung, "Verwaltung", <Settings size={20} />, () => {
             setZeigeVerwaltung(true);
+            setZeigeDashboard(false);
+            setZeigePlattformAbrechnung(false);
             setZeigeAbrechnung(false);
             setZeigePostfach(false);
             setRechnungDetail(null);
@@ -416,11 +427,14 @@ export default function App() {
             setZeigeProfil(false);
             setAusgewaehltesTicket(null);
             setZeigeNeuesTicket(false);
+            setZeigeStartseite(false);
           })}
 
         {aktiveOrgId &&
           railItem("firmeninfo", zeigeFirmenInfo, "Über uns / Kontakt", <Building2 size={20} />, () => {
             setZeigeFirmenInfo(true);
+            setZeigeDashboard(false);
+            setZeigePlattformAbrechnung(false);
             setZeigePostfach(false);
             setZeigeAbrechnung(false);
             setRechnungDetail(null);
@@ -428,6 +442,7 @@ export default function App() {
             setZeigeProfil(false);
             setAusgewaehltesTicket(null);
             setZeigeNeuesTicket(false);
+            setZeigeStartseite(false);
           })}
 
         <div className="flex-1" />
@@ -437,9 +452,11 @@ export default function App() {
             onClick={() => {
               setSuperAdminFirma(null);
               setZeigeVerwaltung(false);
+              setZeigePlattformAbrechnung(false);
               setZeigeAbrechnung(false);
               setZeigePostfach(false);
               setZeigeFirmenInfo(false);
+              setZeigeProfil(false);
               setAusgewaehltesTicket(null);
               setZeigeStartseite(true);
               setZeigeDashboard(false);
@@ -457,6 +474,8 @@ export default function App() {
 
         {railItem("profil", zeigeProfil, "Mein Profil", <User size={20} />, () => {
           setZeigeProfil(true);
+          setZeigeDashboard(false);
+          setZeigePlattformAbrechnung(false);
           setZeigeAbrechnung(false);
           setZeigePostfach(false);
           setRechnungDetail(null);
@@ -464,6 +483,7 @@ export default function App() {
           setZeigeVerwaltung(false);
           setAusgewaehltesTicket(null);
           setZeigeNeuesTicket(false);
+          setZeigeStartseite(false);
         })}
       </nav>
 
@@ -529,7 +549,7 @@ export default function App() {
         ) : zeigePlattformAbrechnung ? (
           <>
             <button
-              onClick={() => setZeigePlattformAbrechnung(false)}
+              onClick={() => { setZeigePlattformAbrechnung(false); setZeigeStartseite(true); }}
               className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
             >
               ← Zurück
@@ -539,7 +559,7 @@ export default function App() {
         ) : zeigePostfach ? (
           <>
             <button
-              onClick={() => setZeigePostfach(false)}
+              onClick={() => { setZeigePostfach(false); setZeigeStartseite(true); }}
               className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
             >
               ← Zurück
@@ -558,7 +578,7 @@ export default function App() {
           ) : (
             <>
               <button
-                onClick={() => setZeigeAbrechnung(false)}
+                onClick={() => { setZeigeAbrechnung(false); setZeigeStartseite(true); }}
                 className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
               >
                 ← Zurück
@@ -576,7 +596,7 @@ export default function App() {
         ) : zeigeFirmenInfo ? (
           <>
             <button
-              onClick={() => setZeigeFirmenInfo(false)}
+              onClick={() => { setZeigeFirmenInfo(false); setZeigeStartseite(true); }}
               className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
             >
               ← Zurück
@@ -586,7 +606,7 @@ export default function App() {
         ) : zeigeVerwaltung ? (
           <>
             <button
-              onClick={() => setZeigeVerwaltung(false)}
+              onClick={() => { setZeigeVerwaltung(false); setZeigeStartseite(true); }}
               className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
             >
               ← Zurück
@@ -613,7 +633,7 @@ export default function App() {
         ) : zeigeProfil ? (
           <>
             <button
-              onClick={() => setZeigeProfil(false)}
+              onClick={() => { setZeigeProfil(false); setZeigeStartseite(true); }}
               className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
             >
               ← Zurück
