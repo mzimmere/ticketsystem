@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-21", titel: "Neue Firma bekommt beim Anlegen automatisch eine eigene Landingpage (Slug wird aus dem Namen abgeleitet, URL direkt sichtbar)" },
   { datum: "2026-07-21", titel: "Kunden-Zugangsseite (?neukunde=...): gut sichtbarer FAQ-Button, wenn die Firma öffentliche FAQ-Einträge hat" },
   { datum: "2026-07-21", titel: "WhatsApp-Anleitung auf permanenten System-User-Token umgestellt, neuer 'Verbindung testen'-Button prüft Meta-Zugang direkt" },
   { datum: "2026-07-21", titel: "Volltextsuche: echte Postgres-Volltextsuche (wortweise, reihenfolge-unabhängig) statt einfacher Zeichenketten-Suche, jetzt auch im Kundenportal" },

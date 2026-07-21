@@ -25,6 +25,8 @@ export default function SuperAdminUebersicht({ onFirmaOeffnen }: SuperAdminUeber
   const [neueOrgName, setNeueOrgName] = useState("");
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
+  const [neueOrgLandingpage, setNeueOrgLandingpage] = useState<string | null>(null);
+  const [landingpageKopiert, setLandingpageKopiert] = useState(false);
 
   useEffect(() => {
     ladeAlles();
@@ -55,13 +57,18 @@ export default function SuperAdminUebersicht({ onFirmaOeffnen }: SuperAdminUeber
   async function neueOrganisationAnlegen() {
     if (!neueOrgName.trim()) return;
     setLaedt(true);
-    const { error } = await supabase.from("organisationen").insert({ name: neueOrgName.trim() });
+    const { data, error } = await supabase
+      .from("organisationen")
+      .insert({ name: neueOrgName.trim() })
+      .select("slug")
+      .single();
     setLaedt(false);
-    if (error) {
+    if (error || !data) {
       setHinweis("Anlegen fehlgeschlagen.");
       return;
     }
     setNeueOrgName("");
+    setNeueOrgLandingpage(data.slug ? `${window.location.origin}/?neukunde=${data.slug}` : null);
     setHinweis("Firma angelegt. Lege als Nächstes einen Org-Admin für sie an.");
     ladeAlles();
   }
@@ -94,6 +101,23 @@ export default function SuperAdminUebersicht({ onFirmaOeffnen }: SuperAdminUeber
           </button>
         </div>
         {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}
+        {neueOrgLandingpage && (
+          <div className="flex items-center gap-2 rounded-lg bg-[var(--bg-muted)] p-2.5">
+            <code className="flex-1 truncate text-xs font-mono text-[var(--text-strong)]">
+              {neueOrgLandingpage}
+            </code>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(neueOrgLandingpage);
+                setLandingpageKopiert(true);
+                setTimeout(() => setLandingpageKopiert(false), 2000);
+              }}
+              className="shrink-0 rounded border border-[var(--border-input)] px-2 py-1 text-xs text-[var(--text-faint)] hover:bg-[var(--bg-surface)]"
+            >
+              {landingpageKopiert ? "✓" : "Kopieren"}
+            </button>
+          </div>
+        )}
         <p className="text-xs text-[var(--text-faint)]">
           Nach dem Anlegen: Firma unten öffnen → Verwaltung → "+ Mitarbeiter anlegen" mit Rolle
           "Org-Admin", um der Firma einen eigenen Admin zu geben.

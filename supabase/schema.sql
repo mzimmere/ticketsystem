@@ -2020,3 +2020,44 @@ grant execute on function get_cron_secret() to service_role;
 
 -- Einmaliges Setup (Secret-Wert wird bewusst nicht hier dokumentiert):
 -- select vault.create_secret('<zufaelliger-wert>', 'cron_shared_secret', 'Shared Secret fuer pg_cron -> Edge Function Auth.');
+
+-- ============================================================
+-- 47. Automatischer Slug (und damit oeffentliche Landingpage
+-- ?neukunde=<slug>) beim Anlegen einer Firma. Vorher blieb slug null,
+-- bis ein Org-Admin ihn manuell in Verwaltung -> Firma eintrug - eine
+-- neue Firma hatte also standardmaessig GAR KEINE Landingpage.
+-- Bereits gesetzte Slugs (manuell oder spaeter geaendert) werden nicht
+-- angetastet.
+-- ============================================================
+create or replace function organisationen_set_slug() returns trigger as $$
+declare
+  v_basis text;
+  v_kandidat text;
+  v_zaehler integer := 1;
+begin
+  if new.slug is not null then
+    return new;
+  end if;
+
+  v_basis := lower(trim(new.name));
+  v_basis := replace(replace(replace(replace(v_basis, 'ä', 'ae'), 'ö', 'oe'), 'ü', 'ue'), 'ß', 'ss');
+  v_basis := regexp_replace(v_basis, '[^a-z0-9]+', '-', 'g');
+  v_basis := trim(both '-' from v_basis);
+  if v_basis = '' then
+    v_basis := 'firma';
+  end if;
+
+  v_kandidat := v_basis;
+  while exists (select 1 from organisationen where slug = v_kandidat) loop
+    v_zaehler := v_zaehler + 1;
+    v_kandidat := v_basis || '-' || v_zaehler;
+  end loop;
+
+  new.slug := v_kandidat;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+create trigger trg_organisationen_set_slug
+  before insert on organisationen
+  for each row execute function organisationen_set_slug();
