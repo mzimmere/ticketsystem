@@ -35,6 +35,7 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
   const [fehler, setFehler] = useState<string | null>(null);
   const [fertig, setFertig] = useState<"sofort" | "bestaetigung" | null>(null);
   const [datenschutzAkzeptiert, setDatenschutzAkzeptiert] = useState(false);
+  const [hatFaq, setHatFaq] = useState(false);
 
   useEffect(() => {
     supabase
@@ -43,8 +44,18 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
         if (error) {
           console.error("[KundenRegistrierung] Firma konnte nicht geladen werden:", error);
         }
-        setOrganisation(data && data.length > 0 ? data[0] : null);
+        const firma = data && data.length > 0 ? data[0] : null;
+        setOrganisation(firma);
         setLadeOrg(false);
+
+        if (firma) {
+          supabase
+            .from("faq_eintraege")
+            .select("id", { count: "exact", head: true })
+            .eq("organisation_id", firma.id)
+            .eq("oeffentlich", true)
+            .then(({ count }) => setHatFaq((count ?? 0) > 0));
+        }
       });
   }, [slug]);
 
@@ -173,6 +184,17 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
             </div>
           )}
         </div>
+
+        {hatFaq && (
+          <a
+            href={`${window.location.pathname}?faq=${slug}`}
+            target="_blank"
+            rel="noreferrer"
+            className="mb-5 flex items-center justify-center gap-2 rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-4 py-2.5 text-sm font-medium text-[var(--text-strong)] transition-colors hover:bg-akzent/10 hover:text-akzent"
+          >
+            ❓ Häufige Fragen ansehen
+          </a>
+        )}
 
         <div className="mb-2 text-center">
           <p className="text-sm text-[var(--text-soft)]">Neuen Account anlegen</p>
