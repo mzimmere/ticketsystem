@@ -3,18 +3,26 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 // Wird täglich per pg_cron aufgerufen.
 // Schließt alle Tickets im Status "wartet_auf_kunde", bei denen die
 // letzte Kunden-Nachricht länger als auto_schliessen_tage Tage her ist.
+//
+// Auth: Diese Funktion hat verify_jwt=false (im Dashboard/Deploy), weil
+// pg_cron kein echtes Supabase-JWT mitschickt - stattdessen prueft der
+// Code selbst gegen ein Shared Secret aus Supabase Vault (Funktion
+// get_cron_secret(), siehe schema.sql Abschnitt 45). Bewusst NICHT im
+// Quellcode hartkodiert, da dieses Repo oeffentlich auf GitHub liegt.
+// Vorher wurde faelschlich SUPABASE_SERVICE_ROLE_KEY erwartet, aber ein
+// Platzhalter-Wert mitgeschickt - der Job lief seit Einfuehrung nie durch.
+
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+);
 
 Deno.serve(async (req) => {
-  // Sicherheit: nur interne Supabase-Aufrufe erlaubt
   const authHeader = req.headers.get("Authorization");
-  if (authHeader !== `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`) {
+  const { data: cronSecret } = await supabase.rpc("get_cron_secret");
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return new Response("Unauthorized", { status: 401 });
   }
-
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  );
 
   // Firmen mit aktivem Auto-Schließen laden
   const { data: firmen, error: firmenFehler } = await supabase

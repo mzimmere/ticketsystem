@@ -216,7 +216,8 @@ export default function Startseite({
     alleOffenen: number | null;
     wartenAufMich: number | null;
     meineTickets: number | null;
-  }>({ meineOffenen: null, alleOffenen: null, wartenAufMich: null, meineTickets: null });
+    slaVerletzt: number | null;
+  }>({ meineOffenen: null, alleOffenen: null, wartenAufMich: null, meineTickets: null, slaVerletzt: null });
 
   useEffect(() => {
     if (!organisationId) return;
@@ -239,11 +240,13 @@ export default function Startseite({
         alleOffenen: null,
         wartenAufMich: wartenRes.count ?? 0,
         meineTickets: meineRes.count ?? 0,
+        slaVerletzt: null,
       });
       return;
     }
 
-    const [alleRes, meineRes, wartenRes] = await Promise.all([
+    const jetzt = new Date().toISOString();
+    const [alleRes, meineRes, wartenRes, slaRes] = await Promise.all([
       supabase.from("tickets").select("id", { count: "exact", head: true })
         .eq("organisation_id", organisationId!)
         .in("status", ["offen", "in_bearbeitung", "wartet_auf_kunde"]),
@@ -256,6 +259,12 @@ export default function Startseite({
       supabase.from("tickets").select("id", { count: "exact", head: true })
         .eq("organisation_id", organisationId!)
         .eq("status", "wartet_auf_kunde"),
+      rolle === "org_admin" || rolle === "super_admin"
+        ? supabase.from("tickets").select("id", { count: "exact", head: true })
+            .eq("organisation_id", organisationId!)
+            .not("status", "in", '("geloest","geschlossen")')
+            .or(`loesung_faellig_am.lt.${jetzt},and(reaktion_faellig_am.lt.${jetzt},erste_antwort_am.is.null)`)
+        : Promise.resolve({ count: 0 }),
     ]);
 
     setStats({
@@ -263,6 +272,7 @@ export default function Startseite({
       meineOffenen: (meineRes as { count: number | null }).count ?? 0,
       wartenAufMich: wartenRes.count ?? 0,
       meineTickets: null,
+      slaVerletzt: (slaRes as { count: number | null }).count ?? 0,
     });
   }
 
@@ -301,7 +311,7 @@ export default function Startseite({
 
         {/* Live-Zahlen */}
         {organisationId && rolle !== "super_admin" && (
-          <div className={`mt-5 grid border-t border-[var(--border)] pt-4 ${istIntern ? "grid-cols-3" : "grid-cols-2"} gap-4`}>
+          <div className={`mt-5 grid border-t border-[var(--border)] pt-4 ${istIntern ? (istAdmin ? "grid-cols-4" : "grid-cols-3") : "grid-cols-2"} gap-4`}>
             {istIntern ? (
               <>
                 <Schnellzahl
@@ -328,6 +338,16 @@ export default function Startseite({
                   farbe={(stats.wartenAufMich ?? 0) > 0 ? "text-yellow-500" : "text-[var(--text-strong)]"}
                   onClick={() => onAktion("tickets-wartend")}
                 />
+                {istAdmin && (
+                  <Schnellzahl
+                    wert={stats.slaVerletzt}
+                    label="SLA verletzt"
+                    icon="⚠️"
+                    iconBg="rgba(220,38,38,0.12)"
+                    farbe={(stats.slaVerletzt ?? 0) > 0 ? "text-red-600" : "text-[var(--text-strong)]"}
+                    onClick={() => onAktion("tickets-sla-verletzt")}
+                  />
+                )}
               </>
             ) : (
               <>

@@ -19,6 +19,9 @@ interface TicketZeile {
   erstellt_am: string;
   zuletzt_kunden_nachricht_am: string | null;
   zuletzt_gelesen_am: string | null;
+  reaktion_faellig_am: string | null;
+  loesung_faellig_am: string | null;
+  erste_antwort_am: string | null;
   tags: string[];
   kunde: { id: string; name: string | null } | null;
   zugewiesen: { name: string | null; avatar_url: string | null } | null;
@@ -69,10 +72,14 @@ function istUngelesen(t: TicketZeile): boolean {
   return new Date(t.zuletzt_kunden_nachricht_am) > new Date(t.zuletzt_gelesen_am);
 }
 
-function istUeberfaellig(t: TicketZeile, slaStunden: number | null): boolean {
-  if (!slaStunden || t.status !== "offen") return false;
-  const stundenAlt = (Date.now() - new Date(t.erstellt_am).getTime()) / 3600000;
-  return stundenAlt > slaStunden;
+function istSlaVerletzt(t: TicketZeile): boolean {
+  if (t.status === "geloest" || t.status === "geschlossen") return false;
+  const jetzt = Date.now();
+  if (t.loesung_faellig_am && new Date(t.loesung_faellig_am).getTime() < jetzt) return true;
+  if (t.reaktion_faellig_am && !t.erste_antwort_am && new Date(t.reaktion_faellig_am).getTime() < jetzt) {
+    return true;
+  }
+  return false;
 }
 
 function FilterChip({
@@ -190,8 +197,7 @@ interface TicketUebersichtProps {
   technikerId: string;
   motto?: string | null;
   heroBildUrl?: string | null;
-  slaStunden?: number | null;
-  initialFilter?: "meine" | "wartend" | null;
+  initialFilter?: "meine" | "wartend" | "sla-verletzt" | null;
 }
 
 export default function TicketUebersicht({
@@ -200,7 +206,6 @@ export default function TicketUebersicht({
   technikerId,
   motto,
   heroBildUrl,
-  slaStunden,
   initialFilter,
 }: TicketUebersichtProps) {
   const [tickets, setTickets] = useState<TicketZeile[]>([]);
@@ -209,6 +214,7 @@ export default function TicketUebersicht({
     initialFilter === "wartend" ? "wartet_auf_kunde" : "offene"
   );
   const [nurMeine, setNurMeine] = useState(initialFilter === "meine");
+  const [nurSlaVerletzt, setNurSlaVerletzt] = useState(initialFilter === "sla-verletzt");
   const [prioritaetFilter, setPrioritaetFilter] = useState<Prioritaet | "alle">("alle");
   const [kundeFilter, setKundeFilter] = useState<string>("alle");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
@@ -273,7 +279,7 @@ export default function TicketUebersicht({
     let query = supabase
       .from("tickets")
       .select(
-        "id, ticket_nr, titel, status, prioritaet, erstellt_am, zuletzt_kunden_nachricht_am, zuletzt_gelesen_am, tags, kunde:kunde_id(id, name), zugewiesen:zugewiesen_an(name, avatar_url)",
+        "id, ticket_nr, titel, status, prioritaet, erstellt_am, zuletzt_kunden_nachricht_am, zuletzt_gelesen_am, reaktion_faellig_am, loesung_faellig_am, erste_antwort_am, tags, kunde:kunde_id(id, name), zugewiesen:zugewiesen_an(name, avatar_url)",
       )
       .eq("organisation_id", organisationId)
       .order("erstellt_am", { ascending: false });
@@ -302,6 +308,7 @@ export default function TicketUebersicht({
     const begriff = suchbegriff.trim().toLowerCase();
     return tickets.filter((t) => {
       if (tagFilter && !t.tags?.includes(tagFilter)) return false;
+      if (nurSlaVerletzt && !istSlaVerletzt(t)) return false;
       if (!begriff) return true;
       const ticketNrText = `#${t.ticket_nr}`;
       return (
@@ -312,7 +319,7 @@ export default function TicketUebersicht({
         nachrichtTrefferIds.has(t.id)
       );
     });
-  }, [tickets, suchbegriff, tagFilter, nachrichtTrefferIds]);
+  }, [tickets, suchbegriff, tagFilter, nachrichtTrefferIds, nurSlaVerletzt]);
 
   return (
     <div className="space-y-4">
@@ -397,6 +404,10 @@ export default function TicketUebersicht({
           👤 Nur meine
         </FilterChip>
 
+        <FilterChip aktiv={nurSlaVerletzt} onClick={() => setNurSlaVerletzt(!nurSlaVerletzt)}>
+          ⚠️ SLA verletzt
+        </FilterChip>
+
         <span className="h-4 w-px bg-[var(--border)]" />
 
         <FilterChip aktiv={statusFilter === "offene"} onClick={() => setStatusFilter("offene")}>
@@ -475,7 +486,7 @@ export default function TicketUebersicht({
 
           {gefilterteTickets.map((ticket) => {
             const ungelesen = istUngelesen(ticket);
-            const ueberfaellig = istUeberfaellig(ticket, slaStunden ?? null);
+            const slaVerletzt = istSlaVerletzt(ticket);
             return (
             <button
               key={ticket.id}
@@ -529,9 +540,9 @@ export default function TicketUebersicht({
                       />
                     </>
                   )}
-                  {ueberfaellig && (
-                    <span className="rounded-full bg-[var(--status-offen-bg)] px-1.5 py-0.5 text-[0.6rem] font-medium text-[var(--status-offen-text)]">
-                      Überfällig
+                  {slaVerletzt && (
+                    <span className="rounded-full bg-[var(--badge-kritisch-bg)] px-1.5 py-0.5 text-[0.6rem] font-medium text-[var(--badge-kritisch-text)]">
+                      ⚠️ SLA verletzt
                     </span>
                   )}
                   {ticket.tags?.map((tag) => (

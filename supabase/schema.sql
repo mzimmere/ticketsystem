@@ -1837,3 +1837,186 @@ create policy app_branding_select on app_branding for select
 create policy app_branding_update on app_branding for update
   using (current_user_rolle() = 'super_admin')
   with check (current_user_rolle() = 'super_admin');
+
+-- ============================================================
+-- 43. SLA-Konfiguration + automatische Fristen/Eskalation
+--
+-- sla_konfiguration wurde in einer frueheren, hier nicht dokumentierten
+-- Migration angelegt (nur ihre Policies waren bereits oben in Abschnitt
+-- "additive RLS-Rewrite" vorhanden) - der Vollstaendigkeit halber jetzt
+-- nachgetragen.
+-- ============================================================
+create table if not exists sla_konfiguration (
+  organisation_id uuid primary key references organisationen(id),
+  reaktionszeit_stunden integer default 4,
+  loesungszeit_stunden integer default 24,
+  aktiv boolean default true
+);
+alter table sla_konfiguration enable row level security;
+
+-- reaktion_faellig_am/loesung_faellig_am/erste_antwort_am auf tickets
+-- existierten bereits (fruehere, ebenfalls nicht dokumentierte Migration),
+-- wurden aber nirgends befuellt - die SLA-Anzeige lief damit ins Leere.
+-- Jetzt per Trigger tatsaechlich gesetzt + Eskalations-Flags ergaenzt.
+alter table tickets
+  add column if not exists reaktion_faellig_am timestamptz,
+  add column if not exists loesung_faellig_am timestamptz,
+  add column if not exists erste_antwort_am timestamptz,
+  add column if not exists reaktion_eskaliert boolean not null default false,
+  add column if not exists loesung_eskaliert boolean not null default false;
+
+create or replace function tickets_set_sla_fristen() returns trigger as $$
+declare
+  v_sla sla_konfiguration%rowtype;
+begin
+  select * into v_sla from sla_konfiguration where organisation_id = new.organisation_id;
+  if found and v_sla.aktiv then
+    new.reaktion_faellig_am := new.erstellt_am + (v_sla.reaktionszeit_stunden || ' hours')::interval;
+    new.loesung_faellig_am := new.erstellt_am + (v_sla.loesungszeit_stunden || ' hours')::interval;
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+create trigger trg_tickets_set_sla_fristen
+  before insert on tickets
+  for each row execute function tickets_set_sla_fristen();
+
+-- Erste Reaktion = erste Nachricht, die NICHT vom Kunden stammt (weder
+-- WhatsApp noch autor_id = kunde_id) - analog zur Erkennung in
+-- set_kunden_nachricht_zeit(), nur umgekehrt.
+create or replace function ticket_nachrichten_set_erste_antwort() returns trigger as $$
+declare
+  v_kunde_id uuid;
+  v_reaktion_faellig timestamptz;
+  v_bereits_beantwortet timestamptz;
+begin
+  select kunde_id, reaktion_faellig_am, erste_antwort_am
+    into v_kunde_id, v_reaktion_faellig, v_bereits_beantwortet
+  from tickets where id = new.ticket_id;
+
+  if v_bereits_beantwortet is null
+     and new.autor_id is not null
+     and new.autor_id <> v_kunde_id
+  then
+    update tickets
+    set erste_antwort_am = new.erstellt_am,
+        reaktion_eskaliert = case
+          when reaktion_eskaliert and v_reaktion_faellig is not null and new.erstellt_am <= v_reaktion_faellig
+          then false else reaktion_eskaliert
+        end
+    where id = new.ticket_id;
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+create trigger trg_ticket_nachrichten_set_erste_antwort
+  after insert on ticket_nachrichten
+  for each row execute function ticket_nachrichten_set_erste_antwort();
+
+-- Eskalation (Edge Function sla-eskalation-pruefen, siehe supabase/functions)
+-- wird alle 15 Minuten per pg_cron ausgefuehrt - siehe Abschnitt "Cron-Jobs"
+-- unten fuer den genauen Aufruf.
+
+-- ============================================================
+-- 44. Volltextsuche ueber Ticket-Nachrichten: echte Postgres-FTS statt
+-- ILIKE '%...%' (wortweise, reihenfolge-unabhaengig, einfaches deutsches
+-- Stemming, per GIN-Index performant).
+-- ============================================================
+alter table ticket_nachrichten
+  add column if not exists inhalt_tsv tsvector
+  generated always as (to_tsvector('german', coalesce(inhalt, ''))) stored;
+
+create index if not exists idx_ticket_nachrichten_inhalt_tsv on ticket_nachrichten using gin (inhalt_tsv);
+
+create or replace function ticket_ids_mit_nachricht(p_organisation_id uuid, p_begriff text)
+returns setof uuid as $$
+  select distinct t.id
+  from tickets t
+  join ticket_nachrichten n on n.ticket_id = t.id
+  where t.organisation_id = p_organisation_id
+    and n.inhalt_tsv @@ websearch_to_tsquery('german', p_begriff)
+    and (
+      current_user_rolle() = 'super_admin'
+      or (t.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    );
+$$ language sql stable security definer set search_path = public;
+
+-- Analog, aber auf die eigenen Tickets des eingeloggten Kunden beschraenkt
+-- (Suche im Kundenportal, MeineTickets.tsx).
+create or replace function meine_ticket_ids_mit_nachricht(p_begriff text)
+returns setof uuid as $$
+  select distinct t.id
+  from tickets t
+  join ticket_nachrichten n on n.ticket_id = t.id
+  where t.kunde_id = auth.uid()
+    and n.inhalt_tsv @@ websearch_to_tsquery('german', p_begriff);
+$$ language sql stable security definer set search_path = public;
+
+grant execute on function meine_ticket_ids_mit_nachricht(text) to authenticated;
+
+-- ============================================================
+-- 45. Cron-Jobs (pg_cron + pg_net -> Edge Functions)
+--
+-- Beide Functions haben verify_jwt=false und pruefen stattdessen selbst
+-- gegen ein Shared Secret aus Supabase Vault (Funktion get_cron_secret(),
+-- siehe oben), weil pg_cron kein echtes Supabase-JWT mitschickt. Das
+-- Secret wird bewusst NICHT im Klartext hier hinterlegt oder im
+-- Function-Quellcode hartkodiert, da dieses Repo oeffentlich auf GitHub
+-- liegt - es liegt einmalig in vault.secrets (siehe Abschnitt 43-Setup,
+-- via vault.create_secret(...) angelegt) und wird sowohl vom Cron-Job
+-- als auch von den Functions zur Laufzeit per SQL/RPC abgerufen.
+--
+-- WICHTIG: der urspruengliche auto-schliessen-Job schickte einen
+-- Platzhalter-Bearer-Wert, der NICHT mit dem in der Function erwarteten
+-- SUPABASE_SERVICE_ROLE_KEY uebereinstimmte UND die Function hatte
+-- verify_jwt=true - das Gateway haette den Aufruf also schon vorher mit
+-- 401 abgelehnt. Der Job lief seit Einfuehrung vermutlich nie durch.
+-- Behoben durch: verify_jwt=false + Vergleich gegen das Vault-Secret.
+--
+-- select cron.schedule(
+--   'auto-schliessen-taeglich',
+--   '0 2 * * *',
+--   $cron$
+--   select net.http_post(
+--     url := 'https://wfntgmavwzuldwjjhhlp.supabase.co/functions/v1/auto-schliessen',
+--     headers := jsonb_build_object(
+--       'Content-Type', 'application/json',
+--       'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'cron_shared_secret')
+--     ),
+--     body := '{}'::jsonb
+--   );
+--   $cron$
+-- );
+--
+-- select cron.schedule(
+--   'sla-eskalation-alle-15min',
+--   '*/15 * * * *',
+--   $cron$
+--   select net.http_post(
+--     url := 'https://wfntgmavwzuldwjjhhlp.supabase.co/functions/v1/sla-eskalation-pruefen',
+--     headers := jsonb_build_object(
+--       'Content-Type', 'application/json',
+--       'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'cron_shared_secret')
+--     ),
+--     body := '{}'::jsonb
+--   );
+--   $cron$
+-- );
+-- ============================================================
+
+-- ============================================================
+-- 46. get_cron_secret(): liefert das Shared Secret aus Vault an die
+-- Edge Functions (per supabase.rpc(), mit Service-Role aufgerufen).
+-- Nur service_role darf das ausfuehren.
+-- ============================================================
+create or replace function get_cron_secret() returns text as $$
+  select decrypted_secret from vault.decrypted_secrets where name = 'cron_shared_secret';
+$$ language sql stable security definer set search_path = public, vault;
+
+revoke all on function get_cron_secret() from public, anon, authenticated;
+grant execute on function get_cron_secret() to service_role;
+
+-- Einmaliges Setup (Secret-Wert wird bewusst nicht hier dokumentiert):
+-- select vault.create_secret('<zufaelliger-wert>', 'cron_shared_secret', 'Shared Secret fuer pg_cron -> Edge Function Auth.');

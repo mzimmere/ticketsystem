@@ -53,7 +53,6 @@ interface Organisation {
   motto: string | null;
   akzentfarbe: string | null;
   hero_bild_url: string | null;
-  sla_stunden: number | null;
 }
 
 // Erkennt, ob die aktuelle URL von einem Einladungs- oder Passwort-Link kommt
@@ -92,7 +91,7 @@ export default function App() {
   const [zeigePlattformAbrechnung, setZeigePlattformAbrechnung] = useState(false);
   const [zeigeStartseite, setZeigeStartseite] = useState(true);
   const [verwaltungsTab, setVerwaltungsTab] = useState<"firma" | "team" | "kunden" | "werkzeuge" | "integrationen">("firma");
-  const [ticketFilter, setTicketFilter] = useState<"meine" | "wartend" | null>(null);
+  const [ticketFilter, setTicketFilter] = useState<"meine" | "wartend" | "sla-verletzt" | null>(null);
   const [rechnungDetail, setRechnungDetail] = useState<
     { kundeId: string; jahr: number; monat: number } | null
   >(null);
@@ -165,6 +164,7 @@ export default function App() {
     if (aktion === "tickets") return;
     if (aktion === "tickets-meine") { setTicketFilter("meine"); return; }
     if (aktion === "tickets-wartend") { setTicketFilter("wartend"); return; }
+    if (aktion === "tickets-sla-verletzt") { setTicketFilter("sla-verletzt"); return; }
     if (aktion === "neues-ticket") setZeigeNeuesTicket(true);
     if (aktion === "dashboard") setZeigeDashboard(true);
     if (aktion === "abrechnung") setZeigeAbrechnung(true);
@@ -190,7 +190,7 @@ export default function App() {
     if (aktiveOrgId) {
       supabase
         .from("organisationen")
-        .select("name, logo_url, motto, akzentfarbe, hero_bild_url, sla_stunden")
+        .select("name, logo_url, motto, akzentfarbe, hero_bild_url")
         .eq("id", aktiveOrgId)
         .single()
         .then(({ data }) => setOrganisation(data as Organisation));
@@ -664,7 +664,6 @@ export default function App() {
             technikerId={profil.id}
             motto={organisation?.motto}
             heroBildUrl={organisation?.hero_bild_url}
-            slaStunden={organisation?.sla_stunden}
             initialFilter={ticketFilter}
           />
           )

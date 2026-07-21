@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../lib/supabaseClient";
 import StatusBadge from "./StatusBadge";
 import FaqSeite from "./FaqSeite";
@@ -20,10 +20,27 @@ interface MeineTicketsProps {
 export default function MeineTickets({ onAuswahl, organisationId }: MeineTicketsProps) {
   const [tickets, setTickets] = useState<TicketZeile[]>([]);
   const [laedt, setLaedt] = useState(true);
+  const [suchbegriff, setSuchbegriff] = useState("");
+  const [nachrichtTrefferIds, setNachrichtTrefferIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     ladeTickets();
   }, []);
+
+  // Volltextsuche über den eigenen Nachrichtenverlauf - debounced, ergänzt
+  // die client-seitige Titel-Suche um Treffer im Gesprächsverlauf.
+  useEffect(() => {
+    const begriff = suchbegriff.trim();
+    if (!begriff) {
+      setNachrichtTrefferIds(new Set());
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      const { data } = await supabase.rpc("meine_ticket_ids_mit_nachricht", { p_begriff: begriff });
+      setNachrichtTrefferIds(new Set((data as string[]) ?? []));
+    }, 350);
+    return () => clearTimeout(timeout);
+  }, [suchbegriff]);
 
   async function ladeTickets() {
     setLaedt(true);
@@ -36,6 +53,14 @@ export default function MeineTickets({ onAuswahl, organisationId }: MeineTickets
     setLaedt(false);
   }
 
+  const gefilterteTickets = useMemo(() => {
+    const begriff = suchbegriff.trim().toLowerCase();
+    if (!begriff) return tickets;
+    return tickets.filter(
+      (t) => t.titel.toLowerCase().includes(begriff) || nachrichtTrefferIds.has(t.id),
+    );
+  }, [tickets, suchbegriff, nachrichtTrefferIds]);
+
   if (laedt) return <p className="text-sm text-[var(--text-faint)]">Lädt…</p>;
 
   if (tickets.length === 0) {
@@ -44,8 +69,18 @@ export default function MeineTickets({ onAuswahl, organisationId }: MeineTickets
 
   return (
     <>
+      <input
+        type="text"
+        value={suchbegriff}
+        onChange={(e) => setSuchbegriff(e.target.value)}
+        placeholder="Anfragen durchsuchen…"
+        className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+      />
+      {gefilterteTickets.length === 0 ? (
+        <p className="text-sm text-[var(--text-faint)]">Keine Treffer für „{suchbegriff}".</p>
+      ) : (
       <div className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)] bg-[var(--bg-surface)]">
-        {tickets.map((ticket) => (
+        {gefilterteTickets.map((ticket) => (
           <button
             key={ticket.id}
             onClick={() => onAuswahl(ticket.id)}
@@ -59,6 +94,7 @@ export default function MeineTickets({ onAuswahl, organisationId }: MeineTickets
           </button>
         ))}
       </div>
+      )}
       {organisationId && <FaqSeite organisationId={organisationId} />}
     </>
   );

@@ -8,6 +8,10 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-21", titel: "WhatsApp-Anleitung auf permanenten System-User-Token umgestellt, neuer 'Verbindung testen'-Button prüft Meta-Zugang direkt" },
+  { datum: "2026-07-21", titel: "Volltextsuche: echte Postgres-Volltextsuche (wortweise, reihenfolge-unabhängig) statt einfacher Zeichenketten-Suche, jetzt auch im Kundenportal" },
+  { datum: "2026-07-21", titel: "SLA-Eskalation: Reaktions-/Lösungsfristen werden jetzt tatsächlich gesetzt, bei Verstoß automatische Mail + Badge/Filter 'SLA verletzt'" },
+  { datum: "2026-07-21", titel: "Fix: nächtlicher Auto-Schließen-Cronjob lief wegen falschem Auth-Token vermutlich seit Einführung nie durch" },
   { datum: "2026-07-21", titel: "Fix: Navigation Rail – Dashboard/Postfach/Plattform-Abrechnung/Verwaltung/Firmeninfo/Profil überschrieben sich teils gegenseitig (fehlende Zustands-Resets)" },
   { datum: "2026-07-18", titel: "Titel & Spruch der Anmeldeseite jetzt vom Super-Admin änderbar (Plattform-Abrechnung → Anmeldeseite)" },
   { datum: "2026-07-18", titel: "Neues Design: Google Material 3 – Navigation Rail, Roboto-Schrift, neue Formsprache und Farben (hell & dunkel)" },

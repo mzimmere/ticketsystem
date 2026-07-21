@@ -54,6 +54,8 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
   });
   const [laedt, setLaedt] = useState(false);
   const [hinweis, setHinweis] = useState<string | null>(null);
+  const [waTestLaedt, setWaTestLaedt] = useState(false);
+  const [waTestErgebnis, setWaTestErgebnis] = useState<{ ok: boolean; text: string } | null>(null);
 
   const webhookBaseUrl = `${typeof window !== "undefined" ? "https://wfntgmavwzuldwjjhhlp.supabase.co" : ""}/functions/v1`;
 
@@ -80,6 +82,40 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
     setLaedt(false);
     setHinweis(error ? "Fehler beim Speichern." : "Gespeichert.");
     setTimeout(() => setHinweis(null), 3000);
+  }
+
+  async function waVerbindungTesten() {
+    setWaTestLaedt(true);
+    setWaTestErgebnis(null);
+    try {
+      // Erst speichern, damit der Test garantiert die aktuell eingegebenen
+      // Werte prüft und nicht einen älteren gespeicherten Stand.
+      await speichern();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/whatsapp-verbindung-testen`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionData.session?.access_token}`,
+        },
+        body: JSON.stringify({ organisationId }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        setWaTestErgebnis({ ok: false, text: json.error ?? "Test fehlgeschlagen." });
+      } else if (json.grund === "nicht_konfiguriert") {
+        setWaTestErgebnis({ ok: false, text: "Bitte zuerst Phone Number ID und Access Token eintragen und speichern." });
+      } else if (json.grund === "token_abgelaufen") {
+        setWaTestErgebnis({ ok: false, text: "Access Token ist ungültig/abgelaufen. Bitte einen permanenten System-User-Token erstellen (siehe Anleitung unten)." });
+      } else if (json.ok) {
+        setWaTestErgebnis({ ok: true, text: `Verbunden: ${json.verifizierterName ?? json.telefonnummer ?? "OK"}${json.qualitaet ? ` · Qualität: ${json.qualitaet}` : ""}` });
+      } else {
+        setWaTestErgebnis({ ok: false, text: json.meldung ?? "Test fehlgeschlagen." });
+      }
+    } catch (err) {
+      setWaTestErgebnis({ ok: false, text: String(err) });
+    }
+    setWaTestLaedt(false);
   }
 
   const emailAktiv = !!(konfig.inbound_email_adresse && konfig.inbound_email_webhook_key);
@@ -260,6 +296,21 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
             </p>
           </div>
 
+          <div>
+            <button
+              onClick={waVerbindungTesten}
+              disabled={waTestLaedt || !konfig.whatsapp_phone_number_id || !konfig.whatsapp_access_token}
+              className="rounded-lg border border-[var(--border-input)] px-3 py-1.5 text-xs font-medium text-[var(--text-soft)] hover:bg-[var(--bg-muted)] disabled:opacity-50"
+            >
+              {waTestLaedt ? "Prüft…" : "Verbindung testen"}
+            </button>
+            {waTestErgebnis && (
+              <p className={`mt-1.5 text-xs ${waTestErgebnis.ok ? "text-green-600" : "text-red-600"}`}>
+                {waTestErgebnis.ok ? "✓ " : "✗ "}{waTestErgebnis.text}
+              </p>
+            )}
+          </div>
+
           <KonfigurationsHilfe
             titel="WhatsApp → Ticket einrichten"
             schritte={[
@@ -282,17 +333,23 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
               },
               {
                 nr: 4,
-                titel: "Phone Number ID und Access Token kopieren",
-                beschreibung: "WhatsApp → API Setup: Die 'Phone Number ID' und den 'Temporary Access Token' (oder einen permanenten System-User-Token) kopieren und oben eintragen.",
+                titel: "Phone Number ID kopieren",
+                beschreibung: "WhatsApp → API Setup: Die 'Phone Number ID' kopieren und oben eintragen.",
               },
               {
                 nr: 5,
+                titel: "Permanenten Access Token erstellen (wichtig!)",
+                beschreibung: "NICHT den 'Temporary Access Token' von API Setup verwenden – der läuft nach 24 Stunden ab und die Anbindung reißt dann scheinbar grundlos ab. Stattdessen: Business-Einstellungen → Nutzer → System-Nutzer → System-Nutzer hinzufügen → der App die Berechtigung 'whatsapp_business_messaging' geben → Token erzeugen (ohne Ablaufdatum). Diesen Token oben eintragen.",
+                link: { label: "Meta Business-Einstellungen", url: "https://business.facebook.com/settings/system-users" },
+              },
+              {
+                nr: 6,
                 titel: "Webhook konfigurieren",
                 beschreibung: "WhatsApp → Configuration → Webhook → Edit. Die Webhook-URL und deinen selbst gewählten Verify Token eintragen. Dann 'messages' abonnieren.",
                 code: `${webhookBaseUrl}/whatsapp-webhook`,
               },
               {
-                nr: 6,
+                nr: 7,
                 titel: "Test-Nachricht senden",
                 beschreibung: "Schicke eine WhatsApp-Nachricht an deine registrierte Nummer. Nach wenigen Sekunden sollte ein neues Ticket erscheinen.",
               },
