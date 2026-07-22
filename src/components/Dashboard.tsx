@@ -109,16 +109,13 @@ export default function Dashboard({ organisationId }: DashboardProps) {
 
   async function ladeTechnikerStats(vonIso: string) {
     const { data: profile } = await supabase
-      .from("profiles")
-      .select("id, name, avatar_url")
-      .eq("organisation_id", organisationId)
-      .in("rolle", ["techniker", "org_admin"])
+      .rpc("get_team_mit_email", { p_organisation_id: organisationId })
       .eq("deaktiviert", false);
 
     if (!profile) return;
 
     const ergebnisse: TechnikerStat[] = await Promise.all(
-      profile.map(async (p) => {
+      (profile as { id: string; name: string | null; avatar_url: string | null }[]).map(async (p) => {
         const [offenRes, geloestRes] = await Promise.all([
           supabase.from("tickets").select("id", { count: "exact", head: true })
             .eq("organisation_id", organisationId)

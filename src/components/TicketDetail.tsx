@@ -270,11 +270,11 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
   }
 
   async function ladeTechniker(organisationId: string) {
+    // get_team_mit_email statt profiles-Direktabfrage: erfasst auch
+    // Mitarbeiter, die nur per firmen_mitgliedschaften (Mehrfach-
+    // Mitgliedschaft) mit dieser Firma verknuepft sind.
     const { data } = await supabase
-      .from("profiles")
-      .select("id, name, avatar_url, verfuegbarkeit")
-      .eq("organisation_id", organisationId)
-      .in("rolle", ["techniker", "org_admin"])
+      .rpc("get_team_mit_email", { p_organisation_id: organisationId })
       .eq("deaktiviert", false);
     setTechniker((data as Techniker[]) ?? []);
   }

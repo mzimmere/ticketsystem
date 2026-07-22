@@ -43,10 +43,7 @@ export default function FirmenInfo({ organisationId }: FirmenInfoProps) {
       .then(({ data }) => setOrganisation(data));
 
     supabase
-      .from("profiles")
-      .select("id, name, avatar_url, rolle, verfuegbarkeit")
-      .eq("organisation_id", organisationId)
-      .in("rolle", ["techniker", "org_admin"])
+      .rpc("get_team_mit_email", { p_organisation_id: organisationId })
       .order("rolle")
       .then(({ data }) => setTeam((data as Mitglied[]) ?? []));
   }, [organisationId]);

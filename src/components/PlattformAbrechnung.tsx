@@ -85,11 +85,13 @@ export default function PlattformAbrechnung() {
 
     const zeilen: OrgZeile[] = await Promise.all(
       (orgDaten ?? []).map(async (org) => {
+        // firmen_mitgliedschaften statt profiles: erfasst auch Mitarbeiter,
+        // die nur per Mehrfach-Mitgliedschaft mit dieser Firma verknuepft
+        // sind (rolle ist dort ohnehin auf techniker/org_admin beschraenkt).
         const { count } = await supabase
-          .from("profiles")
+          .from("firmen_mitgliedschaften")
           .select("id", { count: "exact", head: true })
           .eq("organisation_id", org.id)
-          .in("rolle", ["techniker", "org_admin"])
           .eq("deaktiviert", false);
         const rechnung = (rechnungDaten ?? []).find((r) => r.organisation_id === org.id) ?? null;
         return {

@@ -35,13 +35,13 @@ export default function NeuesTicketIntern({
   const [fehler, setFehler] = useState<string | null>(null);
 
   useEffect(() => {
+    // get_team_mit_email statt profiles-Direktabfrage: erfasst auch
+    // Mitarbeiter, die nur per firmen_mitgliedschaften (Mehrfach-
+    // Mitgliedschaft) mit dieser Firma verknuepft sind, nicht ueber ihre
+    // "Home"-Firma (profiles.organisation_id).
     supabase
-      .from("profiles")
-      .select("id, name")
-      .eq("organisation_id", organisationId)
-      .in("rolle", ["techniker", "org_admin"])
+      .rpc("get_team_mit_email", { p_organisation_id: organisationId })
       .eq("deaktiviert", false)
-      .order("name")
       .then(({ data }) => setTechniker((data as Techniker[]) ?? []));
 
     supabase

@@ -2080,3 +2080,15 @@ alter table profiles add constraint profiles_standard_ticket_filter_check
   check (standard_ticket_filter is null or standard_ticket_filter in (
     'alle', 'offene', 'offen', 'in_bearbeitung', 'wartet_auf_kunde', 'geloest', 'geschlossen'
   ));
+
+-- ============================================================
+-- 50. Fix: mehrere Frontend-Stellen (Ticket-Zuweisung in Neues-Ticket/
+-- Ticket-Detail, Dashboard-Techniker-Stats, FirmenInfo-Team, MeinProfil-
+-- Kollegenliste) fragten Techniker/Org-Admins weiterhin direkt ueber
+-- profiles.organisation_id + rolle ab, statt ueber firmen_mitgliedschaften
+-- (get_team_mit_email) - Mitarbeiter, die nur per Mehrfach-Mitgliedschaft
+-- (nicht als Home-Firma) mit einer Firma verknuepft sind, fehlten dort
+-- komplett. PlattformAbrechnung's Mitarbeiterzahl-Zaehlung (fuer die
+-- Abrechnung!) hatte denselben Fehler und zaehlte firmen_mitgliedschaften
+-- jetzt direkt statt profiles.
+-- ============================================================

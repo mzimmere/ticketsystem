@@ -115,10 +115,7 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
 
   async function ladeKollegen() {
     const { data } = await supabase
-      .from("profiles")
-      .select("id, name")
-      .eq("organisation_id", organisationId)
-      .in("rolle", ["techniker", "org_admin"])
+      .rpc("get_team_mit_email", { p_organisation_id: organisationId })
       .neq("id", profilId);
     setKollegen((data as Kollege[]) ?? []);
   }
