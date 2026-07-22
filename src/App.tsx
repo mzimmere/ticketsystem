@@ -674,6 +674,7 @@ export default function App() {
             motto={organisation?.motto}
             heroBildUrl={organisation?.hero_bild_url}
             initialFilter={ticketFilter}
+            standardFilter={profil.standard_ticket_filter}
           />
           )
         ) : (

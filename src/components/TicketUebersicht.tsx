@@ -198,6 +198,21 @@ interface TicketUebersichtProps {
   motto?: string | null;
   heroBildUrl?: string | null;
   initialFilter?: "meine" | "wartend" | "sla-verletzt" | null;
+  standardFilter?: string | null;
+}
+
+const GUELTIGE_STATUS_FILTER = ["alle", "offene", "offen", "in_bearbeitung", "wartet_auf_kunde", "geloest", "geschlossen"];
+
+function initialenStatusFilter(
+  initialFilter: TicketUebersichtProps["initialFilter"],
+  standardFilter: string | null | undefined,
+): Status | "alle" | "offene" {
+  if (initialFilter === "wartend") return "wartet_auf_kunde";
+  if (initialFilter) return "offene";
+  if (standardFilter && GUELTIGE_STATUS_FILTER.includes(standardFilter)) {
+    return standardFilter as Status | "alle" | "offene";
+  }
+  return "offene";
 }
 
 export default function TicketUebersicht({
@@ -207,12 +222,14 @@ export default function TicketUebersicht({
   motto,
   heroBildUrl,
   initialFilter,
+  standardFilter,
 }: TicketUebersichtProps) {
   const [tickets, setTickets] = useState<TicketZeile[]>([]);
   const [kundenOptionen, setKundenOptionen] = useState<KundeOption[]>([]);
   const [statusFilter, setStatusFilter] = useState<Status | "alle" | "offene">(
-    initialFilter === "wartend" ? "wartet_auf_kunde" : "offene"
+    initialenStatusFilter(initialFilter, standardFilter)
   );
+  const [standardGespeichert, setStandardGespeichert] = useState(standardFilter ?? null);
   const [nurMeine, setNurMeine] = useState(initialFilter === "meine");
   const [nurSlaVerletzt, setNurSlaVerletzt] = useState(initialFilter === "sla-verletzt");
   const [prioritaetFilter, setPrioritaetFilter] = useState<Prioritaet | "alle">("alle");
@@ -421,6 +438,18 @@ export default function TicketUebersicht({
             {STATUS_LABEL[s]}
           </FilterChip>
         ))}
+
+        <button
+          onClick={async () => {
+            await supabase.from("profiles").update({ standard_ticket_filter: statusFilter }).eq("id", technikerId);
+            setStandardGespeichert(statusFilter);
+          }}
+          disabled={standardGespeichert === statusFilter}
+          title="Diesen Status-Filter als deinen Standard speichern"
+          className="rounded-full px-2 py-1 text-xs text-[var(--text-faint)] transition-colors hover:text-akzent disabled:cursor-default disabled:text-akzent"
+        >
+          {standardGespeichert === statusFilter ? "★ Standard" : "☆ Als Standard"}
+        </button>
 
         <span className="h-4 w-px bg-[var(--border)]" />
 

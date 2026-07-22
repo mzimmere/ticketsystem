@@ -2069,3 +2069,14 @@ create trigger trg_organisationen_set_slug
 -- eigene Verwaltungsoberflaeche noetig.
 -- ============================================================
 alter table profiles add column if not exists howto_gesehen boolean not null default false;
+
+-- ============================================================
+-- 49. Persoenlicher Standard-Status-Filter fuer die Ticketuebersicht
+-- (z.B. "In Bearbeitung" statt immer "Offene"), vom Nutzer selbst per
+-- "Als Standard speichern"-Button in TicketUebersicht.tsx waehlbar.
+-- ============================================================
+alter table profiles add column if not exists standard_ticket_filter text;
+alter table profiles add constraint profiles_standard_ticket_filter_check
+  check (standard_ticket_filter is null or standard_ticket_filter in (
+    'alle', 'offene', 'offen', 'in_bearbeitung', 'wartet_auf_kunde', 'geloest', 'geschlossen'
+  ));

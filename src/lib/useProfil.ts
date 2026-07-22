@@ -10,6 +10,7 @@ export interface Profil {
   name: string | null;
   deaktiviert: boolean;
   howto_gesehen: boolean;
+  standard_ticket_filter: string | null;
 }
 
 export interface Mitgliedschaft {
@@ -62,7 +63,7 @@ export function useProfil() {
     const [{ data }, { data: mitgliedDaten }] = await Promise.all([
       supabase
         .from("profiles")
-        .select("id, organisation_id, rolle, name, deaktiviert, howto_gesehen")
+        .select("id, organisation_id, rolle, name, deaktiviert, howto_gesehen, standard_ticket_filter")
         .eq("id", authData.user.id)
         .single(),
       supabase
