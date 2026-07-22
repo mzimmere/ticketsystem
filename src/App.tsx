@@ -25,6 +25,7 @@ import DatenschutzSeite from "./components/DatenschutzSeite";
 import FaqOeffentlich from "./components/FaqOeffentlich";
 import ZugangsBestaetigen from "./components/ZugangsBestaetigen";
 import Changelog from "./components/Changelog";
+import HowTo, { howToAlsGesehenMarkieren } from "./components/HowTo";
 import PlattformAbrechnung from "./components/PlattformAbrechnung";
 
 function neukundeSlug(): string | null {
@@ -75,7 +76,7 @@ function authLinkFehler(): string | null {
 }
 
 export default function App() {
-  const { profil, mitgliedschaften, eingeloggt, laedt } = useProfil();
+  const { profil, mitgliedschaften, eingeloggt, laedt, neuLaden } = useProfil();
   const { dunkel, umschalten } = useTheme();
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [ausgewaehltesTicket, setAusgewaehltesTicket] = useState<string | null>(null);
@@ -508,6 +509,14 @@ export default function App() {
             </select>
           )}
           <Changelog />
+          <HowTo
+            istIntern={istIntern}
+            autoOeffnen={!profil.howto_gesehen}
+            onGesehen={() => {
+              howToAlsGesehenMarkieren(profil.id);
+              neuLaden();
+            }}
+          />
           <div className="ml-auto flex items-center gap-2.5">
             <span className="hidden text-xs text-[var(--text-soft)] sm:inline">{profil.name ?? "Eingeloggt"}</span>
             <button

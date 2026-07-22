@@ -2061,3 +2061,11 @@ $$ language plpgsql security definer set search_path = public;
 create trigger trg_organisationen_set_slug
   before insert on organisationen
   for each row execute function organisationen_set_slug();
+
+-- ============================================================
+-- 48. HowTo: einmalige Anwendungs-Anleitung beim ersten Login (danach
+-- jederzeit ueber das "?"-Icon im Header abrufbar, siehe HowTo.tsx).
+-- Inhalt ist rollenabhaengig fest im Code (intern vs. Kunde) - keine
+-- eigene Verwaltungsoberflaeche noetig.
+-- ============================================================
+alter table profiles add column if not exists howto_gesehen boolean not null default false;
