@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-22", titel: "Hero-Bild auf der Ticketseite wird größer dargestellt (passt sich am Bild-Seitenverhältnis an statt fester, knapper Höhe)" },
   { datum: "2026-07-22", titel: "Ticketübersicht: eigenen Standard-Status-Filter speicherbar (z.B. „In Bearbeitung“ statt immer „Offene“)" },
   { datum: "2026-07-22", titel: "Neues Ticket anlegen: Kunde-Feld jetzt durchsuchbar, mit „+ Neuer Kunde“ direkt aus dem Formular anlegbar" },
   { datum: "2026-07-22", titel: "Neues HowTo: Anwendungs-Anleitung erscheint einmalig beim ersten Login, danach jederzeit über das „?“-Icon im Header (rollenabhängig für Team bzw. Kunden)" },

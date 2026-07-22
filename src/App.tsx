@@ -712,7 +712,7 @@ export default function App() {
                     <img
                       src={organisation.hero_bild_url}
                       alt=""
-                      className="h-40 w-full object-contain sm:h-56"
+                      className="h-auto max-h-96 w-full object-contain"
                     />
                   )}
                   {organisation?.motto && (
