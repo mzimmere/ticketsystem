@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-22", titel: "Neues Ticket anlegen: Kunde-Feld jetzt durchsuchbar, mit „+ Neuer Kunde“ direkt aus dem Formular anlegbar" },
   { datum: "2026-07-22", titel: "Neues HowTo: Anwendungs-Anleitung erscheint einmalig beim ersten Login, danach jederzeit über das „?“-Icon im Header (rollenabhängig für Team bzw. Kunden)" },
   { datum: "2026-07-21", titel: "Neue Firma bekommt beim Anlegen automatisch eine eigene Landingpage (Slug wird aus dem Namen abgeleitet, URL direkt sichtbar)" },
   { datum: "2026-07-21", titel: "Kunden-Zugangsseite (?neukunde=...): gut sichtbarer FAQ-Button, wenn die Firma öffentliche FAQ-Einträge hat" },

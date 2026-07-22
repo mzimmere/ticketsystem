@@ -1,13 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useUngespeichertWarnung } from "../lib/useUngespeichertWarnung";
+import KundenAuswahl from "./KundenAuswahl";
 
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
-
-interface Kunde {
-  id: string;
-  name: string | null;
-}
 
 interface Techniker {
   id: string;
@@ -27,7 +23,6 @@ export default function NeuesTicketIntern({
   onErstellt,
   onAbbrechen,
 }: NeuesTicketInternProps) {
-  const [kunden, setKunden] = useState<Kunde[]>([]);
   const [techniker, setTechniker] = useState<Techniker[]>([]);
   const [kundeId, setKundeId] = useState("");
   const [zugewiesenAn, setZugewiesenAn] = useState(technikerId);
@@ -40,15 +35,6 @@ export default function NeuesTicketIntern({
   const [fehler, setFehler] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase
-      .from("profiles")
-      .select("id, name")
-      .eq("organisation_id", organisationId)
-      .eq("rolle", "kunde")
-      .eq("deaktiviert", false)
-      .order("name")
-      .then(({ data }) => setKunden((data as Kunde[]) ?? []));
-
     supabase
       .from("profiles")
       .select("id, name")
@@ -113,23 +99,7 @@ export default function NeuesTicketIntern({
 
       <div>
         <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Kunde</label>
-        <select
-          value={kundeId}
-          onChange={(e) => setKundeId(e.target.value)}
-          className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-        >
-          <option value="">Kunde wählen…</option>
-          {kunden.map((k) => (
-            <option key={k.id} value={k.id}>
-              {k.name ?? "Unbenannt"}
-            </option>
-          ))}
-        </select>
-        {kunden.length === 0 && (
-          <p className="mt-1 text-xs text-[var(--text-faint)]">
-            Noch keine Kunden vorhanden – erst unter Verwaltung → Kunden anlegen.
-          </p>
-        )}
+        <KundenAuswahl organisationId={organisationId} value={kundeId} onChange={setKundeId} />
       </div>
 
       {vorlagen.length > 0 && (
