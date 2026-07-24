@@ -1,6 +1,13 @@
-import { useState } from "react";
-import { X } from "lucide-react";
+import { useState, useSyncExternalStore } from "react";
+import { X, Share, Download } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
+import {
+  aufAenderungHoeren,
+  installationMoeglich,
+  installationStarten,
+  istIOS,
+  laeuftAlsApp,
+} from "../lib/pwaInstall";
 
 interface HowToSchritt {
   titel: string;
@@ -48,6 +55,69 @@ const KUNDE_SCHRITTE: HowToSchritt[] = [
     text: "Unter dem FAQ-Bereich stehen Antworten auf die häufigsten Fragen – oft schneller als eine neue Anfrage zu stellen.",
   },
 ];
+
+// Installations-Hinweis: zeigt - je nach Browser - entweder einen echten
+// Installations-Button (Chrome/Edge/Android) oder die manuelle Anleitung
+// (iOS/Safari und alles andere). Laeuft die App bereits installiert, wird
+// gar nichts angezeigt.
+function InstallHinweis() {
+  const kannInstallieren = useSyncExternalStore(aufAenderungHoeren, installationMoeglich, () => false);
+  const [laeuft, setLaeuft] = useState(false);
+  const [abgelehnt, setAbgelehnt] = useState(false);
+
+  if (laeuftAlsApp()) return null;
+
+  async function installieren() {
+    setLaeuft(true);
+    const ergebnis = await installationStarten();
+    setLaeuft(false);
+    if (ergebnis === "dismissed") setAbgelehnt(true);
+  }
+
+  return (
+    <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-muted)] p-4">
+      <div className="mb-1.5 flex items-center gap-2">
+        <Download size={15} className="shrink-0 text-akzent" />
+        <p className="text-sm font-medium text-[var(--text-strong)]">Als App installieren</p>
+      </div>
+
+      {kannInstallieren ? (
+        <>
+          <p className="mb-3 text-xs leading-relaxed text-[var(--text-soft)]">
+            Das Ticketsystem lässt sich wie eine normale App auf dem Gerät ablegen – eigenes Symbol,
+            Vollbild, kein Suchen im Browser. Die Daten sind dieselben wie hier.
+          </p>
+          <button
+            onClick={installieren}
+            disabled={laeuft}
+            className="w-full rounded-lg bg-akzent py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {laeuft ? "Wird installiert…" : "Jetzt installieren"}
+          </button>
+          {abgelehnt && (
+            <p className="mt-1.5 text-xs text-[var(--text-faint)]">
+              Abgebrochen – du kannst es hier jederzeit erneut versuchen.
+            </p>
+          )}
+        </>
+      ) : istIOS() ? (
+        <p className="text-xs leading-relaxed text-[var(--text-soft)]">
+          Auf iPhone/iPad in <strong>Safari</strong> unten auf das Teilen-Symbol{" "}
+          <Share size={11} className="inline align-[-1px]" /> tippen, dann{" "}
+          <strong>„Zum Home-Bildschirm"</strong> wählen. Danach startet das Ticketsystem wie eine
+          normale App – mit denselben Daten wie hier.
+        </p>
+      ) : (
+        <p className="text-xs leading-relaxed text-[var(--text-soft)]">
+          Im Browser-Menü (⋮ bzw. ···) gibt es den Eintrag <strong>„App installieren"</strong> oder
+          <strong> „Zum Startbildschirm hinzufügen"</strong> – am Computer oft auch als kleines
+          Symbol rechts in der Adressleiste. Danach startet das Ticketsystem wie eine normale App,
+          mit denselben Daten wie hier.
+        </p>
+      )}
+    </div>
+  );
+}
 
 interface HowToProps {
   istIntern: boolean;
@@ -107,6 +177,8 @@ export default function HowTo({ istIntern, autoOeffnen, onGesehen }: HowToProps)
                   </div>
                 </div>
               ))}
+
+              <InstallHinweis />
             </div>
 
             <div className="border-t border-[var(--border)] px-5 py-3">
