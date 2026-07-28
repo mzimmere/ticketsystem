@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-23", titel: "WhatsApp-Einrichtungsanleitung an Metas neue Konsole angepasst (Anwendungsfall → Schritt 2: Produktionseinrichtung statt der alten „API Setup“-Seite)" },
   { datum: "2026-07-23", titel: "Hilfe („?“ im Header) erklärt jetzt die App-Installation – mit Ein-Klick-Button, wo der Browser es unterstützt, sonst passender Anleitung für iPhone bzw. Browser-Menü" },
   { datum: "2026-07-23", titel: "Ticketsystem ist jetzt als App installierbar (PWA) – auf dem Handy/Desktop zum Homescreen hinzufügen, gleiche Datenbank wie im Browser" },
   { datum: "2026-07-22", titel: "Fix: Mitarbeiter, die nur per Mehrfach-Mitgliedschaft (nicht als Home-Firma) verknüpft sind, fehlten in Ticket-Zuweisung, Dashboard, Über uns, Kollegenliste und Mitarbeiterzahl der Plattform-Abrechnung" },

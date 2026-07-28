@@ -254,7 +254,8 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
               placeholder="1234567890123456"
               className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm font-mono" />
             <p className="mt-1 text-xs text-[var(--text-faint)]">
-              Meta for Developers → App → WhatsApp → API Setup → Phone Number ID
+              Meta → Anwendungsfall → Schritt 2: Produktionseinrichtung → Telefonnummer (oder im
+              WhatsApp Manager bei deiner Nummer)
             </p>
           </div>
 
@@ -291,8 +292,8 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
               <KopierenButton wert={`${webhookBaseUrl}/whatsapp-webhook`} />
             </div>
             <p className="text-xs text-[var(--text-faint)]">
-              Meta for Developers → App → WhatsApp → Configuration → Webhook → URL + Verify Token eintragen.
-              Abonniere das Feld "messages".
+              Bei Meta unter "Schritt 2: Produktionseinrichtung" → Webhooks: diese URL + deinen
+              Verify Token eintragen und das Feld "messages" abonnieren.
             </p>
           </div>
 
@@ -316,45 +317,40 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
             schritte={[
               {
                 nr: 1,
-                titel: "Meta Business Account erstellen",
-                beschreibung: "Du brauchst einen verifizierten Meta Business Account. Gehe zu business.facebook.com und verifiziere dein Unternehmen (Gewerbeschein oder Webseite reicht).",
-                link: { label: "Meta Business Suite", url: "https://business.facebook.com" },
-              },
-              {
-                nr: 2,
-                titel: "Meta Developer App anlegen",
-                beschreibung: "Gehe zu developers.facebook.com → Meine Apps → App erstellen → Business. Den App-Typ 'Business' wählen und dein Business verknüpfen.",
+                titel: "App mit WhatsApp anlegen",
+                beschreibung: "Bei developers.facebook.com → Meine Apps → App erstellen. Als Anwendungsfall 'Über WhatsApp mit deinen Kunden in Kontakt treten' wählen. Danach in der App den Anwendungsfall öffnen und 'Mit API integrieren' wählen (NICHT 'Partner werden').",
                 link: { label: "Meta for Developers", url: "https://developers.facebook.com/apps" },
               },
               {
+                nr: 2,
+                titel: "Telefonnummer + Phone Number ID",
+                beschreibung: "Im Anwendungsfall → 'Schritt 2: Produktionseinrichtung' öffnen und dort deine Telefonnummer hinzufügen/auswählen. Danach wird die 'Phone Number ID' angezeigt – diese oben ins Feld 'Phone Number ID' kopieren. (Sie steht auch jederzeit im WhatsApp Manager bei deiner Nummer.)",
+                link: { label: "WhatsApp Manager", url: "https://business.facebook.com/wa/manage" },
+              },
+              {
                 nr: 3,
-                titel: "WhatsApp-Produkt zur App hinzufügen",
-                beschreibung: "In deiner App: Produkte hinzufügen → WhatsApp → Einrichten. Dann eine Telefonnummer hinzufügen (kann eine neue Nummer oder eine bestehende sein, die noch nicht bei WhatsApp registriert ist).",
-              },
-              {
-                nr: 4,
-                titel: "Phone Number ID kopieren",
-                beschreibung: "WhatsApp → API Setup: Die 'Phone Number ID' kopieren und oben eintragen.",
-              },
-              {
-                nr: 5,
                 titel: "Permanenten Access Token erstellen (wichtig!)",
-                beschreibung: "NICHT den 'Temporary Access Token' von API Setup verwenden – der läuft nach 24 Stunden ab und die Anbindung reißt dann scheinbar grundlos ab. Stattdessen: Business-Einstellungen → Nutzer → System-Nutzer → System-Nutzer hinzufügen → der App die Berechtigung 'whatsapp_business_messaging' geben → Token erzeugen (ohne Ablaufdatum). Diesen Token oben eintragen.",
+                beschreibung: "NICHT den befristeten Token aus der Produktionseinrichtung verwenden – der läuft nach 24 Stunden ab und die Anbindung reißt dann scheinbar grundlos ab. Stattdessen: Business-Einstellungen → Nutzer → Systemnutzer → Systemnutzer hinzufügen → Token generieren mit der Berechtigung 'whatsapp_business_messaging' und deinem WhatsApp-Konto als zugewiesenem Asset (ohne Ablaufdatum). Diesen Token oben ins Feld 'Access Token' eintragen.",
                 link: { label: "Meta Business-Einstellungen", url: "https://business.facebook.com/settings/system-users" },
               },
               {
-                nr: 6,
-                titel: "Webhook konfigurieren",
-                beschreibung: "WhatsApp → Configuration → Webhook → Edit. Die Webhook-URL und deinen selbst gewählten Verify Token eintragen. Dann 'messages' abonnieren.",
+                nr: 4,
+                titel: "Webhook eintragen",
+                beschreibung: "Ebenfalls unter 'Schritt 2: Produktionseinrichtung' → Webhooks: die folgende URL und deinen oben selbst gewählten Verify Token eintragen, dann das Feld 'messages' abonnieren.",
                 code: `${webhookBaseUrl}/whatsapp-webhook`,
               },
               {
-                nr: 7,
+                nr: 5,
+                titel: "Hier speichern & Verbindung testen",
+                beschreibung: "Oben auf 'Integrationen speichern' und dann auf 'Verbindung testen' klicken – zeigt sofort, ob Phone Number ID und Token stimmen.",
+              },
+              {
+                nr: 6,
                 titel: "Test-Nachricht senden",
                 beschreibung: "Schicke eine WhatsApp-Nachricht an deine registrierte Nummer. Nach wenigen Sekunden sollte ein neues Ticket erscheinen.",
               },
             ]}
-            hinweis="Für Produktionsbetrieb (mehr als 5 Test-Empfänger) musst du die WhatsApp Business API-Nutzung bei Meta beantragen und dein Unternehmen verifizieren. Im Testbetrieb kannst du bis zu 5 Testnummern freischalten."
+            hinweis="Für echte Kundennummern (statt nur bis zu 5 Testnummern) verlangt Meta 'Schritt 3: Unternehmensverifizierung'. Solange die nicht abgeschlossen ist, funktioniert WhatsApp nur mit den hinterlegten Testnummern."
           />
         </div>
       </div>
