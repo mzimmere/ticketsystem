@@ -80,7 +80,7 @@ Deno.serve(async (req: Request) => {
       // a) Organisation über die Meta phone_number_id finden
       const { data: organisation } = await supabase
         .from("organisationen")
-        .select("id, whatsapp_access_token")
+        .select("id, whatsapp_access_token, whatsapp_app_secret")
         .eq("whatsapp_phone_number_id", phoneNumberId)
         .single();
 
@@ -161,6 +161,7 @@ Deno.serve(async (req: Request) => {
         vonNummer,
         "Danke, wir haben deine Anfrage erhalten und melden uns.",
         organisation.whatsapp_access_token ?? WHATSAPP_ACCESS_TOKEN,
+        organisation.whatsapp_app_secret,
       );
 
       return new Response("ok", { status: 200 });
@@ -180,9 +181,14 @@ async function sendeWhatsAppNachricht(
   an: string,
   text: string,
   accessToken: string | null | undefined,
+  appSecret: string | null | undefined,
 ) {
   if (!accessToken) return; // kein Token hinterlegt -> keine Auto-Antwort
-  await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
+  // appsecret_proof anhaengen, falls App Secret hinterlegt ist (Meta verlangt
+  // das, wenn "App-Secret-Proof erforderlich" aktiv ist).
+  const proof = appSecret ? await appsecretProof(accessToken, appSecret) : null;
+  const proofParam = proof ? `?appsecret_proof=${proof}` : "";
+  await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages${proofParam}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -195,6 +201,19 @@ async function sendeWhatsAppNachricht(
       text: { body: text },
     }),
   });
+}
+
+// appsecret_proof = HMAC-SHA256(access_token, app_secret) als Hex.
+async function appsecretProof(accessToken: string, appSecret: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(appSecret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(accessToken));
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 // TODO als Nächstes:

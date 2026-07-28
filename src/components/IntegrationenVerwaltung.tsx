@@ -14,6 +14,7 @@ interface Konfig {
   whatsapp_phone_number_id: string | null;
   whatsapp_access_token: string | null;
   whatsapp_webhook_secret: string | null;
+  whatsapp_app_secret: string | null;
 }
 
 function KopierenButton({ wert }: { wert: string }) {
@@ -51,6 +52,7 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
   const [konfig, setKonfig] = useState<Konfig>({
     inbound_email_adresse: null, inbound_email_anbieter: null, inbound_email_webhook_key: null,
     whatsapp_phone_number_id: null, whatsapp_access_token: null, whatsapp_webhook_secret: null,
+    whatsapp_app_secret: null,
   });
   const [laedt, setLaedt] = useState(false);
   const [hinweis, setHinweis] = useState<string | null>(null);
@@ -64,7 +66,7 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
   async function laden() {
     const { data } = await supabase
       .from("organisationen")
-      .select("inbound_email_adresse, inbound_email_anbieter, inbound_email_webhook_key, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_webhook_secret")
+      .select("inbound_email_adresse, inbound_email_anbieter, inbound_email_webhook_key, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_webhook_secret, whatsapp_app_secret")
       .eq("id", organisationId).single();
     if (data) setKonfig(data);
   }
@@ -78,6 +80,7 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
       whatsapp_phone_number_id: konfig.whatsapp_phone_number_id?.trim() || null,
       whatsapp_access_token: konfig.whatsapp_access_token?.trim() || null,
       whatsapp_webhook_secret: konfig.whatsapp_webhook_secret?.trim() || null,
+      whatsapp_app_secret: konfig.whatsapp_app_secret?.trim() || null,
     }).eq("id", organisationId);
     setLaedt(false);
     setHinweis(error ? "Fehler beim Speichern." : "Gespeichert.");
@@ -266,6 +269,21 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
               onChange={(v) => setKonfig({ ...konfig, whatsapp_access_token: v })}
               placeholder="EAAxxxxxxx…"
             />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+              App Secret <span className="font-normal text-[var(--text-faint)]">(optional)</span>
+            </label>
+            <GeheimnisInput
+              value={konfig.whatsapp_app_secret ?? ""}
+              onChange={(v) => setKonfig({ ...konfig, whatsapp_app_secret: v })}
+              placeholder="App-Geheimnis aus Meta…"
+            />
+            <p className="mt-1 text-xs text-[var(--text-faint)]">
+              Nur nötig, wenn Meta "API calls require an appsecret_proof" meldet. Zu finden unter
+              Meta → App-Einstellungen → Allgemein → App-Geheimnis.
+            </p>
           </div>
 
           <div>

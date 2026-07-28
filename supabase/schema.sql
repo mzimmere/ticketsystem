@@ -2092,3 +2092,12 @@ alter table profiles add constraint profiles_standard_ticket_filter_check
 -- Abrechnung!) hatte denselben Fehler und zaehlte firmen_mitgliedschaften
 -- jetzt direkt statt profiles.
 -- ============================================================
+
+-- ============================================================
+-- 51. App Secret der Meta-App pro Firma. Noetig, wenn in Meta die Option
+-- "App-Secret-Proof fuer Server-API-Aufrufe erforderlich" aktiv ist -
+-- dann muss jeder Graph-API-Aufruf zusaetzlich
+--   appsecret_proof = HMAC-SHA256(access_token, app_secret)
+-- mitschicken (siehe whatsapp-webhook + whatsapp-verbindung-testen).
+-- ============================================================
+alter table organisationen add column if not exists whatsapp_app_secret text;

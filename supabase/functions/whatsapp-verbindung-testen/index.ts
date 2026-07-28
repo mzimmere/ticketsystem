@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
 
   const { data: org } = await supabase
     .from("organisationen")
-    .select("whatsapp_phone_number_id, whatsapp_access_token")
+    .select("whatsapp_phone_number_id, whatsapp_access_token, whatsapp_app_secret")
     .eq("id", organisationId)
     .single();
 
@@ -68,8 +68,15 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // appsecret_proof anhaengen, falls ein App Secret hinterlegt ist -
+    // Meta verlangt das, wenn "App-Secret-Proof erforderlich" aktiv ist.
+    const proof = org.whatsapp_app_secret
+      ? await appsecretProof(org.whatsapp_access_token, org.whatsapp_app_secret)
+      : null;
+    const proofParam = proof ? `&appsecret_proof=${proof}` : "";
+
     const metaRes = await fetch(
-      `https://graph.facebook.com/v21.0/${org.whatsapp_phone_number_id}?fields=verified_name,display_phone_number,quality_rating`,
+      `https://graph.facebook.com/v21.0/${org.whatsapp_phone_number_id}?fields=verified_name,display_phone_number,quality_rating${proofParam}`,
       { headers: { Authorization: `Bearer ${org.whatsapp_access_token}` } },
     );
     const metaJson = await metaRes.json();
@@ -96,3 +103,16 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+// appsecret_proof = HMAC-SHA256(access_token, app_secret) als Hex.
+async function appsecretProof(accessToken: string, appSecret: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(appSecret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(accessToken));
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
