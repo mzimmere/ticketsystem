@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-23", titel: "Fix: WhatsApp-Webhook war nicht ausgerollt und prüfte den Verify-Token global statt pro Firma – jetzt mandantenfähig (Verify-Token und Access-Token je Firma aus der App)" },
   { datum: "2026-07-23", titel: "WhatsApp-Einrichtungsanleitung an Metas neue Konsole angepasst (Anwendungsfall → Schritt 2: Produktionseinrichtung statt der alten „API Setup“-Seite)" },
   { datum: "2026-07-23", titel: "Hilfe („?“ im Header) erklärt jetzt die App-Installation – mit Ein-Klick-Button, wo der Browser es unterstützt, sonst passender Anleitung für iPhone bzw. Browser-Menü" },
   { datum: "2026-07-23", titel: "Ticketsystem ist jetzt als App installierbar (PWA) – auf dem Handy/Desktop zum Homescreen hinzufügen, gleiche Datenbank wie im Browser" },

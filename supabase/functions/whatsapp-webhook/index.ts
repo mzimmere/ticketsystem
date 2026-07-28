@@ -12,13 +12,17 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
-const VERIFY_TOKEN = Deno.env.get("WHATSAPP_VERIFY_TOKEN")!;
-const WHATSAPP_ACCESS_TOKEN = Deno.env.get("WHATSAPP_ACCESS_TOKEN")!;
+// Optionale globale Fallback-Secrets (fuer ein altes Single-Tenant-Setup).
+// Vorrangig gelten die PRO FIRMA in der App hinterlegten Werte
+// (organisationen.whatsapp_webhook_secret bzw. whatsapp_access_token) -
+// sonst koennte immer nur eine einzige Firma WhatsApp nutzen.
+const VERIFY_TOKEN = Deno.env.get("WHATSAPP_VERIFY_TOKEN");
+const WHATSAPP_ACCESS_TOKEN = Deno.env.get("WHATSAPP_ACCESS_TOKEN");
 
 Deno.serve(async (req: Request) => {
   // ----------------------------------------------------------
-  // 1) Meta-Webhook-Verifizierung (einmalig beim Einrichten im
-  //    Meta App Dashboard unter WhatsApp > Configuration)
+  // 1) Meta-Webhook-Verifizierung (einmalig beim Einrichten im Meta App
+  //    Dashboard: Anwendungsfall > Schritt 2: Produktionseinrichtung > Webhooks)
   // ----------------------------------------------------------
   if (req.method === "GET") {
     const url = new URL(req.url);
@@ -26,8 +30,22 @@ Deno.serve(async (req: Request) => {
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
 
-    if (mode === "subscribe" && token === VERIFY_TOKEN) {
-      return new Response(challenge, { status: 200 });
+    if (mode === "subscribe" && token) {
+      // Multi-Tenant: jede Firma hinterlegt ihren eigenen Verify Token in
+      // der App (Spalte organisationen.whatsapp_webhook_secret). Passt der
+      // eingehende Token zu IRGENDEINER Firma, ist die Verifizierung ok.
+      // Der optionale globale VERIFY_TOKEN bleibt als Fallback bestehen.
+      if (VERIFY_TOKEN && token === VERIFY_TOKEN) {
+        return new Response(challenge, { status: 200 });
+      }
+      const { data: treffer } = await supabase
+        .from("organisationen")
+        .select("id")
+        .eq("whatsapp_webhook_secret", token)
+        .limit(1);
+      if (treffer && treffer.length > 0) {
+        return new Response(challenge, { status: 200 });
+      }
     }
     return new Response("Verification failed", { status: 403 });
   }
@@ -62,7 +80,7 @@ Deno.serve(async (req: Request) => {
       // a) Organisation über die Meta phone_number_id finden
       const { data: organisation } = await supabase
         .from("organisationen")
-        .select("id")
+        .select("id, whatsapp_access_token")
         .eq("whatsapp_phone_number_id", phoneNumberId)
         .single();
 
@@ -136,11 +154,13 @@ Deno.serve(async (req: Request) => {
         throw nachrichtFehler;
       }
 
-      // e) Kurze Eingangsbestätigung zurückschicken (optional)
+      // e) Kurze Eingangsbestätigung zurückschicken (optional) - mit dem
+      //    Access Token DIESER Firma (Fallback: globales Alt-Secret)
       await sendeWhatsAppNachricht(
         phoneNumberId,
         vonNummer,
         "Danke, wir haben deine Anfrage erhalten und melden uns.",
+        organisation.whatsapp_access_token ?? WHATSAPP_ACCESS_TOKEN,
       );
 
       return new Response("ok", { status: 200 });
@@ -159,12 +179,14 @@ async function sendeWhatsAppNachricht(
   phoneNumberId: string,
   an: string,
   text: string,
+  accessToken: string | null | undefined,
 ) {
+  if (!accessToken) return; // kein Token hinterlegt -> keine Auto-Antwort
   await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+      Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({
       messaging_product: "whatsapp",
