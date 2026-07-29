@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { berechneFreiminutenAbzug, type DongleFreiminuten } from "../lib/freiminuten";
 
 interface ZeitEintrag {
   id: string;
@@ -7,6 +8,7 @@ interface ZeitEintrag {
   minuten: number;
   preis_pro_minute_cent_snapshot: number;
   beschreibung: string | null;
+  dongle_id: string | null;
 }
 
 interface Anpassung {
@@ -73,6 +75,7 @@ export default function RechnungDetail({
   const [kunde, setKunde] = useState<Kunde | null>(null);
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [eintraege, setEintraege] = useState<ZeitEintrag[]>([]);
+  const [dongles, setDongles] = useState<DongleFreiminuten[]>([]);
   const [anpassungen, setAnpassungen] = useState<Anpassung[]>([]);
   const [neueBeschreibung, setNeueBeschreibung] = useState("");
   const [neuerBetragEuro, setNeuerBetragEuro] = useState("");
@@ -106,7 +109,7 @@ export default function RechnungDetail({
 
   async function ladeAlles() {
     setLaedt(true);
-    const [{ data: kundeDaten }, { data: orgDaten }, { data: zeitDaten }, { data: anpassungDaten }] =
+    const [{ data: kundeDaten }, { data: orgDaten }, { data: zeitDaten }, { data: anpassungDaten }, { data: dongleDaten }] =
       await Promise.all([
         supabase
           .from("profiles")
@@ -120,7 +123,7 @@ export default function RechnungDetail({
           .single(),
         supabase
           .from("zeiteintraege")
-          .select("id, erstellt_am, minuten, preis_pro_minute_cent_snapshot, beschreibung")
+          .select("id, erstellt_am, minuten, preis_pro_minute_cent_snapshot, beschreibung, ticket:ticket_id(dongle_id)")
           .eq("kunde_id", kundeId)
           .eq("organisation_id", organisationId)
           .gte("erstellt_am", monatsErster)
@@ -133,12 +136,35 @@ export default function RechnungDetail({
           .eq("kunde_id", kundeId)
           .eq("monat", monatsErster)
           .order("erstellt_am", { ascending: true }),
+        supabase
+          .from("kunden_dongles")
+          .select("id, seriennummer, freiminuten_pro_monat")
+          .eq("kunde_id", kundeId)
+          .eq("organisation_id", organisationId),
       ]);
 
     setKunde(kundeDaten);
     setOrganisation(orgDaten);
-    setEintraege((zeitDaten as ZeitEintrag[]) ?? []);
+    const zeitRoh = (zeitDaten as unknown as Array<{
+      id: string;
+      erstellt_am: string;
+      minuten: number;
+      preis_pro_minute_cent_snapshot: number;
+      beschreibung: string | null;
+      ticket: { dongle_id: string | null } | null;
+    }>) ?? [];
+    setEintraege(
+      zeitRoh.map((e) => ({
+        id: e.id,
+        erstellt_am: e.erstellt_am,
+        minuten: e.minuten,
+        preis_pro_minute_cent_snapshot: e.preis_pro_minute_cent_snapshot,
+        beschreibung: e.beschreibung,
+        dongle_id: e.ticket?.dongle_id ?? null,
+      })),
+    );
     setAnpassungen((anpassungDaten as Anpassung[]) ?? []);
+    setDongles((dongleDaten as DongleFreiminuten[]) ?? []);
     setLaedt(false);
 
     // Produkte des aktuellen Nutzers laden
@@ -217,13 +243,10 @@ export default function RechnungDetail({
     ladeAlles();
   }
 
-  const zwischensumme = eintraege.reduce(
-    (sum, e) => sum + e.minuten * e.preis_pro_minute_cent_snapshot,
-    0,
-  );
-  const gesamtMinuten = eintraege.reduce((sum, e) => sum + e.minuten, 0);
+  const freiminuten = berechneFreiminutenAbzug(eintraege, dongles);
+  const { gesamtMinuten, zwischensummeOhneAbzug, abzugCent, zwischensummeNachAbzug, abzuegeJeDongle } = freiminuten;
   const anpassungenSumme = anpassungen.reduce((sum, a) => sum + a.betrag_cent, 0);
-  const nettosumme = zwischensumme + anpassungenSumme;
+  const nettosumme = zwischensummeNachAbzug + anpassungenSumme;
   const istInnergemeinschaftlich = !!kunde?.ust_id?.trim();
   const mwstSatz = istInnergemeinschaftlich ? 0 : kunde?.mwst_satz ?? 0;
   const mwstBetrag = Math.round(nettosumme * (mwstSatz / 100));
@@ -376,9 +399,25 @@ export default function RechnungDetail({
         <div className="mt-3 flex justify-end">
           <div className="w-56 space-y-1 text-sm">
             <div className="flex justify-between text-[var(--text-soft)]">
-              <span>Zwischensumme ({gesamtMinuten} Min.)</span>
-              <span className="font-mono">{formatEuro(zwischensumme)}</span>
+              <span>Gesamtzeit (ohne Abzug)</span>
+              <span className="font-mono">{gesamtMinuten} Min. / {formatEuro(zwischensummeOhneAbzug)}</span>
             </div>
+
+            {abzuegeJeDongle.map((d) => (
+              <div key={d.dongleId} className="flex justify-between text-[var(--text-soft)]">
+                <span className="truncate pr-2">
+                  − {d.freieMinuten} Freiminuten (Dongle {d.seriennummer})
+                </span>
+                <span className="font-mono">− {formatEuro(d.abzugCent)}</span>
+              </div>
+            ))}
+
+            {abzugCent > 0 && (
+              <div className="flex justify-between border-t border-[var(--border)] pt-1 text-[var(--text-soft)]">
+                <span>Berechnete Zeit</span>
+                <span className="font-mono">{formatEuro(zwischensummeNachAbzug)}</span>
+              </div>
+            )}
 
             {anpassungen.filter((a) => a.art !== "position").map((a) => (
               <div key={a.id} className="flex items-center justify-between text-[var(--text-soft)]">

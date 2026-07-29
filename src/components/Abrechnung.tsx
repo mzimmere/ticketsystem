@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { berechneFreiminutenAbzug, type DongleFreiminuten, type ZeitEintragMitDongle } from "../lib/freiminuten";
 
 interface AbrechnungsZeile {
   kunde_id: string;
@@ -38,6 +39,11 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
     () => `${jahr}-${String(monat).padStart(2, "0")}-01`,
     [jahr, monat],
   );
+  const naechsterMonatErster = useMemo(() => {
+    const naechsterMonat = monat === 12 ? 1 : monat + 1;
+    const naechstesJahr = monat === 12 ? jahr + 1 : jahr;
+    return `${naechstesJahr}-${String(naechsterMonat).padStart(2, "0")}-01`;
+  }, [jahr, monat]);
 
   useEffect(() => {
     ladeAbrechnung();
@@ -47,17 +53,23 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
   async function ladeAbrechnung() {
     setLaedt(true);
 
-    const [{ data: zeitDaten }, { data: anpassungDaten }] = await Promise.all([
+    const [{ data: zeitDaten }, { data: anpassungDaten }, { data: dongleDaten }] = await Promise.all([
       supabase
-        .from("kunde_monatsabrechnung")
-        .select("kunde_id, gesamt_minuten, gesamt_cent, kunde:kunde_id(name, mwst_satz)")
+        .from("zeiteintraege")
+        .select("kunde_id, minuten, preis_pro_minute_cent_snapshot, kunde:kunde_id(name, mwst_satz), ticket:ticket_id(dongle_id)")
         .eq("organisation_id", organisationId)
-        .eq("monat", monatsErster),
+        .gte("erstellt_am", monatsErster)
+        .lt("erstellt_am", naechsterMonatErster)
+        .not("minuten", "is", null),
       supabase
         .from("rechnungsanpassungen")
         .select("kunde_id, betrag_cent, kunde:kunde_id(name, mwst_satz)")
         .eq("organisation_id", organisationId)
         .eq("monat", monatsErster),
+      supabase
+        .from("kunden_dongles")
+        .select("id, kunde_id, seriennummer, freiminuten_pro_monat")
+        .eq("organisation_id", organisationId),
     ]);
 
     type Roh = {
@@ -69,18 +81,43 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
     };
     const karte = new Map<string, Roh>();
 
+    const eintraegeJeKunde = new Map<string, ZeitEintragMitDongle[]>();
+    const namenJeKunde = new Map<string, { name: string | null; mwst_satz: number | null }>();
     for (const z of (zeitDaten ?? []) as unknown as Array<{
       kunde_id: string;
-      gesamt_minuten: number;
-      gesamt_cent: number;
+      minuten: number;
+      preis_pro_minute_cent_snapshot: number;
       kunde: { name: string | null; mwst_satz: number | null } | null;
+      ticket: { dongle_id: string | null } | null;
     }>) {
-      karte.set(z.kunde_id, {
-        kunde_id: z.kunde_id,
-        kunde_name: z.kunde?.name ?? "Unbenannt",
-        mwst_satz: z.kunde?.mwst_satz ?? 0,
-        gesamt_minuten: z.gesamt_minuten,
-        netto_cent: z.gesamt_cent,
+      namenJeKunde.set(z.kunde_id, z.kunde ?? { name: null, mwst_satz: null });
+      const liste = eintraegeJeKunde.get(z.kunde_id) ?? [];
+      liste.push({
+        minuten: z.minuten,
+        preis_pro_minute_cent_snapshot: z.preis_pro_minute_cent_snapshot,
+        dongle_id: z.ticket?.dongle_id ?? null,
+      });
+      eintraegeJeKunde.set(z.kunde_id, liste);
+    }
+
+    const dongleListe = (dongleDaten as (DongleFreiminuten & { kunde_id: string | null })[]) ?? [];
+    const dongleJeKunde = new Map<string, DongleFreiminuten[]>();
+    for (const d of dongleListe) {
+      if (!d.kunde_id) continue;
+      const liste = dongleJeKunde.get(d.kunde_id) ?? [];
+      liste.push(d);
+      dongleJeKunde.set(d.kunde_id, liste);
+    }
+
+    for (const [kundeId, eintraege] of eintraegeJeKunde) {
+      const kundeInfo = namenJeKunde.get(kundeId);
+      const abzug = berechneFreiminutenAbzug(eintraege, dongleJeKunde.get(kundeId) ?? []);
+      karte.set(kundeId, {
+        kunde_id: kundeId,
+        kunde_name: kundeInfo?.name ?? "Unbenannt",
+        mwst_satz: kundeInfo?.mwst_satz ?? 0,
+        gesamt_minuten: abzug.gesamtMinuten,
+        netto_cent: abzug.zwischensummeNachAbzug,
       });
     }
 
