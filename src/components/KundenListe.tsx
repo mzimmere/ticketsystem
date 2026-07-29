@@ -99,6 +99,8 @@ export default function KundenListe({
   const [vertraege, setVertraege] = useState<LizenzVertrag[]>([]);
   const [nichtZugeordneteVertraege, setNichtZugeordneteVertraege] = useState<NichtZugeordneterVertrag[]>([]);
   const [zuweisenAnVertrag, setZuweisenAnVertrag] = useState<Record<string, string>>({});
+  const [filterDongleNummer, setFilterDongleNummer] = useState("");
+  const [filterVertragNummer, setFilterVertragNummer] = useState("");
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
   const [neuerZugang, setNeuerZugang] = useState<{
@@ -436,6 +438,13 @@ export default function KundenListe({
       .some((feld) => feld!.toLowerCase().includes(begriff));
   });
 
+  const gefilterteNichtZugeordnete = nichtZugeordnete.filter((d) =>
+    d.seriennummer.toLowerCase().includes(filterDongleNummer.trim().toLowerCase()),
+  );
+  const gefilterteNichtZugeordneteVertraege = nichtZugeordneteVertraege.filter((v) =>
+    v.lizenz_seriennummer.toLowerCase().includes(filterVertragNummer.trim().toLowerCase()),
+  );
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
@@ -459,15 +468,25 @@ export default function KundenListe({
       {nichtZugeordnete.length > 0 && (
         <div className="space-y-1.5 rounded-lg border border-dashed border-[var(--border-input)] p-3">
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-            Nicht zugeordnete Lizenzen ({nichtZugeordnete.length})
+            Nicht zugeordnete Lizenzen ({gefilterteNichtZugeordnete.length}/{nichtZugeordnete.length})
           </p>
           {zeigeArchivierte && (
             <p className="text-xs text-[var(--text-faint)]">
               Zum Zuweisen erst zu "Aktive" wechseln.
             </p>
           )}
+          <input
+            type="text"
+            value={filterDongleNummer}
+            onChange={(e) => setFilterDongleNummer(e.target.value)}
+            placeholder="Nach Seriennummer filtern…"
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-strong)]"
+          />
+          {gefilterteNichtZugeordnete.length === 0 && (
+            <p className="text-xs text-[var(--text-faint)]">Keine Treffer für diesen Filter.</p>
+          )}
           <div className="space-y-1.5">
-            {nichtZugeordnete.map((d) => (
+            {gefilterteNichtZugeordnete.map((d) => (
               <div
                 key={d.id}
                 className="flex flex-wrap items-center gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5"
@@ -507,15 +526,25 @@ export default function KundenListe({
       {nichtZugeordneteVertraege.length > 0 && (
         <div className="space-y-1.5 rounded-lg border border-dashed border-[var(--border-input)] p-3">
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-            Nicht zugeordnete Lizenzverträge ({nichtZugeordneteVertraege.length})
+            Nicht zugeordnete Lizenzverträge ({gefilterteNichtZugeordneteVertraege.length}/{nichtZugeordneteVertraege.length})
           </p>
           {zeigeArchivierte && (
             <p className="text-xs text-[var(--text-faint)]">
               Zum Zuweisen erst zu "Aktive" wechseln.
             </p>
           )}
+          <input
+            type="text"
+            value={filterVertragNummer}
+            onChange={(e) => setFilterVertragNummer(e.target.value)}
+            placeholder="Nach Seriennummer filtern…"
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-strong)]"
+          />
+          {gefilterteNichtZugeordneteVertraege.length === 0 && (
+            <p className="text-xs text-[var(--text-faint)]">Keine Treffer für diesen Filter.</p>
+          )}
           <div className="space-y-1.5">
-            {nichtZugeordneteVertraege.map((v) => (
+            {gefilterteNichtZugeordneteVertraege.map((v) => (
               <div
                 key={v.id}
                 className="flex flex-wrap items-center gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5"
