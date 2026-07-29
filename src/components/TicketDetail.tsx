@@ -34,6 +34,7 @@ interface Ticket {
   organisation_id: string;
   kunde_id: string;
   zugewiesen_an: string | null;
+  dongle_id: string | null;
   reaktion_faellig_am: string | null;
   loesung_faellig_am: string | null;
   erste_antwort_am: string | null;
@@ -60,6 +61,12 @@ interface Techniker {
   name: string | null;
   avatar_url: string | null;
   verfuegbarkeit: string;
+}
+
+interface Dongle {
+  id: string;
+  seriennummer: string;
+  software: string;
 }
 
 function formatDatum(iso: string): string {
@@ -97,6 +104,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [nachrichten, setNachrichten] = useState<Nachricht[]>([]);
   const [techniker, setTechniker] = useState<Techniker[]>([]);
+  const [dongles, setDongles] = useState<Dongle[]>([]);
   const [ticketTags, setTicketTags] = useState<Tag[]>([]);
   const [alleTags, setAlleTags] = useState<Tag[]>([]);
   const [makros, setMakros] = useState<Makro[]>([]);
@@ -177,8 +185,18 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
       await ladeTechniker(ticketDaten.organisation_id);
       await ladeTagsUndMakros(ticketDaten.organisation_id);
       await ladeTicketTags();
+      await ladeDongles(ticketDaten.kunde_id);
     }
     markiereGelesen();
+  }
+
+  async function ladeDongles(kundeId: string) {
+    const { data } = await supabase
+      .from("kunden_dongles")
+      .select("id, seriennummer, software")
+      .eq("kunde_id", kundeId)
+      .order("seriennummer");
+    setDongles((data as Dongle[]) ?? []);
   }
 
   async function ladeTagsUndMakros(organisationId: string) {
@@ -291,6 +309,14 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
       .update({ zugewiesen_an: zugewiesenAn || null })
       .eq("id", ticketId);
     setTicket((t) => (t ? { ...t, zugewiesen_an: zugewiesenAn || null } : t));
+  }
+
+  async function dongleZuweisen(dongleId: string) {
+    await supabase
+      .from("tickets")
+      .update({ dongle_id: dongleId || null })
+      .eq("id", ticketId);
+    setTicket((t) => (t ? { ...t, dongle_id: dongleId || null } : t));
   }
 
   async function notizSenden() {
@@ -409,6 +435,22 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
               </option>
             ))}
           </select>
+
+          {dongles.length > 0 && (
+            <select
+              value={ticket.dongle_id ?? ""}
+              onChange={(e) => dongleZuweisen(e.target.value)}
+              title="Dongle / Lizenz"
+              className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-2 py-1.5 text-sm"
+            >
+              <option value="">Kein Dongle zugeordnet</option>
+              {dongles.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.seriennummer} ({d.software})
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         {/* Zusammenführen */}

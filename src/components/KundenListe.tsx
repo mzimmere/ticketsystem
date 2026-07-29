@@ -4,6 +4,8 @@ import { sichererDateiname } from "../lib/dateiname";
 import { LAENDER_MWST, LAENDER_LISTE } from "../lib/laender";
 import Avatar from "./Avatar";
 import ZugangsdatenBox from "./ZugangsdatenBox";
+import DongleVerwaltung from "./DongleVerwaltung";
+import DongleImport from "./DongleImport";
 
 interface Kunde {
   id: string;
@@ -36,6 +38,19 @@ interface Dokument {
   erstellt_am: string;
 }
 
+interface Todo {
+  id: string;
+  text: string;
+  erledigt: boolean;
+}
+
+interface NichtZugeordneterDongle {
+  id: string;
+  seriennummer: string;
+  software: string;
+  gruppe: string | null;
+}
+
 interface KundenListeProps {
   organisationId: string;
   refreshKey?: number;
@@ -62,6 +77,10 @@ export default function KundenListe({
   const [neuesPreisDatum, setNeuesPreisDatum] = useState("");
   const [neuerPreisEuro, setNeuerPreisEuro] = useState("");
   const [dokumente, setDokumente] = useState<Dokument[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [neuesTodo, setNeuesTodo] = useState("");
+  const [nichtZugeordnete, setNichtZugeordnete] = useState<NichtZugeordneterDongle[]>([]);
+  const [zuweisenAn, setZuweisenAn] = useState<Record<string, string>>({});
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
   const [neuerZugang, setNeuerZugang] = useState<{
@@ -74,6 +93,33 @@ export default function KundenListe({
     ladeKunden();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organisationId, refreshKey, zeigeArchivierte]);
+
+  useEffect(() => {
+    ladeNichtZugeordnete();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organisationId, refreshKey]);
+
+  async function ladeNichtZugeordnete() {
+    const { data } = await supabase
+      .from("kunden_dongles")
+      .select("id, seriennummer, software, gruppe")
+      .eq("organisation_id", organisationId)
+      .is("kunde_id", null)
+      .order("seriennummer");
+    setNichtZugeordnete((data as NichtZugeordneterDongle[]) ?? []);
+  }
+
+  async function dongleZuweisen(dongleId: string) {
+    const kundeId = zuweisenAn[dongleId];
+    if (!kundeId) return;
+    await supabase.from("kunden_dongles").update({ kunde_id: kundeId }).eq("id", dongleId);
+    setZuweisenAn((z) => {
+      const kopie = { ...z };
+      delete kopie[dongleId];
+      return kopie;
+    });
+    ladeNichtZugeordnete();
+  }
 
   async function ladeKunden() {
     const { data, error } = await supabase
@@ -124,14 +170,56 @@ export default function KundenListe({
     setPreise((data as KundenPreis[]) ?? []);
   }
 
+  async function ladeTodos(kundeId: string) {
+    const { data } = await supabase
+      .from("kunden_todos")
+      .select("id, text, erledigt")
+      .eq("kunde_id", kundeId)
+      .order("erledigt", { ascending: true })
+      .order("reihenfolge", { ascending: true })
+      .order("erstellt_am", { ascending: true });
+    setTodos((data as Todo[]) ?? []);
+  }
+
+  async function todoHinzufuegen(kundeId: string) {
+    if (!neuesTodo.trim()) return;
+    const { error } = await supabase.from("kunden_todos").insert({
+      organisation_id: organisationId,
+      kunde_id: kundeId,
+      text: neuesTodo.trim(),
+    });
+    if (error) {
+      console.error(error);
+      setHinweis("Todo konnte nicht hinzugefügt werden.");
+      return;
+    }
+    setNeuesTodo("");
+    ladeTodos(kundeId);
+  }
+
+  async function todoAbhaken(todoId: string, erledigt: boolean, kundeId: string) {
+    await supabase
+      .from("kunden_todos")
+      .update({ erledigt, erledigt_am: erledigt ? new Date().toISOString() : null })
+      .eq("id", todoId);
+    ladeTodos(kundeId);
+  }
+
+  async function todoLoeschen(todoId: string, kundeId: string) {
+    await supabase.from("kunden_todos").delete().eq("id", todoId);
+    ladeTodos(kundeId);
+  }
+
   function bearbeitenOeffnen(k: Kunde) {
     setOffenId(k.id);
     setEntwurf(k);
     setNeuesPreisDatum(new Date().toISOString().slice(0, 10));
     setNeuerPreisEuro("");
+    setNeuesTodo("");
     setHinweis(null);
     ladeDokumente(k.id);
     ladePreise(k.id);
+    ladeTodos(k.id);
   }
 
   async function preisHinzufuegen(kundeId: string) {
@@ -314,6 +402,56 @@ export default function KundenListe({
           {zeigeArchivierte ? "← Aktive" : "Archiv"}
         </button>
       </div>
+
+      <DongleImport organisationId={organisationId} onImportiert={ladeNichtZugeordnete} />
+
+      {nichtZugeordnete.length > 0 && (
+        <div className="space-y-1.5 rounded-lg border border-dashed border-[var(--border-input)] p-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
+            Nicht zugeordnete Lizenzen ({nichtZugeordnete.length})
+          </p>
+          {zeigeArchivierte && (
+            <p className="text-xs text-[var(--text-faint)]">
+              Zum Zuweisen erst zu "Aktive" wechseln.
+            </p>
+          )}
+          <div className="space-y-1.5">
+            {nichtZugeordnete.map((d) => (
+              <div
+                key={d.id}
+                className="flex flex-wrap items-center gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5"
+              >
+                <span className="font-mono text-xs text-[var(--text-strong)]">{d.seriennummer}</span>
+                <span className="text-xs text-[var(--text-faint)]">· {d.software}</span>
+                {d.gruppe && <span className="text-xs text-[var(--text-faint)]">({d.gruppe})</span>}
+                {!zeigeArchivierte && (
+                  <div className="ml-auto flex items-center gap-1.5">
+                    <select
+                      value={zuweisenAn[d.id] ?? ""}
+                      onChange={(e) => setZuweisenAn((z) => ({ ...z, [d.id]: e.target.value }))}
+                      className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1 text-xs text-[var(--text-strong)]"
+                    >
+                      <option value="">Kunde wählen…</option>
+                      {kunden.map((k) => (
+                        <option key={k.id} value={k.id}>
+                          {k.name ?? "Unbenannt"}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => dongleZuweisen(d.id)}
+                      disabled={!zuweisenAn[d.id]}
+                      className="shrink-0 rounded bg-akzent px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
+                    >
+                      Zuweisen
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {gefilterteKunden.length === 0 ? (
         <p className="text-sm text-[var(--text-faint)]">
@@ -629,6 +767,69 @@ export default function KundenListe({
                     }
                   />
                 </label>
+              </div>
+
+              <div className="border-t border-[var(--border)] pt-3">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
+                  Todo-Liste
+                </p>
+
+                {todos.length > 0 && (
+                  <div className="mb-2 space-y-1">
+                    {todos.map((t) => (
+                      <label
+                        key={t.id}
+                        className="flex items-center gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={t.erledigt}
+                          onChange={(e) => todoAbhaken(t.id, e.target.checked, k.id)}
+                          className="accent-akzent"
+                        />
+                        <span
+                          className={`flex-1 text-sm ${
+                            t.erledigt
+                              ? "text-[var(--text-faint)] line-through"
+                              : "text-[var(--text-strong)]"
+                          }`}
+                        >
+                          {t.text}
+                        </span>
+                        <button
+                          onClick={() => todoLoeschen(t.id, k.id)}
+                          className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
+                        >
+                          Löschen
+                        </button>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={neuesTodo}
+                    onChange={(e) => setNeuesTodo(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && todoHinzufuegen(k.id)}
+                    placeholder="Neues Todo…"
+                    className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                  />
+                  <button
+                    onClick={() => todoHinzufuegen(k.id)}
+                    className="rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="border-t border-[var(--border)] pt-3">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
+                  Dongles / Lizenzen
+                </p>
+                <DongleVerwaltung kundeId={k.id} organisationId={organisationId} />
               </div>
 
               {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}

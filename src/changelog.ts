@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-29", titel: "Kunden-Todoliste, Dongle-/Lizenzverwaltung (Wartungsvertrag, Freiminuten, Software-Module) mit Zuordnung bei Ticketerstellung sowie exocad-CSV-Import (anpassbares Spalten-Mapping, Nicht-zugeordnet-Pool)" },
   { datum: "2026-07-23", titel: "WhatsApp: optionales App-Secret-Feld – Server-Aufrufe schicken jetzt appsecret_proof mit, falls Meta „App-Secret-Proof erforderlich“ aktiviert hat" },
   { datum: "2026-07-23", titel: "Fix: WhatsApp-Webhook war nicht ausgerollt und prüfte den Verify-Token global statt pro Firma – jetzt mandantenfähig (Verify-Token und Access-Token je Firma aus der App)" },
   { datum: "2026-07-23", titel: "WhatsApp-Einrichtungsanleitung an Metas neue Konsole angepasst (Anwendungsfall → Schritt 2: Produktionseinrichtung statt der alten „API Setup“-Seite)" },

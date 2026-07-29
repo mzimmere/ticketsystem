@@ -2101,3 +2101,176 @@ alter table profiles add constraint profiles_standard_ticket_filter_check
 -- mitschicken (siehe whatsapp-webhook + whatsapp-verbindung-testen).
 -- ============================================================
 alter table organisationen add column if not exists whatsapp_app_secret text;
+
+-- ============================================================
+-- 52. Todo-Liste pro Kunde (abhakbar)
+-- ============================================================
+create table kunden_todos (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  kunde_id uuid not null references profiles(id) on delete cascade,
+  text text not null,
+  erledigt boolean not null default false,
+  erledigt_am timestamptz,
+  reihenfolge integer not null default 0,
+  erstellt_am timestamptz default now()
+);
+create index idx_kunden_todos_kunde on kunden_todos(kunde_id);
+alter table kunden_todos enable row level security;
+
+create policy kunden_todos_select on kunden_todos for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy kunden_todos_insert on kunden_todos for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy kunden_todos_update on kunden_todos for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy kunden_todos_delete on kunden_todos for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+-- ============================================================
+-- 53. Dongles/Lizenzen pro Kunde (Seriennummer, Software,
+-- Wartungsvertrag, Ticket-Freiminuten/Monat). kunde_id nullable =
+-- "nicht zugeordnet"-Pool (z.B. frisch importierte Dongles, deren
+-- Kunde noch nicht per Klick zugewiesen wurde).
+-- ============================================================
+create table kunden_dongles (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  kunde_id uuid references profiles(id) on delete set null,
+  seriennummer text not null,
+  software text not null default 'exocad',
+  wartungsvertrag text not null default 'nicht_gewuenscht'
+    check (wartungsvertrag in ('aktiv', 'inaktiv', 'nicht_gewuenscht')),
+  freiminuten_pro_monat integer not null default 0,
+  gruppe text,
+  liefer_datum date,
+  notiz text,
+  erstellt_am timestamptz default now(),
+  unique (organisation_id, seriennummer)
+);
+create index idx_kunden_dongles_kunde on kunden_dongles(kunde_id);
+create index idx_kunden_dongles_org on kunden_dongles(organisation_id);
+alter table kunden_dongles enable row level security;
+
+create policy kunden_dongles_select on kunden_dongles for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy kunden_dongles_insert on kunden_dongles for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy kunden_dongles_update on kunden_dongles for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy kunden_dongles_delete on kunden_dongles for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+-- ============================================================
+-- 54. Software-Module pro Dongle (rein visuell aktiv/inaktiv, um
+-- festzuhalten was der Kunde tatsaechlich gekauft/aktiviert hat).
+-- Keine eigene organisation_id -> Absicherung ueber den Dongle.
+-- ============================================================
+create table dongle_module (
+  id uuid primary key default gen_random_uuid(),
+  dongle_id uuid not null references kunden_dongles(id) on delete cascade,
+  name text not null,
+  aktiv boolean not null default true,
+  activation_key text,
+  article_number text,
+  liefer_datum date,
+  erstellt_am timestamptz default now(),
+  unique (dongle_id, name)
+);
+create index idx_dongle_module_dongle on dongle_module(dongle_id);
+alter table dongle_module enable row level security;
+
+create policy dongle_module_select on dongle_module for select
+  using (
+    exists (
+      select 1 from kunden_dongles d
+      where d.id = dongle_module.dongle_id
+        and (
+          current_user_rolle() = 'super_admin'
+          or (d.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+          or hat_firmenzugriff(d.organisation_id, array['org_admin', 'techniker']::user_rolle[])
+        )
+    )
+  );
+
+create policy dongle_module_insert on dongle_module for insert
+  with check (
+    exists (
+      select 1 from kunden_dongles d
+      where d.id = dongle_module.dongle_id
+        and (
+          current_user_rolle() = 'super_admin'
+          or (d.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+          or hat_firmenzugriff(d.organisation_id, array['org_admin', 'techniker']::user_rolle[])
+        )
+    )
+  );
+
+create policy dongle_module_update on dongle_module for update
+  using (
+    exists (
+      select 1 from kunden_dongles d
+      where d.id = dongle_module.dongle_id
+        and (
+          current_user_rolle() = 'super_admin'
+          or (d.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+          or hat_firmenzugriff(d.organisation_id, array['org_admin', 'techniker']::user_rolle[])
+        )
+    )
+  );
+
+create policy dongle_module_delete on dongle_module for delete
+  using (
+    exists (
+      select 1 from kunden_dongles d
+      where d.id = dongle_module.dongle_id
+        and (
+          current_user_rolle() = 'super_admin'
+          or (d.organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+          or hat_firmenzugriff(d.organisation_id, array['org_admin', 'techniker']::user_rolle[])
+        )
+    )
+  );
+
+-- ============================================================
+-- 55. Optionale Dongle-Zuordnung bei Ticketerstellung (kein Pflichtfeld).
+-- ============================================================
+alter table tickets add column if not exists dongle_id uuid references kunden_dongles(id);

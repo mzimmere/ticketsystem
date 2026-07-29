@@ -10,6 +10,12 @@ interface Techniker {
   name: string | null;
 }
 
+interface Dongle {
+  id: string;
+  seriennummer: string;
+  software: string;
+}
+
 interface NeuesTicketInternProps {
   organisationId: string;
   technikerId: string;
@@ -25,6 +31,8 @@ export default function NeuesTicketIntern({
 }: NeuesTicketInternProps) {
   const [techniker, setTechniker] = useState<Techniker[]>([]);
   const [kundeId, setKundeId] = useState("");
+  const [dongles, setDongles] = useState<Dongle[]>([]);
+  const [dongleId, setDongleId] = useState("");
   const [zugewiesenAn, setZugewiesenAn] = useState(technikerId);
   const [titel, setTitel] = useState("");
   const [beschreibung, setBeschreibung] = useState("");
@@ -52,6 +60,20 @@ export default function NeuesTicketIntern({
       .then(({ data }) => setVorlagen((data as typeof vorlagen) ?? []));
   }, [organisationId]);
 
+  useEffect(() => {
+    setDongleId("");
+    if (!kundeId) {
+      setDongles([]);
+      return;
+    }
+    supabase
+      .from("kunden_dongles")
+      .select("id, seriennummer, software")
+      .eq("kunde_id", kundeId)
+      .order("seriennummer")
+      .then(({ data }) => setDongles((data as Dongle[]) ?? []));
+  }, [kundeId]);
+
   async function absenden() {
     if (!kundeId || !titel.trim()) {
       setFehler("Bitte Kunde und Titel angeben.");
@@ -69,6 +91,7 @@ export default function NeuesTicketIntern({
           prioritaet,
           quelle: "manuell",
           zugewiesen_an: zugewiesenAn || null,
+          dongle_id: dongleId || null,
         })
         .select("id")
         .single();
@@ -101,6 +124,29 @@ export default function NeuesTicketIntern({
         <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Kunde</label>
         <KundenAuswahl organisationId={organisationId} value={kundeId} onChange={setKundeId} />
       </div>
+
+      {kundeId && dongles.length > 0 && (
+        <div>
+          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+            Dongle / Lizenz <span className="font-normal text-[var(--text-faint)]">(optional)</span>
+          </label>
+          <select
+            value={dongleId}
+            onChange={(e) => setDongleId(e.target.value)}
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+          >
+            <option value="">Kein Dongle zugeordnet</option>
+            {dongles.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.seriennummer} ({d.software})
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-[var(--text-faint)]">
+            Hilft später bei der Abrechnung (Freiminuten pro Lizenz).
+          </p>
+        </div>
+      )}
 
       {vorlagen.length > 0 && (
         <div>
