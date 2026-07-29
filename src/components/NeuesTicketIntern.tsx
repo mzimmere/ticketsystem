@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useUngespeichertWarnung } from "../lib/useUngespeichertWarnung";
 import KundenAuswahl from "./KundenAuswahl";
+import KundenTodoListe from "./KundenTodoListe";
 
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
 
@@ -124,6 +125,10 @@ export default function NeuesTicketIntern({
         <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Kunde</label>
         <KundenAuswahl organisationId={organisationId} value={kundeId} onChange={setKundeId} />
       </div>
+
+      {kundeId && (
+        <KundenTodoListe kundeId={kundeId} organisationId={organisationId} modus="kompakt" />
+      )}
 
       {kundeId && dongles.length > 0 && (
         <div>

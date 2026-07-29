@@ -9,6 +9,7 @@ import Avatar from "./Avatar";
 import StatusBadge from "./StatusBadge";
 import TicketMerge from "./TicketMerge";
 import KiAssistent from "./KiAssistent";
+import KundenTodoListe from "./KundenTodoListe";
 
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
@@ -636,6 +637,17 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
         </div>
 
         <div className="space-y-5 lg:sticky lg:top-4">
+          <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
+            <h3 className="mb-2 text-sm font-medium text-[var(--text-strong)]">
+              Todo-Liste dieses Kunden
+            </h3>
+            <KundenTodoListe
+              kundeId={ticket.kunde_id}
+              organisationId={ticket.organisation_id}
+              modus="voll"
+            />
+          </div>
+
           <KiAssistent
             ticketId={ticket.id}
             onAntwortVorschlag={(text) => setNeueNotiz((prev) => prev ? prev + "\n\n" + text : text)}

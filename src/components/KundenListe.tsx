@@ -6,6 +6,7 @@ import Avatar from "./Avatar";
 import ZugangsdatenBox from "./ZugangsdatenBox";
 import DongleVerwaltung from "./DongleVerwaltung";
 import DongleImport from "./DongleImport";
+import KundenTodoListe from "./KundenTodoListe";
 
 interface Kunde {
   id: string;
@@ -36,12 +37,6 @@ interface Dokument {
   storage_path: string;
   dateiname: string;
   erstellt_am: string;
-}
-
-interface Todo {
-  id: string;
-  text: string;
-  erledigt: boolean;
 }
 
 interface NichtZugeordneterDongle {
@@ -94,8 +89,6 @@ export default function KundenListe({
   const [neuesPreisDatum, setNeuesPreisDatum] = useState("");
   const [neuerPreisEuro, setNeuerPreisEuro] = useState("");
   const [dokumente, setDokumente] = useState<Dokument[]>([]);
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [neuesTodo, setNeuesTodo] = useState("");
   const [nichtZugeordnete, setNichtZugeordnete] = useState<NichtZugeordneterDongle[]>([]);
   const [zuweisenAn, setZuweisenAn] = useState<Record<string, string>>({});
   const [vertraege, setVertraege] = useState<LizenzVertrag[]>([]);
@@ -217,46 +210,6 @@ export default function KundenListe({
     setPreise((data as KundenPreis[]) ?? []);
   }
 
-  async function ladeTodos(kundeId: string) {
-    const { data } = await supabase
-      .from("kunden_todos")
-      .select("id, text, erledigt")
-      .eq("kunde_id", kundeId)
-      .order("erledigt", { ascending: true })
-      .order("reihenfolge", { ascending: true })
-      .order("erstellt_am", { ascending: true });
-    setTodos((data as Todo[]) ?? []);
-  }
-
-  async function todoHinzufuegen(kundeId: string) {
-    if (!neuesTodo.trim()) return;
-    const { error } = await supabase.from("kunden_todos").insert({
-      organisation_id: organisationId,
-      kunde_id: kundeId,
-      text: neuesTodo.trim(),
-    });
-    if (error) {
-      console.error(error);
-      setHinweis("Todo konnte nicht hinzugefügt werden.");
-      return;
-    }
-    setNeuesTodo("");
-    ladeTodos(kundeId);
-  }
-
-  async function todoAbhaken(todoId: string, erledigt: boolean, kundeId: string) {
-    await supabase
-      .from("kunden_todos")
-      .update({ erledigt, erledigt_am: erledigt ? new Date().toISOString() : null })
-      .eq("id", todoId);
-    ladeTodos(kundeId);
-  }
-
-  async function todoLoeschen(todoId: string, kundeId: string) {
-    await supabase.from("kunden_todos").delete().eq("id", todoId);
-    ladeTodos(kundeId);
-  }
-
   async function ladeVertraege(kundeId: string) {
     const { data } = await supabase
       .from("lizenz_vertraege")
@@ -271,11 +224,9 @@ export default function KundenListe({
     setEntwurf(k);
     setNeuesPreisDatum(new Date().toISOString().slice(0, 10));
     setNeuerPreisEuro("");
-    setNeuesTodo("");
     setHinweis(null);
     ladeDokumente(k.id);
     ladePreise(k.id);
-    ladeTodos(k.id);
     ladeVertraege(k.id);
   }
 
@@ -935,56 +886,7 @@ export default function KundenListe({
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
                   Todo-Liste
                 </p>
-
-                {todos.length > 0 && (
-                  <div className="mb-2 space-y-1">
-                    {todos.map((t) => (
-                      <label
-                        key={t.id}
-                        className="flex items-center gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={t.erledigt}
-                          onChange={(e) => todoAbhaken(t.id, e.target.checked, k.id)}
-                          className="accent-akzent"
-                        />
-                        <span
-                          className={`flex-1 text-sm ${
-                            t.erledigt
-                              ? "text-[var(--text-faint)] line-through"
-                              : "text-[var(--text-strong)]"
-                          }`}
-                        >
-                          {t.text}
-                        </span>
-                        <button
-                          onClick={() => todoLoeschen(t.id, k.id)}
-                          className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
-                        >
-                          Löschen
-                        </button>
-                      </label>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={neuesTodo}
-                    onChange={(e) => setNeuesTodo(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && todoHinzufuegen(k.id)}
-                    placeholder="Neues Todo…"
-                    className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                  />
-                  <button
-                    onClick={() => todoHinzufuegen(k.id)}
-                    className="rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white"
-                  >
-                    +
-                  </button>
-                </div>
+                <KundenTodoListe kundeId={k.id} organisationId={organisationId} modus="voll" />
               </div>
 
               <div className="border-t border-[var(--border)] pt-3">

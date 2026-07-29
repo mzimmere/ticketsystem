@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-29", titel: "Kunden-Todo-Liste jetzt auch bei der Ticketerstellung (kurze Übersicht offener Punkte) und direkt im Ticket (volle Liste mit Abhaken/Hinzufügen) sichtbar" },
   { datum: "2026-07-29", titel: "Lizenz-Ablauf-Erinnerung: Empfänger jetzt auf eine feste E-Mail-Adresse einstellbar (z.B. Support-Postfach) statt zwingend an alle Org-Admins – Kunden werden weiterhin nie kontaktiert" },
   { datum: "2026-07-29", titel: "Kundenliste: Nicht-zugeordnet-Pools (Dongles/Lizenzverträge) jetzt ebenfalls standardmäßig eingeklappt (5 Zeilen) statt komplett angezeigt; Dongle löschen fragt jetzt vorher nach Bestätigung" },
   { datum: "2026-07-29", titel: "Fix: Dongle-Löschung schlug fehl, wenn ein Ticket ihn referenzierte (fehlendes ON DELETE) – Ticket bleibt jetzt erhalten, verliert nur den Dongle-Link" },
