@@ -62,6 +62,17 @@ interface NichtZugeordneterVertrag {
   vertrag_ende: string | null;
 }
 
+interface HardwareKategorie {
+  id: string;
+  name: string;
+}
+
+interface HardwareEintrag {
+  kunde_id: string;
+  kategorie_id: string;
+  wert: string;
+}
+
 interface KundenListeProps {
   organisationId: string;
   refreshKey?: number;
@@ -72,6 +83,7 @@ interface KundenListeProps {
 }
 
 const ANZAHL_STANDARD_SICHTBAR = 5;
+const KUNDEN_STANDARD_SICHTBAR = 10;
 
 export default function KundenListe({
   organisationId,
@@ -99,6 +111,11 @@ export default function KundenListe({
   const [filterVertragNummer, setFilterVertragNummer] = useState("");
   const [alleDonglesAnzeigen, setAlleDonglesAnzeigen] = useState(false);
   const [alleVertraegeAnzeigen, setAlleVertraegeAnzeigen] = useState(false);
+  const [alleKundenAnzeigen, setAlleKundenAnzeigen] = useState(false);
+  const [hardwareKategorien, setHardwareKategorien] = useState<HardwareKategorie[]>([]);
+  const [hardwareEintraege, setHardwareEintraege] = useState<HardwareEintrag[]>([]);
+  const [filterKategorieId, setFilterKategorieId] = useState("");
+  const [filterWert, setFilterWert] = useState("");
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
   const [neuerZugang, setNeuerZugang] = useState<{
@@ -115,8 +132,18 @@ export default function KundenListe({
   useEffect(() => {
     ladeNichtZugeordnete();
     ladeNichtZugeordneteVertraege();
+    ladeHardwareFilter();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organisationId, refreshKey]);
+
+  async function ladeHardwareFilter() {
+    const [{ data: katDaten }, { data: eintragDaten }] = await Promise.all([
+      supabase.from("hardware_kategorien").select("id, name").eq("organisation_id", organisationId).order("name"),
+      supabase.from("kunden_hardware").select("kunde_id, kategorie_id, wert").eq("organisation_id", organisationId),
+    ]);
+    setHardwareKategorien((katDaten as HardwareKategorie[]) ?? []);
+    setHardwareEintraege((eintragDaten as HardwareEintrag[]) ?? []);
+  }
 
   async function ladeNichtZugeordnete() {
     const { data } = await supabase
@@ -386,13 +413,39 @@ export default function KundenListe({
     }
   }
 
+  const hardwareWertOptionen = filterKategorieId
+    ? Array.from(
+        new Set(
+          hardwareEintraege
+            .filter((e) => e.kategorie_id === filterKategorieId)
+            .map((e) => e.wert),
+        ),
+      ).sort()
+    : [];
+  const hardwareGefilterteKundenIds =
+    filterKategorieId && filterWert
+      ? new Set(
+          hardwareEintraege
+            .filter((e) => e.kategorie_id === filterKategorieId && e.wert === filterWert)
+            .map((e) => e.kunde_id),
+        )
+      : null;
+
   const gefilterteKunden = kunden.filter((k) => {
     const begriff = suchbegriff.trim().toLowerCase();
-    if (!begriff) return true;
-    return [k.name, k.telefonnummer, k.strasse, k.hausnummer, k.plz, k.ort]
-      .filter(Boolean)
-      .some((feld) => feld!.toLowerCase().includes(begriff));
+    if (begriff) {
+      const treffer = [k.name, k.telefonnummer, k.strasse, k.hausnummer, k.plz, k.ort]
+        .filter(Boolean)
+        .some((feld) => feld!.toLowerCase().includes(begriff));
+      if (!treffer) return false;
+    }
+    if (hardwareGefilterteKundenIds && !hardwareGefilterteKundenIds.has(k.id)) return false;
+    return true;
   });
+  const kundenSuchtAktiv = suchbegriff.trim() !== "" || (filterKategorieId !== "" && filterWert !== "");
+  const sichtbareKunden = kundenSuchtAktiv || alleKundenAnzeigen
+    ? gefilterteKunden
+    : gefilterteKunden.slice(0, KUNDEN_STANDARD_SICHTBAR);
 
   const gefilterteNichtZugeordnete = nichtZugeordnete.filter((d) =>
     d.seriennummer.toLowerCase().includes(filterDongleNummer.trim().toLowerCase()),
@@ -428,6 +481,51 @@ export default function KundenListe({
           {zeigeArchivierte ? "← Aktive" : "Archiv"}
         </button>
       </div>
+
+      {hardwareKategorien.length > 0 && (
+        <div className="flex items-center gap-2">
+          <select
+            value={filterKategorieId}
+            onChange={(e) => {
+              setFilterKategorieId(e.target.value);
+              setFilterWert("");
+            }}
+            className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1.5 text-xs text-[var(--text-strong)]"
+          >
+            <option value="">Nach Hardware filtern…</option>
+            {hardwareKategorien.map((k) => (
+              <option key={k.id} value={k.id}>
+                {k.name}
+              </option>
+            ))}
+          </select>
+          {filterKategorieId && (
+            <select
+              value={filterWert}
+              onChange={(e) => setFilterWert(e.target.value)}
+              className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1.5 text-xs text-[var(--text-strong)]"
+            >
+              <option value="">Wert wählen…</option>
+              {hardwareWertOptionen.map((w) => (
+                <option key={w} value={w}>
+                  {w}
+                </option>
+              ))}
+            </select>
+          )}
+          {(filterKategorieId || filterWert) && (
+            <button
+              onClick={() => {
+                setFilterKategorieId("");
+                setFilterWert("");
+              }}
+              className="shrink-0 text-xs text-[var(--text-faint)] hover:underline"
+            >
+              Zurücksetzen
+            </button>
+          )}
+        </div>
+      )}
 
       <DongleImport organisationId={organisationId} onImportiert={ladeNichtZugeordnete} />
 
@@ -576,7 +674,7 @@ export default function KundenListe({
             : "Keine Treffer für diese Suche."}
         </p>
       ) : (
-        gefilterteKunden.map((k) => (
+        sichtbareKunden.map((k) => (
         <div
           key={k.id}
           className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-surface)]"
@@ -990,6 +1088,15 @@ export default function KundenListe({
           )}
         </div>
         ))
+      )}
+
+      {!kundenSuchtAktiv && gefilterteKunden.length > KUNDEN_STANDARD_SICHTBAR && (
+        <button
+          onClick={() => setAlleKundenAnzeigen((v) => !v)}
+          className="w-full rounded border border-[var(--border-input)] px-3 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+        >
+          {alleKundenAnzeigen ? "Weniger anzeigen" : `Alle ${gefilterteKunden.length} anzeigen`}
+        </button>
       )}
     </div>
   );
