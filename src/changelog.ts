@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-29", titel: "Kundenliste: Nicht-zugeordnet-Pools (Dongles/Lizenzverträge) jetzt ebenfalls standardmäßig eingeklappt (5 Zeilen) statt komplett angezeigt; Dongle löschen fragt jetzt vorher nach Bestätigung" },
   { datum: "2026-07-29", titel: "Fix: Dongle-Löschung schlug fehl, wenn ein Ticket ihn referenzierte (fehlendes ON DELETE) – Ticket bleibt jetzt erhalten, verliert nur den Dongle-Link" },
   { datum: "2026-07-29", titel: "Dongle-Verwaltung: Liste pro Kunde jetzt suchbar und standardmäßig eingeklappt (3 Zeilen), Lizenzvertrag (Laufzeit/Ablauf) kann pro Dongle verknüpft und direkt in der Zeile eingesehen werden" },
   { datum: "2026-07-29", titel: "Kundenliste: Nicht zugeordnete Dongles/Lizenzverträge lassen sich jetzt nach Seriennummer filtern (praktisch bei großen Portal-Importen)" },

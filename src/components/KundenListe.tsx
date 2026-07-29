@@ -75,6 +75,8 @@ interface KundenListeProps {
   onlineIds?: Set<string>;
 }
 
+const ANZAHL_STANDARD_SICHTBAR = 5;
+
 export default function KundenListe({
   organisationId,
   refreshKey,
@@ -101,6 +103,8 @@ export default function KundenListe({
   const [zuweisenAnVertrag, setZuweisenAnVertrag] = useState<Record<string, string>>({});
   const [filterDongleNummer, setFilterDongleNummer] = useState("");
   const [filterVertragNummer, setFilterVertragNummer] = useState("");
+  const [alleDonglesAnzeigen, setAlleDonglesAnzeigen] = useState(false);
+  const [alleVertraegeAnzeigen, setAlleVertraegeAnzeigen] = useState(false);
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
   const [neuerZugang, setNeuerZugang] = useState<{
@@ -444,6 +448,16 @@ export default function KundenListe({
   const gefilterteNichtZugeordneteVertraege = nichtZugeordneteVertraege.filter((v) =>
     v.lizenz_seriennummer.toLowerCase().includes(filterVertragNummer.trim().toLowerCase()),
   );
+  const dongleSuchtAktiv = filterDongleNummer.trim() !== "";
+  const sichtbareNichtZugeordnete =
+    dongleSuchtAktiv || alleDonglesAnzeigen
+      ? gefilterteNichtZugeordnete
+      : gefilterteNichtZugeordnete.slice(0, ANZAHL_STANDARD_SICHTBAR);
+  const vertragSuchtAktiv = filterVertragNummer.trim() !== "";
+  const sichtbareNichtZugeordneteVertraege =
+    vertragSuchtAktiv || alleVertraegeAnzeigen
+      ? gefilterteNichtZugeordneteVertraege
+      : gefilterteNichtZugeordneteVertraege.slice(0, ANZAHL_STANDARD_SICHTBAR);
 
   return (
     <div className="space-y-2">
@@ -486,7 +500,7 @@ export default function KundenListe({
             <p className="text-xs text-[var(--text-faint)]">Keine Treffer für diesen Filter.</p>
           )}
           <div className="space-y-1.5">
-            {gefilterteNichtZugeordnete.map((d) => (
+            {sichtbareNichtZugeordnete.map((d) => (
               <div
                 key={d.id}
                 className="flex flex-wrap items-center gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5"
@@ -520,6 +534,14 @@ export default function KundenListe({
               </div>
             ))}
           </div>
+          {!dongleSuchtAktiv && gefilterteNichtZugeordnete.length > ANZAHL_STANDARD_SICHTBAR && (
+            <button
+              onClick={() => setAlleDonglesAnzeigen((v) => !v)}
+              className="w-full rounded border border-[var(--border-input)] px-3 py-1.5 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+            >
+              {alleDonglesAnzeigen ? "Weniger anzeigen" : `Alle ${gefilterteNichtZugeordnete.length} anzeigen`}
+            </button>
+          )}
         </div>
       )}
 
@@ -544,7 +566,7 @@ export default function KundenListe({
             <p className="text-xs text-[var(--text-faint)]">Keine Treffer für diesen Filter.</p>
           )}
           <div className="space-y-1.5">
-            {gefilterteNichtZugeordneteVertraege.map((v) => (
+            {sichtbareNichtZugeordneteVertraege.map((v) => (
               <div
                 key={v.id}
                 className="flex flex-wrap items-center gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5"
@@ -582,6 +604,14 @@ export default function KundenListe({
               </div>
             ))}
           </div>
+          {!vertragSuchtAktiv && gefilterteNichtZugeordneteVertraege.length > ANZAHL_STANDARD_SICHTBAR && (
+            <button
+              onClick={() => setAlleVertraegeAnzeigen((v) => !v)}
+              className="w-full rounded border border-[var(--border-input)] px-3 py-1.5 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+            >
+              {alleVertraegeAnzeigen ? "Weniger anzeigen" : `Alle ${gefilterteNichtZugeordneteVertraege.length} anzeigen`}
+            </button>
+          )}
         </div>
       )}
 

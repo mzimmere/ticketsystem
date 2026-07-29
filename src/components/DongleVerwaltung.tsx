@@ -143,7 +143,10 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
     await supabase.from("kunden_dongles").update(patch).eq("id", id);
   }
 
-  async function dongleLoeschen(id: string) {
+  async function dongleLoeschen(id: string, seriennummer: string) {
+    if (!confirm(`Dongle "${seriennummer}" wirklich löschen? Zugehörige Module werden mitgelöscht, verknüpfte Tickets bleiben erhalten (verlieren nur den Link).`)) {
+      return;
+    }
     setHinweis(null);
     const { error } = await supabase.from("kunden_dongles").delete().eq("id", id);
     if (error) {
@@ -394,7 +397,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
               </div>
 
               <button
-                onClick={() => dongleLoeschen(d.id)}
+                onClick={() => dongleLoeschen(d.id, d.seriennummer)}
                 className="text-xs text-[var(--text-faint)] hover:text-red-600"
               >
                 Dongle löschen
