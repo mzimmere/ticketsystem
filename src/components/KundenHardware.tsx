@@ -12,8 +12,6 @@ interface Eintrag {
   wert: string;
 }
 
-const VORSCHLAEGE_MAX = 6;
-
 interface KundenHardwareProps {
   kundeId: string;
   organisationId: string;
@@ -22,7 +20,6 @@ interface KundenHardwareProps {
 export default function KundenHardware({ kundeId, organisationId }: KundenHardwareProps) {
   const [kategorien, setKategorien] = useState<Kategorie[]>([]);
   const [eintraege, setEintraege] = useState<Eintrag[]>([]);
-  const [vorschlaege, setVorschlaege] = useState<Map<string, string[]>>(new Map());
   const [neuerWert, setNeuerWert] = useState<Record<string, string>>({});
   const [hinweis, setHinweis] = useState<string | null>(null);
 
@@ -32,21 +29,12 @@ export default function KundenHardware({ kundeId, organisationId }: KundenHardwa
   }, [organisationId, kundeId]);
 
   async function laden() {
-    const [{ data: katDaten }, { data: eintragDaten }, { data: alleDaten }] = await Promise.all([
+    const [{ data: katDaten }, { data: eintragDaten }] = await Promise.all([
       supabase.from("hardware_kategorien").select("id, name").eq("organisation_id", organisationId).order("name"),
       supabase.from("kunden_hardware").select("id, kategorie_id, wert").eq("kunde_id", kundeId),
-      supabase.from("kunden_hardware").select("kategorie_id, wert").eq("organisation_id", organisationId),
     ]);
     setKategorien((katDaten as Kategorie[]) ?? []);
     setEintraege((eintragDaten as Eintrag[]) ?? []);
-
-    const karte = new Map<string, string[]>();
-    for (const e of (alleDaten as { kategorie_id: string; wert: string }[]) ?? []) {
-      const liste = karte.get(e.kategorie_id) ?? [];
-      if (!liste.includes(e.wert)) liste.push(e.wert);
-      karte.set(e.kategorie_id, liste);
-    }
-    setVorschlaege(karte);
   }
 
   async function wertHinzufuegen(kategorieId: string, wert: string) {
@@ -85,10 +73,6 @@ export default function KundenHardware({ kundeId, organisationId }: KundenHardwa
     <div className="space-y-3">
       {kategorien.map((k) => {
         const zugeordnet = eintraege.filter((e) => e.kategorie_id === k.id);
-        const zugeordneteWerte = new Set(zugeordnet.map((e) => e.wert));
-        const vorschlaegeFuerKategorie = (vorschlaege.get(k.id) ?? [])
-          .filter((w) => !zugeordneteWerte.has(w))
-          .slice(0, VORSCHLAEGE_MAX);
 
         return (
           <div key={k.id}>
@@ -104,15 +88,6 @@ export default function KundenHardware({ kundeId, organisationId }: KundenHardwa
                     ×
                   </button>
                 </span>
-              ))}
-              {vorschlaegeFuerKategorie.map((w) => (
-                <button
-                  key={w}
-                  onClick={() => wertHinzufuegen(k.id, w)}
-                  className="rounded-full border border-dashed border-[var(--border-input)] px-2.5 py-1 text-xs text-[var(--text-faint)] hover:bg-[var(--bg-muted)]"
-                >
-                  + {w}
-                </button>
               ))}
               <input
                 type="text"
