@@ -44,6 +44,22 @@ const WARTUNG_FARBE: Record<Wartungsvertrag, string> = {
   nicht_gewuenscht: "bg-[var(--bg-muted)] text-[var(--text-faint)]",
 };
 
+// exocad-Lizenzen laufen ueblicherweise ein Jahr - ohne Vertragsbeginn
+// im Datenmodell dient ein 365-Tage-Referenzfenster als Naeherung fuer
+// den Fuellstand des Laufzeit-Balkens (100% = Vertragsende erreicht).
+function laufzeitInfo(vertragEnde: string | null | undefined) {
+  if (!vertragEnde) return null;
+  const tage = Math.round((new Date(vertragEnde).getTime() - Date.now()) / 86400000);
+  const prozent = Math.max(0, Math.min(100, 100 - (tage / 365) * 100));
+  const farbe =
+    tage < 0
+      ? "var(--badge-kritisch-text)"
+      : tage <= 30
+      ? "var(--status-offen-text)"
+      : "var(--akzent)";
+  return { tage, prozent, farbe };
+}
+
 const ANZAHL_STANDARD_SICHTBAR = 3;
 
 interface DongleVerwaltungProps {
@@ -232,9 +248,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
 
       {sichtbareDongles.map((d) => {
         const laufzeit = vertragJeDongle.get(d.id);
-        const tageBisAblauf = laufzeit?.vertrag_ende
-          ? Math.round((new Date(laufzeit.vertrag_ende).getTime() - Date.now()) / 86400000)
-          : null;
+        const info = laufzeitInfo(laufzeit?.vertrag_ende);
         return (
         <div key={d.id} className="overflow-hidden rounded-lg border border-[var(--border)]">
           <button
@@ -243,15 +257,15 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
           >
             <span className="font-mono text-xs text-[var(--text-strong)]">{d.seriennummer}</span>
             <span className="text-xs text-[var(--text-faint)]">· {d.software}</span>
-            {laufzeit?.vertrag_ende && (
-              <span
-                className={`text-xs ${
-                  tageBisAblauf !== null && tageBisAblauf <= 30
-                    ? "font-medium text-amber-700 dark:text-amber-400"
-                    : "text-[var(--text-faint)]"
-                }`}
-              >
-                Laufzeit bis {new Date(laufzeit.vertrag_ende).toLocaleDateString("de-DE")}
+            {info && laufzeit?.vertrag_ende && (
+              <span className="flex items-center gap-1.5 text-xs" style={{ color: info.farbe }}>
+                <span className="h-1.5 w-10 overflow-hidden rounded-full bg-[var(--bg-muted)]">
+                  <span
+                    className="block h-full rounded-full"
+                    style={{ width: `${info.prozent}%`, background: info.farbe }}
+                  />
+                </span>
+                bis {new Date(laufzeit.vertrag_ende).toLocaleDateString("de-DE")}
               </span>
             )}
             <span className={`ml-auto rounded-full px-2 py-0.5 text-[0.65rem] font-medium ${WARTUNG_FARBE[d.wartungsvertrag]}`}>
@@ -300,21 +314,40 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
                   Lizenzvertrag (Laufzeit)
                 </label>
                 {laufzeit ? (
-                  <div className="flex flex-wrap items-center gap-2 rounded bg-[var(--bg-muted)] px-2.5 py-1.5 text-sm">
-                    <span className="text-[var(--text-strong)]">{laufzeit.produkt_name}</span>
-                    <span className="font-mono text-xs text-[var(--text-faint)]">{laufzeit.lizenz_seriennummer}</span>
-                    {laufzeit.status && <span className="text-xs text-[var(--text-faint)]">· {laufzeit.status}</span>}
-                    {laufzeit.vertrag_ende && (
-                      <span className="ml-auto text-xs text-[var(--text-soft)]">
-                        bis {new Date(laufzeit.vertrag_ende).toLocaleDateString("de-DE")}
-                      </span>
-                    )}
-                    <button
-                      onClick={() => vertragLoesen(laufzeit.id)}
-                      className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
-                    >
-                      Verknüpfung lösen
-                    </button>
+                  <div className="space-y-2 rounded bg-[var(--bg-muted)] px-2.5 py-2 text-sm">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[var(--text-strong)]">{laufzeit.produkt_name}</span>
+                      <span className="font-mono text-xs text-[var(--text-faint)]">{laufzeit.lizenz_seriennummer}</span>
+                      {laufzeit.status && <span className="text-xs text-[var(--text-faint)]">· {laufzeit.status}</span>}
+                      <button
+                        onClick={() => vertragLoesen(laufzeit.id)}
+                        className="ml-auto shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
+                      >
+                        Verknüpfung lösen
+                      </button>
+                    </div>
+                    {laufzeit.vertrag_ende &&
+                      (() => {
+                        const info = laufzeitInfo(laufzeit.vertrag_ende);
+                        if (!info) return null;
+                        return (
+                          <div>
+                            <div className="mb-1 flex justify-between text-xs text-[var(--text-faint)]">
+                              <span>Laufzeit</span>
+                              <span style={{ color: info.farbe }} className="font-medium">
+                                bis {new Date(laufzeit.vertrag_ende!).toLocaleDateString("de-DE")}
+                                {info.tage >= 0 ? ` (${info.tage} Tage)` : " (abgelaufen)"}
+                              </span>
+                            </div>
+                            <div className="h-1.5 overflow-hidden rounded-full bg-[var(--bg-surface)]">
+                              <div
+                                className="h-full rounded-full"
+                                style={{ width: `${info.prozent}%`, background: info.farbe }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })()}
                   </div>
                 ) : unverknuepfteVertraege.length > 0 ? (
                   <div className="flex gap-2">

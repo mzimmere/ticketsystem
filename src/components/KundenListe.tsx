@@ -69,6 +69,22 @@ interface KundenListeProps {
 
 const KUNDEN_STANDARD_SICHTBAR = 10;
 
+// exocad-Lizenzen laufen ueblicherweise ein Jahr - ohne Vertragsbeginn im
+// Datenmodell dient ein 365-Tage-Referenzfenster als Naeherung fuer den
+// Fuellstand des Laufzeit-Balkens (100% = Vertragsende erreicht).
+function laufzeitInfo(vertragEnde: string | null | undefined) {
+  if (!vertragEnde) return null;
+  const tage = Math.round((new Date(vertragEnde).getTime() - Date.now()) / 86400000);
+  const prozent = Math.max(0, Math.min(100, 100 - (tage / 365) * 100));
+  const farbe =
+    tage < 0
+      ? "var(--badge-kritisch-text)"
+      : tage <= 30
+      ? "var(--status-offen-text)"
+      : "var(--akzent)";
+  return { tage, prozent, farbe };
+}
+
 export default function KundenListe({
   organisationId,
   refreshKey,
@@ -783,36 +799,34 @@ export default function KundenListe({
                   <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
                     Lizenzverträge (Ablauf/Verlängerung)
                   </p>
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     {vertraege.map((v) => {
-                      const tageBisAblauf = v.vertrag_ende
-                        ? Math.round((new Date(v.vertrag_ende).getTime() - Date.now()) / 86400000)
-                        : null;
-                      const baldFaellig = tageBisAblauf !== null && tageBisAblauf <= 30;
+                      const info = laufzeitInfo(v.vertrag_ende);
                       return (
-                        <div
-                          key={v.id}
-                          className={`flex flex-wrap items-center gap-2 rounded px-3 py-1.5 ${
-                            baldFaellig ? "bg-amber-50 dark:bg-amber-950/30" : "bg-[var(--bg-muted)]"
-                          }`}
-                        >
-                          <span className="text-sm text-[var(--text-strong)]">{v.produkt_name}</span>
-                          <span className="font-mono text-xs text-[var(--text-faint)]">
-                            {v.lizenz_seriennummer}
-                          </span>
-                          {v.status && <span className="text-xs text-[var(--text-faint)]">· {v.status}</span>}
-                          {v.vertrag_ende && (
-                            <span
-                              className={`ml-auto text-xs ${
-                                baldFaellig
-                                  ? "font-medium text-amber-700 dark:text-amber-400"
-                                  : "text-[var(--text-faint)]"
-                              }`}
-                            >
-                              bis {new Date(v.vertrag_ende).toLocaleDateString("de-DE")}
-                              {tageBisAblauf !== null && tageBisAblauf >= 0 && ` (${tageBisAblauf} Tage)`}
-                              {tageBisAblauf !== null && tageBisAblauf < 0 && " (abgelaufen)"}
+                        <div key={v.id} className="rounded bg-[var(--bg-muted)] px-3 py-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm text-[var(--text-strong)]">{v.produkt_name}</span>
+                            <span className="font-mono text-xs text-[var(--text-faint)]">
+                              {v.lizenz_seriennummer}
                             </span>
+                            {v.status && <span className="text-xs text-[var(--text-faint)]">· {v.status}</span>}
+                          </div>
+                          {v.vertrag_ende && info && (
+                            <div className="mt-1.5">
+                              <div className="mb-1 flex justify-between text-xs text-[var(--text-faint)]">
+                                <span>Laufzeit</span>
+                                <span style={{ color: info.farbe }} className="font-medium">
+                                  bis {new Date(v.vertrag_ende).toLocaleDateString("de-DE")}
+                                  {info.tage >= 0 ? ` (${info.tage} Tage)` : " (abgelaufen)"}
+                                </span>
+                              </div>
+                              <div className="h-1.5 overflow-hidden rounded-full bg-[var(--bg-surface)]">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{ width: `${info.prozent}%`, background: info.farbe }}
+                                />
+                              </div>
+                            </div>
                           )}
                         </div>
                       );

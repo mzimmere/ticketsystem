@@ -123,9 +123,10 @@ export default function LizenzVerlaengerungen({ organisationId }: { organisation
               return (
                 <div
                   key={v.id}
-                  className={`flex flex-wrap items-center gap-2 rounded px-3 py-1.5 ${
-                    tageBisAblauf < 0 ? "bg-red-50 dark:bg-red-950/30" : "bg-amber-50 dark:bg-amber-950/30"
-                  }`}
+                  className="flex flex-wrap items-center gap-2 rounded px-3 py-1.5"
+                  style={{
+                    background: tageBisAblauf < 0 ? "var(--badge-kritisch-bg)" : "var(--status-offen-bg)",
+                  }}
                 >
                   <span className="text-sm text-[var(--text-strong)]">
                     {v.kunde?.name ?? "Unbenannt"}
@@ -135,11 +136,10 @@ export default function LizenzVerlaengerungen({ organisationId }: { organisation
                     {v.lizenz_seriennummer}
                   </span>
                   <span
-                    className={`ml-auto text-xs font-medium ${
-                      tageBisAblauf < 0
-                        ? "text-red-700 dark:text-red-400"
-                        : "text-amber-700 dark:text-amber-400"
-                    }`}
+                    className="ml-auto text-xs font-medium"
+                    style={{
+                      color: tageBisAblauf < 0 ? "var(--badge-kritisch-text)" : "var(--status-offen-text)",
+                    }}
                   >
                     bis {new Date(v.vertrag_ende).toLocaleDateString("de-DE")}
                     {tageBisAblauf >= 0 ? ` (${tageBisAblauf} Tage)` : " (abgelaufen)"}
