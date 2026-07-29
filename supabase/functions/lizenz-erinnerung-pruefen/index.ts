@@ -4,10 +4,13 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 // Findet aktive Lizenzvertraege (lizenz_vertraege, Abschnitt 56), die
 // einem Kunden zugeordnet sind und deren Vertragsende innerhalb der pro
 // Firma konfigurierbaren Frist liegt (lizenz_konfiguration, Abschnitt 57,
-// Standard 30 Tage), schickt eine Erinnerungs-Mail an die Org-Admins und
-// setzt erinnerung_gesendet_am (damit nicht bei jedem Lauf erneut
-// benachrichtigt wird). Erstellt/verschickt bewusst KEINE Rechnung - das
-// bleibt weiterhin ein manueller Schritt in Abrechnung.tsx/RechnungDetail.tsx.
+// Standard 30 Tage), schickt eine Erinnerungs-Mail und setzt
+// erinnerung_gesendet_am (damit nicht bei jedem Lauf erneut benachrichtigt
+// wird). Empfaenger: lizenz_konfiguration.erinnerung_email falls gesetzt
+// (z.B. Support-Postfach oder eine bestimmte Person), sonst alle Org-Admins
+// der Firma. Kunden werden nie kontaktiert. Erstellt/verschickt bewusst
+// KEINE Rechnung - das bleibt weiterhin ein manueller Schritt in
+// Abrechnung.tsx/RechnungDetail.tsx.
 //
 // Auth: verify_jwt=false, stattdessen Pruefung gegen dasselbe Shared
 // Secret aus Supabase Vault wie bei den anderen Cron-Functions.
@@ -66,8 +69,9 @@ Deno.serve(async (req) => {
   const { data: orgs } = await supabase.from("organisationen").select("id");
   const { data: konfigs } = await supabase
     .from("lizenz_konfiguration")
-    .select("organisation_id, erinnerung_tage_vorher");
+    .select("organisation_id, erinnerung_tage_vorher, erinnerung_email");
   const tageJeOrg = new Map((konfigs ?? []).map((k) => [k.organisation_id, k.erinnerung_tage_vorher]));
+  const emailJeOrg = new Map((konfigs ?? []).map((k) => [k.organisation_id, k.erinnerung_email]));
 
   for (const org of orgs ?? []) {
     const tage = tageJeOrg.get(org.id) ?? 30;
@@ -85,7 +89,8 @@ Deno.serve(async (req) => {
 
     if (!vertraege || vertraege.length === 0) continue;
 
-    const empfaenger = await orgAdminEmails(org.id);
+    const einzelEmail = emailJeOrg.get(org.id);
+    const empfaenger = einzelEmail ? [einzelEmail] : await orgAdminEmails(org.id);
 
     for (const v of vertraege as unknown as FaelligerVertrag[]) {
       await mailSenden(

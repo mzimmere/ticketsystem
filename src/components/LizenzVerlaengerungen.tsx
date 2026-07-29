@@ -12,6 +12,7 @@ interface FaelligeLizenz {
 
 export default function LizenzVerlaengerungen({ organisationId }: { organisationId: string }) {
   const [tageVorher, setTageVorher] = useState("30");
+  const [erinnerungEmail, setErinnerungEmail] = useState("");
   const [lizenzen, setLizenzen] = useState<FaelligeLizenz[]>([]);
   const [laedt, setLaedt] = useState(false);
   const [hinweis, setHinweis] = useState<string | null>(null);
@@ -24,11 +25,12 @@ export default function LizenzVerlaengerungen({ organisationId }: { organisation
   async function laden() {
     const { data: konfig } = await supabase
       .from("lizenz_konfiguration")
-      .select("erinnerung_tage_vorher")
+      .select("erinnerung_tage_vorher, erinnerung_email")
       .eq("organisation_id", organisationId)
       .maybeSingle();
     const tage = konfig?.erinnerung_tage_vorher ?? 30;
     setTageVorher(String(tage));
+    setErinnerungEmail(konfig?.erinnerung_email ?? "");
     await ladeLizenzen(tage);
   }
 
@@ -52,6 +54,7 @@ export default function LizenzVerlaengerungen({ organisationId }: { organisation
     const { error } = await supabase.from("lizenz_konfiguration").upsert({
       organisation_id: organisationId,
       erinnerung_tage_vorher: tage,
+      erinnerung_email: erinnerungEmail.trim() || null,
     });
     if (!error) await ladeLizenzen(tage);
     setLaedt(false);
@@ -75,19 +78,31 @@ export default function LizenzVerlaengerungen({ organisationId }: { organisation
             className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
           />
           <span className="text-xs text-[var(--text-faint)]">Tage vor Vertragsende</span>
-          <button
-            onClick={speichern}
-            disabled={laedt}
-            className="ml-auto rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-          >
-            {laedt ? "Speichert…" : "Speichern"}
-          </button>
         </div>
+
+        <label className="mb-1 mt-3 block text-xs font-medium text-[var(--text-soft)]">
+          Erinnerung senden an
+        </label>
+        <input
+          type="email"
+          value={erinnerungEmail}
+          onChange={(e) => setErinnerungEmail(e.target.value)}
+          placeholder="leer = alle Org-Admins dieser Firma"
+          className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+        />
         <p className="mt-1 text-xs text-[var(--text-faint)]">
-          Aktive Lizenzverträge, deren Vertragsende innerhalb dieser Frist liegt, erscheinen unten
-          und werden per E-Mail-Erinnerung an Org-Admins gemeldet (kein automatischer
-          Rechnungsversand).
+          Aktive Lizenzverträge, deren Vertragsende innerhalb der Frist liegt, erscheinen unten und
+          werden per E-Mail-Erinnerung gemeldet (kein automatischer Rechnungsversand, Kunden werden
+          nie kontaktiert). Leer lassen = an alle Org-Admins; sonst nur an diese eine Adresse (z.B.
+          Support-Postfach oder eine bestimmte Person).
         </p>
+        <button
+          onClick={speichern}
+          disabled={laedt}
+          className="mt-2 w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+        >
+          {laedt ? "Speichert…" : "Speichern"}
+        </button>
         {hinweis && <p className="mt-1 text-xs text-[var(--text-soft)]">{hinweis}</p>}
       </div>
 

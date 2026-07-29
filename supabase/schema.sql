@@ -2367,6 +2367,12 @@ create table lizenz_konfiguration (
 );
 alter table lizenz_konfiguration enable row level security;
 
+-- Optionale, feste Empfaenger-Adresse fuer Lizenz-Ablauf-Erinnerungen.
+-- Leer = weiterhin alle Org-Admins (bisheriges Verhalten). Gesetzt = nur
+-- diese eine Adresse (z.B. eine bestimmte Person oder eine Support-
+-- Sammeladresse) - Kunden werden davon unabhaengig nie kontaktiert.
+alter table lizenz_konfiguration add column if not exists erinnerung_email text;
+
 create policy lizenz_konfiguration_select on lizenz_konfiguration for select
   using (
     current_user_rolle() = 'super_admin'
