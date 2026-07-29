@@ -5,7 +5,6 @@ import { LAENDER_MWST, LAENDER_LISTE } from "../lib/laender";
 import Avatar from "./Avatar";
 import ZugangsdatenBox from "./ZugangsdatenBox";
 import DongleVerwaltung from "./DongleVerwaltung";
-import DongleImport from "./DongleImport";
 import KundenTodoListe from "./KundenTodoListe";
 import KundenHardware from "./KundenHardware";
 
@@ -40,26 +39,12 @@ interface Dokument {
   erstellt_am: string;
 }
 
-interface NichtZugeordneterDongle {
-  id: string;
-  seriennummer: string;
-  software: string;
-  gruppe: string | null;
-}
-
 interface LizenzVertrag {
   id: string;
   lizenz_seriennummer: string;
   produkt_name: string;
   vertrag_ende: string | null;
   status: string | null;
-}
-
-interface NichtZugeordneterVertrag {
-  id: string;
-  lizenz_seriennummer: string;
-  produkt_name: string;
-  vertrag_ende: string | null;
 }
 
 interface HardwareKategorie {
@@ -82,7 +67,6 @@ interface KundenListeProps {
   onlineIds?: Set<string>;
 }
 
-const ANZAHL_STANDARD_SICHTBAR = 5;
 const KUNDEN_STANDARD_SICHTBAR = 10;
 
 export default function KundenListe({
@@ -102,15 +86,7 @@ export default function KundenListe({
   const [neuesPreisDatum, setNeuesPreisDatum] = useState("");
   const [neuerPreisEuro, setNeuerPreisEuro] = useState("");
   const [dokumente, setDokumente] = useState<Dokument[]>([]);
-  const [nichtZugeordnete, setNichtZugeordnete] = useState<NichtZugeordneterDongle[]>([]);
-  const [zuweisenAn, setZuweisenAn] = useState<Record<string, string>>({});
   const [vertraege, setVertraege] = useState<LizenzVertrag[]>([]);
-  const [nichtZugeordneteVertraege, setNichtZugeordneteVertraege] = useState<NichtZugeordneterVertrag[]>([]);
-  const [zuweisenAnVertrag, setZuweisenAnVertrag] = useState<Record<string, string>>({});
-  const [filterDongleNummer, setFilterDongleNummer] = useState("");
-  const [filterVertragNummer, setFilterVertragNummer] = useState("");
-  const [alleDonglesAnzeigen, setAlleDonglesAnzeigen] = useState(false);
-  const [alleVertraegeAnzeigen, setAlleVertraegeAnzeigen] = useState(false);
   const [alleKundenAnzeigen, setAlleKundenAnzeigen] = useState(false);
   const [hardwareKategorien, setHardwareKategorien] = useState<HardwareKategorie[]>([]);
   const [hardwareEintraege, setHardwareEintraege] = useState<HardwareEintrag[]>([]);
@@ -130,8 +106,6 @@ export default function KundenListe({
   }, [organisationId, refreshKey, zeigeArchivierte]);
 
   useEffect(() => {
-    ladeNichtZugeordnete();
-    ladeNichtZugeordneteVertraege();
     ladeHardwareFilter();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organisationId, refreshKey]);
@@ -143,50 +117,6 @@ export default function KundenListe({
     ]);
     setHardwareKategorien((katDaten as HardwareKategorie[]) ?? []);
     setHardwareEintraege((eintragDaten as HardwareEintrag[]) ?? []);
-  }
-
-  async function ladeNichtZugeordnete() {
-    const { data } = await supabase
-      .from("kunden_dongles")
-      .select("id, seriennummer, software, gruppe")
-      .eq("organisation_id", organisationId)
-      .is("kunde_id", null)
-      .order("seriennummer");
-    setNichtZugeordnete((data as NichtZugeordneterDongle[]) ?? []);
-  }
-
-  async function dongleZuweisen(dongleId: string) {
-    const kundeId = zuweisenAn[dongleId];
-    if (!kundeId) return;
-    await supabase.from("kunden_dongles").update({ kunde_id: kundeId }).eq("id", dongleId);
-    setZuweisenAn((z) => {
-      const kopie = { ...z };
-      delete kopie[dongleId];
-      return kopie;
-    });
-    ladeNichtZugeordnete();
-  }
-
-  async function ladeNichtZugeordneteVertraege() {
-    const { data } = await supabase
-      .from("lizenz_vertraege")
-      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende")
-      .eq("organisation_id", organisationId)
-      .is("kunde_id", null)
-      .order("vertrag_ende", { ascending: true, nullsFirst: false });
-    setNichtZugeordneteVertraege((data as NichtZugeordneterVertrag[]) ?? []);
-  }
-
-  async function vertragZuweisen(vertragId: string) {
-    const kundeId = zuweisenAnVertrag[vertragId];
-    if (!kundeId) return;
-    await supabase.from("lizenz_vertraege").update({ kunde_id: kundeId }).eq("id", vertragId);
-    setZuweisenAnVertrag((z) => {
-      const kopie = { ...z };
-      delete kopie[vertragId];
-      return kopie;
-    });
-    ladeNichtZugeordneteVertraege();
   }
 
   async function ladeKunden() {
@@ -447,22 +377,6 @@ export default function KundenListe({
     ? gefilterteKunden
     : gefilterteKunden.slice(0, KUNDEN_STANDARD_SICHTBAR);
 
-  const gefilterteNichtZugeordnete = nichtZugeordnete.filter((d) =>
-    d.seriennummer.toLowerCase().includes(filterDongleNummer.trim().toLowerCase()),
-  );
-  const gefilterteNichtZugeordneteVertraege = nichtZugeordneteVertraege.filter((v) =>
-    v.lizenz_seriennummer.toLowerCase().includes(filterVertragNummer.trim().toLowerCase()),
-  );
-  const dongleSuchtAktiv = filterDongleNummer.trim() !== "";
-  const sichtbareNichtZugeordnete =
-    dongleSuchtAktiv || alleDonglesAnzeigen
-      ? gefilterteNichtZugeordnete
-      : gefilterteNichtZugeordnete.slice(0, ANZAHL_STANDARD_SICHTBAR);
-  const vertragSuchtAktiv = filterVertragNummer.trim() !== "";
-  const sichtbareNichtZugeordneteVertraege =
-    vertragSuchtAktiv || alleVertraegeAnzeigen
-      ? gefilterteNichtZugeordneteVertraege
-      : gefilterteNichtZugeordneteVertraege.slice(0, ANZAHL_STANDARD_SICHTBAR);
 
   return (
     <div className="space-y-2">
@@ -522,144 +436,6 @@ export default function KundenListe({
               className="shrink-0 text-xs text-[var(--text-faint)] hover:underline"
             >
               Zurücksetzen
-            </button>
-          )}
-        </div>
-      )}
-
-      <DongleImport organisationId={organisationId} onImportiert={ladeNichtZugeordnete} />
-
-      {nichtZugeordnete.length > 0 && (
-        <div className="space-y-1.5 rounded-lg border border-dashed border-[var(--border-input)] p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-            Nicht zugeordnete Lizenzen ({gefilterteNichtZugeordnete.length}/{nichtZugeordnete.length})
-          </p>
-          {zeigeArchivierte && (
-            <p className="text-xs text-[var(--text-faint)]">
-              Zum Zuweisen erst zu "Aktive" wechseln.
-            </p>
-          )}
-          <input
-            type="text"
-            value={filterDongleNummer}
-            onChange={(e) => setFilterDongleNummer(e.target.value)}
-            placeholder="Nach Seriennummer filtern…"
-            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-strong)]"
-          />
-          {gefilterteNichtZugeordnete.length === 0 && (
-            <p className="text-xs text-[var(--text-faint)]">Keine Treffer für diesen Filter.</p>
-          )}
-          <div className="space-y-1.5">
-            {sichtbareNichtZugeordnete.map((d) => (
-              <div
-                key={d.id}
-                className="flex flex-wrap items-center gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5"
-              >
-                <span className="font-mono text-xs text-[var(--text-strong)]">{d.seriennummer}</span>
-                <span className="text-xs text-[var(--text-faint)]">· {d.software}</span>
-                {d.gruppe && <span className="text-xs text-[var(--text-faint)]">({d.gruppe})</span>}
-                {!zeigeArchivierte && (
-                  <div className="ml-auto flex items-center gap-1.5">
-                    <select
-                      value={zuweisenAn[d.id] ?? ""}
-                      onChange={(e) => setZuweisenAn((z) => ({ ...z, [d.id]: e.target.value }))}
-                      className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1 text-xs text-[var(--text-strong)]"
-                    >
-                      <option value="">Kunde wählen…</option>
-                      {kunden.map((k) => (
-                        <option key={k.id} value={k.id}>
-                          {k.name ?? "Unbenannt"}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={() => dongleZuweisen(d.id)}
-                      disabled={!zuweisenAn[d.id]}
-                      className="shrink-0 rounded bg-akzent px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
-                    >
-                      Zuweisen
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          {!dongleSuchtAktiv && gefilterteNichtZugeordnete.length > ANZAHL_STANDARD_SICHTBAR && (
-            <button
-              onClick={() => setAlleDonglesAnzeigen((v) => !v)}
-              className="w-full rounded border border-[var(--border-input)] px-3 py-1.5 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
-            >
-              {alleDonglesAnzeigen ? "Weniger anzeigen" : `Alle ${gefilterteNichtZugeordnete.length} anzeigen`}
-            </button>
-          )}
-        </div>
-      )}
-
-      {nichtZugeordneteVertraege.length > 0 && (
-        <div className="space-y-1.5 rounded-lg border border-dashed border-[var(--border-input)] p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-            Nicht zugeordnete Lizenzverträge ({gefilterteNichtZugeordneteVertraege.length}/{nichtZugeordneteVertraege.length})
-          </p>
-          {zeigeArchivierte && (
-            <p className="text-xs text-[var(--text-faint)]">
-              Zum Zuweisen erst zu "Aktive" wechseln.
-            </p>
-          )}
-          <input
-            type="text"
-            value={filterVertragNummer}
-            onChange={(e) => setFilterVertragNummer(e.target.value)}
-            placeholder="Nach Seriennummer filtern…"
-            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-strong)]"
-          />
-          {gefilterteNichtZugeordneteVertraege.length === 0 && (
-            <p className="text-xs text-[var(--text-faint)]">Keine Treffer für diesen Filter.</p>
-          )}
-          <div className="space-y-1.5">
-            {sichtbareNichtZugeordneteVertraege.map((v) => (
-              <div
-                key={v.id}
-                className="flex flex-wrap items-center gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5"
-              >
-                <span className="font-mono text-xs text-[var(--text-strong)]">{v.lizenz_seriennummer}</span>
-                <span className="text-xs text-[var(--text-faint)]">· {v.produkt_name}</span>
-                {v.vertrag_ende && (
-                  <span className="text-xs text-[var(--text-faint)]">
-                    (bis {new Date(v.vertrag_ende).toLocaleDateString("de-DE")})
-                  </span>
-                )}
-                {!zeigeArchivierte && (
-                  <div className="ml-auto flex items-center gap-1.5">
-                    <select
-                      value={zuweisenAnVertrag[v.id] ?? ""}
-                      onChange={(e) => setZuweisenAnVertrag((z) => ({ ...z, [v.id]: e.target.value }))}
-                      className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1 text-xs text-[var(--text-strong)]"
-                    >
-                      <option value="">Kunde wählen…</option>
-                      {kunden.map((k) => (
-                        <option key={k.id} value={k.id}>
-                          {k.name ?? "Unbenannt"}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={() => vertragZuweisen(v.id)}
-                      disabled={!zuweisenAnVertrag[v.id]}
-                      className="shrink-0 rounded bg-akzent px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
-                    >
-                      Zuweisen
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          {!vertragSuchtAktiv && gefilterteNichtZugeordneteVertraege.length > ANZAHL_STANDARD_SICHTBAR && (
-            <button
-              onClick={() => setAlleVertraegeAnzeigen((v) => !v)}
-              className="w-full rounded border border-[var(--border-input)] px-3 py-1.5 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
-            >
-              {alleVertraegeAnzeigen ? "Weniger anzeigen" : `Alle ${gefilterteNichtZugeordneteVertraege.length} anzeigen`}
             </button>
           )}
         </div>

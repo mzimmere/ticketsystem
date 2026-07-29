@@ -5,6 +5,7 @@ import { pruefeBild } from "../lib/bildvalidierung";
 import { generierePasswort } from "../lib/passwort";
 import { LAENDER_MWST, LAENDER_LISTE } from "../lib/laender";
 import KundenListe from "./KundenListe";
+import DongleLizenzVerwaltung from "./DongleLizenzVerwaltung";
 import MitarbeiterListe from "./MitarbeiterListe";
 import ZugangsdatenBox from "./ZugangsdatenBox";
 import VorlagenVerwaltung from "./VorlagenVerwaltung";
@@ -43,7 +44,7 @@ interface Organisation extends OrganisationKurz {
   sla_stunden: number | null;
 }
 
-type VerwaltungsTab = "firma" | "team" | "kunden" | "werkzeuge" | "integrationen";
+type VerwaltungsTab = "firma" | "team" | "kunden" | "dongles" | "werkzeuge" | "integrationen";
 
 interface VerwaltungProps {
   rolle: Rolle;
@@ -498,6 +499,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
           { id: "firma", label: "🏢 Firma" },
           { id: "team", label: "👥 Team" },
           { id: "kunden", label: "🤝 Kunden" },
+          { id: "dongles", label: "🔑 Dongles & Lizenzen" },
           { id: "werkzeuge", label: "🔧 Werkzeuge" },
           { id: "integrationen", label: "🔌 Integrationen" },
         ] as { id: VerwaltungsTab; label: string }[]).map((t) => (
@@ -1157,6 +1159,10 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
             onlineIds={onlineIds}
           />
         </div>
+      )}
+
+      {aktiveTab === "dongles" && organisationId && (
+        <DongleLizenzVerwaltung organisationId={organisationId} />
       )}
 
       {aktiveTab === "werkzeuge" && organisationId && (

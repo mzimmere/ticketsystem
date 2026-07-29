@@ -8,7 +8,9 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
-  { datum: "2026-07-29", titel: "Kundenliste: zeigt standardmäßig nur noch die ersten 10 Kunden (mit „Alle anzeigen"), zusätzlich nach Hardware-Kategorie/-Wert filterbar (z.B. alle Kunden mit einem bestimmten Intraoral-Scanner)" },
+  { datum: "2026-07-29", titel: "Neuer Verwaltungs-Tab „Dongles & Lizenzen“: Import, Nicht-zugeordnet-Pools und neue durchsuchbare Gesamtübersicht aller Dongles/Lizenzverträge (mit Kunde) sind jetzt aus der Kundenliste ausgelagert – die Kundenliste zeigt nur noch Kundendaten" },
+  { datum: "2026-07-29", titel: "Fix: Anführungszeichen im Changelog-Text hatten den letzten Build unterbrochen (Vercel-Deploy fehlgeschlagen, alte Version blieb aktiv, kein Datenverlust)" },
+  { datum: "2026-07-29", titel: "Kundenliste: zeigt standardmäßig nur noch die ersten 10 Kunden (mit „Alle anzeigen“), zusätzlich nach Hardware-Kategorie/-Wert filterbar (z.B. alle Kunden mit einem bestimmten Intraoral-Scanner)" },
   { datum: "2026-07-29", titel: "Fix: Kunden-Hardware zeigte firmenweite Vorschläge, die wie bereits zugeordnete (aber nicht löschbare) Geräte bei anderen Kunden wirkten – Vorschläge entfernt, nur noch tatsächlich zugeordnete Werte pro Kunde (löschbar) plus Freitext-Eingabe" },
   { datum: "2026-07-29", titel: "Kunden-Hardware erfassbar: frei konfigurierbare Kategorien (z.B. Intraoral-Scanner, Exocad-Datenbank, Fräsmaschine, Drucker), Werte per Klick aus Vorschlägen oder Freitext – in der Kundenliste und direkt im Ticket sichtbar/erfassbar" },
   { datum: "2026-07-29", titel: "Kunden-Todo-Liste jetzt auch bei der Ticketerstellung (kurze Übersicht offener Punkte) und direkt im Ticket (volle Liste mit Abhaken/Hinzufügen) sichtbar" },
