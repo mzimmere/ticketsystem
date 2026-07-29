@@ -7,6 +7,7 @@ import ZugangsdatenBox from "./ZugangsdatenBox";
 import DongleVerwaltung from "./DongleVerwaltung";
 import DongleImport from "./DongleImport";
 import KundenTodoListe from "./KundenTodoListe";
+import KundenHardware from "./KundenHardware";
 
 interface Kunde {
   id: string;
@@ -887,6 +888,13 @@ export default function KundenListe({
                   Todo-Liste
                 </p>
                 <KundenTodoListe kundeId={k.id} organisationId={organisationId} modus="voll" />
+              </div>
+
+              <div className="border-t border-[var(--border)] pt-3">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
+                  Hardware
+                </p>
+                <KundenHardware kundeId={k.id} organisationId={organisationId} />
               </div>
 
               <div className="border-t border-[var(--border)] pt-3">

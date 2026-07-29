@@ -10,6 +10,7 @@ import StatusBadge from "./StatusBadge";
 import TicketMerge from "./TicketMerge";
 import KiAssistent from "./KiAssistent";
 import KundenTodoListe from "./KundenTodoListe";
+import KundenHardware from "./KundenHardware";
 
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
@@ -646,6 +647,13 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
               organisationId={ticket.organisation_id}
               modus="voll"
             />
+          </div>
+
+          <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
+            <h3 className="mb-2 text-sm font-medium text-[var(--text-strong)]">
+              Hardware dieses Kunden
+            </h3>
+            <KundenHardware kundeId={ticket.kunde_id} organisationId={ticket.organisation_id} />
           </div>
 
           <KiAssistent

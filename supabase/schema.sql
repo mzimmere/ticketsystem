@@ -2393,3 +2393,90 @@ create policy lizenz_konfiguration_update on lizenz_konfiguration for update
     or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
     or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
   );
+
+-- ============================================================
+-- 58. Kunden-Hardware: frei konfigurierbare Kategorien (z.B. Intraoral-
+-- Scanner, Desktop-Scanner, Exocad-Datenbank, Fraesmaschine, Drucker)
+-- + Zuordnung der beim Kunden tatsaechlich vorhandenen Geraete/Werte.
+-- Kategorien sind pro Firma frei konfigurierbar (Muster: tags).
+-- Mehrfachwerte pro Kategorie erlaubt (z.B. zwei Fraesmaschinen).
+-- ============================================================
+create table hardware_kategorien (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  name text not null,
+  erstellt_am timestamptz default now(),
+  unique (organisation_id, name)
+);
+create index idx_hardware_kategorien_org on hardware_kategorien(organisation_id);
+alter table hardware_kategorien enable row level security;
+
+create policy hardware_kategorien_select on hardware_kategorien for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy hardware_kategorien_insert on hardware_kategorien for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy hardware_kategorien_update on hardware_kategorien for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy hardware_kategorien_delete on hardware_kategorien for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create table kunden_hardware (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  kunde_id uuid not null references profiles(id) on delete cascade,
+  kategorie_id uuid not null references hardware_kategorien(id) on delete cascade,
+  wert text not null,
+  notiz text,
+  erstellt_am timestamptz default now()
+);
+create index idx_kunden_hardware_kunde on kunden_hardware(kunde_id);
+create index idx_kunden_hardware_kategorie on kunden_hardware(kategorie_id);
+create index idx_kunden_hardware_org on kunden_hardware(organisation_id);
+alter table kunden_hardware enable row level security;
+
+create policy kunden_hardware_select on kunden_hardware for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy kunden_hardware_insert on kunden_hardware for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy kunden_hardware_update on kunden_hardware for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy kunden_hardware_delete on kunden_hardware for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );

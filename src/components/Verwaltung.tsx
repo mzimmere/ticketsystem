@@ -12,6 +12,7 @@ import MakroVerwaltung from "./MakroVerwaltung";
 import TagVerwaltung from "./TagVerwaltung";
 import SlaVerwaltung from "./SlaVerwaltung";
 import LizenzVerlaengerungen from "./LizenzVerlaengerungen";
+import HardwareKategorienVerwaltung from "./HardwareKategorienVerwaltung";
 import FaqVerwaltung from "./FaqVerwaltung";
 import ReportingExport from "./ReportingExport";
 import IntegrationenVerwaltung from "./IntegrationenVerwaltung";
@@ -1195,6 +1196,20 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
               { nr: 1, titel: "Tags anlegen", beschreibung: "Name und Farbe wählen. Sinnvolle Tags: Hardware, Software, Netzwerk, Drucker, Passwort, Onboarding, Dringend." },
               { nr: 2, titel: "Tickets taggen", beschreibung: "Im Ticket-Detail gibt es einen '+ Tag'-Button. Mehrere Tags pro Ticket möglich. Tags sind auch für Kunden sichtbar." },
               { nr: 3, titel: "In der Übersicht filtern", beschreibung: "In der Ticket-Übersicht erscheinen alle vergebenen Tags als Filter-Buttons. Klick auf einen Tag zeigt nur Tickets mit diesem Tag." },
+            ]}
+          />
+        </div>
+      )}
+
+      {aktiveTab === "werkzeuge" && organisationId && (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
+          <HardwareKategorienVerwaltung organisationId={organisationId} />
+          <KonfigurationsHilfe
+            titel="Kunden-Hardware erfassen"
+            schritte={[
+              { nr: 1, titel: "Kategorien anlegen", beschreibung: "Z.B. Intraoral-Scanner, Desktop-Scanner, Exocad-Datenbank (lokal/SQL-Server), Fräsmaschine, Drucker. Ganz nach eurem Bedarf." },
+              { nr: 2, titel: "Beim Kunden oder im Ticket erfassen", beschreibung: "In der Kundenliste und direkt im Ticket lässt sich pro Kategorie ein Wert per Klick aus bereits verwendeten Vorschlägen übernehmen oder frei eintippen." },
+              { nr: 3, titel: "Mehrfachwerte möglich", beschreibung: "Ein Kunde kann z.B. zwei Fräsmaschinen unterschiedlicher Hersteller haben – einfach beide als eigene Chips hinzufügen." },
             ]}
           />
         </div>
