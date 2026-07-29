@@ -356,7 +356,6 @@ export default function TicketUebersicht({
       <div className="flex items-baseline justify-between">
         <h2
           className="text-lg font-semibold text-[var(--text-strong)]"
-          style={{ fontFamily: "Roboto, sans-serif" }}
         >
           Tickets
         </h2>

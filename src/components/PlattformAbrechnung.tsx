@@ -225,7 +225,7 @@ export default function PlattformAbrechnung() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-[var(--text-strong)]" style={{ fontFamily: "Roboto, sans-serif" }}>
+        <h2 className="text-lg font-semibold text-[var(--text-strong)]">
           Plattform-Abrechnung
         </h2>
       </div>

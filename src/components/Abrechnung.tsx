@@ -192,7 +192,6 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
       <div className="keine-druckansicht flex items-center justify-between">
         <h2
           className="text-lg font-semibold text-[var(--text-strong)]"
-          style={{ fontFamily: "Roboto, sans-serif" }}
         >
           Abrechnung
         </h2>

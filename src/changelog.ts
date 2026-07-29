@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-29", titel: "Neues Design (Phase 1 – Fundament): IBM Plex Sans/Mono statt Roboto, neuer „Scan-Blau“-Akzent statt Google-Blau, kühlere Neutraltöne, schärfere Eckenradien – wirkt auf die ganze App inkl. Login, da über die zentralen Design-Tokens gesteuert" },
   { datum: "2026-07-29", titel: "Neuer Verwaltungs-Tab „Dongles & Lizenzen“: Import, Nicht-zugeordnet-Pools und neue durchsuchbare Gesamtübersicht aller Dongles/Lizenzverträge (mit Kunde) sind jetzt aus der Kundenliste ausgelagert – die Kundenliste zeigt nur noch Kundendaten" },
   { datum: "2026-07-29", titel: "Fix: Anführungszeichen im Changelog-Text hatten den letzten Build unterbrochen (Vercel-Deploy fehlgeschlagen, alte Version blieb aktiv, kein Datenverlust)" },
   { datum: "2026-07-29", titel: "Kundenliste: zeigt standardmäßig nur noch die ersten 10 Kunden (mit „Alle anzeigen“), zusätzlich nach Hardware-Kategorie/-Wert filterbar (z.B. alle Kunden mit einem bestimmten Intraoral-Scanner)" },

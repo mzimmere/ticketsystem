@@ -1,60 +1,103 @@
 @import "tailwindcss";
 
+/* IBM Plex: von IBM fuer technische/Engineering-Produkte entworfen -
+   passt zum Praezisions-Instrument-Charakter dieser App (Scanner,
+   Fraesmaschinen, Seriennummern). Selbst gehostet (src/assets/fonts),
+   keine externe Font-CDN-Abhaengigkeit. */
+@font-face {
+  font-family: "Plex Sans";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/fonts/ibm-plex-sans-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Plex Sans";
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/fonts/ibm-plex-sans-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Plex Sans";
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/fonts/ibm-plex-sans-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Plex Mono";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/fonts/ibm-plex-mono-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Plex Mono";
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url("./assets/fonts/ibm-plex-mono-500.woff2") format("woff2");
+}
+
 :root {
-  /* Material 3, seeded from Google Blue */
-  --akzent: #1a73e8;
+  /* "Instrumenten-Panel": Scan-Blau als einziger Akzent, kuehle
+     Neutraltoene statt Material-Lila-Grau. */
+  --akzent: #0e6e8c;
   color-scheme: light;
-  --bg-surface: #fefbff;
-  --bg-muted: #f0eef7;
-  --border: #e2e0ea;
-  --border-input: #c9c6d0;
-  --text-strong: #1b1b21;
-  --text-soft: #46464f;
-  --text-faint: #79747e;
+  --bg-surface: #ffffff;
+  --bg-muted: #f5f7fa;
+  --border: #dce1e8;
+  --border-input: #c3cad4;
+  --text-strong: #14181f;
+  --text-soft: #4d5563;
+  --text-faint: #838d9c;
 
-  --badge-mittel-bg: #d3e3fd;
-  --badge-mittel-text: #0b57d0;
-  --badge-hoch-bg: #fbe3cf;
-  --badge-hoch-text: #8f4600;
-  --badge-kritisch-bg: #fce8e6;
-  --badge-kritisch-text: #b3261e;
+  --badge-mittel-bg: #e4f1f5;
+  --badge-mittel-text: #0a5670;
+  --badge-hoch-bg: #fdf1df;
+  --badge-hoch-text: #8a5300;
+  --badge-kritisch-bg: #fbe4e1;
+  --badge-kritisch-text: #93261a;
 
-  --bubble-intern-bg: #fef3d6;
-  --bubble-intern-border: #f2c94c;
-  --bubble-whatsapp-bg: #e6f4ea;
-  --bubble-whatsapp-border: #a8dab5;
+  --bubble-intern-bg: #fdf1df;
+  --bubble-intern-border: #e0ab4c;
+  --bubble-whatsapp-bg: #e1f3e8;
+  --bubble-whatsapp-border: #7fc79e;
 }
 
 .dark {
   color-scheme: dark;
-  --bg-surface: #1e1f25;
-  --bg-muted: #131318;
-  --border: #46464f;
-  --border-input: #5a5960;
-  --text-strong: #e4e2e6;
-  --text-soft: #c7c5d0;
-  --text-faint: #938f99;
+  --akzent: #4fb8d6;
+  --bg-surface: #171c25;
+  --bg-muted: #0c1017;
+  --border: #262c36;
+  --border-input: #333b47;
+  --text-strong: #e7eaf0;
+  --text-soft: #aab2c0;
+  --text-faint: #6b7383;
 
-  --badge-mittel-bg: #0f3260;
-  --badge-mittel-text: #a8c7fa;
-  --badge-hoch-bg: #4a2b04;
-  --badge-hoch-text: #f5a25d;
-  --badge-kritisch-bg: #601410;
-  --badge-kritisch-text: #f2897e;
+  --badge-mittel-bg: #123640;
+  --badge-mittel-text: #7cd0e8;
+  --badge-hoch-bg: #3a2b0d;
+  --badge-hoch-text: #f0b25c;
+  --badge-kritisch-bg: #3a1712;
+  --badge-kritisch-text: #f0897a;
 
-  --bubble-intern-bg: #3a2e05;
-  --bubble-intern-border: #7a5c00;
-  --bubble-whatsapp-bg: #0e3320;
-  --bubble-whatsapp-border: #1f5c3d;
+  --bubble-intern-bg: #3a2b0d;
+  --bubble-intern-border: #8a6a1e;
+  --bubble-whatsapp-bg: #123423;
+  --bubble-whatsapp-border: #2e6b49;
 }
 
 body {
   background-color: var(--bg-muted);
-  font-family: Roboto, -apple-system, "Segoe UI", "Google Sans", Helvetica, Arial, sans-serif;
+  font-family: "Plex Sans", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
 .font-mono {
-  font-family: "Roboto Mono", ui-monospace, monospace;
+  font-family: "Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 .bg-akzent {
@@ -71,27 +114,27 @@ body {
 }
 
 :root {
-  --status-offen-bg: #fdecd1;
+  --status-offen-bg: #fdf1df;
   --status-offen-text: #8a5300;
-  --status-bearbeitung-bg: #d3e3fd;
-  --status-bearbeitung-text: #0b57d0;
-  --status-warten-bg: #f3e8fd;
-  --status-warten-text: #6b2fa0;
-  --status-geloest-bg: #dcf0e1;
-  --status-geloest-text: #146c2e;
+  --status-bearbeitung-bg: #e4f1f5;
+  --status-bearbeitung-text: #0a5670;
+  --status-warten-bg: #f1e9f8;
+  --status-warten-text: #5d3585;
+  --status-geloest-bg: #e1f3e8;
+  --status-geloest-text: #1e7d4f;
   --status-geschlossen-bg: var(--bg-muted);
   --status-geschlossen-text: var(--text-faint);
 }
 
 .dark {
-  --status-offen-bg: #4a3610;
-  --status-offen-text: #fdba5c;
-  --status-bearbeitung-bg: #0f3260;
-  --status-bearbeitung-text: #a8c7fa;
-  --status-warten-bg: #3a1a5c;
-  --status-warten-text: #d5b4fa;
-  --status-geloest-bg: #103a1e;
-  --status-geloest-text: #86d999;
+  --status-offen-bg: #3a2b0d;
+  --status-offen-text: #f0b25c;
+  --status-bearbeitung-bg: #123640;
+  --status-bearbeitung-text: #7cd0e8;
+  --status-warten-bg: #2c1f3d;
+  --status-warten-text: #c9a3ea;
+  --status-geloest-bg: #123423;
+  --status-geloest-text: #6bd39a;
 }
 
 /* ============================================================
@@ -103,19 +146,19 @@ body {
    (Pills/Avatare/Chips) bleibt bewusst unveraendert.
    ============================================================ */
 .rounded {
-  border-radius: 10px;
+  border-radius: 8px;
 }
 .rounded-md {
-  border-radius: 10px;
+  border-radius: 8px;
 }
 .rounded-lg {
-  border-radius: 16px;
+  border-radius: 12px;
 }
 .rounded-xl {
-  border-radius: 20px;
+  border-radius: 16px;
 }
 .rounded-2xl {
-  border-radius: 28px;
+  border-radius: 20px;
 }
 
 /* "Primaerbutton"-Konvention der App war bisher immer bg-slate-900 +

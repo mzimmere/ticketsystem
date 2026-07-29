@@ -77,7 +77,6 @@ export default function SuperAdminUebersicht({ onFirmaOeffnen }: SuperAdminUeber
     <div className="space-y-4">
       <h2
         className="text-lg font-semibold text-[var(--text-strong)]"
-        style={{ fontFamily: "Roboto, sans-serif" }}
       >
         Alle Firmen
       </h2>
