@@ -68,7 +68,7 @@ export default function FaqOeffentlich({ slug }: { slug: string }) {
   return (
     <div
       className="min-h-screen bg-[var(--bg-muted)]"
-      style={{ "--akzent": org.akzentfarbe || "#f59e0b" } as React.CSSProperties}
+      style={{ "--akzent": org.akzentfarbe || "#0e6e8c" } as React.CSSProperties}
     >
       {/* Header */}
       <div className="border-b border-[var(--border)] bg-[var(--bg-surface)] px-6 py-5">

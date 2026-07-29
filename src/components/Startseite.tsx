@@ -282,7 +282,7 @@ export default function Startseite({
   return (
     <div
       className="space-y-6"
-      style={{ "--akzent": akzentfarbe || "#f59e0b" } as React.CSSProperties}
+      style={{ "--akzent": akzentfarbe || "#0e6e8c" } as React.CSSProperties}
     >
       {/* Kopfbereich */}
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-6">

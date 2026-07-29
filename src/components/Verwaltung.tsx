@@ -64,7 +64,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
   const [orgOeffnungszeiten, setOrgOeffnungszeiten] = useState("");
   const [orgStandardpreisEuro, setOrgStandardpreisEuro] = useState("");
   const [orgMotto, setOrgMotto] = useState("");
-  const [orgAkzentfarbe, setOrgAkzentfarbe] = useState("#f59e0b");
+  const [orgAkzentfarbe, setOrgAkzentfarbe] = useState("#0e6e8c");
   const [orgSlug, setOrgSlug] = useState("");
   const [slugKopiert, setSlugKopiert] = useState(false);
   const [orgDatenschutzUrl, setOrgDatenschutzUrl] = useState("");
@@ -140,7 +140,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
           : "",
       );
       setOrgMotto(data.motto ?? "");
-      setOrgAkzentfarbe(data.akzentfarbe ?? "#f59e0b");
+      setOrgAkzentfarbe(data.akzentfarbe ?? "#0e6e8c");
       setOrgSlug(data.slug ?? "");
       setOrgDatenschutzUrl(data.datenschutz_url ?? "");
       setOrgDatenschutzText(data.datenschutz_text ?? "");

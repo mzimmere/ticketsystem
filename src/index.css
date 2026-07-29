@@ -112,6 +112,12 @@ body {
 .bg-akzent:hover {
   filter: brightness(0.92);
 }
+/* Gedaempfte Akzentflaeche fuer aktive Zustaende (Nav-Rail, Chips) -
+   color-mix() statt fester Hex-Werte, damit es mit jeder pro Firma
+   frei waehlbaren Akzentfarbe (organisationen.akzentfarbe) funktioniert. */
+.bg-akzent-soft {
+  background-color: color-mix(in srgb, var(--akzent) 14%, transparent);
+}
 
 :root {
   --status-offen-bg: #fdf1df;

@@ -40,12 +40,30 @@ interface TagesVolumen {
   geloest: number;
 }
 
-function KpiKarte({ titel, wert, sub, farbe }: { titel: string; wert: string | number; sub?: string; farbe?: string }) {
+function KpiKarte({
+  titel,
+  wert,
+  sub,
+  farbe,
+  streifen,
+}: {
+  titel: string;
+  wert: string | number;
+  sub?: string;
+  farbe?: string;
+  streifen?: string;
+}) {
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4">
+    <div className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4">
       <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{titel}</p>
-      <p className={`mt-1 text-3xl font-bold ${farbe ?? "text-[var(--text-strong)]"}`}>{wert}</p>
-      {sub && <p className="mt-0.5 text-xs text-[var(--text-faint)]">{sub}</p>}
+      <p className={`mt-1.5 font-mono text-3xl font-medium tabular-nums tracking-tight ${farbe ?? "text-[var(--text-strong)]"}`}>
+        {wert}
+      </p>
+      {sub && <p className="mt-1 text-xs text-[var(--text-faint)]">{sub}</p>}
+      <span
+        className="absolute inset-x-0 bottom-0 h-[3px]"
+        style={{ background: streifen ?? "var(--border-input)" }}
+      />
     </div>
   );
 }
@@ -247,20 +265,23 @@ export default function Dashboard({ organisationId }: DashboardProps) {
               </>
             ) : (
               <>
-                <KpiKarte titel="Tickets gesamt" wert={stats?.gesamt ?? 0} />
+                <KpiKarte titel="Tickets gesamt" wert={stats?.gesamt ?? 0} streifen="var(--akzent)" />
                 <KpiKarte titel="Offen / aktiv"
                   wert={(stats?.offen ?? 0) + (stats?.in_bearbeitung ?? 0) + (stats?.wartet_auf_kunde ?? 0)}
                   farbe={(stats?.offen ?? 0) + (stats?.in_bearbeitung ?? 0) > 10 ? "text-orange-600" : "text-[var(--text-strong)]"}
+                  streifen="var(--status-offen-text)"
                 />
                 <KpiKarte titel="Kundenzufriedenheit"
                   wert={csatRate !== null ? `${csatRate}%` : "—"}
                   sub={csatGesamt > 0 ? `${csatGesamt} Bewertungen` : "Noch keine Bewertungen"}
                   farbe={csatRate !== null ? (csatRate >= 80 ? "text-green-600" : csatRate >= 60 ? "text-yellow-600" : "text-red-600") : undefined}
+                  streifen={csatRate !== null ? (csatRate >= 80 ? "var(--status-geloest-text)" : csatRate >= 60 ? "var(--status-offen-text)" : "var(--badge-kritisch-text)") : undefined}
                 />
                 <KpiKarte titel="SLA-Einhaltung"
                   wert={slaRate !== null ? `${slaRate}%` : "—"}
                   sub={slaGesamt > 0 ? `${slaGesamt} Tickets mit SLA` : "Keine SLA konfiguriert"}
                   farbe={slaRate !== null ? (slaRate >= 90 ? "text-green-600" : slaRate >= 70 ? "text-yellow-600" : "text-red-600") : undefined}
+                  streifen={slaRate !== null ? (slaRate >= 90 ? "var(--status-geloest-text)" : slaRate >= 70 ? "var(--status-offen-text)" : "var(--badge-kritisch-text)") : undefined}
                 />
               </>
             )}
@@ -294,18 +315,18 @@ export default function Dashboard({ organisationId }: DashboardProps) {
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">Ticket-Volumen</p>
                 <div className="flex items-center gap-4 text-xs text-[var(--text-faint)]">
-                  <span className="flex items-center gap-1.5"><span className="h-2 w-3 rounded-sm bg-blue-400" />Neu</span>
-                  <span className="flex items-center gap-1.5"><span className="h-2 w-3 rounded-sm bg-green-400" />Gelöst</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-3 rounded-sm" style={{ background: "#2f8fae" }} />Neu</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-3 rounded-sm" style={{ background: "#2e9c63" }} />Gelöst</span>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={140}>
                 <BarChart data={volumen} barGap={2} barSize={zeitraum > 30 ? 4 : 8}>
                   <defs>
                     <filter id="neonBlau" x="-75%" y="-75%" width="250%" height="250%">
-                      <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#60a5fa" floodOpacity="0.9" />
+                      <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#2f8fae" floodOpacity="0.9" />
                     </filter>
                     <filter id="neonGruen" x="-75%" y="-75%" width="250%" height="250%">
-                      <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#4ade80" floodOpacity="0.9" />
+                      <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#2e9c63" floodOpacity="0.9" />
                     </filter>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -321,11 +342,11 @@ export default function Dashboard({ organisationId }: DashboardProps) {
                     labelFormatter={(v) => String(v)}
                     formatter={(val) => [String(val ?? ""), (val === 0 || val) ? "" : ""]}
                   />
-                  <Bar dataKey="neu" fill="#60a5fa" radius={[3, 3, 0, 0]}
-                    activeBar={{ fill: "#93c5fd", style: { filter: "url(#neonBlau)" } }}
+                  <Bar dataKey="neu" fill="#2f8fae" radius={[3, 3, 0, 0]}
+                    activeBar={{ fill: "#4aa8c2", style: { filter: "url(#neonBlau)" } }}
                     animationDuration={1400} animationEasing="ease-out" />
-                  <Bar dataKey="geloest" fill="#4ade80" radius={[3, 3, 0, 0]}
-                    activeBar={{ fill: "#86efac", style: { filter: "url(#neonGruen)" } }}
+                  <Bar dataKey="geloest" fill="#2e9c63" radius={[3, 3, 0, 0]}
+                    activeBar={{ fill: "#47b57c", style: { filter: "url(#neonGruen)" } }}
                     animationDuration={1400} animationBegin={150} animationEasing="ease-out" />
                 </BarChart>
               </ResponsiveContainer>
@@ -340,7 +361,7 @@ export default function Dashboard({ organisationId }: DashboardProps) {
                 <BarChart data={techniker.filter((t) => t.durchschnitt_minuten !== null)} barSize={24}>
                   <defs>
                     <filter id="neonAmber" x="-75%" y="-75%" width="250%" height="250%">
-                      <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#f59e0b" floodOpacity="0.9" />
+                      <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#c77c1e" floodOpacity="0.9" />
                     </filter>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -351,8 +372,8 @@ export default function Dashboard({ organisationId }: DashboardProps) {
                     cursor={false}
                     contentStyle={{ background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 11 }}
                   />
-                  <Bar dataKey="durchschnitt_minuten" fill="#f59e0b" radius={[3, 3, 0, 0]}
-                    activeBar={{ fill: "#fcd34d", style: { filter: "url(#neonAmber)" } }}
+                  <Bar dataKey="durchschnitt_minuten" fill="#c77c1e" radius={[3, 3, 0, 0]}
+                    activeBar={{ fill: "#d99a45", style: { filter: "url(#neonAmber)" } }}
                     animationDuration={1400} animationEasing="ease-out" />
                 </BarChart>
               </ResponsiveContainer>
@@ -373,11 +394,11 @@ export default function Dashboard({ organisationId }: DashboardProps) {
                 {techniker.map((t, i) => (
                   <div key={i} className="grid grid-cols-4 items-center border-b border-[var(--border)] py-2 text-sm last:border-b-0">
                     <span className="text-[var(--text-strong)]">{t.name ?? "Unbenannt"}</span>
-                    <span className={`text-center font-medium ${t.offen > 10 ? "text-orange-600" : "text-[var(--text-soft)]"}`}>
+                    <span className={`text-center font-mono font-medium ${t.offen > 10 ? "text-orange-600" : "text-[var(--text-soft)]"}`}>
                       {t.offen}
                     </span>
-                    <span className="text-center text-green-600 font-medium">{t.geloest_30d}</span>
-                    <span className="text-right text-xs text-[var(--text-faint)]">
+                    <span className="text-center font-mono text-green-600 font-medium">{t.geloest_30d}</span>
+                    <span className="text-right font-mono text-xs text-[var(--text-faint)]">
                       {formatMinuten(t.durchschnitt_minuten)}
                     </span>
                   </div>
@@ -394,7 +415,7 @@ export default function Dashboard({ organisationId }: DashboardProps) {
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">👍</span>
                   <div>
-                    <p className="text-xl font-bold text-green-600">{csat.positiv}</p>
+                    <p className="font-mono text-xl font-medium text-green-600">{csat.positiv}</p>
                     <p className="text-xs text-[var(--text-faint)]">Positiv</p>
                   </div>
                 </div>
@@ -407,7 +428,7 @@ export default function Dashboard({ organisationId }: DashboardProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="text-right">
-                    <p className="text-xl font-bold text-red-500">{csat.negativ}</p>
+                    <p className="font-mono text-xl font-medium text-red-500">{csat.negativ}</p>
                     <p className="text-xs text-[var(--text-faint)]">Negativ</p>
                   </div>
                   <span className="text-2xl">👎</span>

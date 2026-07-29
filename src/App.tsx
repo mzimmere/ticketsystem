@@ -312,12 +312,15 @@ export default function App() {
       key={key}
       onClick={onClick}
       title={titel}
-      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-colors active:scale-95 ${
+      className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-colors active:scale-95 ${
         aktiv
-          ? "bg-akzent text-white"
+          ? "bg-akzent-soft text-akzent"
           : "text-[var(--text-soft)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-strong)]"
       }`}
     >
+      {aktiv && (
+        <span className="absolute -left-2.5 top-1.5 bottom-1.5 w-[3px] rounded-full bg-akzent" />
+      )}
       {icon}
     </button>
   );
@@ -325,14 +328,14 @@ export default function App() {
   return (
     <div
       className="grid min-h-screen grid-cols-[72px_1fr] bg-[var(--bg-muted)]"
-      style={{ "--akzent": organisation?.akzentfarbe || "#f59e0b" } as React.CSSProperties}
+      style={{ "--akzent": organisation?.akzentfarbe || "#0e6e8c" } as React.CSSProperties}
     >
       {/* Navigation Rail */}
       <nav className="flex flex-col items-center gap-1 border-r border-[var(--border)] bg-[var(--bg-surface)] py-4">
         <button
           onClick={zurueckZuTickets}
           title="Zur Startseite"
-          className="mb-3 flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-akzent text-sm font-bold text-white transition-transform active:scale-95"
+          className="mb-3 flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-akzent font-mono text-xs font-medium text-white transition-transform active:scale-95"
         >
           {organisation?.logo_url ? (
             <img src={organisation.logo_url} alt={organisation.name} className="h-full w-full object-contain" />
