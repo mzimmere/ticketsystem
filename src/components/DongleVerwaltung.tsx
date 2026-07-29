@@ -23,6 +23,15 @@ interface Modul {
   liefer_datum: string | null;
 }
 
+interface LizenzVertrag {
+  id: string;
+  lizenz_seriennummer: string;
+  produkt_name: string;
+  vertrag_ende: string | null;
+  status: string | null;
+  dongle_id: string | null;
+}
+
 const WARTUNG_LABEL: Record<Wartungsvertrag, string> = {
   aktiv: "Wartungsvertrag aktiv",
   inaktiv: "Wartungsvertrag inaktiv",
@@ -34,6 +43,8 @@ const WARTUNG_FARBE: Record<Wartungsvertrag, string> = {
   inaktiv: "bg-[var(--badge-kritisch-bg)] text-[var(--badge-kritisch-text)]",
   nicht_gewuenscht: "bg-[var(--bg-muted)] text-[var(--text-faint)]",
 };
+
+const ANZAHL_STANDARD_SICHTBAR = 3;
 
 interface DongleVerwaltungProps {
   kundeId: string;
@@ -48,11 +59,18 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
   const [zeigeNeuerDongle, setZeigeNeuerDongle] = useState(false);
   const [neueSeriennummer, setNeueSeriennummer] = useState("");
   const [neueSoftware, setNeueSoftware] = useState("exocad");
+  const [filterNummer, setFilterNummer] = useState("");
+  const [alleAnzeigen, setAlleAnzeigen] = useState(false);
+  const [vertraege, setVertraege] = useState<LizenzVertrag[]>([]);
+  const [verknuepfenAuswahl, setVerknuepfenAuswahl] = useState<Record<string, string>>({});
   const [hinweis, setHinweis] = useState<string | null>(null);
 
   useEffect(() => {
     ladeDongles();
+    ladeVertraege();
     setOffenDongleId(null);
+    setFilterNummer("");
+    setAlleAnzeigen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kundeId]);
 
@@ -67,6 +85,15 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
       setHinweis("Dongles konnten nicht geladen werden.");
     }
     setDongles((data as Dongle[]) ?? []);
+  }
+
+  async function ladeVertraege() {
+    const { data } = await supabase
+      .from("lizenz_vertraege")
+      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende, status, dongle_id")
+      .eq("kunde_id", kundeId)
+      .order("vertrag_ende", { ascending: true, nullsFirst: false });
+    setVertraege((data as LizenzVertrag[]) ?? []);
   }
 
   async function ladeModule(dongleId: string) {
@@ -117,7 +144,13 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
   }
 
   async function dongleLoeschen(id: string) {
-    await supabase.from("kunden_dongles").delete().eq("id", id);
+    setHinweis(null);
+    const { error } = await supabase.from("kunden_dongles").delete().eq("id", id);
+    if (error) {
+      console.error(error);
+      setHinweis("Löschen fehlgeschlagen (Details in der Browser-Konsole).");
+      return;
+    }
     if (offenDongleId === id) setOffenDongleId(null);
     ladeDongles();
   }
@@ -148,20 +181,76 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
     ladeModule(dongleId);
   }
 
+  async function vertragVerknuepfen(dongleId: string) {
+    const vertragId = verknuepfenAuswahl[dongleId];
+    if (!vertragId) return;
+    await supabase.from("lizenz_vertraege").update({ dongle_id: dongleId }).eq("id", vertragId);
+    setVerknuepfenAuswahl((v) => {
+      const kopie = { ...v };
+      delete kopie[dongleId];
+      return kopie;
+    });
+    ladeVertraege();
+  }
+
+  async function vertragLoesen(vertragId: string) {
+    await supabase.from("lizenz_vertraege").update({ dongle_id: null }).eq("id", vertragId);
+    ladeVertraege();
+  }
+
+  const gefiltert = dongles.filter((d) =>
+    d.seriennummer.toLowerCase().includes(filterNummer.trim().toLowerCase()),
+  );
+  const suchtAktiv = filterNummer.trim() !== "";
+  const sichtbareDongles =
+    suchtAktiv || alleAnzeigen ? gefiltert : gefiltert.slice(0, ANZAHL_STANDARD_SICHTBAR);
+  const vertragJeDongle = new Map(vertraege.filter((v) => v.dongle_id).map((v) => [v.dongle_id!, v]));
+  const unverknuepfteVertraege = vertraege.filter((v) => !v.dongle_id);
+
   return (
     <div className="space-y-2">
       {dongles.length === 0 && !zeigeNeuerDongle && (
         <p className="text-xs text-[var(--text-faint)]">Noch keine Dongles/Lizenzen hinterlegt.</p>
       )}
 
-      {dongles.map((d) => (
+      {dongles.length > ANZAHL_STANDARD_SICHTBAR && (
+        <input
+          type="text"
+          value={filterNummer}
+          onChange={(e) => setFilterNummer(e.target.value)}
+          placeholder={`Nach Seriennummer filtern… (${dongles.length} Dongles)`}
+          className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-strong)]"
+        />
+      )}
+
+      {suchtAktiv && gefiltert.length === 0 && (
+        <p className="text-xs text-[var(--text-faint)]">Keine Treffer für diesen Filter.</p>
+      )}
+
+      {sichtbareDongles.map((d) => {
+        const laufzeit = vertragJeDongle.get(d.id);
+        const tageBisAblauf = laufzeit?.vertrag_ende
+          ? Math.round((new Date(laufzeit.vertrag_ende).getTime() - Date.now()) / 86400000)
+          : null;
+        return (
         <div key={d.id} className="overflow-hidden rounded-lg border border-[var(--border)]">
           <button
             onClick={() => dongleOeffnen(d.id)}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-[var(--bg-muted)]"
+            className="flex w-full flex-wrap items-center gap-2 px-3 py-2 text-left hover:bg-[var(--bg-muted)]"
           >
             <span className="font-mono text-xs text-[var(--text-strong)]">{d.seriennummer}</span>
             <span className="text-xs text-[var(--text-faint)]">· {d.software}</span>
+            {laufzeit?.vertrag_ende && (
+              <span
+                className={`text-xs ${
+                  tageBisAblauf !== null && tageBisAblauf <= 30
+                    ? "font-medium text-amber-700 dark:text-amber-400"
+                    : "text-[var(--text-faint)]"
+                }`}
+              >
+                Laufzeit bis {new Date(laufzeit.vertrag_ende).toLocaleDateString("de-DE")}
+              </span>
+            )}
             <span className={`ml-auto rounded-full px-2 py-0.5 text-[0.65rem] font-medium ${WARTUNG_FARBE[d.wartungsvertrag]}`}>
               {WARTUNG_LABEL[d.wartungsvertrag]}
             </span>
@@ -201,6 +290,59 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
                   onChange={(e) => dongleAktualisieren(d.id, { freiminuten_pro_monat: Math.max(0, Number(e.target.value)) })}
                   className="w-20 rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2 py-1 text-sm text-[var(--text-strong)]"
                 />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+                  Lizenzvertrag (Laufzeit)
+                </label>
+                {laufzeit ? (
+                  <div className="flex flex-wrap items-center gap-2 rounded bg-[var(--bg-muted)] px-2.5 py-1.5 text-sm">
+                    <span className="text-[var(--text-strong)]">{laufzeit.produkt_name}</span>
+                    <span className="font-mono text-xs text-[var(--text-faint)]">{laufzeit.lizenz_seriennummer}</span>
+                    {laufzeit.status && <span className="text-xs text-[var(--text-faint)]">· {laufzeit.status}</span>}
+                    {laufzeit.vertrag_ende && (
+                      <span className="ml-auto text-xs text-[var(--text-soft)]">
+                        bis {new Date(laufzeit.vertrag_ende).toLocaleDateString("de-DE")}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => vertragLoesen(laufzeit.id)}
+                      className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
+                    >
+                      Verknüpfung lösen
+                    </button>
+                  </div>
+                ) : unverknuepfteVertraege.length > 0 ? (
+                  <div className="flex gap-2">
+                    <select
+                      value={verknuepfenAuswahl[d.id] ?? ""}
+                      onChange={(e) => setVerknuepfenAuswahl((v) => ({ ...v, [d.id]: e.target.value }))}
+                      className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2.5 py-1.5 text-sm text-[var(--text-strong)]"
+                    >
+                      <option value="">Lizenzvertrag wählen…</option>
+                      {unverknuepfteVertraege.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.produkt_name} ({v.lizenz_seriennummer})
+                          {v.vertrag_ende ? ` – bis ${new Date(v.vertrag_ende).toLocaleDateString("de-DE")}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => vertragVerknuepfen(d.id)}
+                      disabled={!verknuepfenAuswahl[d.id]}
+                      className="shrink-0 rounded bg-akzent px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+                    >
+                      Verknüpfen
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-[var(--text-faint)]">
+                    Keine (noch nicht verknüpften) Lizenzverträge bei diesem Kunden hinterlegt. Diese
+                    kommen aus dem zweiten exocad-Import (license_history) und werden getrennt von den
+                    Dongles importiert.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -260,7 +402,17 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
             </div>
           )}
         </div>
-      ))}
+        );
+      })}
+
+      {!suchtAktiv && gefiltert.length > ANZAHL_STANDARD_SICHTBAR && (
+        <button
+          onClick={() => setAlleAnzeigen((v) => !v)}
+          className="w-full rounded border border-[var(--border-input)] px-3 py-1.5 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+        >
+          {alleAnzeigen ? "Weniger anzeigen" : `Alle ${gefiltert.length} anzeigen`}
+        </button>
+      )}
 
       {zeigeNeuerDongle ? (
         <div className="space-y-2 rounded-lg border border-dashed border-[var(--border-input)] p-3">

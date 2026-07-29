@@ -2287,8 +2287,17 @@ create policy dongle_module_delete on dongle_module for delete
 
 -- ============================================================
 -- 55. Optionale Dongle-Zuordnung bei Ticketerstellung (kein Pflichtfeld).
+-- dongle_id ist nur ein informativer Hinweis, kein Pflichtfeld -> beim
+-- Loeschen eines Dongles soll das Ticket erhalten bleiben und nur den
+-- Link verlieren (ON DELETE SET NULL), statt das Loeschen zu blockieren.
+-- Fix (urspruenglich ohne ON DELETE angelegt, dadurch NO ACTION-Default -
+-- Dongle-Loeschung schlug fehl sobald ein Ticket ihn referenzierte, ohne
+-- dass das Frontend den Fehler anzeigte):
 -- ============================================================
 alter table tickets add column if not exists dongle_id uuid references kunden_dongles(id);
+alter table tickets drop constraint if exists tickets_dongle_id_fkey;
+alter table tickets add constraint tickets_dongle_id_fkey
+  foreign key (dongle_id) references kunden_dongles(id) on delete set null;
 
 -- ============================================================
 -- 56. Lizenzvertraege (2. exocad-Exportformat: Vertragslaufzeit/
