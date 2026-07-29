@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-29", titel: "Lizenzverträge: 2. exocad-Import (license_history) für Vertragslaufzeit/Ablaufdatum, „Bald fällige Lizenzverlängerungen“-Ansicht pro Kunde und organisationsweit, tägliche E-Mail-Erinnerung an Org-Admins (nur Hinweis, keine automatische Rechnung)" },
   { datum: "2026-07-29", titel: "Abrechnung: Ticket-Freiminuten pro Dongle werden jetzt automatisch abgezogen (Gesamtzeit ohne Abzug vs. berechnete Zeit, je Dongle eine Abzugszeile) – gilt in Rechnungsdetail und Monatsübersicht" },
   { datum: "2026-07-29", titel: "Kunden-Todoliste, Dongle-/Lizenzverwaltung (Wartungsvertrag, Freiminuten, Software-Module) mit Zuordnung bei Ticketerstellung sowie exocad-CSV-Import (anpassbares Spalten-Mapping, Nicht-zugeordnet-Pool)" },
   { datum: "2026-07-23", titel: "WhatsApp: optionales App-Secret-Feld – Server-Aufrufe schicken jetzt appsecret_proof mit, falls Meta „App-Secret-Proof erforderlich“ aktiviert hat" },

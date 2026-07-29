@@ -2004,6 +2004,21 @@ grant execute on function meine_ticket_ids_mit_nachricht(text) to authenticated;
 --   );
 --   $cron$
 -- );
+--
+-- select cron.schedule(
+--   'lizenz-erinnerung-taeglich',
+--   '0 3 * * *',
+--   $cron$
+--   select net.http_post(
+--     url := 'https://wfntgmavwzuldwjjhhlp.supabase.co/functions/v1/lizenz-erinnerung-pruefen',
+--     headers := jsonb_build_object(
+--       'Content-Type', 'application/json',
+--       'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'cron_shared_secret')
+--     ),
+--     body := '{}'::jsonb
+--   );
+--   $cron$
+-- );
 -- ============================================================
 
 -- ============================================================
@@ -2274,3 +2289,92 @@ create policy dongle_module_delete on dongle_module for delete
 -- 55. Optionale Dongle-Zuordnung bei Ticketerstellung (kein Pflichtfeld).
 -- ============================================================
 alter table tickets add column if not exists dongle_id uuid references kunden_dongles(id);
+
+-- ============================================================
+-- 56. Lizenzvertraege (2. exocad-Exportformat: Vertragslaufzeit/
+-- Ablaufdatum, eigenstaendiger Identifikator, ueberschneidet sich
+-- NICHT mit kunden_dongles.seriennummer). kunde_id nullable = "nicht
+-- zugeordnet"-Pool wie bei kunden_dongles. dongle_id optional, falls
+-- der Admin manuell weiss welcher physische Dongle gemeint ist.
+-- ============================================================
+create table lizenz_vertraege (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  kunde_id uuid references profiles(id) on delete set null,
+  dongle_id uuid references kunden_dongles(id) on delete set null,
+  lizenz_seriennummer text not null,
+  produkt_name text not null,
+  lizenz_typ text,
+  vertrag_start date,
+  vertrag_ende date,
+  aktiviert_am date,
+  status text,
+  frei_zeitraum_ende date,
+  lizenz_attribut text,
+  erinnerung_gesendet_am timestamptz,
+  erstellt_am timestamptz default now(),
+  unique (organisation_id, lizenz_seriennummer)
+);
+create index idx_lizenz_vertraege_kunde on lizenz_vertraege(kunde_id);
+create index idx_lizenz_vertraege_org on lizenz_vertraege(organisation_id);
+create index idx_lizenz_vertraege_ende on lizenz_vertraege(vertrag_ende);
+alter table lizenz_vertraege enable row level security;
+
+create policy lizenz_vertraege_select on lizenz_vertraege for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy lizenz_vertraege_insert on lizenz_vertraege for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy lizenz_vertraege_update on lizenz_vertraege for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy lizenz_vertraege_delete on lizenz_vertraege for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+-- ============================================================
+-- 57. Konfigurierbare Frist fuer die Lizenz-Ablauf-Erinnerung
+-- (Muster: sla_konfiguration - eine Zeile pro Organisation).
+-- ============================================================
+create table lizenz_konfiguration (
+  organisation_id uuid primary key references organisationen(id),
+  erinnerung_tage_vorher integer not null default 30
+);
+alter table lizenz_konfiguration enable row level security;
+
+create policy lizenz_konfiguration_select on lizenz_konfiguration for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or organisation_id = current_user_org()
+    or ist_firmenmitglied(organisation_id)
+  );
+
+create policy lizenz_konfiguration_insert on lizenz_konfiguration for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+create policy lizenz_konfiguration_update on lizenz_konfiguration for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );

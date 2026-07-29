@@ -3,22 +3,25 @@ import { supabase } from "../lib/supabaseClient";
 import { parseCsv } from "../lib/csv";
 import DateiAuswahl from "./DateiAuswahl";
 
-// Zielfelder fuer den Import + gaengige Spaltennamen aus Portal-Exporten
-// (aktuell exocad "activation_keys"-Export), fuer die automatische
-// Spalten-Erkennung. Das Mapping bleibt in der UI trotzdem frei anpassbar,
-// falls ein anderes Portal andere Spaltennamen liefert.
-const ZIELFELD_LABEL = {
-  seriennummer: "Seriennummer (Dongle)",
-  modulname: "Modulname",
-  lieferdatum: "Lieferdatum",
-  activation_key: "Activation Key",
-  article_number: "Artikelnummer",
-  gruppe: "Kunden-/Gruppenhinweis",
-} as const;
+type ImportZiel = "dongle" | "lizenz";
 
-type Zielfeld = keyof typeof ZIELFELD_LABEL;
+interface Feld {
+  schluessel: string;
+  label: string;
+  pflicht: boolean;
+}
 
-const ALIASE: Record<Zielfeld, string[]> = {
+// Ziel 1: exocad "activation_keys"-Export -> Dongles/Module (Phase 1).
+// Ein Modul (= eine Zeile) je Seriennummer, gruppiert nach Seriennummer.
+const FELDER_DONGLE: Feld[] = [
+  { schluessel: "seriennummer", label: "Seriennummer (Dongle)", pflicht: true },
+  { schluessel: "modulname", label: "Modulname", pflicht: true },
+  { schluessel: "lieferdatum", label: "Lieferdatum", pflicht: false },
+  { schluessel: "activation_key", label: "Activation Key", pflicht: false },
+  { schluessel: "article_number", label: "Artikelnummer", pflicht: false },
+  { schluessel: "gruppe", label: "Kunden-/Gruppenhinweis", pflicht: false },
+];
+const ALIASE_DONGLE: Record<string, string[]> = {
   seriennummer: ["serialnumber", "serial_number", "seriennummer", "serial"],
   modulname: ["name", "module", "modulename", "module_name"],
   lieferdatum: ["deliverydate", "delivery_date", "lieferdatum"],
@@ -27,9 +30,41 @@ const ALIASE: Record<Zielfeld, string[]> = {
   gruppe: ["group_name", "groupname", "gruppe"],
 };
 
-const PFLICHTFELDER: Zielfeld[] = ["seriennummer", "modulname"];
+// Ziel 2: exocad "license_history"-Export -> Lizenzvertraege (Phase 3).
+// Eigenstaendiger Identifikator, ueberschneidet sich NICHT mit den
+// Dongle-Seriennummern aus Ziel 1. Eine Zeile = ein Lizenzvertrag.
+const FELDER_LIZENZ: Feld[] = [
+  { schluessel: "seriennummer", label: "Seriennummer (Lizenz)", pflicht: true },
+  { schluessel: "produkt_name", label: "Produktname", pflicht: true },
+  { schluessel: "lizenz_typ", label: "Lizenztyp", pflicht: false },
+  { schluessel: "vertrag_start", label: "Vertragsbeginn", pflicht: false },
+  { schluessel: "vertrag_ende", label: "Vertragsende / Ablauf", pflicht: false },
+  { schluessel: "aktiviert_am", label: "Aktiviert am", pflicht: false },
+  { schluessel: "status", label: "Status", pflicht: false },
+  { schluessel: "frei_zeitraum_ende", label: "Freier Zeitraum bis", pflicht: false },
+  { schluessel: "lizenz_attribut", label: "Lizenz-Attribut", pflicht: false },
+];
+const ALIASE_LIZENZ: Record<string, string[]> = {
+  seriennummer: ["serialnumber", "serial_number", "seriennummer", "serial"],
+  produkt_name: ["productname", "product_name"],
+  lizenz_typ: ["licensetype", "license_type"],
+  vertrag_start: ["contractstartdate", "contract_start_date"],
+  vertrag_ende: ["contractenddate", "contract_end_date"],
+  aktiviert_am: ["activatedat", "activated_at"],
+  status: ["status"],
+  frei_zeitraum_ende: ["freeperiodenddate", "free_period_end_date"],
+  lizenz_attribut: ["licenseattribute", "license_attribute"],
+};
 
-interface Vorschau {
+function erkenneZiel(header: string[]): ImportZiel {
+  const h = header.map((s) => s.toLowerCase());
+  const hatProduktname = h.some((s) => ["productname", "product_name"].includes(s));
+  const hatVertragsende = h.some((s) => ["contractenddate", "contract_end_date"].includes(s));
+  return hatProduktname && hatVertragsende ? "lizenz" : "dongle";
+}
+
+interface VorschauDongle {
+  ziel: "dongle";
   gesamtZeilen: number;
   uebersprungen: number;
   neueDongles: number;
@@ -44,6 +79,33 @@ interface Vorschau {
   >;
   existierendeSerials: Set<string>;
 }
+
+interface VorschauLizenzZeile {
+  produktName: string;
+  lizenzTyp: string | null;
+  vertragStart: string | null;
+  vertragEnde: string | null;
+  aktiviertAm: string | null;
+  status: string | null;
+  freiZeitraumEnde: string | null;
+  lizenzAttribut: string | null;
+}
+
+interface VorschauLizenz {
+  ziel: "lizenz";
+  gesamtZeilen: number;
+  uebersprungen: number;
+  neueVertraege: number;
+  bestehendeVertraege: number;
+  zeilen: Map<string, VorschauLizenzZeile>;
+  existierendeSerials: Set<string>;
+}
+
+type Vorschau = VorschauDongle | VorschauLizenz;
+
+type Ergebnis =
+  | { ziel: "dongle"; neueDongles: number; bestehendeDongles: number; module: number }
+  | { ziel: "lizenz"; neueVertraege: number; aktualisierteVertraege: number };
 
 interface DongleImportProps {
   organisationId: string;
@@ -61,18 +123,14 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
   const [datei, setDatei] = useState<File | null>(null);
   const [header, setHeader] = useState<string[]>([]);
   const [zeilen, setZeilen] = useState<string[][]>([]);
-  const [mapping, setMapping] = useState<Record<Zielfeld, string>>({
-    seriennummer: "",
-    modulname: "",
-    lieferdatum: "",
-    activation_key: "",
-    article_number: "",
-    gruppe: "",
-  });
+  const [ziel, setZiel] = useState<ImportZiel>("dongle");
+  const [mapping, setMapping] = useState<Record<string, string>>({});
   const [vorschau, setVorschau] = useState<Vorschau | null>(null);
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
-  const [ergebnis, setErgebnis] = useState<{ neueDongles: number; bestehendeDongles: number; module: number } | null>(null);
+  const [ergebnis, setErgebnis] = useState<Ergebnis | null>(null);
+
+  const felder = ziel === "lizenz" ? FELDER_LIZENZ : FELDER_DONGLE;
 
   function zuruecksetzen() {
     setDatei(null);
@@ -97,11 +155,16 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
     setHeader(h);
     setZeilen(z);
 
+    const erkanntesZiel = erkenneZiel(h);
+    setZiel(erkanntesZiel);
+
     // Auto-Erkennung anhand gaengiger Spaltennamen
-    const neuesMapping = { ...mapping };
-    for (const ziel of Object.keys(ZIELFELD_LABEL) as Zielfeld[]) {
-      const treffer = h.find((spalte) => ALIASE[ziel].includes(spalte.toLowerCase()));
-      neuesMapping[ziel] = treffer ?? "";
+    const zielAliase = erkanntesZiel === "lizenz" ? ALIASE_LIZENZ : ALIASE_DONGLE;
+    const zielFelder = erkanntesZiel === "lizenz" ? FELDER_LIZENZ : FELDER_DONGLE;
+    const neuesMapping: Record<string, string> = {};
+    for (const feld of zielFelder) {
+      const treffer = h.find((spalte) => zielAliase[feld.schluessel].includes(spalte.toLowerCase()));
+      neuesMapping[feld.schluessel] = treffer ?? "";
     }
     setMapping(neuesMapping);
   }
@@ -112,13 +175,22 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
 
   async function vorschauBerechnen() {
     setFehler(null);
-    const fehlt = PFLICHTFELDER.filter((f) => !mapping[f]);
-    if (fehlt.length > 0) {
-      setFehler(`Bitte Spalte für "${ZIELFELD_LABEL[fehlt[0]]}" zuordnen.`);
+    const fehlendeFelder = felder.filter((f) => f.pflicht && !mapping[f.schluessel]);
+    if (fehlendeFelder.length > 0) {
+      setFehler(`Bitte Spalte für "${fehlendeFelder[0].label}" zuordnen.`);
       return;
     }
     setLaedt(true);
 
+    if (ziel === "lizenz") {
+      await vorschauLizenzBerechnen();
+    } else {
+      await vorschauDongleBerechnen();
+    }
+    setLaedt(false);
+  }
+
+  async function vorschauDongleBerechnen() {
     const idxSerial = spaltenIndex(mapping.seriennummer);
     const idxName = spaltenIndex(mapping.modulname);
     const idxDatum = mapping.lieferdatum ? spaltenIndex(mapping.lieferdatum) : -1;
@@ -126,7 +198,7 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
     const idxArt = mapping.article_number ? spaltenIndex(mapping.article_number) : -1;
     const idxGruppe = mapping.gruppe ? spaltenIndex(mapping.gruppe) : -1;
 
-    const gruppiert: Vorschau["gruppiert"] = new Map();
+    const gruppiert: VorschauDongle["gruppiert"] = new Map();
     let uebersprungen = 0;
 
     for (const z of zeilen) {
@@ -163,6 +235,7 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
     }
 
     setVorschau({
+      ziel: "dongle",
       gesamtZeilen: zeilen.length,
       uebersprungen,
       neueDongles: alleSerials.filter((s) => !existierendeSerials.has(s)).length,
@@ -170,7 +243,61 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
       gruppiert,
       existierendeSerials,
     });
-    setLaedt(false);
+  }
+
+  async function vorschauLizenzBerechnen() {
+    const idxSerial = spaltenIndex(mapping.seriennummer);
+    const idxProdukt = spaltenIndex(mapping.produkt_name);
+    const idxTyp = mapping.lizenz_typ ? spaltenIndex(mapping.lizenz_typ) : -1;
+    const idxStart = mapping.vertrag_start ? spaltenIndex(mapping.vertrag_start) : -1;
+    const idxEnde = mapping.vertrag_ende ? spaltenIndex(mapping.vertrag_ende) : -1;
+    const idxAktiviert = mapping.aktiviert_am ? spaltenIndex(mapping.aktiviert_am) : -1;
+    const idxStatus = mapping.status ? spaltenIndex(mapping.status) : -1;
+    const idxFreiEnde = mapping.frei_zeitraum_ende ? spaltenIndex(mapping.frei_zeitraum_ende) : -1;
+    const idxAttribut = mapping.lizenz_attribut ? spaltenIndex(mapping.lizenz_attribut) : -1;
+
+    const zeilenKarte = new Map<string, VorschauLizenzZeile>();
+    let uebersprungen = 0;
+
+    for (const z of zeilen) {
+      const seriennummer = z[idxSerial]?.trim();
+      const produktName = z[idxProdukt]?.trim();
+      if (!seriennummer || !produktName) {
+        uebersprungen++;
+        continue;
+      }
+      zeilenKarte.set(seriennummer, {
+        produktName,
+        lizenzTyp: idxTyp >= 0 ? z[idxTyp]?.trim() || null : null,
+        vertragStart: idxStart >= 0 ? z[idxStart]?.trim() || null : null,
+        vertragEnde: idxEnde >= 0 ? z[idxEnde]?.trim() || null : null,
+        aktiviertAm: idxAktiviert >= 0 ? z[idxAktiviert]?.trim() || null : null,
+        status: idxStatus >= 0 ? z[idxStatus]?.trim() || null : null,
+        freiZeitraumEnde: idxFreiEnde >= 0 ? z[idxFreiEnde]?.trim() || null : null,
+        lizenzAttribut: idxAttribut >= 0 ? z[idxAttribut]?.trim() || null : null,
+      });
+    }
+
+    const alleSerials = Array.from(zeilenKarte.keys());
+    const existierendeSerials = new Set<string>();
+    for (const chunk of inChunks(alleSerials, 500)) {
+      const { data } = await supabase
+        .from("lizenz_vertraege")
+        .select("lizenz_seriennummer")
+        .eq("organisation_id", organisationId)
+        .in("lizenz_seriennummer", chunk);
+      (data ?? []).forEach((d) => existierendeSerials.add(d.lizenz_seriennummer));
+    }
+
+    setVorschau({
+      ziel: "lizenz",
+      gesamtZeilen: zeilen.length,
+      uebersprungen,
+      neueVertraege: alleSerials.filter((s) => !existierendeSerials.has(s)).length,
+      bestehendeVertraege: existierendeSerials.size,
+      zeilen: zeilenKarte,
+      existierendeSerials,
+    });
   }
 
   async function importieren() {
@@ -178,71 +305,11 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
     setLaedt(true);
     setFehler(null);
     try {
-      const neueDongleRows = Array.from(vorschau.gruppiert.entries())
-        .filter(([serial]) => !vorschau.existierendeSerials.has(serial))
-        .map(([serial, info]) => ({
-          organisation_id: organisationId,
-          kunde_id: null,
-          seriennummer: serial,
-          software: "exocad",
-          gruppe: info.gruppe,
-          liefer_datum: info.minLieferdatum,
-        }));
-
-      for (const chunk of inChunks(neueDongleRows, 500)) {
-        if (chunk.length === 0) continue;
-        // ignoreDuplicates statt normalem upsert: bestehende Dongles (z.B.
-        // schon einem Kunden zugeordnet, mit eigenem Wartungsvertrag/
-        // Freiminuten) werden beim erneuten Import NICHT ueberschrieben.
-        const { error } = await supabase
-          .from("kunden_dongles")
-          .upsert(chunk, { onConflict: "organisation_id,seriennummer", ignoreDuplicates: true });
-        if (error) throw error;
+      if (vorschau.ziel === "lizenz") {
+        await lizenzImportieren(vorschau);
+      } else {
+        await dongleImportieren(vorschau);
       }
-
-      // Alle betroffenen Dongle-IDs (neu + bestehend) nachladen, um Module zuzuordnen
-      const alleSerials = Array.from(vorschau.gruppiert.keys());
-      const serialZuId = new Map<string, string>();
-      for (const chunk of inChunks(alleSerials, 500)) {
-        const { data } = await supabase
-          .from("kunden_dongles")
-          .select("id, seriennummer")
-          .eq("organisation_id", organisationId)
-          .in("seriennummer", chunk);
-        (data ?? []).forEach((d) => serialZuId.set(d.seriennummer, d.id));
-      }
-
-      const modulRows: { dongle_id: string; name: string; aktiv: boolean; activation_key: string | null; article_number: string | null; liefer_datum: string | null }[] = [];
-      for (const [serial, info] of vorschau.gruppiert.entries()) {
-        const dongleId = serialZuId.get(serial);
-        if (!dongleId) continue;
-        for (const m of info.module) {
-          modulRows.push({
-            dongle_id: dongleId,
-            name: m.modulname,
-            aktiv: true,
-            activation_key: m.activationKey,
-            article_number: m.articleNumber,
-            liefer_datum: m.lieferdatum,
-          });
-        }
-      }
-
-      let moduleVerarbeitet = 0;
-      for (const chunk of inChunks(modulRows, 500)) {
-        if (chunk.length === 0) continue;
-        const { error } = await supabase
-          .from("dongle_module")
-          .upsert(chunk, { onConflict: "dongle_id,name" });
-        if (error) throw error;
-        moduleVerarbeitet += chunk.length;
-      }
-
-      setErgebnis({
-        neueDongles: vorschau.neueDongles,
-        bestehendeDongles: vorschau.bestehendeDongles,
-        module: moduleVerarbeitet,
-      });
       setVorschau(null);
       onImportiert();
     } catch (err) {
@@ -253,13 +320,116 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
     }
   }
 
+  async function dongleImportieren(vorschau: VorschauDongle) {
+    const neueDongleRows = Array.from(vorschau.gruppiert.entries())
+      .filter(([serial]) => !vorschau.existierendeSerials.has(serial))
+      .map(([serial, info]) => ({
+        organisation_id: organisationId,
+        kunde_id: null,
+        seriennummer: serial,
+        software: "exocad",
+        gruppe: info.gruppe,
+        liefer_datum: info.minLieferdatum,
+      }));
+
+    for (const chunk of inChunks(neueDongleRows, 500)) {
+      if (chunk.length === 0) continue;
+      // ignoreDuplicates statt normalem upsert: bestehende Dongles (z.B.
+      // schon einem Kunden zugeordnet, mit eigenem Wartungsvertrag/
+      // Freiminuten) werden beim erneuten Import NICHT ueberschrieben.
+      const { error } = await supabase
+        .from("kunden_dongles")
+        .upsert(chunk, { onConflict: "organisation_id,seriennummer", ignoreDuplicates: true });
+      if (error) throw error;
+    }
+
+    // Alle betroffenen Dongle-IDs (neu + bestehend) nachladen, um Module zuzuordnen
+    const alleSerials = Array.from(vorschau.gruppiert.keys());
+    const serialZuId = new Map<string, string>();
+    for (const chunk of inChunks(alleSerials, 500)) {
+      const { data } = await supabase
+        .from("kunden_dongles")
+        .select("id, seriennummer")
+        .eq("organisation_id", organisationId)
+        .in("seriennummer", chunk);
+      (data ?? []).forEach((d) => serialZuId.set(d.seriennummer, d.id));
+    }
+
+    const modulRows: { dongle_id: string; name: string; aktiv: boolean; activation_key: string | null; article_number: string | null; liefer_datum: string | null }[] = [];
+    for (const [serial, info] of vorschau.gruppiert.entries()) {
+      const dongleId = serialZuId.get(serial);
+      if (!dongleId) continue;
+      for (const m of info.module) {
+        modulRows.push({
+          dongle_id: dongleId,
+          name: m.modulname,
+          aktiv: true,
+          activation_key: m.activationKey,
+          article_number: m.articleNumber,
+          liefer_datum: m.lieferdatum,
+        });
+      }
+    }
+
+    let moduleVerarbeitet = 0;
+    for (const chunk of inChunks(modulRows, 500)) {
+      if (chunk.length === 0) continue;
+      const { error } = await supabase
+        .from("dongle_module")
+        .upsert(chunk, { onConflict: "dongle_id,name" });
+      if (error) throw error;
+      moduleVerarbeitet += chunk.length;
+    }
+
+    setErgebnis({
+      ziel: "dongle",
+      neueDongles: vorschau.neueDongles,
+      bestehendeDongles: vorschau.bestehendeDongles,
+      module: moduleVerarbeitet,
+    });
+  }
+
+  async function lizenzImportieren(vorschau: VorschauLizenz) {
+    const rows = Array.from(vorschau.zeilen.entries()).map(([serial, z]) => ({
+      organisation_id: organisationId,
+      lizenz_seriennummer: serial,
+      produkt_name: z.produktName,
+      lizenz_typ: z.lizenzTyp,
+      vertrag_start: z.vertragStart,
+      vertrag_ende: z.vertragEnde,
+      aktiviert_am: z.aktiviertAm,
+      status: z.status,
+      frei_zeitraum_ende: z.freiZeitraumEnde,
+      lizenz_attribut: z.lizenzAttribut,
+    }));
+
+    // Normaler Upsert (kein ignoreDuplicates): Vertragsdaten (Ablaufdatum,
+    // Status, ...) sollen beim erneuten Import aktualisiert werden. kunde_id,
+    // dongle_id und erinnerung_gesendet_am werden bewusst NICHT mitgeschickt,
+    // damit eine bereits erfolgte manuelle Zuordnung bzw. eine schon
+    // versendete Erinnerung dabei nicht ueberschrieben wird.
+    for (const chunk of inChunks(rows, 500)) {
+      if (chunk.length === 0) continue;
+      const { error } = await supabase
+        .from("lizenz_vertraege")
+        .upsert(chunk, { onConflict: "organisation_id,lizenz_seriennummer" });
+      if (error) throw error;
+    }
+
+    setErgebnis({
+      ziel: "lizenz",
+      neueVertraege: vorschau.neueVertraege,
+      aktualisierteVertraege: vorschau.bestehendeVertraege,
+    });
+  }
+
   if (!offen) {
     return (
       <button
         onClick={() => setOffen(true)}
         className="w-full rounded border border-dashed border-[var(--border-input)] px-3 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
       >
-        Dongles/Module aus Portal-Export importieren
+        Dongles/Module/Lizenzen aus Portal-Export importieren
       </button>
     );
   }
@@ -267,7 +437,7 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
   return (
     <div className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-[var(--text-strong)]">Dongles/Module importieren</p>
+        <p className="text-sm font-medium text-[var(--text-strong)]">Portal-Export importieren</p>
         <button
           onClick={() => {
             setOffen(false);
@@ -281,11 +451,19 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
 
       {ergebnis ? (
         <div className="space-y-2">
-          <p className="text-sm text-[var(--text-strong)]">
-            ✓ Import abgeschlossen: {ergebnis.neueDongles} neue Dongles angelegt (im Pool
-            „Nicht zugeordnet"), {ergebnis.bestehendeDongles} bestehende Dongles unverändert,{" "}
-            {ergebnis.module} Module verarbeitet.
-          </p>
+          {ergebnis.ziel === "dongle" ? (
+            <p className="text-sm text-[var(--text-strong)]">
+              ✓ Import abgeschlossen: {ergebnis.neueDongles} neue Dongles angelegt (im Pool
+              „Nicht zugeordnet"), {ergebnis.bestehendeDongles} bestehende Dongles unverändert,{" "}
+              {ergebnis.module} Module verarbeitet.
+            </p>
+          ) : (
+            <p className="text-sm text-[var(--text-strong)]">
+              ✓ Import abgeschlossen: {ergebnis.neueVertraege} neue Lizenzverträge angelegt (im Pool
+              „Nicht zugeordnet"), {ergebnis.aktualisierteVertraege} bestehende Lizenzverträge aktualisiert
+              (Vertragsende/Status).
+            </p>
+          )}
           <button
             onClick={() => {
               zuruecksetzen();
@@ -309,22 +487,23 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
           {datei && header.length > 0 && (
             <div className="space-y-3">
               <p className="text-xs text-[var(--text-faint)]">
-                {datei.name} · {zeilen.length} Zeilen erkannt
+                {datei.name} · {zeilen.length} Zeilen erkannt ·{" "}
+                {ziel === "lizenz" ? "erkannt als Lizenzvertrags-Export" : "erkannt als Dongle-/Modul-Export"}
               </p>
 
               <div className="space-y-2">
                 <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
                   Spalten zuordnen
                 </p>
-                {(Object.keys(ZIELFELD_LABEL) as Zielfeld[]).map((ziel) => (
-                  <div key={ziel} className="flex items-center gap-2">
+                {felder.map((feld) => (
+                  <div key={feld.schluessel} className="flex items-center gap-2">
                     <label className="w-40 shrink-0 text-xs text-[var(--text-soft)]">
-                      {ZIELFELD_LABEL[ziel]}
-                      {PFLICHTFELDER.includes(ziel) && <span className="text-red-600"> *</span>}
+                      {feld.label}
+                      {feld.pflicht && <span className="text-red-600"> *</span>}
                     </label>
                     <select
-                      value={mapping[ziel]}
-                      onChange={(e) => setMapping((m) => ({ ...m, [ziel]: e.target.value }))}
+                      value={mapping[feld.schluessel] ?? ""}
+                      onChange={(e) => setMapping((m) => ({ ...m, [feld.schluessel]: e.target.value }))}
                       className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2 py-1.5 text-sm text-[var(--text-strong)]"
                     >
                       <option value="">— nicht zuordnen —</option>
@@ -348,20 +527,36 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
                 </button>
               ) : (
                 <div className="space-y-2 rounded-lg bg-[var(--bg-muted)] p-3">
-                  <p className="text-sm text-[var(--text-strong)]">
-                    {vorschau.gruppiert.size} Dongles ({vorschau.neueDongles} neu,{" "}
-                    {vorschau.bestehendeDongles} bestehend), {vorschau.gesamtZeilen - vorschau.uebersprungen}{" "}
-                    Modul-Zeilen werden verarbeitet.
-                  </p>
+                  {vorschau.ziel === "dongle" ? (
+                    <>
+                      <p className="text-sm text-[var(--text-strong)]">
+                        {vorschau.gruppiert.size} Dongles ({vorschau.neueDongles} neu,{" "}
+                        {vorschau.bestehendeDongles} bestehend), {vorschau.gesamtZeilen - vorschau.uebersprungen}{" "}
+                        Modul-Zeilen werden verarbeitet.
+                      </p>
+                      <p className="text-xs text-[var(--text-faint)]">
+                        Neue Dongles landen zunächst unzugeordnet und müssen einem Kunden zugewiesen werden.
+                        Bestehende Dongles (Wartungsvertrag, Freiminuten) bleiben unverändert.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm text-[var(--text-strong)]">
+                        {vorschau.zeilen.size} Lizenzverträge ({vorschau.neueVertraege} neu,{" "}
+                        {vorschau.bestehendeVertraege} bestehend/aktualisiert).
+                      </p>
+                      <p className="text-xs text-[var(--text-faint)]">
+                        Neue Lizenzverträge landen zunächst unzugeordnet. Bestehende Verträge werden mit
+                        Vertragsende/Status aus dem Export aktualisiert; eine bereits erfolgte Kundenzuordnung
+                        bleibt erhalten.
+                      </p>
+                    </>
+                  )}
                   {vorschau.uebersprungen > 0 && (
                     <p className="text-xs text-[var(--text-faint)]">
-                      {vorschau.uebersprungen} Zeilen übersprungen (Seriennummer oder Modulname fehlt).
+                      {vorschau.uebersprungen} Zeilen übersprungen (Pflichtfeld fehlt).
                     </p>
                   )}
-                  <p className="text-xs text-[var(--text-faint)]">
-                    Neue Dongles landen zunächst unzugeordnet und müssen einem Kunden zugewiesen werden.
-                    Bestehende Dongles (Wartungsvertrag, Freiminuten) bleiben unverändert.
-                  </p>
                   <button
                     onClick={importieren}
                     disabled={laedt}

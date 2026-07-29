@@ -51,6 +51,21 @@ interface NichtZugeordneterDongle {
   gruppe: string | null;
 }
 
+interface LizenzVertrag {
+  id: string;
+  lizenz_seriennummer: string;
+  produkt_name: string;
+  vertrag_ende: string | null;
+  status: string | null;
+}
+
+interface NichtZugeordneterVertrag {
+  id: string;
+  lizenz_seriennummer: string;
+  produkt_name: string;
+  vertrag_ende: string | null;
+}
+
 interface KundenListeProps {
   organisationId: string;
   refreshKey?: number;
@@ -81,6 +96,9 @@ export default function KundenListe({
   const [neuesTodo, setNeuesTodo] = useState("");
   const [nichtZugeordnete, setNichtZugeordnete] = useState<NichtZugeordneterDongle[]>([]);
   const [zuweisenAn, setZuweisenAn] = useState<Record<string, string>>({});
+  const [vertraege, setVertraege] = useState<LizenzVertrag[]>([]);
+  const [nichtZugeordneteVertraege, setNichtZugeordneteVertraege] = useState<NichtZugeordneterVertrag[]>([]);
+  const [zuweisenAnVertrag, setZuweisenAnVertrag] = useState<Record<string, string>>({});
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
   const [neuerZugang, setNeuerZugang] = useState<{
@@ -96,6 +114,7 @@ export default function KundenListe({
 
   useEffect(() => {
     ladeNichtZugeordnete();
+    ladeNichtZugeordneteVertraege();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organisationId, refreshKey]);
 
@@ -119,6 +138,28 @@ export default function KundenListe({
       return kopie;
     });
     ladeNichtZugeordnete();
+  }
+
+  async function ladeNichtZugeordneteVertraege() {
+    const { data } = await supabase
+      .from("lizenz_vertraege")
+      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende")
+      .eq("organisation_id", organisationId)
+      .is("kunde_id", null)
+      .order("vertrag_ende", { ascending: true, nullsFirst: false });
+    setNichtZugeordneteVertraege((data as NichtZugeordneterVertrag[]) ?? []);
+  }
+
+  async function vertragZuweisen(vertragId: string) {
+    const kundeId = zuweisenAnVertrag[vertragId];
+    if (!kundeId) return;
+    await supabase.from("lizenz_vertraege").update({ kunde_id: kundeId }).eq("id", vertragId);
+    setZuweisenAnVertrag((z) => {
+      const kopie = { ...z };
+      delete kopie[vertragId];
+      return kopie;
+    });
+    ladeNichtZugeordneteVertraege();
   }
 
   async function ladeKunden() {
@@ -210,6 +251,15 @@ export default function KundenListe({
     ladeTodos(kundeId);
   }
 
+  async function ladeVertraege(kundeId: string) {
+    const { data } = await supabase
+      .from("lizenz_vertraege")
+      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende, status")
+      .eq("kunde_id", kundeId)
+      .order("vertrag_ende", { ascending: true, nullsFirst: false });
+    setVertraege((data as LizenzVertrag[]) ?? []);
+  }
+
   function bearbeitenOeffnen(k: Kunde) {
     setOffenId(k.id);
     setEntwurf(k);
@@ -220,6 +270,7 @@ export default function KundenListe({
     ladeDokumente(k.id);
     ladePreise(k.id);
     ladeTodos(k.id);
+    ladeVertraege(k.id);
   }
 
   async function preisHinzufuegen(kundeId: string) {
@@ -441,6 +492,58 @@ export default function KundenListe({
                     <button
                       onClick={() => dongleZuweisen(d.id)}
                       disabled={!zuweisenAn[d.id]}
+                      className="shrink-0 rounded bg-akzent px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
+                    >
+                      Zuweisen
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {nichtZugeordneteVertraege.length > 0 && (
+        <div className="space-y-1.5 rounded-lg border border-dashed border-[var(--border-input)] p-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
+            Nicht zugeordnete Lizenzverträge ({nichtZugeordneteVertraege.length})
+          </p>
+          {zeigeArchivierte && (
+            <p className="text-xs text-[var(--text-faint)]">
+              Zum Zuweisen erst zu "Aktive" wechseln.
+            </p>
+          )}
+          <div className="space-y-1.5">
+            {nichtZugeordneteVertraege.map((v) => (
+              <div
+                key={v.id}
+                className="flex flex-wrap items-center gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5"
+              >
+                <span className="font-mono text-xs text-[var(--text-strong)]">{v.lizenz_seriennummer}</span>
+                <span className="text-xs text-[var(--text-faint)]">· {v.produkt_name}</span>
+                {v.vertrag_ende && (
+                  <span className="text-xs text-[var(--text-faint)]">
+                    (bis {new Date(v.vertrag_ende).toLocaleDateString("de-DE")})
+                  </span>
+                )}
+                {!zeigeArchivierte && (
+                  <div className="ml-auto flex items-center gap-1.5">
+                    <select
+                      value={zuweisenAnVertrag[v.id] ?? ""}
+                      onChange={(e) => setZuweisenAnVertrag((z) => ({ ...z, [v.id]: e.target.value }))}
+                      className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1 text-xs text-[var(--text-strong)]"
+                    >
+                      <option value="">Kunde wählen…</option>
+                      {kunden.map((k) => (
+                        <option key={k.id} value={k.id}>
+                          {k.name ?? "Unbenannt"}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => vertragZuweisen(v.id)}
+                      disabled={!zuweisenAnVertrag[v.id]}
                       className="shrink-0 rounded bg-akzent px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
                     >
                       Zuweisen
@@ -831,6 +934,49 @@ export default function KundenListe({
                 </p>
                 <DongleVerwaltung kundeId={k.id} organisationId={organisationId} />
               </div>
+
+              {vertraege.length > 0 && (
+                <div className="border-t border-[var(--border)] pt-3">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
+                    Lizenzverträge (Ablauf/Verlängerung)
+                  </p>
+                  <div className="space-y-1.5">
+                    {vertraege.map((v) => {
+                      const tageBisAblauf = v.vertrag_ende
+                        ? Math.round((new Date(v.vertrag_ende).getTime() - Date.now()) / 86400000)
+                        : null;
+                      const baldFaellig = tageBisAblauf !== null && tageBisAblauf <= 30;
+                      return (
+                        <div
+                          key={v.id}
+                          className={`flex flex-wrap items-center gap-2 rounded px-3 py-1.5 ${
+                            baldFaellig ? "bg-amber-50 dark:bg-amber-950/30" : "bg-[var(--bg-muted)]"
+                          }`}
+                        >
+                          <span className="text-sm text-[var(--text-strong)]">{v.produkt_name}</span>
+                          <span className="font-mono text-xs text-[var(--text-faint)]">
+                            {v.lizenz_seriennummer}
+                          </span>
+                          {v.status && <span className="text-xs text-[var(--text-faint)]">· {v.status}</span>}
+                          {v.vertrag_ende && (
+                            <span
+                              className={`ml-auto text-xs ${
+                                baldFaellig
+                                  ? "font-medium text-amber-700 dark:text-amber-400"
+                                  : "text-[var(--text-faint)]"
+                              }`}
+                            >
+                              bis {new Date(v.vertrag_ende).toLocaleDateString("de-DE")}
+                              {tageBisAblauf !== null && tageBisAblauf >= 0 && ` (${tageBisAblauf} Tage)`}
+                              {tageBisAblauf !== null && tageBisAblauf < 0 && " (abgelaufen)"}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}
 

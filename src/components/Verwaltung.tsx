@@ -11,6 +11,7 @@ import VorlagenVerwaltung from "./VorlagenVerwaltung";
 import MakroVerwaltung from "./MakroVerwaltung";
 import TagVerwaltung from "./TagVerwaltung";
 import SlaVerwaltung from "./SlaVerwaltung";
+import LizenzVerlaengerungen from "./LizenzVerlaengerungen";
 import FaqVerwaltung from "./FaqVerwaltung";
 import ReportingExport from "./ReportingExport";
 import IntegrationenVerwaltung from "./IntegrationenVerwaltung";
@@ -1211,6 +1212,20 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
               { nr: 4, titel: "Auto-Schließen (optional)", beschreibung: "Anzahl Tage eintragen, nach denen ein Ticket im Status 'Wartet auf Kunde' automatisch geschlossen wird. Leer lassen = deaktiviert. Läuft täglich um 02:00 Uhr." },
             ]}
             hinweis="SLA-Fristen gelten nur für Tickets die nach der Aktivierung erstellt werden – bestehende Tickets bleiben unverändert."
+          />
+        </div>
+      )}
+
+      {aktiveTab === "werkzeuge" && organisationId && (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
+          <LizenzVerlaengerungen organisationId={organisationId} />
+          <KonfigurationsHilfe
+            titel="Lizenz-Ablauf-Erinnerungen"
+            schritte={[
+              { nr: 1, titel: "Frist einstellen", beschreibung: "Anzahl Tage vor Vertragsende festlegen, ab wann eine Lizenz als 'bald fällig' gilt und eine Erinnerungs-Mail auslöst." },
+              { nr: 2, titel: "Lizenzverträge importieren", beschreibung: "Über den Import-Button in der Kundenliste den exocad 'license_history'-Export hochladen. Neue Verträge landen zunächst unzugeordnet und werden dort einem Kunden zugewiesen." },
+              { nr: 3, titel: "Nur Hinweis, keine Rechnung", beschreibung: "Das System verschickt ausschließlich eine Erinnerungs-Mail an Org-Admins. Rechnung/Verlängerung wird weiterhin manuell in der Abrechnung erstellt." },
+            ]}
           />
         </div>
       )}
