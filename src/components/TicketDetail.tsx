@@ -3,6 +3,8 @@ import { supabase } from "../lib/supabaseClient";
 import { benachrichtigeKunde } from "../lib/benachrichtigungen";
 import { sichererDateiname } from "../lib/dateiname";
 import { useUngespeichertWarnung } from "../lib/useUngespeichertWarnung";
+import { useSpracheingabe, spracheingabeUnterstuetzt } from "../lib/useSpracheingabe";
+import { Mic, MicOff } from "lucide-react";
 import DateiAuswahl from "./DateiAuswahl";
 import Zeiterfassung from "./Zeiterfassung";
 import Avatar from "./Avatar";
@@ -104,6 +106,7 @@ interface TicketDetailProps {
 
 export default function TicketDetail({ ticketId, technikerId }: TicketDetailProps) {
   const [ticket, setTicket] = useState<Ticket | null>(null);
+  const [kundeEmail, setKundeEmail] = useState<string | null>(null);
   const [nachrichten, setNachrichten] = useState<Nachricht[]>([]);
   const [techniker, setTechniker] = useState<Techniker[]>([]);
   const [dongles, setDongles] = useState<Dongle[]>([]);
@@ -117,6 +120,9 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
   const [zeigeTagMenu, setZeigeTagMenu] = useState(false);
   const [andereBetrachter, setAndereBetrachter] = useState<string[]>([]);
   useUngespeichertWarnung(neueNotiz.trim().length > 0 || neueDateien.length > 0);
+  const spracheingabe = useSpracheingabe((text) =>
+    setNeueNotiz((prev) => (prev.trim() ? `${prev.trim()} ${text}` : text)),
+  );
 
   useEffect(() => {
     ladeAlles();
@@ -188,8 +194,14 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
       await ladeTagsUndMakros(ticketDaten.organisation_id);
       await ladeTicketTags();
       await ladeDongles(ticketDaten.kunde_id);
+      await ladeKundeEmail(ticketDaten.kunde_id);
     }
     markiereGelesen();
+  }
+
+  async function ladeKundeEmail(kundeId: string) {
+    const { data } = await supabase.rpc("get_kunde_email", { p_kunde_id: kundeId });
+    setKundeEmail((data as string | null) ?? null);
   }
 
   async function ladeDongles(kundeId: string) {
@@ -396,9 +408,27 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
             </span>
             {ticket.titel}
           </h2>
-          <p className="text-xs text-[var(--text-soft)]">
-            {ticket.kunde?.name ?? "Unbekannter Kunde"}
-            {ticket.kunde?.telefonnummer && ` · ${ticket.kunde.telefonnummer}`}
+          <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-[var(--text-soft)]">
+            <span>{ticket.kunde?.name ?? "Unbekannter Kunde"}</span>
+            {ticket.kunde?.telefonnummer && (
+              <>
+                <span className="text-[var(--text-faint)]">·</span>
+                <a
+                  href={`tel:${ticket.kunde.telefonnummer}`}
+                  className="font-mono hover:text-akzent hover:underline"
+                >
+                  {ticket.kunde.telefonnummer}
+                </a>
+              </>
+            )}
+            {kundeEmail && (
+              <>
+                <span className="text-[var(--text-faint)]">·</span>
+                <a href={`mailto:${kundeEmail}`} className="hover:text-akzent hover:underline">
+                  {kundeEmail}
+                </a>
+              </>
+            )}
           </p>
         </div>
 
@@ -605,6 +635,20 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
                 <option key={m.id} value={m.id}>{m.titel}</option>
               ))}
             </select>
+          )}
+          {spracheingabeUnterstuetzt && (
+            <button
+              type="button"
+              onClick={() => (spracheingabe.aktiv ? spracheingabe.stoppen() : spracheingabe.starten())}
+              className={`flex items-center gap-1.5 rounded border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                spracheingabe.aktiv
+                  ? "border-red-300 bg-red-50 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400"
+                  : "border-[var(--border-input)] text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+              }`}
+            >
+              {spracheingabe.aktiv ? <MicOff size={14} /> : <Mic size={14} />}
+              {spracheingabe.aktiv ? "Aufnahme läuft… (klicken zum Stoppen)" : "Diktieren"}
+            </button>
           )}
           <DateiAuswahl dateien={neueDateien} onAendern={setNeueDateien}>
             <textarea

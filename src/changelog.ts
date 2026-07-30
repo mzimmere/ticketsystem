@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-30", titel: "Ticket: Telefonnummer und E-Mail des Kunden jetzt immer im Ticket-Kopf sichtbar (klickbar als Anruf-/Mail-Link); Antwortfeld unterstützt Spracheingabe (Diktieren-Button, Chrome/Edge)" },
   { datum: "2026-07-29", titel: "Neues Design (Phase 3 – Lizenz-Laufzeiten): „bis DD.MM.YYYY“-Text bei Dongles und Lizenzverträgen jetzt zusätzlich als Restlaufzeit-Balken sichtbar (grün/amber/rot je nach Dringlichkeit) statt reinem Text" },
   { datum: "2026-07-29", titel: "Neues Design (Phase 2 – Navigation & Dashboard): Firmenfarbe von DST Consulting auf Scan-Blau umgestellt; Navigation-Rail zeigt aktiven Bereich jetzt per Farbstreifen statt voller Füllfarbe; Dashboard-Kennzahlen und Diagramme in Mono-Ziffern mit farbigem Statusstreifen" },
   { datum: "2026-07-29", titel: "Neues Design (Phase 1 – Fundament): IBM Plex Sans/Mono statt Roboto, neuer „Scan-Blau“-Akzent statt Google-Blau, kühlere Neutraltöne, schärfere Eckenradien – wirkt auf die ganze App inkl. Login, da über die zentralen Design-Tokens gesteuert" },

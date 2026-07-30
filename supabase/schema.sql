@@ -2480,3 +2480,48 @@ create policy kunden_hardware_delete on kunden_hardware for delete
     or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
     or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
   );
+
+-- ============================================================
+-- 59. Kunden-E-Mail fuer die Ticketanzeige. profiles hat aus gutem Grund
+-- keine E-Mail-Spalte (liegt nur in auth.users) - diese Funktion liefert
+-- sie nur an org_admin/techniker der Firma des jeweiligen Kunden, sonst
+-- NULL. Im Unterschied zu get_team_mit_email (Abschnitt 44) wird hier
+-- bewusst geprueft, da Kunden-PII sensibler ist als Team-Kontaktdaten.
+--
+-- coalesce(..., false) ist hier Pflicht: "if not (A or B or C)" ohne das
+-- wuerde bei dreiwertiger Logik (z.B. current_user_rolle() liefert NULL,
+-- weil auth.uid() zu keinem profiles-Eintrag passt) den Deny-Zweig
+-- ueberspringen - PL/pgSQL behandelt "IF NOT (NULL)" als weder wahr noch
+-- falsch und faellt bis zum Rueckgabewert durch. Per SQL-Testaufruf ohne
+-- Session geprueft: liefert korrekt NULL statt einer echten E-Mail.
+-- ============================================================
+create or replace function get_kunde_email(p_kunde_id uuid)
+returns text
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_org uuid;
+  v_email text;
+begin
+  select organisation_id into v_org from profiles where id = p_kunde_id;
+  if v_org is null then
+    return null;
+  end if;
+
+  if not coalesce(
+    current_user_rolle() = 'super_admin'
+    or (v_org = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(v_org, array['org_admin', 'techniker']::user_rolle[]),
+    false
+  ) then
+    return null;
+  end if;
+
+  select u.email into v_email from auth.users u where u.id = p_kunde_id;
+  return v_email;
+end;
+$$;
+
+grant execute on function get_kunde_email(uuid) to authenticated;
