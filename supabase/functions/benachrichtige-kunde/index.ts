@@ -3,9 +3,15 @@
 // Postfach (nicht den Supabase-Auth-Mailer), weil das hier App-eigene
 // Benachrichtigungen sind, keine Auth-Mails.
 //
+// Nutzt zuerst die pro Firma hinterlegte SMTP-Konfiguration
+// (organisation_smtp_konfiguration, Abschnitt 60 - jede Firma kann eine
+// eigene Absenderadresse haben), sonst Fallback auf die globalen
+// SMTP_*-Secrets.
+//
 // Projektpfad: supabase/functions/benachrichtige-kunde/index.ts
 // Deploy: supabase functions deploy benachrichtige-kunde
-// Secrets: supabase secrets set SMTP_HOST=... SMTP_PORT=587 SMTP_USER=... SMTP_PASSWORD=... ABSENDER_EMAIL=ticket@deine-domain.de
+// Secrets (Fallback, falls eine Firma keine eigene Konfiguration hat):
+// supabase secrets set SMTP_HOST=... SMTP_PORT=587 SMTP_USER=... SMTP_PASSWORD=... ABSENDER_EMAIL=ticket@deine-domain.de
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
@@ -15,19 +21,34 @@ const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
-async function mailSenden(empfaenger: string, betreff: string, text: string, absenderName: string) {
+async function smtpKonfigLaden(organisationId: string) {
+  const { data } = await supabaseAdmin
+    .from("organisation_smtp_konfiguration")
+    .select("smtp_host, smtp_port, smtp_user, smtp_password, absender_email")
+    .eq("organisation_id", organisationId)
+    .maybeSingle();
+
+  if (data?.smtp_host && data.smtp_user && data.smtp_password && data.absender_email) {
+    return { host: data.smtp_host, port: data.smtp_port ?? 587, user: data.smtp_user, passwort: data.smtp_password, absender: data.absender_email };
+  }
+
   const host = Deno.env.get("SMTP_HOST");
-  const port = Number(Deno.env.get("SMTP_PORT") ?? "587");
   const user = Deno.env.get("SMTP_USER");
   const passwort = Deno.env.get("SMTP_PASSWORD");
   const absender = Deno.env.get("ABSENDER_EMAIL") ?? user;
-  if (!host || !user || !passwort || !absender) return { ok: false, grund: "smtp_nicht_konfiguriert" };
+  if (!host || !user || !passwort || !absender) return null;
+  return { host, port: Number(Deno.env.get("SMTP_PORT") ?? "587"), user, passwort, absender };
+}
+
+async function mailSenden(organisationId: string, empfaenger: string, betreff: string, text: string, absenderName: string) {
+  const konfig = await smtpKonfigLaden(organisationId);
+  if (!konfig) return { ok: false, grund: "smtp_nicht_konfiguriert" };
 
   const client = new SMTPClient({
-    connection: { hostname: host, port, tls: port === 465, auth: { username: user, password: passwort } },
+    connection: { hostname: konfig.host, port: konfig.port, tls: konfig.port === 465, auth: { username: konfig.user, password: konfig.passwort } },
   });
   try {
-    await client.send({ from: `${absenderName} <${absender}>`, to: empfaenger, subject: betreff, content: text });
+    await client.send({ from: `${absenderName} <${konfig.absender}>`, to: empfaenger, subject: betreff, content: text });
     return { ok: true };
   } finally {
     await client.close();
@@ -125,7 +146,7 @@ Deno.serve(async (req: Request) => {
       ].join("\n");
     }
 
-    const ergebnis = await mailSenden(kundeEmail, betreff, text, firmenName);
+    const ergebnis = await mailSenden(ticket.organisation_id, kundeEmail, betreff, text, firmenName);
     if (!ergebnis.ok) {
       // SMTP noch nicht eingerichtet - kein Fehler, einfach nichts senden
       return new Response(JSON.stringify(ergebnis), {

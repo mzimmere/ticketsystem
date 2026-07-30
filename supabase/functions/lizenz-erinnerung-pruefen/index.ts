@@ -45,19 +45,35 @@ async function orgAdminEmails(organisationId: string): Promise<string[]> {
   return emails;
 }
 
-async function mailSenden(empfaenger: string[], betreff: string, text: string) {
+async function smtpKonfigLaden(organisationId: string) {
+  const { data } = await supabase
+    .from("organisation_smtp_konfiguration")
+    .select("smtp_host, smtp_port, smtp_user, smtp_password, absender_email")
+    .eq("organisation_id", organisationId)
+    .maybeSingle();
+
+  if (data?.smtp_host && data.smtp_user && data.smtp_password && data.absender_email) {
+    return { host: data.smtp_host, port: data.smtp_port ?? 587, user: data.smtp_user, passwort: data.smtp_password, absender: data.absender_email };
+  }
+
   const host = Deno.env.get("SMTP_HOST");
-  const port = Number(Deno.env.get("SMTP_PORT") ?? "587");
   const user = Deno.env.get("SMTP_USER");
   const passwort = Deno.env.get("SMTP_PASSWORD");
   const absender = Deno.env.get("ABSENDER_EMAIL") ?? user;
-  if (!host || !user || !passwort || !absender || empfaenger.length === 0) return;
+  if (!host || !user || !passwort || !absender) return null;
+  return { host, port: Number(Deno.env.get("SMTP_PORT") ?? "587"), user, passwort, absender };
+}
+
+async function mailSenden(organisationId: string, empfaenger: string[], betreff: string, text: string) {
+  if (empfaenger.length === 0) return;
+  const konfig = await smtpKonfigLaden(organisationId);
+  if (!konfig) return;
 
   const client = new SMTPClient({
-    connection: { hostname: host, port, tls: port === 465, auth: { username: user, password: passwort } },
+    connection: { hostname: konfig.host, port: konfig.port, tls: konfig.port === 465, auth: { username: konfig.user, password: konfig.passwort } },
   });
   try {
-    await client.send({ from: `Ticketsystem <${absender}>`, to: empfaenger, subject: betreff, content: text });
+    await client.send({ from: `Ticketsystem <${konfig.absender}>`, to: empfaenger, subject: betreff, content: text });
   } catch (err) {
     console.error("SMTP-Fehler:", err);
   } finally {
@@ -103,6 +119,7 @@ Deno.serve(async (req) => {
 
     for (const v of vertraege as unknown as FaelligerVertrag[]) {
       await mailSenden(
+        org.id,
         empfaenger,
         `Lizenz-Erinnerung: ${v.produkt_name} läuft bald ab`,
         [

@@ -2525,3 +2525,55 @@ end;
 $$;
 
 grant execute on function get_kunde_email(uuid) to authenticated;
+
+-- ============================================================
+-- 60. Pro-Firma SMTP-Konfiguration (eigene Absenderadresse je
+-- Organisation statt einer einzigen globalen). Eigene Tabelle statt
+-- Spalten auf organisationen, weil organisationen_select von JEDER
+-- Person der Firma lesbar ist (auch Kunden, siehe Abschnitt 42/58) -
+-- das Passwort darf aber nur super_admin/org_admin sehen. Bewusst
+-- NICHT das Muster "organisation_id = current_user_org()" ohne
+-- Rolleneinschraenkung wie bei lizenz_konfiguration verwendet, weil
+-- das dort unkritische Daten sind, hier aber ein echtes Passwort.
+--
+-- Ohne eigene Konfiguration faellt der Versand in den Edge Functions
+-- auf die globalen SMTP_*-Secrets zurueck (bisheriges Verhalten).
+-- ============================================================
+create table organisation_smtp_konfiguration (
+  organisation_id uuid primary key references organisationen(id) on delete cascade,
+  smtp_host text,
+  smtp_port integer not null default 587,
+  smtp_user text,
+  smtp_password text,
+  absender_email text,
+  aktualisiert_am timestamptz not null default now()
+);
+alter table organisation_smtp_konfiguration enable row level security;
+
+create policy organisation_smtp_konfiguration_select on organisation_smtp_konfiguration for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+create policy organisation_smtp_konfiguration_insert on organisation_smtp_konfiguration for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+create policy organisation_smtp_konfiguration_update on organisation_smtp_konfiguration for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+create policy organisation_smtp_konfiguration_delete on organisation_smtp_konfiguration for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );

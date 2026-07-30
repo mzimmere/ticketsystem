@@ -48,6 +48,16 @@ function GeheimnisInput({ value, onChange, placeholder }: { value: string; onCha
   );
 }
 
+interface SmtpKonfig {
+  smtp_host: string;
+  smtp_port: string;
+  smtp_user: string;
+  smtp_password: string;
+  absender_email: string;
+}
+
+const SMTP_LEER: SmtpKonfig = { smtp_host: "", smtp_port: "587", smtp_user: "", smtp_password: "", absender_email: "" };
+
 export default function IntegrationenVerwaltung({ organisationId }: IntegrationenProps) {
   const [konfig, setKonfig] = useState<Konfig>({
     inbound_email_adresse: null, inbound_email_anbieter: null, inbound_email_webhook_key: null,
@@ -58,10 +68,13 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [waTestLaedt, setWaTestLaedt] = useState(false);
   const [waTestErgebnis, setWaTestErgebnis] = useState<{ ok: boolean; text: string } | null>(null);
+  const [smtpKonfig, setSmtpKonfig] = useState<SmtpKonfig>(SMTP_LEER);
+  const [smtpLaedt, setSmtpLaedt] = useState(false);
+  const [smtpHinweis, setSmtpHinweis] = useState<string | null>(null);
 
   const webhookBaseUrl = `${typeof window !== "undefined" ? "https://wfntgmavwzuldwjjhhlp.supabase.co" : ""}/functions/v1`;
 
-  useEffect(() => { laden(); }, [organisationId]);
+  useEffect(() => { laden(); ladeSmtp(); }, [organisationId]);
 
   async function laden() {
     const { data } = await supabase
@@ -69,6 +82,41 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
       .select("inbound_email_adresse, inbound_email_anbieter, inbound_email_webhook_key, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_webhook_secret, whatsapp_app_secret")
       .eq("id", organisationId).single();
     if (data) setKonfig(data);
+  }
+
+  async function ladeSmtp() {
+    const { data } = await supabase
+      .from("organisation_smtp_konfiguration")
+      .select("smtp_host, smtp_port, smtp_user, smtp_password, absender_email")
+      .eq("organisation_id", organisationId)
+      .maybeSingle();
+    setSmtpKonfig(
+      data
+        ? {
+            smtp_host: data.smtp_host ?? "",
+            smtp_port: String(data.smtp_port ?? 587),
+            smtp_user: data.smtp_user ?? "",
+            smtp_password: data.smtp_password ?? "",
+            absender_email: data.absender_email ?? "",
+          }
+        : SMTP_LEER,
+    );
+  }
+
+  async function smtpSpeichern() {
+    setSmtpLaedt(true);
+    const { error } = await supabase.from("organisation_smtp_konfiguration").upsert({
+      organisation_id: organisationId,
+      smtp_host: smtpKonfig.smtp_host.trim() || null,
+      smtp_port: Number(smtpKonfig.smtp_port) || 587,
+      smtp_user: smtpKonfig.smtp_user.trim() || null,
+      smtp_password: smtpKonfig.smtp_password.trim() || null,
+      absender_email: smtpKonfig.absender_email.trim() || null,
+      aktualisiert_am: new Date().toISOString(),
+    });
+    setSmtpLaedt(false);
+    setSmtpHinweis(error ? "Fehler beim Speichern." : "Gespeichert.");
+    setTimeout(() => setSmtpHinweis(null), 3000);
   }
 
   async function speichern() {
@@ -127,6 +175,82 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
   return (
     <div className="space-y-6">
       <h3 className="text-sm font-medium text-[var(--text-strong)]">Integrationen</h3>
+
+      {/* ── E-Mail-Versand (SMTP) ──────────────────────────────────── */}
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">✉️</span>
+            <div>
+              <p className="text-sm font-medium text-[var(--text-strong)]">E-Mail-Versand (Absenderadresse)</p>
+              <p className="text-xs text-[var(--text-faint)]">
+                Postfach, über das Kunden-Benachrichtigungen und Erinnerungen für diese Firma verschickt werden
+              </p>
+            </div>
+          </div>
+          <span className={`rounded-full px-2 py-0.5 text-[0.65rem] font-medium ${smtpKonfig.smtp_host && smtpKonfig.smtp_user && smtpKonfig.smtp_password && smtpKonfig.absender_email ? "bg-green-100 text-green-700" : "bg-[var(--bg-muted)] text-[var(--text-faint)]"}`}>
+            {smtpKonfig.smtp_host && smtpKonfig.smtp_user && smtpKonfig.smtp_password && smtpKonfig.absender_email ? "Eigenes Postfach" : "Gemeinsames Postfach"}
+          </span>
+        </div>
+
+        <p className="text-xs text-[var(--text-faint)]">
+          Ohne eigene Angaben hier wird das zentrale, gemeinsame Postfach der Plattform für den Versand
+          verwendet (alle Firmen teilen sich dann eine Absenderadresse). Trage hier die SMTP-Zugangsdaten
+          eines eigenen Postfachs dieser Firma ein, damit Kunden Mails von der eigenen Adresse erhalten.
+        </p>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">SMTP-Host</label>
+            <input type="text" value={smtpKonfig.smtp_host}
+              onChange={(e) => setSmtpKonfig({ ...smtpKonfig, smtp_host: e.target.value })}
+              placeholder="smtp-mail.outlook.com"
+              className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm font-mono" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Port</label>
+            <input type="number" value={smtpKonfig.smtp_port}
+              onChange={(e) => setSmtpKonfig({ ...smtpKonfig, smtp_port: e.target.value })}
+              placeholder="587"
+              className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm font-mono" />
+            <p className="mt-1 text-xs text-[var(--text-faint)]">587 = STARTTLS (üblich), 465 = TLS</p>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Benutzername</label>
+            <input type="text" value={smtpKonfig.smtp_user}
+              onChange={(e) => setSmtpKonfig({ ...smtpKonfig, smtp_user: e.target.value })}
+              placeholder="firma@ihre-domain.de"
+              className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm font-mono" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Absenderadresse</label>
+            <input type="email" value={smtpKonfig.absender_email}
+              onChange={(e) => setSmtpKonfig({ ...smtpKonfig, absender_email: e.target.value })}
+              placeholder="firma@ihre-domain.de"
+              className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm font-mono" />
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Passwort</label>
+          <GeheimnisInput
+            value={smtpKonfig.smtp_password}
+            onChange={(v) => setSmtpKonfig({ ...smtpKonfig, smtp_password: v })}
+            placeholder="Postfach-Passwort oder App-Passwort…"
+          />
+          <p className="mt-1 text-xs text-[var(--text-faint)]">
+            Zu finden in den SMTP-/E-Mail-Client-Einstellungen des E-Mail-Anbieters. Bei manchen
+            Anbietern (z.B. Outlook, Gmail) wird ein separat generiertes App-Passwort benötigt statt
+            des normalen Login-Passworts.
+          </p>
+        </div>
+
+        {smtpHinweis && <p className="text-sm text-[var(--text-soft)]">{smtpHinweis}</p>}
+        <button onClick={smtpSpeichern} disabled={smtpLaedt}
+          className="w-full rounded-xl border border-[var(--border-input)] py-2 text-sm font-medium text-[var(--text-soft)] hover:bg-[var(--bg-muted)] disabled:opacity-50">
+          {smtpLaedt ? "Speichert…" : "SMTP-Zugangsdaten speichern"}
+        </button>
+      </div>
 
       {/* ── E-Mail zu Ticket ───────────────────────────────────────── */}
       <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-4">

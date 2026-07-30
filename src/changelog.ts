@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-30", titel: "Jede Firma kann jetzt unter Verwaltung → Integrationen eine eigene Absenderadresse (SMTP-Zugangsdaten) hinterlegen, statt sich ein gemeinsames Postfach mit allen anderen Firmen zu teilen; ohne eigene Angabe gilt weiterhin das zentrale Postfach als Fallback" },
   { datum: "2026-07-30", titel: "Ticket: Telefonnummer und E-Mail-Adresse des Kunden lassen sich jetzt per Klick auf das Kopieren-Symbol in die Zwischenablage kopieren" },
   { datum: "2026-07-30", titel: "E-Mail-Versand (Kundenbenachrichtigung, Plattform-Rechnung, SLA-/Lizenz-Erinnerung) von Resend auf einfaches SMTP über ein normales Postfach umgestellt – keine Domain-Verifizierung/DNS-Einrichtung mehr nötig" },
   { datum: "2026-07-30", titel: "Diktieren-Button zeigt in Firefox (und anderen nicht unterstützten Browsern) jetzt einen Hinweis statt einfach zu verschwinden – „geht mit Chrome, Edge oder Safari“" },

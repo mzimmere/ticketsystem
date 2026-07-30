@@ -90,9 +90,13 @@ supabase secrets set SMTP_HOST=smtp.deinanbieter.de SMTP_PORT=587 SMTP_USER=dein
   automatisch auf `SMTP_USER` zurück.
 - Ohne gesetzte Secrets bleibt der Versand aus, es gibt aber keinen Fehler –
   die App funktioniert auch ohne E-Mail-Versand normal weiter.
-- Dieselben Secrets gelten für alle vier E-Mail-Functions
-  (`benachrichtige-kunde`, `sende-plattform-rechnung`,
-  `sla-eskalation-pruefen`, `lizenz-erinnerung-pruefen`) – einmal setzen reicht.
+- Diese Secrets sind der **globale Fallback** für `benachrichtige-kunde`,
+  `sla-eskalation-pruefen` und `lizenz-erinnerung-pruefen`. Jede Firma kann
+  in der App unter Verwaltung → Integrationen eine **eigene** Absenderadresse
+  hinterlegen (Tabelle `organisation_smtp_konfiguration`) – ist das gesetzt,
+  wird das statt des globalen Postfachs verwendet. `sende-plattform-rechnung`
+  (Super-Admin → Firma) nutzt immer die globalen Secrets, da diese Mails im
+  Namen der Plattform verschickt werden, nicht im Namen der Kunden-Firma.
 
 ## 5. Deployment auf Vercel
 
