@@ -636,7 +636,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
               ))}
             </select>
           )}
-          {spracheingabeUnterstuetzt && (
+          {spracheingabeUnterstuetzt ? (
             <button
               type="button"
               onClick={() => (spracheingabe.aktiv ? spracheingabe.stoppen() : spracheingabe.starten())}
@@ -649,6 +649,11 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
               {spracheingabe.aktiv ? <MicOff size={14} /> : <Mic size={14} />}
               {spracheingabe.aktiv ? "Aufnahme läuft… (klicken zum Stoppen)" : "Diktieren"}
             </button>
+          ) : (
+            <p className="flex items-center gap-1.5 text-xs text-[var(--text-faint)]">
+              <MicOff size={13} />
+              Spracheingabe hier nicht möglich – geht mit Chrome, Edge oder Safari
+            </p>
           )}
           <DateiAuswahl dateien={neueDateien} onAendern={setNeueDateien}>
             <textarea
