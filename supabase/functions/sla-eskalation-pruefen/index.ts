@@ -1,4 +1,5 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 // Wird alle 15 Minuten per pg_cron aufgerufen.
 // Findet Tickets, deren Reaktions- oder Lösungsfrist (siehe SLA-Trigger in
@@ -49,15 +50,23 @@ async function empfaengerEmails(ticket: TicketZeile): Promise<string[]> {
 }
 
 async function mailSenden(empfaenger: string[], betreff: string, text: string) {
-  const resendKey = Deno.env.get("RESEND_API_KEY");
-  const absender = Deno.env.get("ABSENDER_EMAIL");
-  if (!resendKey || !absender || empfaenger.length === 0) return;
+  const host = Deno.env.get("SMTP_HOST");
+  const port = Number(Deno.env.get("SMTP_PORT") ?? "587");
+  const user = Deno.env.get("SMTP_USER");
+  const passwort = Deno.env.get("SMTP_PASSWORD");
+  const absender = Deno.env.get("ABSENDER_EMAIL") ?? user;
+  if (!host || !user || !passwort || !absender || empfaenger.length === 0) return;
 
-  await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: `Ticketsystem <${absender}>`, to: empfaenger, subject: betreff, text }),
-  }).catch((err) => console.error("Resend-Fehler:", err));
+  const client = new SMTPClient({
+    connection: { hostname: host, port, tls: port === 465, auth: { username: user, password: passwort } },
+  });
+  try {
+    await client.send({ from: `Ticketsystem <${absender}>`, to: empfaenger, subject: betreff, content: text });
+  } catch (err) {
+    console.error("SMTP-Fehler:", err);
+  } finally {
+    await client.close();
+  }
 }
 
 Deno.serve(async (req) => {

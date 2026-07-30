@@ -108,8 +108,8 @@ export default function PlattformRechnungDetail({
         setHinweis(
           json.grund === "keine_email"
             ? "Diese Firma hat keine E-Mail-Adresse hinterlegt."
-            : json.grund === "resend_nicht_konfiguriert"
-            ? "Mail-Versand ist noch nicht eingerichtet (RESEND_API_KEY/ABSENDER_EMAIL fehlen)."
+            : json.grund === "smtp_nicht_konfiguriert"
+            ? "Mail-Versand ist noch nicht eingerichtet (SMTP_HOST/SMTP_USER/SMTP_PASSWORD fehlen)."
             : "Versand fehlgeschlagen.",
         );
       } else {

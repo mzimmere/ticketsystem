@@ -8,6 +8,8 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-30", titel: "Ticket: Telefonnummer und E-Mail-Adresse des Kunden lassen sich jetzt per Klick auf das Kopieren-Symbol in die Zwischenablage kopieren" },
+  { datum: "2026-07-30", titel: "E-Mail-Versand (Kundenbenachrichtigung, Plattform-Rechnung, SLA-/Lizenz-Erinnerung) von Resend auf einfaches SMTP über ein normales Postfach umgestellt – keine Domain-Verifizierung/DNS-Einrichtung mehr nötig" },
   { datum: "2026-07-30", titel: "Diktieren-Button zeigt in Firefox (und anderen nicht unterstützten Browsern) jetzt einen Hinweis statt einfach zu verschwinden – „geht mit Chrome, Edge oder Safari“" },
   { datum: "2026-07-30", titel: "Ticket: Telefonnummer und E-Mail des Kunden jetzt immer im Ticket-Kopf sichtbar (klickbar als Anruf-/Mail-Link); Antwortfeld unterstützt Spracheingabe (Diktieren-Button, Chrome/Edge)" },
   { datum: "2026-07-29", titel: "Neues Design (Phase 3 – Lizenz-Laufzeiten): „bis DD.MM.YYYY“-Text bei Dongles und Lizenzverträgen jetzt zusätzlich als Restlaufzeit-Balken sichtbar (grün/amber/rot je nach Dringlichkeit) statt reinem Text" },

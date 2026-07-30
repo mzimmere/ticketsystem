@@ -1,16 +1,36 @@
 // Supabase Edge Function: Plattform-Rechnung (Super-Admin an Firma) per
-// Mail verschicken. Nutzt wie "benachrichtige-kunde" Resend direkt.
+// Mail verschicken. Nutzt wie "benachrichtige-kunde" SMTP direkt.
 //
 // Projektpfad: supabase/functions/sende-plattform-rechnung/index.ts
 // Deploy: supabase functions deploy sende-plattform-rechnung
-// Secret: supabase secrets set RESEND_API_KEY=... ABSENDER_EMAIL=ticket@deine-domain.de
+// Secrets: supabase secrets set SMTP_HOST=... SMTP_PORT=587 SMTP_USER=... SMTP_PASSWORD=... ABSENDER_EMAIL=ticket@deine-domain.de
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
+
+async function mailSenden(empfaenger: string, betreff: string, text: string, absenderName: string) {
+  const host = Deno.env.get("SMTP_HOST");
+  const port = Number(Deno.env.get("SMTP_PORT") ?? "587");
+  const user = Deno.env.get("SMTP_USER");
+  const passwort = Deno.env.get("SMTP_PASSWORD");
+  const absender = Deno.env.get("ABSENDER_EMAIL") ?? user;
+  if (!host || !user || !passwort || !absender) return { ok: false, grund: "smtp_nicht_konfiguriert" };
+
+  const client = new SMTPClient({
+    connection: { hostname: host, port, tls: port === 465, auth: { username: user, password: passwort } },
+  });
+  try {
+    await client.send({ from: `${absenderName} <${absender}>`, to: empfaenger, subject: betreff, content: text });
+    return { ok: true };
+  } finally {
+    await client.close();
+  }
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -126,32 +146,12 @@ Deno.serve(async (req: Request) => {
       .filter((zeile) => zeile !== null && zeile !== undefined)
       .join("\n");
 
-    const resendKey = Deno.env.get("RESEND_API_KEY");
-    const absenderEmail = Deno.env.get("ABSENDER_EMAIL");
-    if (!resendKey || !absenderEmail) {
-      return new Response(JSON.stringify({ ok: false, grund: "resend_nicht_konfiguriert" }), {
+    const ergebnis = await mailSenden(organisation.email, betreff, text, absender?.firmenname ?? "Ticketsystem");
+    if (!ergebnis.ok) {
+      return new Response(JSON.stringify(ergebnis), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
-    }
-
-    const resendRes = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: `${absender?.firmenname ?? "Ticketsystem"} <${absenderEmail}>`,
-        to: organisation.email,
-        subject: betreff,
-        text,
-      }),
-    });
-
-    if (!resendRes.ok) {
-      const fehlerText = await resendRes.text();
-      throw new Error(`Resend-Fehler: ${fehlerText}`);
     }
 
     await supabaseAdmin

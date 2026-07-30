@@ -4,7 +4,7 @@ import { benachrichtigeKunde } from "../lib/benachrichtigungen";
 import { sichererDateiname } from "../lib/dateiname";
 import { useUngespeichertWarnung } from "../lib/useUngespeichertWarnung";
 import { useSpracheingabe, spracheingabeUnterstuetzt } from "../lib/useSpracheingabe";
-import { Mic, MicOff } from "lucide-react";
+import { Mic, MicOff, Copy, Check } from "lucide-react";
 import DateiAuswahl from "./DateiAuswahl";
 import Zeiterfassung from "./Zeiterfassung";
 import Avatar from "./Avatar";
@@ -107,6 +107,17 @@ interface TicketDetailProps {
 export default function TicketDetail({ ticketId, technikerId }: TicketDetailProps) {
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [kundeEmail, setKundeEmail] = useState<string | null>(null);
+  const [kopiertFeld, setKopiertFeld] = useState<"telefon" | "email" | null>(null);
+
+  async function kopieren(text: string, feld: "telefon" | "email") {
+    try {
+      await navigator.clipboard.writeText(text);
+      setKopiertFeld(feld);
+      setTimeout(() => setKopiertFeld((f) => (f === feld ? null : f)), 1500);
+    } catch {
+      // Zwischenablage nicht verfügbar (z.B. kein HTTPS) - einfach ignorieren
+    }
+  }
   const [nachrichten, setNachrichten] = useState<Nachricht[]>([]);
   const [techniker, setTechniker] = useState<Techniker[]>([]);
   const [dongles, setDongles] = useState<Dongle[]>([]);
@@ -419,6 +430,14 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
                 >
                   {ticket.kunde.telefonnummer}
                 </a>
+                <button
+                  type="button"
+                  title="Telefonnummer kopieren"
+                  onClick={() => kopieren(ticket.kunde!.telefonnummer!, "telefon")}
+                  className="text-[var(--text-faint)] hover:text-akzent"
+                >
+                  {kopiertFeld === "telefon" ? <Check size={12} /> : <Copy size={12} />}
+                </button>
               </>
             )}
             {kundeEmail && (
@@ -427,6 +446,14 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
                 <a href={`mailto:${kundeEmail}`} className="hover:text-akzent hover:underline">
                   {kundeEmail}
                 </a>
+                <button
+                  type="button"
+                  title="E-Mail-Adresse kopieren"
+                  onClick={() => kopieren(kundeEmail, "email")}
+                  className="text-[var(--text-faint)] hover:text-akzent"
+                >
+                  {kopiertFeld === "email" ? <Check size={12} /> : <Copy size={12} />}
+                </button>
               </>
             )}
           </p>

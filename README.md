@@ -73,6 +73,27 @@ supabase functions deploy invite-mitarbeiter
 Die `whatsapp-webhook`-Function liegt bereit, aber **bewusst noch nicht
 deployed/aktiviert** – siehe unten.
 
+## 4b. E-Mail-Versand (Kundenbenachrichtigung, Plattform-Rechnung, SLA/Lizenz-Erinnerung)
+
+Läuft per SMTP über ein normales, bereits vorhandenes Postfach – keine
+Domain-Verifizierung/DNS-Einrichtung nötig.
+
+```bash
+supabase functions deploy benachrichtige-kunde
+supabase secrets set SMTP_HOST=smtp.deinanbieter.de SMTP_PORT=587 SMTP_USER=deine@adresse.de SMTP_PASSWORD=... ABSENDER_EMAIL=deine@adresse.de
+```
+
+- `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`: von deinem E-Mail-Anbieter
+  (steht meist unter "SMTP-Einstellungen" oder "E-Mail-Client einrichten").
+  Port `465` = implizites TLS, Port `587` (Standard) = STARTTLS.
+- `ABSENDER_EMAIL`: optional, falls abweichend von `SMTP_USER`. Fällt sonst
+  automatisch auf `SMTP_USER` zurück.
+- Ohne gesetzte Secrets bleibt der Versand aus, es gibt aber keinen Fehler –
+  die App funktioniert auch ohne E-Mail-Versand normal weiter.
+- Dieselben Secrets gelten für alle vier E-Mail-Functions
+  (`benachrichtige-kunde`, `sende-plattform-rechnung`,
+  `sla-eskalation-pruefen`, `lizenz-erinnerung-pruefen`) – einmal setzen reicht.
+
 ## 5. Deployment auf Vercel
 
 Wie bei deinen anderen Projekten: Repo zu GitHub pushen, in Vercel
@@ -95,11 +116,10 @@ Variables setzen, fertig.
 Über das 🏦-Icon im Header (nur Super-Admin) lassen sich Tarife mit
 Mitarbeiter-Staffeln anlegen, Firmen einem Tarif zuordnen und daraus
 monatliche Rechnungen erzeugen. Der E-Mail-Versand läuft über dieselbe
-Resend-Konfiguration wie die Kundenbenachrichtigungen:
+SMTP-Konfiguration wie die Kundenbenachrichtigungen (siehe Abschnitt 8):
 
 ```bash
 supabase functions deploy sende-plattform-rechnung
-supabase secrets set RESEND_API_KEY=... ABSENDER_EMAIL=rechnung@deine-domain.de
 ```
 
 Ohne gesetzte Secrets bleibt die Rechnung als Entwurf gespeichert; der Versand

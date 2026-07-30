@@ -1,6 +1,6 @@
 // Zentrale Stelle für Kunden-Benachrichtigungen bei Ticket-Ereignissen.
-// Ruft die Edge Function "benachrichtige-kunde" auf, die per Resend eine
-// E-Mail verschickt. Schlägt der Versand fehl (z.B. weil Resend noch
+// Ruft die Edge Function "benachrichtige-kunde" auf, die per SMTP eine
+// E-Mail verschickt. Schlägt der Versand fehl (z.B. weil SMTP noch
 // nicht eingerichtet ist), wird das nur geloggt - der Kunde sieht den
 // neuen Status ohnehin sofort live im Portal (Realtime).
 
