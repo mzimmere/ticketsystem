@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-30", titel: "E-Mail-Versand technisch stabilisiert: Supabase kann keine SMTP-Verbindungen direkt aufbauen (führte bislang dazu, dass gar keine Mails ankamen) – der Versand läuft jetzt über eine kleine Relay-Function auf Vercel, die echtes SMTP kann; für Firmen/Nutzer ändert sich nichts an der Eingabe" },
   { datum: "2026-07-30", titel: "Jede Firma kann jetzt unter Verwaltung → Integrationen eine eigene Absenderadresse (SMTP-Zugangsdaten) hinterlegen, statt sich ein gemeinsames Postfach mit allen anderen Firmen zu teilen; ohne eigene Angabe gilt weiterhin das zentrale Postfach als Fallback" },
   { datum: "2026-07-30", titel: "Ticket: Telefonnummer und E-Mail-Adresse des Kunden lassen sich jetzt per Klick auf das Kopieren-Symbol in die Zwischenablage kopieren" },
   { datum: "2026-07-30", titel: "E-Mail-Versand (Kundenbenachrichtigung, Plattform-Rechnung, SLA-/Lizenz-Erinnerung) von Resend auf einfaches SMTP über ein normales Postfach umgestellt – keine Domain-Verifizierung/DNS-Einrichtung mehr nötig" },

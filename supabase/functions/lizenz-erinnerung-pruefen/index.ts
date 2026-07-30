@@ -1,5 +1,4 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 // Wird taeglich per pg_cron aufgerufen (Muster: sla-eskalation-pruefen).
 // Findet aktive Lizenzvertraege (lizenz_vertraege, Abschnitt 56), die
@@ -69,15 +68,23 @@ async function mailSenden(organisationId: string, empfaenger: string[], betreff:
   const konfig = await smtpKonfigLaden(organisationId);
   if (!konfig) return;
 
-  const client = new SMTPClient({
-    connection: { hostname: konfig.host, port: konfig.port, tls: konfig.port === 465, auth: { username: konfig.user, password: konfig.passwort } },
-  });
+  const relayUrl = Deno.env.get("MAIL_RELAY_URL");
+  const relaySecret = Deno.env.get("MAIL_RELAY_SECRET");
+  if (!relayUrl || !relaySecret) return;
+
   try {
-    await client.send({ from: `Ticketsystem <${konfig.absender}>`, to: empfaenger, subject: betreff, content: text });
+    const relayRes = await fetch(relayUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Relay-Secret": relaySecret },
+      body: JSON.stringify({
+        host: konfig.host, port: konfig.port, user: konfig.user, password: konfig.passwort,
+        from: `Ticketsystem <${konfig.absender}>`, to: empfaenger, subject: betreff, text,
+      }),
+    });
+    const relayJson = await relayRes.json().catch(() => ({}));
+    if (!relayRes.ok || !relayJson.ok) console.error("Relay-Fehler:", relayJson);
   } catch (err) {
-    console.error("SMTP-Fehler:", err);
-  } finally {
-    await client.close();
+    console.error("Relay-Fehler:", err);
   }
 }
 

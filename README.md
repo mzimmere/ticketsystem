@@ -78,11 +78,25 @@ deployed/aktiviert** – siehe unten.
 Läuft per SMTP über ein normales, bereits vorhandenes Postfach – keine
 Domain-Verifizierung/DNS-Einrichtung nötig.
 
+**Wichtig:** Supabase Edge Functions laufen in einer Deno-Sandbox, die keine
+rohen TCP-Verbindungen nach außen erlaubt – ein direkter SMTP-Versuch von
+dort stürzt sofort mit HTTP 503 ab. Der eigentliche SMTP-Versand läuft
+deshalb über eine kleine Vercel-Function (`api/send-mail.ts`, Node.js-
+Laufzeit, die echtes SMTP kann). Die Supabase-Functions schicken die
+Mail-Daten nur noch per HTTPS an diese Vercel-Function weiter.
+
 ```bash
 supabase functions deploy benachrichtige-kunde
+supabase secrets set MAIL_RELAY_URL=https://deine-domain.vercel.app/api/send-mail MAIL_RELAY_SECRET=...
 supabase secrets set SMTP_HOST=smtp.deinanbieter.de SMTP_PORT=587 SMTP_USER=deine@adresse.de SMTP_PASSWORD=... ABSENDER_EMAIL=deine@adresse.de
 ```
 
+Zusätzlich in Vercel (Project Settings → Environment Variables) dieselbe
+`MAIL_RELAY_SECRET` eintragen – muss auf beiden Seiten identisch sein, sonst
+lehnt die Vercel-Function den Aufruf mit 401 ab.
+
+- `MAIL_RELAY_URL`/`MAIL_RELAY_SECRET`: Adresse und geteiltes Secret der
+  Vercel-Relay-Function (Infrastruktur, nicht pro Firma).
 - `SMTP_HOST`/`SMTP_PORT`/`SMTP_USER`/`SMTP_PASSWORD`: von deinem E-Mail-Anbieter
   (steht meist unter "SMTP-Einstellungen" oder "E-Mail-Client einrichten").
   Port `465` = implizites TLS, Port `587` (Standard) = STARTTLS.
@@ -90,13 +104,16 @@ supabase secrets set SMTP_HOST=smtp.deinanbieter.de SMTP_PORT=587 SMTP_USER=dein
   automatisch auf `SMTP_USER` zurück.
 - Ohne gesetzte Secrets bleibt der Versand aus, es gibt aber keinen Fehler –
   die App funktioniert auch ohne E-Mail-Versand normal weiter.
-- Diese Secrets sind der **globale Fallback** für `benachrichtige-kunde`,
-  `sla-eskalation-pruefen` und `lizenz-erinnerung-pruefen`. Jede Firma kann
-  in der App unter Verwaltung → Integrationen eine **eigene** Absenderadresse
-  hinterlegen (Tabelle `organisation_smtp_konfiguration`) – ist das gesetzt,
-  wird das statt des globalen Postfachs verwendet. `sende-plattform-rechnung`
-  (Super-Admin → Firma) nutzt immer die globalen Secrets, da diese Mails im
-  Namen der Plattform verschickt werden, nicht im Namen der Kunden-Firma.
+- `SMTP_*`/`ABSENDER_EMAIL` sind der **globale Fallback** für
+  `benachrichtige-kunde`, `sla-eskalation-pruefen` und
+  `lizenz-erinnerung-pruefen`. Jede Firma kann in der App unter Verwaltung →
+  Integrationen eine **eigene** Absenderadresse hinterlegen (Tabelle
+  `organisation_smtp_konfiguration`) – ist das gesetzt, wird das statt des
+  globalen Postfachs verwendet (läuft ebenfalls über dieselbe Vercel-Relay-
+  Function). `sende-plattform-rechnung` (Super-Admin → Firma) nutzt immer die
+  globalen `SMTP_*`-Secrets (nie die Firmen-eigene Konfiguration), läuft aber
+  ebenfalls über den Relay – auch diese Function ist eine Supabase Edge
+  Function und kann daher genauso wenig direkt SMTP sprechen.
 
 ## 5. Deployment auf Vercel
 
