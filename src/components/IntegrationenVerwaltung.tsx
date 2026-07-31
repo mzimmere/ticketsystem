@@ -9,8 +9,6 @@ interface IntegrationenProps {
 
 interface Konfig {
   inbound_email_adresse: string | null;
-  inbound_email_anbieter: string | null;
-  inbound_email_webhook_key: string | null;
   whatsapp_phone_number_id: string | null;
   whatsapp_access_token: string | null;
   whatsapp_webhook_secret: string | null;
@@ -54,13 +52,18 @@ interface SmtpKonfig {
   smtp_user: string;
   smtp_password: string;
   absender_email: string;
+  imap_host: string;
+  imap_port: string;
 }
 
-const SMTP_LEER: SmtpKonfig = { smtp_host: "", smtp_port: "587", smtp_user: "", smtp_password: "", absender_email: "" };
+const SMTP_LEER: SmtpKonfig = {
+  smtp_host: "", smtp_port: "587", smtp_user: "", smtp_password: "", absender_email: "",
+  imap_host: "", imap_port: "993",
+};
 
 export default function IntegrationenVerwaltung({ organisationId }: IntegrationenProps) {
   const [konfig, setKonfig] = useState<Konfig>({
-    inbound_email_adresse: null, inbound_email_anbieter: null, inbound_email_webhook_key: null,
+    inbound_email_adresse: null,
     whatsapp_phone_number_id: null, whatsapp_access_token: null, whatsapp_webhook_secret: null,
     whatsapp_app_secret: null,
   });
@@ -79,7 +82,7 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
   async function laden() {
     const { data } = await supabase
       .from("organisationen")
-      .select("inbound_email_adresse, inbound_email_anbieter, inbound_email_webhook_key, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_webhook_secret, whatsapp_app_secret")
+      .select("inbound_email_adresse, whatsapp_phone_number_id, whatsapp_access_token, whatsapp_webhook_secret, whatsapp_app_secret")
       .eq("id", organisationId).single();
     if (data) setKonfig(data);
   }
@@ -87,7 +90,7 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
   async function ladeSmtp() {
     const { data } = await supabase
       .from("organisation_smtp_konfiguration")
-      .select("smtp_host, smtp_port, smtp_user, smtp_password, absender_email")
+      .select("smtp_host, smtp_port, smtp_user, smtp_password, absender_email, imap_host, imap_port")
       .eq("organisation_id", organisationId)
       .maybeSingle();
     setSmtpKonfig(
@@ -98,33 +101,42 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
             smtp_user: data.smtp_user ?? "",
             smtp_password: data.smtp_password ?? "",
             absender_email: data.absender_email ?? "",
+            imap_host: data.imap_host ?? "",
+            imap_port: String(data.imap_port ?? 993),
           }
         : SMTP_LEER,
     );
   }
 
+  // Speichert SMTP+IMAP-Zugangsdaten (ein Postfach, eine Tabelle) UND die
+  // Support-Adresse fuer eingehende Mails (liegt auf organisationen) in
+  // einem Rutsch, da beide Karten dasselbe Postfach beschreiben.
   async function smtpSpeichern() {
     setSmtpLaedt(true);
-    const { error } = await supabase.from("organisation_smtp_konfiguration").upsert({
-      organisation_id: organisationId,
-      smtp_host: smtpKonfig.smtp_host.trim() || null,
-      smtp_port: Number(smtpKonfig.smtp_port) || 587,
-      smtp_user: smtpKonfig.smtp_user.trim() || null,
-      smtp_password: smtpKonfig.smtp_password.trim() || null,
-      absender_email: smtpKonfig.absender_email.trim() || null,
-      aktualisiert_am: new Date().toISOString(),
-    });
+    const [{ error: smtpFehler }, { error: inboundFehler }] = await Promise.all([
+      supabase.from("organisation_smtp_konfiguration").upsert({
+        organisation_id: organisationId,
+        smtp_host: smtpKonfig.smtp_host.trim() || null,
+        smtp_port: Number(smtpKonfig.smtp_port) || 587,
+        smtp_user: smtpKonfig.smtp_user.trim() || null,
+        smtp_password: smtpKonfig.smtp_password.trim() || null,
+        absender_email: smtpKonfig.absender_email.trim() || null,
+        imap_host: smtpKonfig.imap_host.trim() || null,
+        imap_port: Number(smtpKonfig.imap_port) || 993,
+        aktualisiert_am: new Date().toISOString(),
+      }),
+      supabase.from("organisationen")
+        .update({ inbound_email_adresse: konfig.inbound_email_adresse?.trim() || null })
+        .eq("id", organisationId),
+    ]);
     setSmtpLaedt(false);
-    setSmtpHinweis(error ? "Fehler beim Speichern." : "Gespeichert.");
+    setSmtpHinweis(smtpFehler || inboundFehler ? "Fehler beim Speichern." : "Gespeichert.");
     setTimeout(() => setSmtpHinweis(null), 3000);
   }
 
   async function speichern() {
     setLaedt(true);
     const { error } = await supabase.from("organisationen").update({
-      inbound_email_adresse: konfig.inbound_email_adresse?.trim() || null,
-      inbound_email_anbieter: konfig.inbound_email_anbieter || null,
-      inbound_email_webhook_key: konfig.inbound_email_webhook_key?.trim() || null,
       whatsapp_phone_number_id: konfig.whatsapp_phone_number_id?.trim() || null,
       whatsapp_access_token: konfig.whatsapp_access_token?.trim() || null,
       whatsapp_webhook_secret: konfig.whatsapp_webhook_secret?.trim() || null,
@@ -169,46 +181,52 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
     setWaTestLaedt(false);
   }
 
-  const emailAktiv = !!(konfig.inbound_email_adresse && konfig.inbound_email_webhook_key);
+  const versandAktiv = !!(smtpKonfig.smtp_host && smtpKonfig.smtp_user && smtpKonfig.smtp_password && smtpKonfig.absender_email);
+  const empfangAktiv = !!(konfig.inbound_email_adresse && smtpKonfig.imap_host && smtpKonfig.smtp_user && smtpKonfig.smtp_password);
   const waAktiv = !!(konfig.whatsapp_phone_number_id && konfig.whatsapp_access_token);
 
   return (
     <div className="space-y-6">
       <h3 className="text-sm font-medium text-[var(--text-strong)]">Integrationen</h3>
 
-      {/* ── E-Mail-Versand (SMTP) ──────────────────────────────────── */}
+      {/* ── E-Mail (Senden & Empfangen) ────────────────────────────── */}
       <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-lg">✉️</span>
             <div>
-              <p className="text-sm font-medium text-[var(--text-strong)]">E-Mail-Versand (Absenderadresse)</p>
+              <p className="text-sm font-medium text-[var(--text-strong)]">E-Mail (Senden &amp; Empfangen)</p>
               <p className="text-xs text-[var(--text-faint)]">
-                Postfach, über das Kunden-Benachrichtigungen und Erinnerungen für diese Firma verschickt werden
+                Ein Postfach für Kunden-Benachrichtigungen (SMTP) und automatische Tickets aus eingehenden Mails (IMAP)
               </p>
             </div>
           </div>
-          <span className={`rounded-full px-2 py-0.5 text-[0.65rem] font-medium ${smtpKonfig.smtp_host && smtpKonfig.smtp_user && smtpKonfig.smtp_password && smtpKonfig.absender_email ? "bg-green-100 text-green-700" : "bg-[var(--bg-muted)] text-[var(--text-faint)]"}`}>
-            {smtpKonfig.smtp_host && smtpKonfig.smtp_user && smtpKonfig.smtp_password && smtpKonfig.absender_email ? "Eigenes Postfach" : "Gemeinsames Postfach"}
-          </span>
+          <div className="flex shrink-0 gap-1.5">
+            <span className={`rounded-full px-2 py-0.5 text-[0.65rem] font-medium ${versandAktiv ? "bg-green-100 text-green-700" : "bg-[var(--bg-muted)] text-[var(--text-faint)]"}`}>
+              Versand: {versandAktiv ? "Eigenes Postfach" : "Gemeinsam"}
+            </span>
+            <span className={`rounded-full px-2 py-0.5 text-[0.65rem] font-medium ${empfangAktiv ? "bg-green-100 text-green-700" : "bg-[var(--bg-muted)] text-[var(--text-faint)]"}`}>
+              Empfang: {empfangAktiv ? "Aktiv" : "Nicht konfiguriert"}
+            </span>
+          </div>
         </div>
 
         <p className="text-xs text-[var(--text-faint)]">
-          Ohne eigene Angaben hier wird das zentrale, gemeinsame Postfach der Plattform für den Versand
-          verwendet (alle Firmen teilen sich dann eine Absenderadresse). Trage hier die SMTP-Zugangsdaten
-          eines eigenen Postfachs dieser Firma ein, damit Kunden Mails von der eigenen Adresse erhalten.
+          Ohne eigene Angaben hier wird für den Versand das zentrale, gemeinsame Postfach der Plattform
+          verwendet. Trage die Zugangsdaten eines eigenen Postfachs dieser Firma ein, damit Kunden Mails
+          von der eigenen Adresse erhalten und Antworten an diese Adresse automatisch zu Tickets werden.
         </p>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">SMTP-Host</label>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">SMTP-Host (Versand)</label>
             <input type="text" value={smtpKonfig.smtp_host}
               onChange={(e) => setSmtpKonfig({ ...smtpKonfig, smtp_host: e.target.value })}
               placeholder="smtp-mail.outlook.com"
               className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm font-mono" />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Port</label>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">SMTP-Port</label>
             <input type="number" value={smtpKonfig.smtp_port}
               onChange={(e) => setSmtpKonfig({ ...smtpKonfig, smtp_port: e.target.value })}
               placeholder="587"
@@ -216,11 +234,27 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
             <p className="mt-1 text-xs text-[var(--text-faint)]">587 = STARTTLS (üblich), 465 = TLS</p>
           </div>
           <div>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">IMAP-Host (Empfang)</label>
+            <input type="text" value={smtpKonfig.imap_host}
+              onChange={(e) => setSmtpKonfig({ ...smtpKonfig, imap_host: e.target.value })}
+              placeholder="imap-mail.outlook.com"
+              className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm font-mono" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">IMAP-Port</label>
+            <input type="number" value={smtpKonfig.imap_port}
+              onChange={(e) => setSmtpKonfig({ ...smtpKonfig, imap_port: e.target.value })}
+              placeholder="993"
+              className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm font-mono" />
+            <p className="mt-1 text-xs text-[var(--text-faint)]">993 = IMAP über TLS (üblich)</p>
+          </div>
+          <div>
             <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Benutzername</label>
             <input type="text" value={smtpKonfig.smtp_user}
               onChange={(e) => setSmtpKonfig({ ...smtpKonfig, smtp_user: e.target.value })}
               placeholder="firma@ihre-domain.de"
               className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm font-mono" />
+            <p className="mt-1 text-xs text-[var(--text-faint)]">Gilt für SMTP und IMAP – ein Postfach-Login.</p>
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Absenderadresse</label>
@@ -239,123 +273,35 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
             placeholder="Postfach-Passwort oder App-Passwort…"
           />
           <p className="mt-1 text-xs text-[var(--text-faint)]">
-            Zu finden in den SMTP-/E-Mail-Client-Einstellungen des E-Mail-Anbieters. Bei manchen
+            Zu finden in den SMTP-/IMAP-/E-Mail-Client-Einstellungen des E-Mail-Anbieters. Bei manchen
             Anbietern (z.B. Outlook, Gmail) wird ein separat generiertes App-Passwort benötigt statt
             des normalen Login-Passworts.
+          </p>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+            Support-E-Mail-Adresse <span className="font-normal text-[var(--text-faint)]">(für automatische Tickets)</span>
+          </label>
+          <input type="email" value={konfig.inbound_email_adresse ?? ""}
+            onChange={(e) => setKonfig({ ...konfig, inbound_email_adresse: e.target.value })}
+            placeholder="support@deine-firma.de"
+            className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
+          <p className="mt-1 text-xs text-[var(--text-faint)]">
+            Diese Adresse gibst du Kunden als Support-Kontakt – meist identisch mit der Absenderadresse
+            oben. Alle paar Minuten wird das Postfach automatisch nach neuen Mails durchsucht und daraus
+            Tickets angelegt (kleine Verzögerung statt sofortiger Zustellung, dafür ohne
+            Drittanbieter-Konto/Domain-Einrichtung). Unbekannte Absenderadressen erzeugen automatisch
+            einen neuen Kunden-Account; antwortet jemand auf eine Ticket-Mail mit "#123" im Betreff
+            (unverändert), wird die Antwort dem bestehenden Ticket zugeordnet statt ein neues zu öffnen.
           </p>
         </div>
 
         {smtpHinweis && <p className="text-sm text-[var(--text-soft)]">{smtpHinweis}</p>}
         <button onClick={smtpSpeichern} disabled={smtpLaedt}
           className="w-full rounded-xl border border-[var(--border-input)] py-2 text-sm font-medium text-[var(--text-soft)] hover:bg-[var(--bg-muted)] disabled:opacity-50">
-          {smtpLaedt ? "Speichert…" : "SMTP-Zugangsdaten speichern"}
+          {smtpLaedt ? "Speichert…" : "E-Mail-Zugangsdaten speichern"}
         </button>
-      </div>
-
-      {/* ── E-Mail zu Ticket ───────────────────────────────────────── */}
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">📧</span>
-            <div>
-              <p className="text-sm font-medium text-[var(--text-strong)]">E-Mail → Ticket</p>
-              <p className="text-xs text-[var(--text-faint)]">Eingehende E-Mails automatisch als Ticket anlegen</p>
-            </div>
-          </div>
-          <span className={`rounded-full px-2 py-0.5 text-[0.65rem] font-medium ${emailAktiv ? "bg-green-100 text-green-700" : "bg-[var(--bg-muted)] text-[var(--text-faint)]"}`}>
-            {emailAktiv ? "Aktiv" : "Nicht konfiguriert"}
-          </span>
-        </div>
-
-        <div className="space-y-3">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-              Support-E-Mail-Adresse
-            </label>
-            <input type="email" value={konfig.inbound_email_adresse ?? ""}
-              onChange={(e) => setKonfig({ ...konfig, inbound_email_adresse: e.target.value })}
-              placeholder="support@deine-firma.de"
-              className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
-            <p className="mt-1 text-xs text-[var(--text-faint)]">
-              Diese Adresse gibst du deinen Kunden als Support-Kontakt – eingehende E-Mails werden automatisch zu Tickets.
-            </p>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Anbieter</label>
-            <div className="flex gap-2">
-              {["resend", "postmark", "cloudflare"].map((a) => (
-                <button key={a} onClick={() => setKonfig({ ...konfig, inbound_email_anbieter: a })}
-                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${konfig.inbound_email_anbieter === a ? "border-[var(--akzent)] bg-akzent/10 text-akzent" : "border-[var(--border)] text-[var(--text-soft)]"}`}>
-                  {a === "resend" ? "Resend" : a === "postmark" ? "Postmark" : "Cloudflare"}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-              Webhook-Secret / API-Key vom Anbieter
-            </label>
-            <GeheimnisInput
-              value={konfig.inbound_email_webhook_key ?? ""}
-              onChange={(v) => setKonfig({ ...konfig, inbound_email_webhook_key: v })}
-              placeholder="Signing Secret oder API-Key…"
-            />
-          </div>
-
-          {konfig.inbound_email_anbieter && (
-            <div className="rounded-lg bg-[var(--bg-muted)] p-3 space-y-1.5">
-              <p className="text-xs font-medium text-[var(--text-soft)]">
-                Webhook-URL – bei {konfig.inbound_email_anbieter === "resend" ? "Resend" : konfig.inbound_email_anbieter === "postmark" ? "Postmark" : "Cloudflare"} eintragen:
-              </p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 truncate rounded bg-[var(--bg-surface)] px-2 py-1 text-xs font-mono text-[var(--text-strong)]">
-                  {webhookBaseUrl}/email-inbound
-                </code>
-                <KopierenButton wert={`${webhookBaseUrl}/email-inbound`} />
-              </div>
-            </div>
-          )}
-
-          <KonfigurationsHilfe
-            titel="E-Mail → Ticket einrichten"
-            schritte={[
-              {
-                nr: 1,
-                titel: "Domain kaufen und verifizieren",
-                beschreibung: "Du brauchst eine eigene Domain (z.B. firma.de). Bei deinem gewählten Anbieter (Resend, Postmark oder Cloudflare) die Domain verifizieren – das dauert meist 5–10 Minuten.",
-                link: { label: "Resend Domain-Einrichtung", url: "https://resend.com/docs/dashboard/domains/introduction" },
-              },
-              {
-                nr: 2,
-                titel: "E-Mail-Adresse festlegen",
-                beschreibung: "Wähle eine Support-Adresse, z.B. support@firma.de oder hilfe@firma.de. Diese Adresse gibst du deinen Kunden als Kontakt-E-Mail an – alle eingehenden Mails werden automatisch zu Tickets.",
-              },
-              {
-                nr: 3,
-                titel: "Webhook-URL beim Anbieter eintragen",
-                beschreibung: konfig.inbound_email_anbieter === "resend"
-                  ? "Resend Dashboard → Domains → deine Domain → Inbound → Webhook URL eintragen. Das Signing Secret unter diesem Webhook-Eintrag kopieren."
-                  : konfig.inbound_email_anbieter === "postmark"
-                  ? "Postmark → Server → Settings → Inbound Webhook → URL eintragen. Den API-Key findest du unter Account → API Tokens."
-                  : "Cloudflare → Email Routing → Rules → Custom address → Ziel-Worker eintragen.",
-                code: `${webhookBaseUrl}/email-inbound`,
-              },
-              {
-                nr: 4,
-                titel: "Secret hier eintragen und speichern",
-                beschreibung: "Das Signing Secret / den API-Key vom Anbieter in das Feld oben eintragen. Dann auf 'Integrationen speichern' klicken.",
-              },
-              {
-                nr: 5,
-                titel: "Test-Mail senden",
-                beschreibung: "Schicke eine E-Mail an deine Support-Adresse. Nach wenigen Sekunden sollte in der Ticket-Übersicht ein neues Ticket erscheinen.",
-              },
-            ]}
-            hinweis="Kunden, die per E-Mail schreiben, werden automatisch als Absender erkannt – ist die E-Mail-Adresse schon als Kunde angelegt, wird das Ticket direkt zugeordnet. Unbekannte Adressen erzeugen automatisch einen neuen Kunden-Account."
-          />
-        </div>
       </div>
 
       {/* ── WhatsApp ───────────────────────────────────────────────── */}

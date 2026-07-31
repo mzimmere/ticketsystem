@@ -147,6 +147,15 @@ Deno.serve(async (req: Request) => {
       .eq("id", ticket.organisation_id)
       .single();
 
+    // Name der Person, die die Aktion ausgeloest hat (bzw. des Kunden bei
+    // einer neuen Antwort) - fuer den Hinweis "von wem" in der Mail.
+    const { data: aendererProfil } = await supabaseAdmin
+      .from("profiles")
+      .select("name")
+      .eq("id", userData.user.id)
+      .maybeSingle();
+    const aendererNameRoh = aendererProfil?.name?.trim() || null;
+
     const seitenUrl = Deno.env.get("PUBLIC_SITE_URL") ?? "";
     const firmenName = organisation?.name ?? "Ticketsystem";
 
@@ -154,24 +163,27 @@ Deno.serve(async (req: Request) => {
     let text: string;
 
     if (ereignis === "zugewiesen") {
+      const aendererName = aendererNameRoh ?? "Ein Kollege";
       betreff = `Ticket #${ticket.ticket_nr} wurde dir zugewiesen`;
       text = [
-        `Das Ticket "${ticket.titel}" (#${ticket.ticket_nr}) wurde dir zugewiesen.`,
+        `Das Ticket "${ticket.titel}" (#${ticket.ticket_nr}) wurde dir von ${aendererName} zugewiesen.`,
         ``,
         `Ticket ansehen: ${seitenUrl}`,
       ].join("\n");
     } else if (ereignis === "status_geaendert") {
+      const aendererName = aendererNameRoh ?? "Ein Kollege";
       const statusText = STATUS_LABEL[neuerStatus] ?? neuerStatus;
       betreff = `Ticket #${ticket.ticket_nr}: Status geändert auf "${statusText}"`;
       text = [
-        `Der Status deines Tickets "${ticket.titel}" (#${ticket.ticket_nr}) wurde von einer anderen Person auf "${statusText}" geändert.`,
+        `Der Status deines Tickets "${ticket.titel}" (#${ticket.ticket_nr}) wurde von ${aendererName} auf "${statusText}" geändert.`,
         ``,
         `Ticket ansehen: ${seitenUrl}`,
       ].join("\n");
     } else {
+      const aendererName = aendererNameRoh ?? "Der Kunde";
       betreff = `Ticket #${ticket.ticket_nr}: Neue Kundenantwort`;
       text = [
-        `Der Kunde hat auf dein Ticket "${ticket.titel}" (#${ticket.ticket_nr}) geantwortet.`,
+        `${aendererName} hat auf dein Ticket "${ticket.titel}" (#${ticket.ticket_nr}) geantwortet.`,
         ``,
         `Ticket ansehen: ${seitenUrl}`,
       ].join("\n");

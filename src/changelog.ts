@@ -8,6 +8,8 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-31", titel: "Mitarbeiter-Benachrichtigungsmail (Zuweisung/Statuswechsel/Kundenantwort) nennt jetzt den Namen der Person, die die Änderung ausgelöst hat" },
+  { datum: "2026-07-31", titel: "E-Mail → Ticket funktioniert jetzt wirklich: eingehende Mails am Support-Postfach werden alle paar Minuten per IMAP abgerufen und automatisch zu Tickets (inkl. Anhängen); unbekannte Absender werden automatisch als Kunde angelegt, Antworten mit „#123“ im Betreff landen im bestehenden Ticket statt einem neuen" },
   { datum: "2026-07-31", titel: "Navigation Rail links bleibt jetzt fix am Bildschirmrand (inkl. Design-Umschalter/Profil-Symbol unten) statt mit langen Seiten mitzuscrollen" },
   { datum: "2026-07-30", titel: "Zugewiesener Techniker bekommt jetzt eine E-Mail, wenn ihm ein Ticket zugewiesen wird, jemand anderes den Status seines Tickets ändert oder der Kunde antwortet – nicht bei eigenen Aktionen" },
   { datum: "2026-07-30", titel: "E-Mail-Versand technisch stabilisiert: Supabase kann keine SMTP-Verbindungen direkt aufbauen (führte bislang dazu, dass gar keine Mails ankamen) – der Versand läuft jetzt über eine kleine Relay-Function auf Vercel, die echtes SMTP kann; für Firmen/Nutzer ändert sich nichts an der Eingabe" },

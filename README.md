@@ -115,6 +115,27 @@ lehnt die Vercel-Function den Aufruf mit 401 ab.
   ebenfalls über den Relay – auch diese Function ist eine Supabase Edge
   Function und kann daher genauso wenig direkt SMTP sprechen.
 
+## 4c. E-Mail → Ticket (eingehende Mails automatisch als Ticket anlegen)
+
+Läuft per IMAP-Abruf alle 5 Minuten (Cron `email-abrufen-alle-5min`), aus
+demselben Grund wie beim Versand: Supabase Edge Functions können kein
+IMAP (raw TCP), daher übernimmt eine weitere Vercel-Function
+(`api/check-mail.ts`) den eigentlichen Postfach-Abruf.
+
+Einrichtung läuft komplett über die App (Verwaltung → Integrationen →
+"E-Mail (Senden & Empfangen)"): IMAP-Host/Port zusätzlich zu den
+SMTP-Daten eintragen (gleiches Postfach, gleicher Benutzer/Passwort) und
+die Support-E-Mail-Adresse angeben. Kein zusätzliches Secret nötig – nutzt
+denselben `MAIL_RELAY_URL`/`MAIL_RELAY_SECRET` wie der Versand (URL wird
+von `/send-mail` auf `/check-mail` umgeschrieben).
+
+- Unbekannte Absenderadressen erzeugen automatisch einen neuen Kunden-Account.
+- Enthält der Betreff „#123“ (unverändert aus einer Ticket-Mail), wird die
+  Antwort dem bestehenden Ticket zugeordnet statt ein neues zu öffnen.
+- Anhänge werden mit übernommen (bis 8 MB pro Datei).
+- Dedupe über `ticket_nachrichten.email_message_id` (unique index) – auch
+  bei mehrfachem Abruf derselben Mail kein doppeltes Ticket/Antwort.
+
 ## 5. Deployment auf Vercel
 
 Wie bei deinen anderen Projekten: Repo zu GitHub pushen, in Vercel

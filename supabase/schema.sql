@@ -2577,3 +2577,65 @@ create policy organisation_smtp_konfiguration_delete on organisation_smtp_konfig
     or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
     or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
   );
+
+-- ============================================================
+-- 61. E-Mail -> Ticket per IMAP-Abruf statt Anbieter-Webhook. Die
+-- urspruengliche Webhook-Variante (Resend/Postmark/Cloudflare,
+-- organisationen.inbound_email_anbieter/inbound_email_webhook_key) wurde
+-- nie fertig gebaut (Edge Function email-inbound existierte nie) und
+-- haette ohnehin eine eigene, per DNS verifizierte Domain gebraucht -
+-- genau die Huerde, die beim SMTP-Versand schon vermieden wurde.
+--
+-- Stattdessen: IMAP-Zugangsdaten in organisation_smtp_konfiguration
+-- (dasselbe Postfach wie beim SMTP-Versand, daher gemeinsamer Benutzer/
+-- Passwort). Eine neue Edge Function (email-abrufen) fragt per Cron alle
+-- 5 Minuten ueber die Vercel-Relay-Function (api/check-mail.ts, Node.js -
+-- IMAP ist wie SMTP eine rohe TCP-Verbindung und aus einer Supabase Edge
+-- Function heraus nicht moeglich) das Postfach jeder konfigurierten Firma
+-- nach neuen Mails ab und legt daraus Tickets an.
+--
+-- get_kunde_id_by_email() und email_message_id/idx_nachrichten_email_dedupe
+-- wurden bereits in einer frueheren Migration angelegt (siehe
+-- "email_zu_ticket_imap"). cron.schedule('email-abrufen-alle-5min', ...)
+-- wurde direkt per SQL ausgefuehrt (gleiches Muster wie Abschnitt 45):
+--
+-- select cron.schedule(
+--   'email-abrufen-alle-5min',
+--   '*/5 * * * *',
+--   $cron$
+--   select net.http_post(
+--     url := 'https://wfntgmavwzuldwjjhhlp.supabase.co/functions/v1/email-abrufen',
+--     headers := jsonb_build_object(
+--       'Content-Type', 'application/json',
+--       'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'cron_shared_secret')
+--     ),
+--     body := '{}'::jsonb
+--   );
+--   $cron$
+-- );
+-- ============================================================
+
+alter table organisation_smtp_konfiguration add column if not exists imap_host text;
+alter table organisation_smtp_konfiguration add column if not exists imap_port integer not null default 993;
+
+alter table ticket_nachrichten add column if not exists email_message_id text;
+create unique index if not exists idx_nachrichten_email_dedupe
+  on ticket_nachrichten(email_message_id)
+  where email_message_id is not null;
+
+create or replace function get_kunde_id_by_email(p_organisation_id uuid, p_email text)
+returns uuid
+language sql
+security definer
+set search_path = public, auth
+as $$
+  select p.id
+  from profiles p
+  join auth.users u on u.id = p.id
+  where p.organisation_id = p_organisation_id
+    and p.rolle = 'kunde'
+    and lower(u.email) = lower(p_email)
+  limit 1;
+$$;
+
+grant execute on function get_kunde_id_by_email(uuid, text) to service_role;
