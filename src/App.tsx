@@ -330,8 +330,10 @@ export default function App() {
       className="grid min-h-screen grid-cols-[72px_1fr] bg-[var(--bg-muted)]"
       style={{ "--akzent": organisation?.akzentfarbe || "#0e6e8c" } as React.CSSProperties}
     >
-      {/* Navigation Rail */}
-      <nav className="flex flex-col items-center gap-1 border-r border-[var(--border)] bg-[var(--bg-surface)] py-4">
+      {/* Navigation Rail - sticky, damit der untere Block (Design/Profil)
+          immer am unteren Bildschirmrand bleibt, auch wenn die rechte Seite
+          laenger als der Viewport ist und die Seite scrollt. */}
+      <nav className="sticky top-0 flex h-screen flex-col items-center gap-1 overflow-y-auto border-r border-[var(--border)] bg-[var(--bg-surface)] py-4">
         <button
           onClick={zurueckZuTickets}
           title="Zur Startseite"
