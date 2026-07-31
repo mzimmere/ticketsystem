@@ -7,6 +7,7 @@ import ZugangsdatenBox from "./ZugangsdatenBox";
 import DongleVerwaltung from "./DongleVerwaltung";
 import KundenTodoListe from "./KundenTodoListe";
 import KundenHardware from "./KundenHardware";
+import KundenAuswahl from "./KundenAuswahl";
 
 interface Kunde {
   id: string;
@@ -24,6 +25,12 @@ interface Kunde {
   ust_id: string | null;
   notizen: string | null;
   deaktiviert: boolean;
+  zusammengefuehrt_in: string | null;
+}
+
+interface ZusatzEmail {
+  id: string;
+  email: string;
 }
 
 interface KundenPreis {
@@ -111,6 +118,13 @@ export default function KundenListe({
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
   const [kundeEmail, setKundeEmail] = useState<string | null>(null);
+  const [zusatzEmails, setZusatzEmails] = useState<ZusatzEmail[]>([]);
+  const [neueZusatzEmail, setNeueZusatzEmail] = useState("");
+  const [zeigeZusammenfuehren, setZeigeZusammenfuehren] = useState(false);
+  const [zusammenfuehrenQuelleId, setZusammenfuehrenQuelleId] = useState("");
+  const [zusammenfuehrenLaedt, setZusammenfuehrenLaedt] = useState(false);
+  const [mergeVersion, setMergeVersion] = useState(0);
+  const [zielNamen, setZielNamen] = useState<Record<string, string>>({});
   const [neuerZugang, setNeuerZugang] = useState<{
     email: string;
     link?: string;
@@ -140,7 +154,7 @@ export default function KundenListe({
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "id, name, vorname, nachname, avatar_url, telefonnummer, strasse, hausnummer, plz, ort, land, mwst_satz, ust_id, notizen, deaktiviert",
+        "id, name, vorname, nachname, avatar_url, telefonnummer, strasse, hausnummer, plz, ort, land, mwst_satz, ust_id, notizen, deaktiviert, zusammengefuehrt_in",
       )
       .eq("organisation_id", organisationId)
       .eq("rolle", "kunde")
@@ -150,7 +164,22 @@ export default function KundenListe({
       console.error("[KundenListe] Laden fehlgeschlagen:", error);
       setHinweis("Kunden konnten nicht geladen werden (Details in der Browser-Konsole).");
     }
-    setKunden((data as Kunde[]) ?? []);
+    const geladeneKunden = (data as Kunde[]) ?? [];
+    setKunden(geladeneKunden);
+
+    const zielIds = Array.from(
+      new Set(geladeneKunden.map((k) => k.zusammengefuehrt_in).filter((id): id is string => !!id)),
+    );
+    if (zielIds.length > 0) {
+      const { data: ziele } = await supabase.from("profiles").select("id, name").in("id", zielIds);
+      const map: Record<string, string> = {};
+      for (const z of (ziele as { id: string; name: string | null }[]) ?? []) {
+        map[z.id] = z.name ?? "Unbenannt";
+      }
+      setZielNamen(map);
+    } else {
+      setZielNamen({});
+    }
   }
 
   async function statusUmschalten(kundeId: string, deaktivieren: boolean) {
@@ -201,15 +230,76 @@ export default function KundenListe({
     setNeuerPreisEuro("");
     setHinweis(null);
     setKundeEmail(null);
+    setNeueZusatzEmail("");
+    setZeigeZusammenfuehren(false);
+    setZusammenfuehrenQuelleId("");
     ladeDokumente(k.id);
     ladePreise(k.id);
     ladeVertraege(k.id);
     ladeKundeEmail(k.id);
+    ladeZusatzEmails(k.id);
   }
 
   async function ladeKundeEmail(kundeId: string) {
     const { data } = await supabase.rpc("get_kunde_email", { p_kunde_id: kundeId });
     setKundeEmail((data as string | null) ?? null);
+  }
+
+  async function ladeZusatzEmails(kundeId: string) {
+    const { data } = await supabase
+      .from("kunden_email_adressen")
+      .select("id, email")
+      .eq("kunde_id", kundeId)
+      .order("erstellt_am");
+    setZusatzEmails((data as ZusatzEmail[]) ?? []);
+  }
+
+  async function zusatzEmailHinzufuegen(kundeId: string) {
+    const email = neueZusatzEmail.trim().toLowerCase();
+    if (!email) return;
+    const { error } = await supabase
+      .from("kunden_email_adressen")
+      .insert({ organisation_id: organisationId, kunde_id: kundeId, email });
+    if (error) {
+      setHinweis(
+        error.code === "23505"
+          ? "Diese E-Mail-Adresse ist bereits einem Kunden zugeordnet."
+          : "E-Mail-Adresse konnte nicht hinzugefügt werden.",
+      );
+      return;
+    }
+    setNeueZusatzEmail("");
+    ladeZusatzEmails(kundeId);
+  }
+
+  async function zusatzEmailLoeschen(id: string, kundeId: string) {
+    await supabase.from("kunden_email_adressen").delete().eq("id", id);
+    ladeZusatzEmails(kundeId);
+  }
+
+  async function kontenZusammenfuehren(zielId: string) {
+    if (!zusammenfuehrenQuelleId) return;
+    setZusammenfuehrenLaedt(true);
+    setHinweis(null);
+    const { error } = await supabase.rpc("kunden_zusammenfuehren", {
+      p_ziel_kunde_id: zielId,
+      p_quelle_kunde_id: zusammenfuehrenQuelleId,
+    });
+    setZusammenfuehrenLaedt(false);
+    if (error) {
+      console.error(error);
+      setHinweis(error.message ?? "Zusammenführen fehlgeschlagen.");
+      return;
+    }
+    setZeigeZusammenfuehren(false);
+    setZusammenfuehrenQuelleId("");
+    setHinweis("Konten zusammengeführt.");
+    setMergeVersion((v) => v + 1);
+    ladeZusatzEmails(zielId);
+    ladeDokumente(zielId);
+    ladePreise(zielId);
+    ladeVertraege(zielId);
+    ladeKunden();
   }
 
   async function preisHinzufuegen(kundeId: string) {
@@ -549,6 +639,53 @@ export default function KundenListe({
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+                  Weitere E-Mail-Adressen{" "}
+                  <span className="font-normal text-[var(--text-faint)]">
+                    – z.B. wenn per Mail von einer anderen Adresse geschrieben wird
+                  </span>
+                </label>
+                {zusatzEmails.length > 0 && (
+                  <div className="mb-2 space-y-1">
+                    {zusatzEmails.map((e) => (
+                      <div
+                        key={e.id}
+                        className="flex items-center justify-between gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5 text-sm"
+                      >
+                        <span className="truncate text-[var(--text-strong)]">{e.email}</span>
+                        <button
+                          onClick={() => zusatzEmailLoeschen(e.id, k.id)}
+                          className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
+                        >
+                          Entfernen
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    value={neueZusatzEmail}
+                    onChange={(e) => setNeueZusatzEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && zusatzEmailHinzufuegen(k.id)}
+                    placeholder="weitere.adresse@beispiel.de"
+                    className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                  />
+                  <button
+                    onClick={() => zusatzEmailHinzufuegen(k.id)}
+                    className="rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white"
+                  >
+                    +
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-[var(--text-faint)]">
+                  Mails von hinterlegten Adressen landen automatisch bei diesem Kunden (statt einen
+                  neuen Account anzulegen).
+                </p>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
                   Telefon / WhatsApp
                 </label>
                 <input
@@ -794,21 +931,34 @@ export default function KundenListe({
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
                   Todo-Liste
                 </p>
-                <KundenTodoListe kundeId={k.id} organisationId={organisationId} modus="voll" />
+                <KundenTodoListe
+                  key={`todos-${k.id}-${mergeVersion}`}
+                  kundeId={k.id}
+                  organisationId={organisationId}
+                  modus="voll"
+                />
               </div>
 
               <div className="border-t border-[var(--border)] pt-3">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
                   Hardware
                 </p>
-                <KundenHardware kundeId={k.id} organisationId={organisationId} />
+                <KundenHardware
+                  key={`hardware-${k.id}-${mergeVersion}`}
+                  kundeId={k.id}
+                  organisationId={organisationId}
+                />
               </div>
 
               <div className="border-t border-[var(--border)] pt-3">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
                   Dongles / Lizenzen
                 </p>
-                <DongleVerwaltung kundeId={k.id} organisationId={organisationId} />
+                <DongleVerwaltung
+                  key={`dongle-${k.id}-${mergeVersion}`}
+                  kundeId={k.id}
+                  organisationId={organisationId}
+                />
               </div>
 
               {vertraege.length > 0 && (
@@ -852,6 +1002,61 @@ export default function KundenListe({
                 </div>
               )}
 
+              {!zeigeArchivierte && (
+                <div className="border-t border-[var(--border)] pt-3">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
+                    Konten zusammenführen
+                  </p>
+                  {!zeigeZusammenfuehren ? (
+                    <button
+                      onClick={() => setZeigeZusammenfuehren(true)}
+                      className="w-full rounded border border-[var(--border-input)] px-3 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+                    >
+                      Mit anderem Kundenkonto zusammenführen…
+                    </button>
+                  ) : (
+                    <div className="space-y-2 rounded border border-[var(--border-input)] p-3">
+                      <p className="text-xs text-[var(--text-faint)]">
+                        Wähle das doppelte/ältere Konto (z.B. weil der Kunde von einer anderen
+                        Mail-Adresse geschrieben hat). Alle Tickets, Zeiteinträge, Dokumente,
+                        Preise, Todos, Dongles, Lizenzverträge und Hardware wandern zu{" "}
+                        <strong>{k.name ?? "diesem Kunden"}</strong>, dessen Login-Mail wird als
+                        zusätzliche Adresse hinterlegt und das doppelte Konto anschließend
+                        deaktiviert.
+                      </p>
+                      <KundenAuswahl
+                        organisationId={organisationId}
+                        value={zusammenfuehrenQuelleId}
+                        onChange={setZusammenfuehrenQuelleId}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => kontenZusammenfuehren(k.id)}
+                          disabled={
+                            zusammenfuehrenLaedt || !zusammenfuehrenQuelleId || zusammenfuehrenQuelleId === k.id
+                          }
+                          className="flex-1 rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+                        >
+                          {zusammenfuehrenLaedt ? "Wird zusammengeführt…" : "Zusammenführen"}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setZeigeZusammenfuehren(false);
+                            setZusammenfuehrenQuelleId("");
+                          }}
+                          className="rounded border border-[var(--border-input)] px-3 py-2 text-sm text-[var(--text-soft)]"
+                        >
+                          Abbrechen
+                        </button>
+                      </div>
+                      {zusammenfuehrenQuelleId === k.id && (
+                        <p className="text-xs text-red-600">Bitte ein anderes Konto wählen.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}
 
               <button
@@ -876,12 +1081,21 @@ export default function KundenListe({
 
               <div className="border-t border-[var(--border)] pt-3">
                 {zeigeArchivierte ? (
-                  <button
-                    onClick={() => statusUmschalten(k.id, false)}
-                    className="w-full rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
-                  >
-                    Wieder aktivieren
-                  </button>
+                  k.zusammengefuehrt_in ? (
+                    <p className="text-xs text-[var(--text-faint)]">
+                      Dieses Konto wurde in{" "}
+                      <strong>{zielNamen[k.zusammengefuehrt_in] ?? "ein anderes Konto"}</strong>{" "}
+                      zusammengeführt. Alle Tickets und Daten liegen dort – ein erneutes
+                      Aktivieren würde die Zuordnung nicht rückgängig machen.
+                    </p>
+                  ) : (
+                    <button
+                      onClick={() => statusUmschalten(k.id, false)}
+                      className="w-full rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+                    >
+                      Wieder aktivieren
+                    </button>
+                  )
                 ) : (
                   <button
                     onClick={() => statusUmschalten(k.id, true)}

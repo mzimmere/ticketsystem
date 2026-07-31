@@ -2685,3 +2685,144 @@ grant execute on function get_user_id_by_email(text) to service_role;
 -- Default-Timeout regelmaessig in einen Timeout, der die Function
 -- moeglicherweise mitten in der Verarbeitung abbrach.
 -- ============================================================
+
+-- ============================================================
+-- 64. Mehrere E-Mail-Adressen pro Kunde + Konten zusammenfuehren.
+-- Hintergrund: ein Kunde schreibt der Support-Mailadresse haeufiger von
+-- wechselnden Adressen (Kollege, privates Postfach, ...). email-abrufen
+-- (Abschnitt 61) legt fuer jede unbekannte Adresse bislang einen neuen
+-- Account an. kunden_email_adressen erlaubt es, weitere bekannte Adressen
+-- einem bestehenden Kunden-Account zuzuordnen (get_kunde_id_by_email prueft
+-- sie zusaetzlich zur Login-Mail); kunden_zusammenfuehren() fasst zwei
+-- versehentlich getrennt entstandene Accounts zusammen: alle Tickets/
+-- Zeiteintraege/Dokumente/Preise/Todos/Dongles/Lizenzvertraege/Hardware
+-- wandern zum Zielkonto, die Login-Mail des Quellkontos wird als
+-- zusaetzliche Adresse hinterlegt, das Quellkonto wird deaktiviert (nicht
+-- geloescht - historische kunde_id/autor_id-Fremdschluessel vieler Tabellen
+-- haben "on delete no action", Loeschen wuerde daran scheitern; ausserdem
+-- bleibt ueber profiles.zusammengefuehrt_in nachvollziehbar, wohin
+-- zusammengefuehrt wurde).
+--
+-- Alle E-Mail-Adressen werden klein geschrieben gespeichert/verglichen,
+-- damit ein einfacher Unique-Index (statt Ausdrucks-Index) fuer
+-- "on conflict" beim Zusammenfuehren ausreicht.
+-- ============================================================
+create table kunden_email_adressen (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  kunde_id uuid not null references profiles(id) on delete cascade,
+  email text not null,
+  erstellt_am timestamptz default now()
+);
+create unique index idx_kunden_email_adressen_email on kunden_email_adressen(email);
+create index idx_kunden_email_adressen_kunde on kunden_email_adressen(kunde_id);
+alter table kunden_email_adressen enable row level security;
+
+create policy kunden_email_adressen_select on kunden_email_adressen for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy kunden_email_adressen_insert on kunden_email_adressen for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy kunden_email_adressen_delete on kunden_email_adressen for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+alter table profiles add column if not exists zusammengefuehrt_in uuid references profiles(id);
+
+create or replace function get_kunde_id_by_email(p_organisation_id uuid, p_email text)
+returns uuid
+language sql
+security definer
+set search_path = public, auth
+as $$
+  select coalesce(
+    (select p.id
+     from profiles p
+     join auth.users u on u.id = p.id
+     where p.organisation_id = p_organisation_id
+       and p.rolle = 'kunde'
+       and not p.deaktiviert
+       and lower(u.email) = lower(p_email)
+     limit 1),
+    (select e.kunde_id
+     from kunden_email_adressen e
+     join profiles p on p.id = e.kunde_id
+     where p.organisation_id = p_organisation_id
+       and e.email = lower(p_email)
+     limit 1)
+  );
+$$;
+
+create or replace function kunden_zusammenfuehren(p_ziel_kunde_id uuid, p_quelle_kunde_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_ziel_org uuid;
+  v_quelle_org uuid;
+  v_ziel_rolle user_rolle;
+  v_quelle_rolle user_rolle;
+  v_quelle_email text;
+begin
+  if p_ziel_kunde_id = p_quelle_kunde_id then
+    raise exception 'Ziel- und Quellkonto duerfen nicht identisch sein.';
+  end if;
+
+  select organisation_id, rolle into v_ziel_org, v_ziel_rolle from profiles where id = p_ziel_kunde_id;
+  select organisation_id, rolle into v_quelle_org, v_quelle_rolle from profiles where id = p_quelle_kunde_id;
+
+  if v_ziel_org is null or v_quelle_org is null or v_ziel_org <> v_quelle_org then
+    raise exception 'Beide Konten muessen zur selben Firma gehoeren.';
+  end if;
+  if v_ziel_rolle <> 'kunde' or v_quelle_rolle <> 'kunde' then
+    raise exception 'Zusammenfuehren ist nur fuer Kunden-Konten moeglich.';
+  end if;
+
+  if not coalesce(
+    current_user_rolle() = 'super_admin'
+    or (v_ziel_org = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(v_ziel_org, array['org_admin', 'techniker']::user_rolle[]),
+    false
+  ) then
+    raise exception 'Keine Berechtigung.';
+  end if;
+
+  select lower(email) into v_quelle_email from auth.users where id = p_quelle_kunde_id;
+  if v_quelle_email is not null then
+    insert into kunden_email_adressen (organisation_id, kunde_id, email)
+    values (v_ziel_org, p_ziel_kunde_id, v_quelle_email)
+    on conflict (email) do nothing;
+  end if;
+
+  update kunden_email_adressen set kunde_id = p_ziel_kunde_id where kunde_id = p_quelle_kunde_id;
+  update tickets set kunde_id = p_ziel_kunde_id where kunde_id = p_quelle_kunde_id;
+  update ticket_nachrichten set autor_id = p_ziel_kunde_id where autor_id = p_quelle_kunde_id;
+  update zeiteintraege set kunde_id = p_ziel_kunde_id where kunde_id = p_quelle_kunde_id;
+  update kunden_dokumente set kunde_id = p_ziel_kunde_id where kunde_id = p_quelle_kunde_id;
+  update rechnungsanpassungen set kunde_id = p_ziel_kunde_id where kunde_id = p_quelle_kunde_id;
+  update kunden_preise set kunde_id = p_ziel_kunde_id where kunde_id = p_quelle_kunde_id;
+  update kunden_todos set kunde_id = p_ziel_kunde_id where kunde_id = p_quelle_kunde_id;
+  update kunden_dongles set kunde_id = p_ziel_kunde_id where kunde_id = p_quelle_kunde_id;
+  update lizenz_vertraege set kunde_id = p_ziel_kunde_id where kunde_id = p_quelle_kunde_id;
+  update kunden_hardware set kunde_id = p_ziel_kunde_id where kunde_id = p_quelle_kunde_id;
+
+  update profiles set deaktiviert = true, zusammengefuehrt_in = p_ziel_kunde_id
+  where id = p_quelle_kunde_id;
+end;
+$$;
+
+grant execute on function kunden_zusammenfuehren(uuid, uuid) to authenticated;

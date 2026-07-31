@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-31", titel: "Kundenverwaltung: weitere E-Mail-Adressen pro Kunde hinterlegbar (Mails von diesen Adressen landen automatisch beim richtigen Kunden statt einen neuen Account anzulegen) sowie neue Funktion „Konten zusammenführen“, um versehentlich doppelt angelegte Kunden-Accounts inkl. aller Tickets, Zeiteinträge, Dokumente, Preise, Todos, Dongles, Lizenzverträge und Hardware zu einem Konto zu vereinen" },
   { datum: "2026-07-31", titel: "Kundenverwaltung zeigt beim Aufklappen jetzt die Login-E-Mail-Adresse des Kunden an (nicht änderbar, nur zur Ansicht)" },
   { datum: "2026-07-31", titel: "Passwort vergessen (Link beim Login) und Passwort ändern (in Mein Profil, für alle Nutzer) – bisher gab es keine Möglichkeit, ein Passwort selbst zurückzusetzen" },
   { datum: "2026-07-31", titel: "Zwei Fixes am E-Mail-Import: eine fehlende Datenbank-Komponente (pg_net) ließ zeitweise alle Hintergrund-Jobs fehlschlagen (auch SLA-/Lizenz-Erinnerung, jetzt behoben); außerdem scheiterte der Import bisher an E-Mails von Absendern, die schon irgendeinen Account im System haben (z.B. ein Mitarbeiter beim Testen) – wird jetzt korrekt dem bestehenden Account zugeordnet statt übersprungen" },
