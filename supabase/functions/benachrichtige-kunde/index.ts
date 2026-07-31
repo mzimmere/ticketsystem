@@ -80,6 +80,29 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// Signiert die CSAT-Bewertungslinks (siehe Function "csat-bewerten") mit dem
+// Service-Role-Key als HMAC-Geheimnis - der ist in jeder Edge Function ohne
+// weitere Konfiguration vorhanden, verhindert also ein zusaetzliches Secret
+// nur fuer diesen Zweck. Der Key selbst wird dabei nie verschickt, nur eine
+// Pruefsumme ueber Ticket-ID und Bewertung.
+async function csatSignatur(ticketId: string, wert: number): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`${ticketId}:${wert}`));
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function csatLink(ticketId: string, wert: number): Promise<string> {
+  const basisUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/csat-bewerten`;
+  const sig = await csatSignatur(ticketId, wert);
+  return `${basisUrl}?t=${ticketId}&w=${wert}&s=${sig}`;
+}
+
 const STATUS_LABEL: Record<string, string> = {
   offen: "Offen",
   in_bearbeitung: "In Bearbeitung",
@@ -143,15 +166,27 @@ Deno.serve(async (req: Request) => {
     if (ereignis === "status_geaendert") {
       const statusText = STATUS_LABEL[neuerStatus] ?? neuerStatus;
       betreff = `Ticket #${ticket.ticket_nr}: Status geändert auf "${statusText}"`;
-      text = [
+      const zeilen = [
         `Hallo ${kunde?.name ?? ""},`,
         ``,
         `der Status deines Tickets "${ticket.titel}" (#${ticket.ticket_nr}) wurde auf "${statusText}" geändert.`,
         ``,
         `Details ansehen: ${seitenUrl}`,
-        ``,
-        `— ${firmenName}`,
-      ].join("\n");
+      ];
+
+      if (neuerStatus === "geschlossen") {
+        const linkJa = await csatLink(ticketId, 1);
+        const linkNein = await csatLink(ticketId, 2);
+        zeilen.push(
+          ``,
+          `War unsere Hilfe zufriedenstellend?`,
+          `👍 Ja: ${linkJa}`,
+          `👎 Nicht wirklich: ${linkNein}`,
+        );
+      }
+
+      zeilen.push(``, `— ${firmenName}`);
+      text = zeilen.join("\n");
     } else {
       betreff = `Ticket #${ticket.ticket_nr}: Neue Antwort`;
       text = [

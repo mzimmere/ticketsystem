@@ -79,6 +79,28 @@ Deno.serve(async (req) => {
 
     await supabase.from("ticket_nachrichten").insert(nachrichten);
 
+    // Kunden ueber den Abschluss informieren (inkl. Bewertungslinks, siehe
+    // benachrichtige-kunde) - sonst wuerden automatisch geschlossene Tickets
+    // (die Mehrheit der Abschluesse) nie eine CSAT-Anfrage ausloesen.
+    // Service-Role-Key als Bearer-Token, da benachrichtige-kunde ein echtes
+    // Supabase-JWT erwartet (verify_jwt=true) und dieser Cron-Job selbst
+    // keine Nutzer-Session hat.
+    const benachrichtigenUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/benachrichtige-kunde`;
+    for (const id of ticketIds) {
+      try {
+        await fetch(benachrichtigenUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({ ticketId: id, ereignis: "status_geaendert", neuerStatus: "geschlossen" }),
+        });
+      } catch (err) {
+        console.error(`Benachrichtigung fuer Ticket ${id} fehlgeschlagen:`, err);
+      }
+    }
+
     geschlossenGesamt += ticketIds.length;
     console.log(`Firma ${firma.id}: ${ticketIds.length} Ticket(s) automatisch geschlossen.`);
   }
