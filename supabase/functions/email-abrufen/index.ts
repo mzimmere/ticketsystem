@@ -43,7 +43,6 @@ function sichererDateiname(name: string): string {
 
 interface OrgMitPostfach {
   organisation_id: string;
-  inbound_email_adresse: string;
   smtp_user: string;
   smtp_password: string;
   imap_host: string;
@@ -89,12 +88,23 @@ async function mailsAbrufen(konfig: OrgMitPostfach): Promise<AbgerufeneMail[]> {
   return (json.mails as AbgerufeneMail[]) ?? [];
 }
 
+// Findet den Kunden-Kontakt fuer eine eingehende Mail. Reihenfolge:
+// 1. Bereits als Kunde DIESER Firma bekannt?
+// 2. Gehoert die Adresse schon IRGENDEINEM Account (Mitarbeiter, Kunde
+//    einer anderen Firma)? auth.admin.createUser() wuerde sonst mit
+//    "already registered" fehlschlagen und die Mail wuerde stillschweigend
+//    uebersprungen - stattdessen diesen bestehenden Account als Kontakt
+//    des Tickets verwenden.
+// 3. Sonst: neuen Kunden-Account anlegen.
 async function kundeFindenOderAnlegen(organisationId: string, email: string, name: string | null): Promise<string | null> {
   const { data: bestehenderKunde } = await supabase.rpc("get_kunde_id_by_email", {
     p_organisation_id: organisationId,
     p_email: email,
   });
   if (bestehenderKunde) return bestehenderKunde as string;
+
+  const { data: bestehenderNutzer } = await supabase.rpc("get_user_id_by_email", { p_email: email });
+  if (bestehenderNutzer) return bestehenderNutzer as string;
 
   const teile = (name ?? "").trim().split(/\s+/).filter(Boolean);
   const vorname = teile.length > 0 ? teile[0] : null;
@@ -164,7 +174,6 @@ Deno.serve(async (req) => {
 
     const mails = await mailsAbrufen({
       organisation_id: org.id,
-      inbound_email_adresse: org.inbound_email_adresse,
       smtp_user: smtpKonfig.smtp_user,
       smtp_password: smtpKonfig.smtp_password,
       imap_host: smtpKonfig.imap_host,

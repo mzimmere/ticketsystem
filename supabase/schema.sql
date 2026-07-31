@@ -2639,3 +2639,49 @@ as $$
 $$;
 
 grant execute on function get_kunde_id_by_email(uuid, text) to service_role;
+
+-- ============================================================
+-- 62. Fix fuer email-abrufen: schreibt jemand von einer Adresse, die
+-- schon IRGENDEINEN Account hat (z.B. ein Mitarbeiter testet mit der
+-- eigenen Mailadresse, oder ein Kunde einer anderen Firma), schlug
+-- auth.admin.createUser() mit "already registered" fehl und die Mail
+-- wurde stillschweigend uebersprungen (get_kunde_id_by_email findet nur
+-- Kunden DIESER Firma, nicht beliebige bestehende Accounts). Neue
+-- Funktion sucht firmenuebergreifend nach der E-Mail-Adresse; findet sie
+-- einen Treffer, wird dessen profiles.id als kunde_id des Tickets
+-- verwendet statt einen neuen (dann fehlschlagenden) Account anzulegen.
+-- ============================================================
+create or replace function get_user_id_by_email(p_email text)
+returns uuid
+language sql
+security definer
+set search_path = public, auth
+as $$
+  select id from auth.users where lower(email) = lower(p_email) limit 1;
+$$;
+
+revoke all on function get_user_id_by_email(text) from public, authenticated, anon;
+grant execute on function get_user_id_by_email(text) to service_role;
+
+-- ============================================================
+-- 63. Incident: die pg_net-Extension fehlte in der Datenbank (Ursache
+-- unklar - vermutlich durch eine Plattform-Wartung entfernt). Dadurch
+-- schlugen ALLE Cron-Jobs fehl, die net.http_post(...) aufrufen
+-- (auto-schliessen, sla-eskalation-alle-15min, lizenz-erinnerung-taeglich,
+-- email-abrufen-alle-5min) - "ERROR: schema net does not exist". Betraf
+-- nicht nur den neuen E-Mail-Import, sondern auch die bereits laenger
+-- laufende SLA-Eskalation/Lizenz-Erinnerung, vermutlich seit dem
+-- 2026-07-31 fruehen Morgen (per cron.job_run_details geprueft).
+--
+-- Behoben per: create extension if not exists pg_net;
+-- (installiert die Funktionen unter dem Schema "net", unabhaengig davon
+-- in welchem Schema die Extension selbst "wohnt" - pg_net legt sein
+-- eigenes "net"-Schema intern an).
+--
+-- Der email-abrufen-Cron-Job wurde dabei gleich neu eingerichtet mit
+-- timeout_milliseconds := 30000 statt dem Default von 5000 - ein
+-- IMAP-Abruf (Verbinden, Suchen, mehrere Mails laden, als gelesen
+-- markieren) braucht laenger als ein normaler DB-Aufruf und lief beim
+-- Default-Timeout regelmaessig in einen Timeout, der die Function
+-- moeglicherweise mitten in der Verarbeitung abbrach.
+-- ============================================================
