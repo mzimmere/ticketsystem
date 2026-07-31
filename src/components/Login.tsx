@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 
-type Modus = "laden" | "anmelden" | "passwort-setzen";
+type Modus = "laden" | "anmelden" | "passwort-setzen" | "passwort-vergessen";
 
 const STATUS_ZEILEN = [
   { label: "Datenbank", zustand: "online" as const },
@@ -15,6 +15,7 @@ export default function Login() {
   const [passwort, setPasswort] = useState("");
   const [fehler, setFehler] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
+  const [linkGesendet, setLinkGesendet] = useState(false);
   const [titel, setTitel] = useState("Ticketsystem");
   const [spruch, setSpruch] = useState("Anfragen ankommen lassen,\nohne dass etwas verloren geht.");
 
@@ -50,6 +51,23 @@ export default function Login() {
     });
     setLaedt(false);
     if (error) setFehler("E-Mail oder Passwort stimmt nicht.");
+  }
+
+  async function linkAnfordern() {
+    setFehler(null);
+    if (!email.trim()) {
+      setFehler("Bitte E-Mail-Adresse eingeben.");
+      return;
+    }
+    setLaedt(true);
+    // Absichtlich keine Fehlermeldung bei unbekannter Adresse (Supabase
+    // liefert dafuer auch keinen Fehler zurueck) - sonst liesse sich damit
+    // erraten, welche E-Mail-Adressen im System existieren.
+    await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: window.location.origin,
+    });
+    setLaedt(false);
+    setLinkGesendet(true);
   }
 
   async function passwortSetzen() {
@@ -243,6 +261,19 @@ export default function Login() {
         }
         .login-submit:disabled { opacity: 0.5; cursor: default; }
         .login-submit:hover:not(:disabled) { background: #0a5670; }
+        .login-link {
+          display: block;
+          width: 100%;
+          margin-top: 14px;
+          padding: 0;
+          border: none;
+          background: none;
+          text-align: center;
+          font-size: 0.82rem;
+          color: var(--paper-soft);
+          cursor: pointer;
+        }
+        .login-link:hover { color: var(--signal); text-decoration: underline; }
       `}</style>
 
       <div className="login-panel">
@@ -275,52 +306,113 @@ export default function Login() {
 
       <div className="login-formside">
         <div className="login-card">
-          <h1>{modus === "passwort-setzen" ? "Passwort festlegen" : "Anmelden"}</h1>
-          <p className="sub">
-            {modus === "passwort-setzen"
-              ? "Letzter Schritt, dann bist du drin."
-              : "Schön, dass du da bist."}
-          </p>
+          {modus === "passwort-vergessen" ? (
+            <>
+              <h1>Passwort vergessen</h1>
+              <p className="sub">
+                {linkGesendet
+                  ? "Falls ein Konto mit dieser Adresse existiert, wurde ein Link zum Zurücksetzen verschickt."
+                  : "Wir schicken dir einen Link zum Zurücksetzen."}
+              </p>
 
-          {modus === "anmelden" && (
-            <div className="login-field">
-              <label htmlFor="email">E-Mail</label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoFocus
-              />
-            </div>
+              {!linkGesendet && (
+                <div className="login-field">
+                  <label htmlFor="email">E-Mail</label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && linkAnfordern()}
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              {fehler && <p className="login-error">{fehler}</p>}
+
+              {!linkGesendet && (
+                <button className="login-submit" onClick={linkAnfordern} disabled={laedt}>
+                  {laedt ? "Sendet…" : "Link senden"}
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setModus("anmelden");
+                  setFehler(null);
+                  setLinkGesendet(false);
+                }}
+                className="login-link"
+              >
+                ← Zurück zum Login
+              </button>
+            </>
+          ) : (
+            <>
+              <h1>{modus === "passwort-setzen" ? "Passwort festlegen" : "Anmelden"}</h1>
+              <p className="sub">
+                {modus === "passwort-setzen"
+                  ? "Letzter Schritt, dann bist du drin."
+                  : "Schön, dass du da bist."}
+              </p>
+
+              {modus === "anmelden" && (
+                <div className="login-field">
+                  <label htmlFor="email">E-Mail</label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              <div className="login-field">
+                <label htmlFor="passwort">
+                  {modus === "passwort-setzen" ? "Neues Passwort" : "Passwort"}
+                </label>
+                <input
+                  id="passwort"
+                  type="password"
+                  value={passwort}
+                  onChange={(e) => setPasswort(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      modus === "passwort-setzen" ? passwortSetzen() : anmelden();
+                    }
+                  }}
+                />
+              </div>
+
+              {fehler && <p className="login-error">{fehler}</p>}
+
+              <button
+                className="login-submit"
+                onClick={modus === "passwort-setzen" ? passwortSetzen : anmelden}
+                disabled={laedt}
+              >
+                {modus === "passwort-setzen" ? "Passwort speichern & weiter" : "Anmelden"}
+              </button>
+
+              {modus === "anmelden" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModus("passwort-vergessen");
+                    setFehler(null);
+                    setLinkGesendet(false);
+                  }}
+                  className="login-link"
+                >
+                  Passwort vergessen?
+                </button>
+              )}
+            </>
           )}
-
-          <div className="login-field">
-            <label htmlFor="passwort">
-              {modus === "passwort-setzen" ? "Neues Passwort" : "Passwort"}
-            </label>
-            <input
-              id="passwort"
-              type="password"
-              value={passwort}
-              onChange={(e) => setPasswort(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  modus === "passwort-setzen" ? passwortSetzen() : anmelden();
-                }
-              }}
-            />
-          </div>
-
-          {fehler && <p className="login-error">{fehler}</p>}
-
-          <button
-            className="login-submit"
-            onClick={modus === "passwort-setzen" ? passwortSetzen : anmelden}
-            disabled={laedt}
-          >
-            {modus === "passwort-setzen" ? "Passwort speichern & weiter" : "Anmelden"}
-          </button>
         </div>
       </div>
     </div>

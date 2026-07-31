@@ -58,6 +58,10 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
   const [nutzung, setNutzung] = useState<NutzungsMonat[]>([]);
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
+  const [neuesPasswort, setNeuesPasswort] = useState("");
+  const [neuesPasswortWiederholen, setNeuesPasswortWiederholen] = useState("");
+  const [passwortHinweis, setPasswortHinweis] = useState<string | null>(null);
+  const [passwortLaedt, setPasswortLaedt] = useState(false);
 
   useEffect(() => {
     ladeProfil();
@@ -160,6 +164,28 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
     setVerfuegbarkeit(wert);
   }
 
+  async function passwortAendern() {
+    setPasswortHinweis(null);
+    if (neuesPasswort.length < 8) {
+      setPasswortHinweis("Mindestens 8 Zeichen.");
+      return;
+    }
+    if (neuesPasswort !== neuesPasswortWiederholen) {
+      setPasswortHinweis("Passwörter stimmen nicht überein.");
+      return;
+    }
+    setPasswortLaedt(true);
+    const { error } = await supabase.auth.updateUser({ password: neuesPasswort });
+    setPasswortLaedt(false);
+    if (error) {
+      setPasswortHinweis("Passwort konnte nicht geändert werden.");
+      return;
+    }
+    setNeuesPasswort("");
+    setNeuesPasswortWiederholen("");
+    setPasswortHinweis("Passwort geändert.");
+  }
+
   async function ticketsUebergeben() {
     if (!uebergabeAn) return;
     setLaedt(true);
@@ -216,6 +242,26 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
         )}
 
         {hinweis && <p className="text-sm text-[var(--text-soft)]">{hinweis}</p>}
+      </div>
+
+      <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
+        <h3 className="text-sm font-medium text-[var(--text-strong)]">Passwort ändern</h3>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Neues Passwort</label>
+          <input type="password" value={neuesPasswort} onChange={(e) => setNeuesPasswort(e.target.value)}
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Passwort wiederholen</label>
+          <input type="password" value={neuesPasswortWiederholen} onChange={(e) => setNeuesPasswortWiederholen(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && passwortAendern()}
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
+        </div>
+        {passwortHinweis && <p className="text-xs text-[var(--text-soft)]">{passwortHinweis}</p>}
+        <button onClick={passwortAendern} disabled={passwortLaedt || !neuesPasswort || !neuesPasswortWiederholen}
+          className="w-full rounded border border-[var(--border-input)] py-2 text-sm font-medium text-[var(--text-soft)] hover:bg-[var(--bg-muted)] disabled:opacity-50">
+          {passwortLaedt ? "Ändert…" : "Passwort ändern"}
+        </button>
       </div>
 
       {istIntern && <BuzzerSoundEinstellung profilId={profilId} />}
