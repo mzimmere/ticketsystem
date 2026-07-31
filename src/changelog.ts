@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-31", titel: "Fix: Schnellzugriff-Ticketbuttons waren für super_admin komplett ausgeblendet (auch mit ausgewählter Firma) statt nur ohne Firmen-Kontext – jetzt sichtbar, sobald eine Firma aktiv ist; der zwischenzeitlich hinzugefügte „+ Neues Ticket“-Button auf dem Dashboard wurde auf Wunsch wieder entfernt" },
   { datum: "2026-07-31", titel: "Kunde bekommt jetzt automatisch eine Mail mit direktem Bewertungslink (👍/👎, ohne Login), sobald sein Ticket geschlossen wird – egal ob manuell oder automatisch durch die Inaktivitäts-Regel; vorher gab es dafür keine Benachrichtigung, die Bewertung war nur sichtbar, wenn der Kunde zufällig selbst ins Portal ging" },
   { datum: "2026-07-31", titel: "Startseite: „Neues Ticket“-Button im Schnellzugriff für Mitarbeiter ergänzt (bisher gab es dort nur „Alle Tickets“)" },
   { datum: "2026-07-31", titel: "Dashboard: „+ Neues Ticket“-Button ergänzt (oben neben „Zurück“), damit ein Ticket nicht erst über die Ticketübersicht angelegt werden muss" },

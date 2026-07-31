@@ -371,7 +371,7 @@ export default function Startseite({
           Schnellzugriff
         </p>
 
-        {istIntern && rolle !== "super_admin" && (
+        {istIntern && organisationId && (
           <>
             <AktionsButton
               icon="➕"
