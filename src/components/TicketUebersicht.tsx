@@ -199,6 +199,8 @@ interface TicketUebersichtProps {
   heroBildUrl?: string | null;
   initialFilter?: "meine" | "wartend" | "sla-verletzt" | null;
   standardFilter?: string | null;
+  startMitNeuemTicket?: boolean;
+  onStartMitNeuemTicketKonsumiert?: () => void;
 }
 
 const GUELTIGE_STATUS_FILTER = ["alle", "offene", "offen", "in_bearbeitung", "wartet_auf_kunde", "geloest", "geschlossen"];
@@ -223,6 +225,8 @@ export default function TicketUebersicht({
   heroBildUrl,
   initialFilter,
   standardFilter,
+  startMitNeuemTicket,
+  onStartMitNeuemTicketKonsumiert,
 }: TicketUebersichtProps) {
   const [tickets, setTickets] = useState<TicketZeile[]>([]);
   const [kundenOptionen, setKundenOptionen] = useState<KundeOption[]>([]);
@@ -238,7 +242,12 @@ export default function TicketUebersicht({
   const [suchbegriff, setSuchbegriff] = useState("");
   const [nachrichtTrefferIds, setNachrichtTrefferIds] = useState<Set<string>>(new Set());
   const [laedt, setLaedt] = useState(true);
-  const [zeigeNeuesTicket, setZeigeNeuesTicket] = useState(false);
+  const [zeigeNeuesTicket, setZeigeNeuesTicket] = useState(startMitNeuemTicket ?? false);
+
+  useEffect(() => {
+    if (startMitNeuemTicket) onStartMitNeuemTicketKonsumiert?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     ladeTickets();

@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-07-31", titel: "Dashboard: „+ Neues Ticket“-Button ergänzt (oben neben „Zurück“), damit ein Ticket nicht erst über die Ticketübersicht angelegt werden muss" },
   { datum: "2026-07-31", titel: "Fix: Tabelle „kunden_preise“ (Individueller Minutenpreis) war nie tatsächlich angelegt worden, obwohl im Schema dokumentiert – dadurch scheiterte „Konten zusammenführen“ und das Preis-Feature war seit jeher unbenutzbar; Tabelle nachträglich angelegt" },
   { datum: "2026-07-31", titel: "Kundenverwaltung: weitere E-Mail-Adressen pro Kunde hinterlegbar (Mails von diesen Adressen landen automatisch beim richtigen Kunden statt einen neuen Account anzulegen) sowie neue Funktion „Konten zusammenführen“, um versehentlich doppelt angelegte Kunden-Accounts inkl. aller Tickets, Zeiteinträge, Dokumente, Preise, Todos, Dongles, Lizenzverträge und Hardware zu einem Konto zu vereinen" },
   { datum: "2026-07-31", titel: "Kundenverwaltung zeigt beim Aufklappen jetzt die Login-E-Mail-Adresse des Kunden an (nicht änderbar, nur zur Ansicht)" },

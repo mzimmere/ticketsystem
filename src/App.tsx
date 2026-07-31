@@ -93,6 +93,7 @@ export default function App() {
   const [zeigeStartseite, setZeigeStartseite] = useState(true);
   const [verwaltungsTab, setVerwaltungsTab] = useState<"firma" | "team" | "kunden" | "werkzeuge" | "integrationen">("firma");
   const [ticketFilter, setTicketFilter] = useState<"meine" | "wartend" | "sla-verletzt" | null>(null);
+  const [sofortNeuesTicket, setSofortNeuesTicket] = useState(false);
   const [rechnungDetail, setRechnungDetail] = useState<
     { kundeId: string; jahr: number; monat: number } | null
   >(null);
@@ -546,12 +547,22 @@ export default function App() {
           />
         ) : zeigeDashboard ? (
           <>
-            <button
-              onClick={() => { setZeigeDashboard(false); setZeigeStartseite(true); }}
-              className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
-            >
-              ← Zurück
-            </button>
+            <div className="flex items-center justify-between gap-2">
+              <button
+                onClick={() => { setZeigeDashboard(false); setZeigeStartseite(true); }}
+                className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
+              >
+                ← Zurück
+              </button>
+              {aktiveOrgId && (
+                <button
+                  onClick={() => { setZeigeDashboard(false); setSofortNeuesTicket(true); }}
+                  className="rounded bg-akzent px-3 py-1.5 text-sm font-medium text-white"
+                >
+                  + Neues Ticket
+                </button>
+              )}
+            </div>
             {profil.rolle === "super_admin" && !superAdminFirma ? (
               <SuperAdminDashboard onFirmaOeffnen={(id) => { setSuperAdminFirma(id); setZeigeDashboard(false); setZeigeStartseite(true); }} />
             ) : aktiveOrgId ? (
@@ -680,6 +691,8 @@ export default function App() {
             heroBildUrl={organisation?.hero_bild_url}
             initialFilter={ticketFilter}
             standardFilter={profil.standard_ticket_filter}
+            startMitNeuemTicket={sofortNeuesTicket}
+            onStartMitNeuemTicketKonsumiert={() => setSofortNeuesTicket(false)}
           />
           )
         ) : (
