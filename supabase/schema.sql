@@ -759,6 +759,15 @@ create policy kunden_preise_delete on kunden_preise for delete
     or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
   );
 
+-- Incident (2026-07-31, im Rahmen von Abschnitt 64 entdeckt): diese Tabelle
+-- war zwar seit jeher hier dokumentiert, aber nie tatsaechlich in der
+-- Datenbank angelegt worden - "kunden_zusammenfuehren()" schlug deshalb mit
+-- "relation kunden_preise does not exist" fehl. Das Frontend (KundenListe.tsx,
+-- "Individueller Minutenpreis") schluckte den fehlenden Table bislang
+-- stillschweigend (Ladefehler ohne Anzeige), das Feature war also seit jeher
+-- unbenutzbar, ohne dass es auffiel. Per "create table if not exists" mit
+-- exakt der oben dokumentierten Definition nachtraeglich angelegt.
+
 -- ============================================================
 -- 24. Adresse aufteilen: PLZ, Ort, Straße, Hausnummer
 -- ============================================================
