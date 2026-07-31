@@ -110,6 +110,7 @@ export default function KundenListe({
   const [filterWert, setFilterWert] = useState("");
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
+  const [kundeEmail, setKundeEmail] = useState<string | null>(null);
   const [neuerZugang, setNeuerZugang] = useState<{
     email: string;
     link?: string;
@@ -199,9 +200,16 @@ export default function KundenListe({
     setNeuesPreisDatum(new Date().toISOString().slice(0, 10));
     setNeuerPreisEuro("");
     setHinweis(null);
+    setKundeEmail(null);
     ladeDokumente(k.id);
     ladePreise(k.id);
     ladeVertraege(k.id);
+    ladeKundeEmail(k.id);
+  }
+
+  async function ladeKundeEmail(kundeId: string) {
+    const { data } = await supabase.rpc("get_kunde_email", { p_kunde_id: kundeId });
+    setKundeEmail((data as string | null) ?? null);
   }
 
   async function preisHinzufuegen(kundeId: string) {
@@ -528,6 +536,15 @@ export default function KundenListe({
                     className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+                  E-Mail (Login) <span className="font-normal text-[var(--text-faint)]">– nicht änderbar</span>
+                </label>
+                <p className="rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm text-[var(--text-strong)]">
+                  {kundeEmail ?? "—"}
+                </p>
               </div>
 
               <div>
