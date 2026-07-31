@@ -168,6 +168,7 @@ export default function App() {
     if (aktion === "tickets-wartend") { setTicketFilter("wartend"); return; }
     if (aktion === "tickets-sla-verletzt") { setTicketFilter("sla-verletzt"); return; }
     if (aktion === "neues-ticket") setZeigeNeuesTicket(true);
+    if (aktion === "neues-ticket-intern") setSofortNeuesTicket(true);
     if (aktion === "dashboard") setZeigeDashboard(true);
     if (aktion === "abrechnung") setZeigeAbrechnung(true);
     if (aktion === "firmeninfo") setZeigeFirmenInfo(true);

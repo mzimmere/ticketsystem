@@ -372,13 +372,22 @@ export default function Startseite({
         </p>
 
         {istIntern && rolle !== "super_admin" && (
-          <AktionsButton
-            icon="🎫"
-            label="Alle Tickets"
-            sub="Übersicht, Suche und Filter"
-            onClick={() => onAktion("tickets")}
-            hervorgehoben
-          />
+          <>
+            <AktionsButton
+              icon="➕"
+              iconBg="rgba(245,158,11,0.15)"
+              label="Neues Ticket"
+              sub="Ticket direkt anlegen"
+              onClick={() => onAktion("neues-ticket-intern")}
+              hervorgehoben
+            />
+            <AktionsButton
+              icon="🎫"
+              label="Alle Tickets"
+              sub="Übersicht, Suche und Filter"
+              onClick={() => onAktion("tickets")}
+            />
+          </>
         )}
 
         {!istIntern && (
