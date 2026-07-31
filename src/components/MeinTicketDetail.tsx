@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
+import { benachrichtigeMitarbeiter } from "../lib/benachrichtigungen";
 import Avatar from "./Avatar";
 import DateiAuswahl from "./DateiAuswahl";
 import StatusBadge from "./StatusBadge";
@@ -163,6 +164,7 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
     setDateien([]);
     setSendeLaedt(false);
     await ladeNachrichten();
+    benachrichtigeMitarbeiter({ ticketId, ereignis: "neue_kundenantwort" });
   }
 
   async function ticketSchliessen() {

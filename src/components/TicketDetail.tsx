@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { benachrichtigeKunde } from "../lib/benachrichtigungen";
+import { benachrichtigeKunde, benachrichtigeMitarbeiter } from "../lib/benachrichtigungen";
 import { sichererDateiname } from "../lib/dateiname";
 import { useUngespeichertWarnung } from "../lib/useUngespeichertWarnung";
 import { useSpracheingabe, spracheingabeUnterstuetzt } from "../lib/useSpracheingabe";
@@ -326,6 +326,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
     await supabase.from("tickets").update({ status }).eq("id", ticketId);
     setTicket((t) => (t ? { ...t, status } : t));
     benachrichtigeKunde({ ticketId, ereignis: "status_geaendert", neuerStatus: status });
+    benachrichtigeMitarbeiter({ ticketId, ereignis: "status_geaendert", neuerStatus: status });
   }
 
   async function zuweisen(zugewiesenAn: string) {
@@ -334,6 +335,9 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
       .update({ zugewiesen_an: zugewiesenAn || null })
       .eq("id", ticketId);
     setTicket((t) => (t ? { ...t, zugewiesen_an: zugewiesenAn || null } : t));
+    if (zugewiesenAn) {
+      benachrichtigeMitarbeiter({ ticketId, ereignis: "zugewiesen" });
+    }
   }
 
   async function dongleZuweisen(dongleId: string) {
