@@ -16,6 +16,10 @@
 // hinterlegte SMTP-Konfiguration (organisation_smtp_konfiguration,
 // Abschnitt 60), sonst Fallback auf die globalen SMTP_*-Secrets.
 //
+// Mail-Texte sind pro Firma anpassbar (Tabelle benachrichtigungs_mails,
+// Abschnitt 65) - siehe EmailTexteVerwaltung.tsx (Verwaltung > Werkzeuge).
+// Ohne eigene Vorlage gilt der Standardtext aus STANDARD_VORLAGEN unten.
+//
 // Projektpfad: supabase/functions/benachrichtige-mitarbeiter/index.ts
 // Deploy: supabase functions deploy benachrichtige-mitarbeiter
 // Secrets: siehe benachrichtige-kunde (MAIL_RELAY_URL/MAIL_RELAY_SECRET,
@@ -84,6 +88,47 @@ const STATUS_LABEL: Record<string, string> = {
   geloest: "Gelöst",
   geschlossen: "Geschlossen",
 };
+
+const STANDARD_VORLAGEN: Record<string, { betreff: string; text: string }> = {
+  mitarbeiter_zugewiesen: {
+    betreff: `Ticket #{{ticket_nr}} wurde dir zugewiesen`,
+    text: [
+      `Das Ticket "{{ticket_titel}}" (#{{ticket_nr}}) wurde dir von {{aenderer_name}} zugewiesen.`,
+      ``,
+      `Ticket ansehen: {{link}}`,
+    ].join("\n"),
+  },
+  mitarbeiter_status_geaendert: {
+    betreff: `Ticket #{{ticket_nr}}: Status geändert auf "{{status}}"`,
+    text: [
+      `Der Status deines Tickets "{{ticket_titel}}" (#{{ticket_nr}}) wurde von {{aenderer_name}} auf "{{status}}" geändert.`,
+      ``,
+      `Ticket ansehen: {{link}}`,
+    ].join("\n"),
+  },
+  mitarbeiter_neue_kundenantwort: {
+    betreff: `Ticket #{{ticket_nr}}: Neue Kundenantwort`,
+    text: [
+      `{{aenderer_name}} hat auf dein Ticket "{{ticket_titel}}" (#{{ticket_nr}}) geantwortet.`,
+      ``,
+      `Ticket ansehen: {{link}}`,
+    ].join("\n"),
+  },
+};
+
+async function vorlageLaden(organisationId: string, key: string): Promise<{ betreff: string; text: string }> {
+  const { data } = await supabaseAdmin
+    .from("benachrichtigungs_mails")
+    .select("betreff, text")
+    .eq("organisation_id", organisationId)
+    .eq("vorlage_key", key)
+    .maybeSingle();
+  return data ?? STANDARD_VORLAGEN[key];
+}
+
+function fuellePlatzhalter(vorlage: string, werte: Record<string, string>): string {
+  return vorlage.replace(/\{\{(\w+)\}\}/g, (_, name) => werte[name] ?? "");
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -159,35 +204,29 @@ Deno.serve(async (req: Request) => {
     const seitenUrl = Deno.env.get("PUBLIC_SITE_URL") ?? "";
     const firmenName = organisation?.name ?? "Ticketsystem";
 
-    let betreff: string;
-    let text: string;
+    let vorlageKey: string;
+    const werte: Record<string, string> = {
+      ticket_titel: ticket.titel,
+      ticket_nr: String(ticket.ticket_nr),
+      link: seitenUrl,
+      firmen_name: firmenName,
+    };
 
     if (ereignis === "zugewiesen") {
-      const aendererName = aendererNameRoh ?? "Ein Kollege";
-      betreff = `Ticket #${ticket.ticket_nr} wurde dir zugewiesen`;
-      text = [
-        `Das Ticket "${ticket.titel}" (#${ticket.ticket_nr}) wurde dir von ${aendererName} zugewiesen.`,
-        ``,
-        `Ticket ansehen: ${seitenUrl}`,
-      ].join("\n");
+      vorlageKey = "mitarbeiter_zugewiesen";
+      werte.aenderer_name = aendererNameRoh ?? "Ein Kollege";
     } else if (ereignis === "status_geaendert") {
-      const aendererName = aendererNameRoh ?? "Ein Kollege";
-      const statusText = STATUS_LABEL[neuerStatus] ?? neuerStatus;
-      betreff = `Ticket #${ticket.ticket_nr}: Status geändert auf "${statusText}"`;
-      text = [
-        `Der Status deines Tickets "${ticket.titel}" (#${ticket.ticket_nr}) wurde von ${aendererName} auf "${statusText}" geändert.`,
-        ``,
-        `Ticket ansehen: ${seitenUrl}`,
-      ].join("\n");
+      vorlageKey = "mitarbeiter_status_geaendert";
+      werte.aenderer_name = aendererNameRoh ?? "Ein Kollege";
+      werte.status = STATUS_LABEL[neuerStatus] ?? neuerStatus;
     } else {
-      const aendererName = aendererNameRoh ?? "Der Kunde";
-      betreff = `Ticket #${ticket.ticket_nr}: Neue Kundenantwort`;
-      text = [
-        `${aendererName} hat auf dein Ticket "${ticket.titel}" (#${ticket.ticket_nr}) geantwortet.`,
-        ``,
-        `Ticket ansehen: ${seitenUrl}`,
-      ].join("\n");
+      vorlageKey = "mitarbeiter_neue_kundenantwort";
+      werte.aenderer_name = aendererNameRoh ?? "Der Kunde";
     }
+
+    const vorlage = await vorlageLaden(ticket.organisation_id, vorlageKey);
+    const betreff = fuellePlatzhalter(vorlage.betreff, werte);
+    const text = fuellePlatzhalter(vorlage.text, werte);
 
     const ergebnis = await mailSenden(ticket.organisation_id, technikerEmail, betreff, text, firmenName);
     return new Response(JSON.stringify(ergebnis), {

@@ -17,6 +17,7 @@ import HardwareKategorienVerwaltung from "./HardwareKategorienVerwaltung";
 import FaqVerwaltung from "./FaqVerwaltung";
 import ReportingExport from "./ReportingExport";
 import IntegrationenVerwaltung from "./IntegrationenVerwaltung";
+import EmailTexteVerwaltung from "./EmailTexteVerwaltung";
 import KonfigurationsHilfe from "./KonfigurationsHilfe";
 
 type Rolle = "super_admin" | "org_admin" | "techniker" | "kunde";
@@ -1262,6 +1263,22 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
               { nr: 3, titel: "Öffentlicher Link", beschreibung: "Falls ein Firmen-Slug hinterlegt ist, gibt es oben einen kopierbaren Link zur öffentlichen FAQ-Seite – zum Einbinden auf der eigenen Website." },
               { nr: 4, titel: "Kunden entlasten", beschreibung: "Gute FAQ reduziert Ticket-Volumen deutlich. Faustregel: die häufigsten 10 Fragen der letzten 3 Monate als Startpunkt nehmen." },
             ]}
+          />
+        </div>
+      )}
+
+      {aktiveTab === "werkzeuge" && organisationId && (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
+          <h3 className="text-sm font-medium text-[var(--text-strong)]">E-Mail-Texte</h3>
+          <EmailTexteVerwaltung organisationId={organisationId} />
+          <KonfigurationsHilfe
+            titel="Automatische E-Mails anpassen"
+            schritte={[
+              { nr: 1, titel: "Text öffnen", beschreibung: "Auf eine der Mails klicken (z.B. 'Ticket geschlossen (mit Bewertung)'), um Betreff und Text zu bearbeiten." },
+              { nr: 2, titel: "Platzhalter verwenden", beschreibung: "Werte wie {{kunde_name}} oder {{ticket_nr}} werden beim Versand automatisch durch die echten Werte ersetzt. Welche Platzhalter zur Verfügung stehen, steht direkt über dem Textfeld." },
+              { nr: 3, titel: "Zurücksetzen jederzeit möglich", beschreibung: "Mit 'Auf Standard zurücksetzen' wird wieder der ursprüngliche Systemtext verwendet." },
+            ]}
+            hinweis="Ohne eigene Anpassung wird automatisch der Standardtext verschickt - hier ändert sich also nichts, solange nichts bearbeitet wird."
           />
         </div>
       )}

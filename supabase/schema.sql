@@ -2835,3 +2835,60 @@ end;
 $$;
 
 grant execute on function kunden_zusammenfuehren(uuid, uuid) to authenticated;
+
+-- ============================================================
+-- 65. Anpassbare Texte fuer die automatischen System-Mails (Statuswechsel,
+-- Ticket geschlossen inkl. CSAT-Links, neue Antwort, Mitarbeiter-
+-- Benachrichtigungen). Vorher waren diese Texte fest im Code der Edge
+-- Functions benachrichtige-kunde/benachrichtige-mitarbeiter hinterlegt -
+-- jede Firma bekam exakt denselben Wortlaut. Eine Zeile pro (Firma,
+-- Vorlage) - fehlt die Zeile, gilt der im Code hinterlegte Standardtext
+-- (STANDARD_VORLAGEN in beiden Functions bzw. in
+-- src/components/EmailTexteVerwaltung.tsx zur Vorbelegung im Formular).
+--
+-- Platzhalter im Text/Betreff im Format {{name}} (z.B. {{kunde_name}},
+-- {{ticket_nr}}), werden von den Edge Functions per einfachem
+-- Regex-Replace gefuellt - siehe fuellePlatzhalter() dort.
+-- ============================================================
+create table benachrichtigungs_mails (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  vorlage_key text not null check (vorlage_key in (
+    'kunde_status_geaendert', 'kunde_ticket_geschlossen', 'kunde_neue_antwort',
+    'mitarbeiter_zugewiesen', 'mitarbeiter_status_geaendert', 'mitarbeiter_neue_kundenantwort'
+  )),
+  betreff text not null,
+  text text not null,
+  aktualisiert_am timestamptz default now(),
+  unique (organisation_id, vorlage_key)
+);
+create index idx_benachrichtigungs_mails_org on benachrichtigungs_mails(organisation_id);
+alter table benachrichtigungs_mails enable row level security;
+
+create policy benachrichtigungs_mails_select on benachrichtigungs_mails for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy benachrichtigungs_mails_insert on benachrichtigungs_mails for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy benachrichtigungs_mails_update on benachrichtigungs_mails for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy benachrichtigungs_mails_delete on benachrichtigungs_mails for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );

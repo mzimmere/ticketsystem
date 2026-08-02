@@ -17,6 +17,10 @@
 // schickt die Mail-Daten stattdessen per HTTPS an die Vercel-Function,
 // die den echten SMTP-Versand macht.
 //
+// Mail-Texte sind pro Firma anpassbar (Tabelle benachrichtigungs_mails,
+// Abschnitt 65) - siehe EmailTexteVerwaltung.tsx (Verwaltung > Werkzeuge).
+// Ohne eigene Vorlage gilt der Standardtext aus STANDARD_VORLAGEN unten.
+//
 // Projektpfad: supabase/functions/benachrichtige-kunde/index.ts
 // Deploy: supabase functions deploy benachrichtige-kunde
 // Secrets:
@@ -111,6 +115,66 @@ const STATUS_LABEL: Record<string, string> = {
   geschlossen: "Geschlossen",
 };
 
+// Standardtexte, falls die Firma in benachrichtigungs_mails keine eigene
+// Vorlage hinterlegt hat. Platzhalter im Format {{name}}, siehe
+// fuellePlatzhalter() weiter unten.
+const STANDARD_VORLAGEN: Record<string, { betreff: string; text: string }> = {
+  kunde_status_geaendert: {
+    betreff: `Ticket #{{ticket_nr}}: Status geändert auf "{{status}}"`,
+    text: [
+      `Hallo {{kunde_name}},`,
+      ``,
+      `der Status deines Tickets "{{ticket_titel}}" (#{{ticket_nr}}) wurde auf "{{status}}" geändert.`,
+      ``,
+      `Details ansehen: {{link}}`,
+      ``,
+      `— {{firmen_name}}`,
+    ].join("\n"),
+  },
+  kunde_ticket_geschlossen: {
+    betreff: `Ticket #{{ticket_nr}}: Geschlossen`,
+    text: [
+      `Hallo {{kunde_name}},`,
+      ``,
+      `dein Ticket "{{ticket_titel}}" (#{{ticket_nr}}) wurde geschlossen.`,
+      ``,
+      `Details ansehen: {{link}}`,
+      ``,
+      `War unsere Hilfe zufriedenstellend?`,
+      `👍 Ja: {{bewertung_link_ja}}`,
+      `👎 Nicht wirklich: {{bewertung_link_nein}}`,
+      ``,
+      `— {{firmen_name}}`,
+    ].join("\n"),
+  },
+  kunde_neue_antwort: {
+    betreff: `Ticket #{{ticket_nr}}: Neue Antwort`,
+    text: [
+      `Hallo {{kunde_name}},`,
+      ``,
+      `es gibt eine neue Antwort zu deinem Ticket "{{ticket_titel}}" (#{{ticket_nr}}).`,
+      ``,
+      `Details ansehen: {{link}}`,
+      ``,
+      `— {{firmen_name}}`,
+    ].join("\n"),
+  },
+};
+
+async function vorlageLaden(organisationId: string, key: string): Promise<{ betreff: string; text: string }> {
+  const { data } = await supabaseAdmin
+    .from("benachrichtigungs_mails")
+    .select("betreff, text")
+    .eq("organisation_id", organisationId)
+    .eq("vorlage_key", key)
+    .maybeSingle();
+  return data ?? STANDARD_VORLAGEN[key];
+}
+
+function fuellePlatzhalter(vorlage: string, werte: Record<string, string>): string {
+  return vorlage.replace(/\{\{(\w+)\}\}/g, (_, name) => werte[name] ?? "");
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -160,45 +224,31 @@ Deno.serve(async (req: Request) => {
     const seitenUrl = Deno.env.get("PUBLIC_SITE_URL") ?? "";
     const firmenName = organisation?.name ?? "Ticketsystem";
 
-    let betreff: string;
-    let text: string;
+    let vorlageKey: string;
+    const werte: Record<string, string> = {
+      kunde_name: kunde?.name ?? "",
+      ticket_titel: ticket.titel,
+      ticket_nr: String(ticket.ticket_nr),
+      link: seitenUrl,
+      firmen_name: firmenName,
+    };
 
     if (ereignis === "status_geaendert") {
-      const statusText = STATUS_LABEL[neuerStatus] ?? neuerStatus;
-      betreff = `Ticket #${ticket.ticket_nr}: Status geändert auf "${statusText}"`;
-      const zeilen = [
-        `Hallo ${kunde?.name ?? ""},`,
-        ``,
-        `der Status deines Tickets "${ticket.titel}" (#${ticket.ticket_nr}) wurde auf "${statusText}" geändert.`,
-        ``,
-        `Details ansehen: ${seitenUrl}`,
-      ];
-
+      werte.status = STATUS_LABEL[neuerStatus] ?? neuerStatus;
       if (neuerStatus === "geschlossen") {
-        const linkJa = await csatLink(ticketId, 1);
-        const linkNein = await csatLink(ticketId, 2);
-        zeilen.push(
-          ``,
-          `War unsere Hilfe zufriedenstellend?`,
-          `👍 Ja: ${linkJa}`,
-          `👎 Nicht wirklich: ${linkNein}`,
-        );
+        vorlageKey = "kunde_ticket_geschlossen";
+        werte.bewertung_link_ja = await csatLink(ticketId, 1);
+        werte.bewertung_link_nein = await csatLink(ticketId, 2);
+      } else {
+        vorlageKey = "kunde_status_geaendert";
       }
-
-      zeilen.push(``, `— ${firmenName}`);
-      text = zeilen.join("\n");
     } else {
-      betreff = `Ticket #${ticket.ticket_nr}: Neue Antwort`;
-      text = [
-        `Hallo ${kunde?.name ?? ""},`,
-        ``,
-        `es gibt eine neue Antwort zu deinem Ticket "${ticket.titel}" (#${ticket.ticket_nr}).`,
-        ``,
-        `Details ansehen: ${seitenUrl}`,
-        ``,
-        `— ${firmenName}`,
-      ].join("\n");
+      vorlageKey = "kunde_neue_antwort";
     }
+
+    const vorlage = await vorlageLaden(ticket.organisation_id, vorlageKey);
+    const betreff = fuellePlatzhalter(vorlage.betreff, werte);
+    const text = fuellePlatzhalter(vorlage.text, werte);
 
     const ergebnis = await mailSenden(ticket.organisation_id, kundeEmail, betreff, text, firmenName);
     if (!ergebnis.ok) {
