@@ -12,8 +12,11 @@ import type { Sprache } from "./SpracheContext";
 
 export type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 
+export type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
+
 export interface Uebersetzung {
   status: Record<Status, string>;
+  prioritaet: Record<Prioritaet, string>;
   login: {
     ladenStatusDatenbank: string;
     ladenStatusAuth: string;
@@ -189,6 +192,75 @@ export interface Uebersetzung {
     negativ: string;
     zufriedenheit: string;
   };
+  ticketUebersicht: {
+    alleKunden: string;
+    unbenannt: string;
+    kundeSuchen: string;
+    keineTreffer: string;
+    tickets: string;
+    eintragEinzahl: string;
+    eintragMehrzahl: string;
+    neuesTicketAnlegen: string;
+    suchePlatzhalter: string;
+    nurMeine: string;
+    slaVerletzt: string;
+    offene: string;
+    alleStatus: string;
+    alsStandardTitle: string;
+    standardMarkiert: string;
+    alsStandard: string;
+    allePrioritaeten: string;
+    waehleFirmaHinweis: string;
+    keineTrefferTitel: string;
+    keineOffenenTickets: string;
+    keinTicketEnthaelt: string;
+    keinTicketMitTag: string;
+    allesErledigt: string;
+    spalteNr: string;
+    spalteBetreffKunde: string;
+    spalteStatus: string;
+    spalteZeit: string;
+    neueNachrichtVomKunden: string;
+    unbekannterKunde: string;
+  };
+  ticketDetail: {
+    laedt: string;
+    betrachterBannerSuffix: string;
+    unbekannterKunde: string;
+    telefonKopierenTitle: string;
+    emailKopierenTitle: string;
+    nichtZugewiesen: string;
+    unbenannt: string;
+    urlaub: string;
+    abwesend: string;
+    keinDongleZugeordnet: string;
+    dongleTitle: string;
+    reaktionLabel: string;
+    ueberfaellig: string;
+    loesungLabel: string;
+    tagButton: string;
+    betrachterSchautEinzahl: string;
+    betrachterSchautMehrzahl: string;
+    betrachterWarnungSuffix: string;
+    verlauf: string;
+    technikerFallback: string;
+    kundeWhatsapp: string;
+    kunde: string;
+    anhangFallback: string;
+    makroEinfuegen: string;
+    aufnahmeLaeuft: string;
+    diktieren: string;
+    spracheingabeNichtMoeglich: string;
+    notizPlatzhalter: string;
+    fuerKundenSichtbar: string;
+    wirdGesendet: string;
+    senden: string;
+    todoListeKunde: string;
+    hardwareKunde: string;
+    anhangFehler: string;
+    minutenErfasstSuffix: string;
+    manuellSuffix: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -198,6 +270,12 @@ const de: Uebersetzung = {
     wartet_auf_kunde: "Wartet auf Kunde",
     geloest: "Gelöst",
     geschlossen: "Geschlossen",
+  },
+  prioritaet: {
+    niedrig: "Niedrig",
+    mittel: "Mittel",
+    hoch: "Hoch",
+    kritisch: "Kritisch",
   },
   login: {
     ladenStatusDatenbank: "Datenbank",
@@ -374,6 +452,75 @@ const de: Uebersetzung = {
     negativ: "Negativ",
     zufriedenheit: "Zufriedenheit",
   },
+  ticketUebersicht: {
+    alleKunden: "Alle Kunden",
+    unbenannt: "Unbenannt",
+    kundeSuchen: "Kunde suchen…",
+    keineTreffer: "Keine Treffer.",
+    tickets: "Tickets",
+    eintragEinzahl: "Eintrag",
+    eintragMehrzahl: "Einträge",
+    neuesTicketAnlegen: "+ Neues Ticket anlegen",
+    suchePlatzhalter: "Suche nach Titel, Kunde, Nr., Bearbeiter oder Verlauf…",
+    nurMeine: "Nur meine",
+    slaVerletzt: "SLA verletzt",
+    offene: "Offene",
+    alleStatus: "Alle Status",
+    alsStandardTitle: "Diesen Status-Filter als deinen Standard speichern",
+    standardMarkiert: "★ Standard",
+    alsStandard: "☆ Als Standard",
+    allePrioritaeten: "Alle Prioritäten",
+    waehleFirmaHinweis: 'Wähle zuerst über das Zahnrad-Icon → "Alle Firmen" eine Firma aus, um deren Tickets zu sehen.',
+    keineTrefferTitel: "Keine Treffer",
+    keineOffenenTickets: "Keine offenen Tickets",
+    keinTicketEnthaelt: "Kein Ticket enthält „{begriff}“ – weder im Titel noch im Verlauf.",
+    keinTicketMitTag: "Kein Ticket ist mit dem Tag „{tag}“ versehen.",
+    allesErledigt: "Alles erledigt! Neue Tickets erscheinen hier sobald Kunden eine Anfrage stellen.",
+    spalteNr: "Nr.",
+    spalteBetreffKunde: "Betreff & Kunde",
+    spalteStatus: "Status",
+    spalteZeit: "Zeit",
+    neueNachrichtVomKunden: "Neue Nachricht vom Kunden",
+    unbekannterKunde: "Unbekannter Kunde",
+  },
+  ticketDetail: {
+    laedt: "Lädt…",
+    betrachterBannerSuffix: "schaut sich dieses Ticket gerade auch an.",
+    unbekannterKunde: "Unbekannter Kunde",
+    telefonKopierenTitle: "Telefonnummer kopieren",
+    emailKopierenTitle: "E-Mail-Adresse kopieren",
+    nichtZugewiesen: "Nicht zugewiesen",
+    unbenannt: "Unbenannt",
+    urlaub: "Urlaub",
+    abwesend: "abwesend",
+    keinDongleZugeordnet: "Kein Dongle zugeordnet",
+    dongleTitle: "Dongle / Lizenz",
+    reaktionLabel: "Reaktion:",
+    ueberfaellig: "ÜBERFÄLLIG",
+    loesungLabel: "Lösung:",
+    tagButton: "+ Tag",
+    betrachterSchautEinzahl: "schaut",
+    betrachterSchautMehrzahl: "schauen",
+    betrachterWarnungSuffix: "gerade auch auf dieses Ticket.",
+    verlauf: "Verlauf",
+    technikerFallback: "Techniker",
+    kundeWhatsapp: "Kunde (WhatsApp)",
+    kunde: "Kunde",
+    anhangFallback: "Anhang",
+    makroEinfuegen: "📋 Makro einfügen…",
+    aufnahmeLaeuft: "Aufnahme läuft… (klicken zum Stoppen)",
+    diktieren: "Diktieren",
+    spracheingabeNichtMoeglich: "Spracheingabe hier nicht möglich – geht mit Chrome, Edge oder Safari",
+    notizPlatzhalter: "Notiz oder Antwort schreiben…",
+    fuerKundenSichtbar: "Für Kunden sichtbar",
+    wirdGesendet: "Wird gesendet…",
+    senden: "Senden",
+    todoListeKunde: "Todo-Liste dieses Kunden",
+    hardwareKunde: "Hardware dieses Kunden",
+    anhangFehler: "Mindestens ein Anhang konnte nicht gespeichert werden. Details siehe Browser-Konsole (F12).",
+    minutenErfasstSuffix: "Min. erfasst",
+    manuellSuffix: " (manuell)",
+  },
 };
 
 const en: Uebersetzung = {
@@ -383,6 +530,12 @@ const en: Uebersetzung = {
     wartet_auf_kunde: "Waiting for customer",
     geloest: "Resolved",
     geschlossen: "Closed",
+  },
+  prioritaet: {
+    niedrig: "Low",
+    mittel: "Medium",
+    hoch: "High",
+    kritisch: "Critical",
   },
   login: {
     ladenStatusDatenbank: "Database",
@@ -558,6 +711,75 @@ const en: Uebersetzung = {
     positiv: "Positive",
     negativ: "Negative",
     zufriedenheit: "satisfaction",
+  },
+  ticketUebersicht: {
+    alleKunden: "All customers",
+    unbenannt: "Unnamed",
+    kundeSuchen: "Search customer…",
+    keineTreffer: "No matches.",
+    tickets: "Tickets",
+    eintragEinzahl: "entry",
+    eintragMehrzahl: "entries",
+    neuesTicketAnlegen: "+ Create new ticket",
+    suchePlatzhalter: "Search by title, customer, number, assignee, or history…",
+    nurMeine: "Only mine",
+    slaVerletzt: "SLA breached",
+    offene: "Open",
+    alleStatus: "All statuses",
+    alsStandardTitle: "Save this status filter as your default",
+    standardMarkiert: "★ Default",
+    alsStandard: "☆ Set as default",
+    allePrioritaeten: "All priorities",
+    waehleFirmaHinweis: 'First choose a company via the gear icon → "All companies" to see its tickets.',
+    keineTrefferTitel: "No matches",
+    keineOffenenTickets: "No open tickets",
+    keinTicketEnthaelt: "No ticket contains “{begriff}” – neither in the title nor in the history.",
+    keinTicketMitTag: "No ticket is tagged with “{tag}”.",
+    allesErledigt: "All done! New tickets will appear here as soon as customers submit a request.",
+    spalteNr: "No.",
+    spalteBetreffKunde: "Subject & customer",
+    spalteStatus: "Status",
+    spalteZeit: "Time",
+    neueNachrichtVomKunden: "New message from customer",
+    unbekannterKunde: "Unknown customer",
+  },
+  ticketDetail: {
+    laedt: "Loading…",
+    betrachterBannerSuffix: "is also viewing this ticket right now.",
+    unbekannterKunde: "Unknown customer",
+    telefonKopierenTitle: "Copy phone number",
+    emailKopierenTitle: "Copy email address",
+    nichtZugewiesen: "Not assigned",
+    unbenannt: "Unnamed",
+    urlaub: "on vacation",
+    abwesend: "away",
+    keinDongleZugeordnet: "No dongle assigned",
+    dongleTitle: "Dongle / License",
+    reaktionLabel: "Response:",
+    ueberfaellig: "OVERDUE",
+    loesungLabel: "Resolution:",
+    tagButton: "+ Tag",
+    betrachterSchautEinzahl: "is",
+    betrachterSchautMehrzahl: "are",
+    betrachterWarnungSuffix: "also currently viewing this ticket.",
+    verlauf: "History",
+    technikerFallback: "Technician",
+    kundeWhatsapp: "Customer (WhatsApp)",
+    kunde: "Customer",
+    anhangFallback: "Attachment",
+    makroEinfuegen: "📋 Insert macro…",
+    aufnahmeLaeuft: "Recording… (click to stop)",
+    diktieren: "Dictate",
+    spracheingabeNichtMoeglich: "Voice input not available here – works with Chrome, Edge, or Safari",
+    notizPlatzhalter: "Write a note or reply…",
+    fuerKundenSichtbar: "Visible to customer",
+    wirdGesendet: "Sending…",
+    senden: "Send",
+    todoListeKunde: "This customer's to-do list",
+    hardwareKunde: "This customer's hardware",
+    anhangFehler: "At least one attachment could not be saved. See browser console (F12) for details.",
+    minutenErfasstSuffix: "min logged",
+    manuellSuffix: " (manual)",
   },
 };
 

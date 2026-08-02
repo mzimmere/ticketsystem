@@ -6,6 +6,8 @@ import NeuesTicketIntern from "./NeuesTicketIntern";
 import StatusBadge from "./StatusBadge";
 import { TicketZeileSkeleton } from "./Skeleton";
 import LeerZustand from "./LeerZustand";
+import { useSprache, type Sprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
@@ -32,21 +34,6 @@ interface KundeOption {
   name: string | null;
 }
 
-const STATUS_LABEL: Record<Status, string> = {
-  offen: "Offen",
-  in_bearbeitung: "In Bearbeitung",
-  wartet_auf_kunde: "Wartet auf Kunde",
-  geloest: "Gelöst",
-  geschlossen: "Geschlossen",
-};
-
-const PRIORITAET_LABEL: Record<Prioritaet, string> = {
-  niedrig: "Niedrig",
-  mittel: "Mittel",
-  hoch: "Hoch",
-  kritisch: "Kritisch",
-};
-
 const PRIORITAET_AKZENT: Record<Prioritaet, string> = {
   niedrig: "var(--text-faint)",
   mittel: "var(--badge-mittel-text)",
@@ -54,9 +41,18 @@ const PRIORITAET_AKZENT: Record<Prioritaet, string> = {
   kritisch: "var(--badge-kritisch-text)",
 };
 
-function formatRelativ(iso: string): string {
+function formatRelativ(iso: string, sprache: Sprache): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const min = Math.floor(diffMs / 60000);
+  if (sprache === "en") {
+    if (min < 1) return "just now";
+    if (min < 60) return `${min} min ago`;
+    const std = Math.floor(min / 60);
+    if (std < 24) return `${std}h ago`;
+    const tage = Math.floor(std / 24);
+    if (tage < 7) return `${tage} day${tage > 1 ? "s" : ""} ago`;
+    return new Date(iso).toLocaleDateString("en-US");
+  }
   if (min < 1) return "gerade eben";
   if (min < 60) return `vor ${min} Min.`;
   const std = Math.floor(min / 60);
@@ -114,6 +110,8 @@ function KundenFilter({
   wert: string;
   onChange: (id: string) => void;
 }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).ticketUebersicht;
   const [offen, setOffen] = useState(false);
   const [suche, setSuche] = useState("");
   const ref = useRef<HTMLDivElement>(null);
@@ -127,7 +125,7 @@ function KundenFilter({
   }, []);
 
   const ausgewaehlterName =
-    wert === "alle" ? "Alle Kunden" : kundenOptionen.find((k) => k.id === wert)?.name ?? "Unbenannt";
+    wert === "alle" ? txt.alleKunden : kundenOptionen.find((k) => k.id === wert)?.name ?? txt.unbenannt;
 
   const gefiltert = useMemo(() => {
     const begriff = suche.trim().toLowerCase();
@@ -158,7 +156,7 @@ function KundenFilter({
             autoFocus
             value={suche}
             onChange={(e) => setSuche(e.target.value)}
-            placeholder="Kunde suchen…"
+            placeholder={txt.kundeSuchen}
             className="mb-2 w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2 py-1.5 text-xs text-[var(--text-strong)]"
           />
           <div className="max-h-56 space-y-0.5 overflow-y-auto">
@@ -168,7 +166,7 @@ function KundenFilter({
                 wert === "alle" ? "font-semibold text-akzent" : "text-[var(--text-strong)]"
               }`}
             >
-              Alle Kunden
+              {txt.alleKunden}
             </button>
             {gefiltert.map((k) => (
               <button
@@ -178,11 +176,11 @@ function KundenFilter({
                   wert === k.id ? "font-semibold text-akzent" : "text-[var(--text-strong)]"
                 }`}
               >
-                {k.name ?? "Unbenannt"}
+                {k.name ?? txt.unbenannt}
               </button>
             ))}
             {gefiltert.length === 0 && (
-              <p className="px-2 py-1 text-xs text-[var(--text-faint)]">Keine Treffer.</p>
+              <p className="px-2 py-1 text-xs text-[var(--text-faint)]">{txt.keineTreffer}</p>
             )}
           </div>
         </div>
@@ -228,6 +226,10 @@ export default function TicketUebersicht({
   startMitNeuemTicket,
   onStartMitNeuemTicketKonsumiert,
 }: TicketUebersichtProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).ticketUebersicht;
+  const statusTxt = texte(sprache).status;
+  const prioritaetTxt = texte(sprache).prioritaet;
   const [tickets, setTickets] = useState<TicketZeile[]>([]);
   const [kundenOptionen, setKundenOptionen] = useState<KundeOption[]>([]);
   const [statusFilter, setStatusFilter] = useState<Status | "alle" | "offene">(
@@ -366,11 +368,11 @@ export default function TicketUebersicht({
         <h2
           className="text-lg font-semibold text-[var(--text-strong)]"
         >
-          Tickets
+          {txt.tickets}
         </h2>
         {!laedt && (
           <span className="font-mono text-xs text-[var(--text-faint)]">
-            {gefilterteTickets.length} {gefilterteTickets.length === 1 ? "Eintrag" : "Einträge"}
+            {gefilterteTickets.length} {gefilterteTickets.length === 1 ? txt.eintragEinzahl : txt.eintragMehrzahl}
           </span>
         )}
       </div>
@@ -391,7 +393,7 @@ export default function TicketUebersicht({
             onClick={() => setZeigeNeuesTicket(true)}
             className="w-full rounded border border-dashed border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
           >
-            + Neues Ticket anlegen
+            {txt.neuesTicketAnlegen}
           </button>
         ))}
 
@@ -414,7 +416,7 @@ export default function TicketUebersicht({
           type="text"
           value={suchbegriff}
           onChange={(e) => setSuchbegriff(e.target.value)}
-          placeholder="Suche nach Titel, Kunde, Nr., Bearbeiter oder Verlauf…"
+          placeholder={txt.suchePlatzhalter}
           className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-surface)] py-2 pl-9 pr-3 text-sm text-[var(--text-strong)]"
         />
       </div>
@@ -426,24 +428,24 @@ export default function TicketUebersicht({
         <span className="h-4 w-px bg-[var(--border)]" />
 
         <FilterChip aktiv={nurMeine} onClick={() => setNurMeine(!nurMeine)}>
-          👤 Nur meine
+          👤 {txt.nurMeine}
         </FilterChip>
 
         <FilterChip aktiv={nurSlaVerletzt} onClick={() => setNurSlaVerletzt(!nurSlaVerletzt)}>
-          ⚠️ SLA verletzt
+          ⚠️ {txt.slaVerletzt}
         </FilterChip>
 
         <span className="h-4 w-px bg-[var(--border)]" />
 
         <FilterChip aktiv={statusFilter === "offene"} onClick={() => setStatusFilter("offene")}>
-          Offene
+          {txt.offene}
         </FilterChip>
         <FilterChip aktiv={statusFilter === "alle"} onClick={() => setStatusFilter("alle")}>
-          Alle Status
+          {txt.alleStatus}
         </FilterChip>
-        {(Object.keys(STATUS_LABEL) as Status[]).map((s) => (
+        {(Object.keys(statusTxt) as Status[]).map((s) => (
           <FilterChip key={s} aktiv={statusFilter === s} onClick={() => setStatusFilter(s)}>
-            {STATUS_LABEL[s]}
+            {statusTxt[s]}
           </FilterChip>
         ))}
 
@@ -453,10 +455,10 @@ export default function TicketUebersicht({
             setStandardGespeichert(statusFilter);
           }}
           disabled={standardGespeichert === statusFilter}
-          title="Diesen Status-Filter als deinen Standard speichern"
+          title={txt.alsStandardTitle}
           className="rounded-full px-2 py-1 text-xs text-[var(--text-faint)] transition-colors hover:text-akzent disabled:cursor-default disabled:text-akzent"
         >
-          {standardGespeichert === statusFilter ? "★ Standard" : "☆ Als Standard"}
+          {standardGespeichert === statusFilter ? txt.standardMarkiert : txt.alsStandard}
         </button>
 
         <span className="h-4 w-px bg-[var(--border)]" />
@@ -465,11 +467,11 @@ export default function TicketUebersicht({
           aktiv={prioritaetFilter === "alle"}
           onClick={() => setPrioritaetFilter("alle")}
         >
-          Alle Prioritäten
+          {txt.allePrioritaeten}
         </FilterChip>
-        {(Object.keys(PRIORITAET_LABEL) as Prioritaet[]).map((p) => (
+        {(Object.keys(prioritaetTxt) as Prioritaet[]).map((p) => (
           <FilterChip key={p} aktiv={prioritaetFilter === p} onClick={() => setPrioritaetFilter(p)}>
-            {PRIORITAET_LABEL[p]}
+            {prioritaetTxt[p]}
           </FilterChip>
         ))}
 
@@ -492,8 +494,7 @@ export default function TicketUebersicht({
       {/* Tabelle */}
       {!organisationId ? (
         <p className="text-sm text-[var(--text-faint)]">
-          Wähle zuerst über das Zahnrad-Icon → "Alle Firmen" eine Firma aus, um deren Tickets zu
-          sehen.
+          {txt.waehleFirmaHinweis}
         </p>
       ) : laedt ? (
         <div className="animate-fade-in overflow-hidden rounded-lg border border-[var(--border)]">
@@ -502,23 +503,23 @@ export default function TicketUebersicht({
       ) : gefilterteTickets.length === 0 ? (
         <LeerZustand
           icon="🎫"
-          titel={suchbegriff || tagFilter ? "Keine Treffer" : "Keine offenen Tickets"}
+          titel={suchbegriff || tagFilter ? txt.keineTrefferTitel : txt.keineOffenenTickets}
           beschreibung={
             suchbegriff
-              ? `Kein Ticket enthält „${suchbegriff}" – weder im Titel noch im Verlauf.`
+              ? txt.keinTicketEnthaelt.replace("{begriff}", suchbegriff)
               : tagFilter
-              ? `Kein Ticket ist mit dem Tag „${tagFilter}" versehen.`
-              : "Alles erledigt! Neue Tickets erscheinen hier sobald Kunden eine Anfrage stellen."
+              ? txt.keinTicketMitTag.replace("{tag}", tagFilter)
+              : txt.allesErledigt
           }
         />
       ) : (
         <div className="overflow-hidden rounded-lg border border-[var(--border)]">
           <div className="hidden items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-muted)] px-4 py-1.5 text-[0.65rem] font-medium uppercase tracking-wide text-[var(--text-faint)] sm:flex">
             <span className="w-2" />
-            <span className="w-10">Nr.</span>
-            <span className="flex-1">Betreff &amp; Kunde</span>
-            <span className="w-20 text-right">Status</span>
-            <span className="w-20 text-right">Zeit</span>
+            <span className="w-10">{txt.spalteNr}</span>
+            <span className="flex-1">{txt.spalteBetreffKunde}</span>
+            <span className="w-20 text-right">{txt.spalteStatus}</span>
+            <span className="w-20 text-right">{txt.spalteZeit}</span>
           </div>
 
           {gefilterteTickets.map((ticket) => {
@@ -536,7 +537,7 @@ export default function TicketUebersicht({
               <span
                 className="absolute bottom-0 left-0 top-0 w-1"
                 style={{ background: PRIORITAET_AKZENT[ticket.prioritaet] }}
-                title={PRIORITAET_LABEL[ticket.prioritaet]}
+                title={prioritaetTxt[ticket.prioritaet]}
               />
               <span className="hidden w-10 shrink-0 font-mono text-xs text-[var(--text-faint)] sm:inline">
                 #{ticket.ticket_nr}
@@ -564,8 +565,8 @@ export default function TicketUebersicht({
                     }`}
                   >
                     {ungelesen
-                      ? "Neue Nachricht vom Kunden"
-                      : ticket.kunde?.name ?? "Unbekannter Kunde"}
+                      ? txt.neueNachrichtVomKunden
+                      : ticket.kunde?.name ?? txt.unbekannterKunde}
                   </p>
                   {ticket.zugewiesen?.name && (
                     <>
@@ -579,7 +580,7 @@ export default function TicketUebersicht({
                   )}
                   {slaVerletzt && (
                     <span className="rounded-full bg-[var(--badge-kritisch-bg)] px-1.5 py-0.5 text-[0.6rem] font-medium text-[var(--badge-kritisch-text)]">
-                      ⚠️ SLA verletzt
+                      ⚠️ {txt.slaVerletzt}
                     </span>
                   )}
                   {ticket.tags?.map((tag) => (
@@ -595,7 +596,7 @@ export default function TicketUebersicht({
               <div className="flex shrink-0 flex-col items-end gap-1">
                 <StatusBadge status={ticket.status} />
                 <span className="font-mono text-[0.65rem] text-[var(--text-faint)]">
-                  {formatRelativ(ticket.erstellt_am)}
+                  {formatRelativ(ticket.erstellt_am, sprache)}
                 </span>
               </div>
             </button>

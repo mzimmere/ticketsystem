@@ -13,6 +13,8 @@ import TicketMerge from "./TicketMerge";
 import KiAssistent from "./KiAssistent";
 import KundenTodoListe from "./KundenTodoListe";
 import KundenHardware from "./KundenHardware";
+import { useSprache, type Sprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
@@ -73,8 +75,8 @@ interface Dongle {
   software: string;
 }
 
-function formatDatum(iso: string): string {
-  return new Date(iso).toLocaleString("de-DE", {
+function formatDatum(iso: string, sprache: Sprache): string {
+  return new Date(iso).toLocaleString(sprache === "en" ? "en-US" : "de-DE", {
     day: "2-digit",
     month: "2-digit",
     year: "2-digit",
@@ -91,20 +93,15 @@ const STATUS_OPTIONEN: Status[] = [
   "geschlossen",
 ];
 
-const STATUS_LABEL: Record<Status, string> = {
-  offen: "Offen",
-  in_bearbeitung: "In Bearbeitung",
-  wartet_auf_kunde: "Wartet auf Kunde",
-  geloest: "Gelöst",
-  geschlossen: "Geschlossen",
-};
-
 interface TicketDetailProps {
   ticketId: string;
   technikerId: string;
 }
 
 export default function TicketDetail({ ticketId, technikerId }: TicketDetailProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).ticketDetail;
+  const statusTxt = texte(sprache).status;
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [kundeEmail, setKundeEmail] = useState<string | null>(null);
   const [kopiertFeld, setKopiertFeld] = useState<"telefon" | "email" | null>(null);
@@ -295,7 +292,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
     }[]).map((z) => ({
       id: `zeit-${z.id}`,
       quelle: "zeiterfassung",
-      inhalt: `${z.minuten} Min. erfasst${z.beschreibung ? ` – ${z.beschreibung}` : ""}${z.erfassungsart === "manuell" ? " (manuell)" : ""}`,
+      inhalt: `${z.minuten} ${txt.minutenErfasstSuffix}${z.beschreibung ? ` – ${z.beschreibung}` : ""}${z.erfassungsart === "manuell" ? txt.manuellSuffix : ""}`,
       erstellt_am: z.erstellt_am,
       autor: z.techniker,
       anhaenge: [],
@@ -388,9 +385,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
       }
     }
     if (anhangFehler) {
-      alert(
-        "Mindestens ein Anhang konnte nicht gespeichert werden. Details siehe Browser-Konsole (F12).",
-      );
+      alert(txt.anhangFehler);
     }
 
     setNeueNotiz("");
@@ -402,13 +397,13 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
     }
   }
 
-  if (!ticket) return <p className="text-sm text-[var(--text-faint)]">Lädt…</p>;
+  if (!ticket) return <p className="text-sm text-[var(--text-faint)]">{txt.laedt}</p>;
 
   return (
     <div className="space-y-5">
       {andereBetrachter.length > 0 && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-500/10 dark:text-amber-300">
-          👀 {andereBetrachter.join(", ")} schaut sich dieses Ticket gerade auch an.
+          👀 {andereBetrachter.join(", ")} {txt.betrachterBannerSuffix}
         </div>
       )}
 
@@ -424,7 +419,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
             {ticket.titel}
           </h2>
           <p className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-[var(--text-soft)]">
-            <span>{ticket.kunde?.name ?? "Unbekannter Kunde"}</span>
+            <span>{ticket.kunde?.name ?? txt.unbekannterKunde}</span>
             {ticket.kunde?.telefonnummer && (
               <>
                 <span className="text-[var(--text-faint)]">·</span>
@@ -436,7 +431,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
                 </a>
                 <button
                   type="button"
-                  title="Telefonnummer kopieren"
+                  title={txt.telefonKopierenTitle}
                   onClick={() => kopieren(ticket.kunde!.telefonnummer!, "telefon")}
                   className="text-[var(--text-faint)] hover:text-akzent"
                 >
@@ -452,7 +447,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
                 </a>
                 <button
                   type="button"
-                  title="E-Mail-Adresse kopieren"
+                  title={txt.emailKopierenTitle}
                   onClick={() => kopieren(kundeEmail, "email")}
                   className="text-[var(--text-faint)] hover:text-akzent"
                 >
@@ -472,7 +467,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
           >
             {STATUS_OPTIONEN.map((s) => (
               <option key={s} value={s}>
-                {STATUS_LABEL[s]}
+                {statusTxt[s]}
               </option>
             ))}
           </select>
@@ -489,12 +484,12 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
             onChange={(e) => zuweisen(e.target.value)}
             className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-2 py-1.5 text-sm"
           >
-            <option value="">Nicht zugewiesen</option>
+            <option value="">{txt.nichtZugewiesen}</option>
             {techniker.map((t) => (
               <option key={t.id} value={t.id}>
-                {t.name ?? "Unbenannt"}
+                {t.name ?? txt.unbenannt}
                 {t.verfuegbarkeit !== "verfuegbar" &&
-                  ` (${t.verfuegbarkeit === "urlaub" ? "Urlaub" : "abwesend"})`}
+                  ` (${t.verfuegbarkeit === "urlaub" ? txt.urlaub : txt.abwesend})`}
               </option>
             ))}
           </select>
@@ -503,10 +498,10 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
             <select
               value={ticket.dongle_id ?? ""}
               onChange={(e) => dongleZuweisen(e.target.value)}
-              title="Dongle / Lizenz"
+              title={txt.dongleTitle}
               className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-2 py-1.5 text-sm"
             >
-              <option value="">Kein Dongle zugeordnet</option>
+              <option value="">{txt.keinDongleZugeordnet}</option>
               {dongles.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.seriennummer} ({d.software})
@@ -531,14 +526,14 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
           <div className="flex flex-wrap gap-2">
             {ticket.reaktion_faellig_am && (
               <span className={`rounded px-2 py-0.5 text-xs font-medium ${new Date(ticket.reaktion_faellig_am) < new Date() ? "bg-red-100 text-red-700" : "bg-blue-50 text-blue-700"}`}>
-                ⏱ Reaktion: {formatDatum(ticket.reaktion_faellig_am)}
-                {new Date(ticket.reaktion_faellig_am) < new Date() && " – ÜBERFÄLLIG"}
+                ⏱ {txt.reaktionLabel} {formatDatum(ticket.reaktion_faellig_am, sprache)}
+                {new Date(ticket.reaktion_faellig_am) < new Date() && ` – ${txt.ueberfaellig}`}
               </span>
             )}
             {ticket.loesung_faellig_am && (
               <span className={`rounded px-2 py-0.5 text-xs font-medium ${new Date(ticket.loesung_faellig_am) < new Date() ? "bg-red-100 text-red-700" : "bg-orange-50 text-orange-700"}`}>
-                🎯 Lösung: {formatDatum(ticket.loesung_faellig_am)}
-                {new Date(ticket.loesung_faellig_am) < new Date() && " – ÜBERFÄLLIG"}
+                🎯 {txt.loesungLabel} {formatDatum(ticket.loesung_faellig_am, sprache)}
+                {new Date(ticket.loesung_faellig_am) < new Date() && ` – ${txt.ueberfaellig}`}
               </span>
             )}
           </div>
@@ -562,7 +557,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
                 onClick={() => setZeigeTagMenu(!zeigeTagMenu)}
                 className="rounded border border-dashed border-[var(--border-input)] px-2 py-0.5 text-xs text-[var(--text-faint)] hover:bg-[var(--bg-muted)]"
               >
-                + Tag
+                {txt.tagButton}
               </button>
               {zeigeTagMenu && (
                 <div className="absolute left-0 top-6 z-10 min-w-[140px] rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-1 shadow-lg">
@@ -585,13 +580,13 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
         {/* Kollisionswarnung */}
         {andereBetrachter.length > 0 && (
           <p className="rounded bg-yellow-50 px-3 py-1.5 text-xs text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200">
-            ⚠️ {andereBetrachter.join(", ")} {andereBetrachter.length === 1 ? "schaut" : "schauen"} gerade auch auf dieses Ticket.
+            ⚠️ {andereBetrachter.join(", ")} {andereBetrachter.length === 1 ? txt.betrachterSchautEinzahl : txt.betrachterSchautMehrzahl} {txt.betrachterWarnungSuffix}
           </p>
         )}
       </div>
 
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
-        <h3 className="mb-3 text-sm font-medium text-[var(--text-strong)]">Verlauf</h3>
+        <h3 className="mb-3 text-sm font-medium text-[var(--text-strong)]">{txt.verlauf}</h3>
         <div className="max-h-96 space-y-3 overflow-y-auto lg:max-h-[32rem]">
           {nachrichten.map((n) => (
             n.quelle === "zeiterfassung" ? (
@@ -601,11 +596,11 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
               >
                 <span>⏱</span>
                 <span className="font-medium text-amber-800 dark:text-amber-300">
-                  {n.autor?.name ?? "Techniker"}
+                  {n.autor?.name ?? txt.technikerFallback}
                 </span>
                 <span className="text-[var(--text-soft)]">{n.inhalt}</span>
                 <span className="ml-auto font-mono text-[var(--text-faint)]">
-                  {formatDatum(n.erstellt_am)}
+                  {formatDatum(n.erstellt_am, sprache)}
                 </span>
               </div>
             ) : (
@@ -621,11 +616,11 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
             >
               <div className="mb-1 flex items-center justify-between text-xs text-[var(--text-soft)]">
                 <span>
-                  {n.autor?.name ?? (n.quelle === "whatsapp" ? "Kunde (WhatsApp)" : "Kunde")}
+                  {n.autor?.name ?? (n.quelle === "whatsapp" ? txt.kundeWhatsapp : txt.kunde)}
                 </span>
                 <span className="flex items-center gap-2">
                   <span className="font-mono text-[var(--text-faint)]">
-                    {formatDatum(n.erstellt_am)}
+                    {formatDatum(n.erstellt_am, sprache)}
                   </span>
                   <span className="uppercase tracking-wide">{n.quelle}</span>
                 </span>
@@ -639,7 +634,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
                       onClick={() => anhangOeffnen(a.storage_path)}
                       className="rounded border border-[var(--border)] bg-[var(--bg-surface)] px-2 py-1 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
                     >
-                      📎 {a.storage_path.split("-").slice(1).join("-") || "Anhang"}
+                      📎 {a.storage_path.split("-").slice(1).join("-") || txt.anhangFallback}
                     </button>
                   ))}
                 </div>
@@ -661,7 +656,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
               }}
               className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-soft)]"
             >
-              <option value="">📋 Makro einfügen…</option>
+              <option value="">{txt.makroEinfuegen}</option>
               {makros.map((m) => (
                 <option key={m.id} value={m.id}>{m.titel}</option>
               ))}
@@ -678,12 +673,12 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
               }`}
             >
               {spracheingabe.aktiv ? <MicOff size={14} /> : <Mic size={14} />}
-              {spracheingabe.aktiv ? "Aufnahme läuft… (klicken zum Stoppen)" : "Diktieren"}
+              {spracheingabe.aktiv ? txt.aufnahmeLaeuft : txt.diktieren}
             </button>
           ) : (
             <p className="flex items-center gap-1.5 text-xs text-[var(--text-faint)]">
               <MicOff size={13} />
-              Spracheingabe hier nicht möglich – geht mit Chrome, Edge oder Safari
+              {txt.spracheingabeNichtMoeglich}
             </p>
           )}
           <DateiAuswahl dateien={neueDateien} onAendern={setNeueDateien}>
@@ -691,7 +686,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
               value={neueNotiz}
               onChange={(e) => setNeueNotiz(e.target.value)}
               rows={3}
-              placeholder="Notiz oder Antwort schreiben…"
+              placeholder={txt.notizPlatzhalter}
               className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
             />
           </DateiAuswahl>
@@ -703,14 +698,14 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
                 onChange={(e) => setFuerKundeSichtbar(e.target.checked)}
                 className="accent-amber-500"
               />
-              Für Kunden sichtbar
+              {txt.fuerKundenSichtbar}
             </label>
             <button
               onClick={notizSenden}
               disabled={sendeLaedt}
               className="rounded bg-slate-900 px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50"
             >
-              {sendeLaedt ? "Wird gesendet…" : "Senden"}
+              {sendeLaedt ? txt.wirdGesendet : txt.senden}
             </button>
           </div>
         </div>
@@ -720,7 +715,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
         <div className="space-y-5 lg:sticky lg:top-4">
           <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
             <h3 className="mb-2 text-sm font-medium text-[var(--text-strong)]">
-              Todo-Liste dieses Kunden
+              {txt.todoListeKunde}
             </h3>
             <KundenTodoListe
               kundeId={ticket.kunde_id}
@@ -731,7 +726,7 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
 
           <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
             <h3 className="mb-2 text-sm font-medium text-[var(--text-strong)]">
-              Hardware dieses Kunden
+              {txt.hardwareKunde}
             </h3>
             <KundenHardware kundeId={ticket.kunde_id} organisationId={ticket.organisation_id} />
           </div>
