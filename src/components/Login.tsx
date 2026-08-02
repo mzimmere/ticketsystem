@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 type Modus = "laden" | "anmelden" | "passwort-setzen" | "passwort-vergessen";
 
-const STATUS_ZEILEN = [
-  { label: "Datenbank", zustand: "online" as const },
-  { label: "Authentifizierung", zustand: "online" as const },
-  { label: "WhatsApp-Anbindung", zustand: "vorbereitet" as const },
-];
-
 export default function Login() {
+  const { sprache, setSprache } = useSprache();
+  const t = texte(sprache).login;
+  const STATUS_ZEILEN = [
+    { label: t.ladenStatusDatenbank, zustand: "online" as const },
+    { label: t.ladenStatusAuth, zustand: "online" as const },
+    { label: t.ladenStatusWhatsapp, zustand: "vorbereitet" as const },
+  ];
   const [modus, setModus] = useState<Modus>("laden");
   const [email, setEmail] = useState("");
   const [passwort, setPasswort] = useState("");
@@ -50,13 +53,13 @@ export default function Login() {
       password: passwort,
     });
     setLaedt(false);
-    if (error) setFehler("E-Mail oder Passwort stimmt nicht.");
+    if (error) setFehler(t.fehlerLogin);
   }
 
   async function linkAnfordern() {
     setFehler(null);
     if (!email.trim()) {
-      setFehler("Bitte E-Mail-Adresse eingeben.");
+      setFehler(t.fehlerEmailErforderlich);
       return;
     }
     setLaedt(true);
@@ -73,14 +76,14 @@ export default function Login() {
   async function passwortSetzen() {
     setFehler(null);
     if (passwort.length < 8) {
-      setFehler("Mindestens 8 Zeichen.");
+      setFehler(t.fehlerMindestZeichen);
       return;
     }
     setLaedt(true);
     const { error } = await supabase.auth.updateUser({ password: passwort });
     setLaedt(false);
     if (error) {
-      setFehler("Konnte das Passwort nicht setzen. Bitte Link erneut anfordern.");
+      setFehler(t.fehlerPasswortSetzen);
       return;
     }
     // URL bereinigen, damit ein Reload nicht wieder im Einladungs-Modus landet
@@ -278,8 +281,28 @@ export default function Login() {
 
       <div className="login-panel">
         <div>
-          <div className="login-wordmark">
-            <span>●</span> {titel}
+          <div className="flex items-center justify-between">
+            <div className="login-wordmark">
+              <span>●</span> {titel}
+            </div>
+            <div className="flex overflow-hidden rounded-full border border-[var(--ink-line)] text-xs">
+              <button
+                type="button"
+                onClick={() => setSprache("de")}
+                className="px-2 py-1"
+                style={{ background: sprache === "de" ? "var(--signal)" : "transparent", color: "var(--ink-text)" }}
+              >
+                DE
+              </button>
+              <button
+                type="button"
+                onClick={() => setSprache("en")}
+                className="px-2 py-1"
+                style={{ background: sprache === "en" ? "var(--signal)" : "transparent", color: "var(--ink-text)" }}
+              >
+                EN
+              </button>
+            </div>
           </div>
           <p className="login-tagline">
             {spruch.split("\n").map((zeile, i) => (
@@ -298,7 +321,9 @@ export default function Login() {
                 <span className="dot" />
                 {zeile.label}
               </span>
-              <span className="zustand-label">{zeile.zustand}</span>
+              <span className="zustand-label">
+                {zeile.zustand === "online" ? t.zustandOnline : t.zustandVorbereitet}
+              </span>
             </div>
           ))}
         </div>
@@ -308,16 +333,14 @@ export default function Login() {
         <div className="login-card">
           {modus === "passwort-vergessen" ? (
             <>
-              <h1>Passwort vergessen</h1>
+              <h1>{t.passwortVergessenTitel}</h1>
               <p className="sub">
-                {linkGesendet
-                  ? "Falls ein Konto mit dieser Adresse existiert, wurde ein Link zum Zurücksetzen verschickt."
-                  : "Wir schicken dir einen Link zum Zurücksetzen."}
+                {linkGesendet ? t.linkGesendetText : t.passwortVergessenText}
               </p>
 
               {!linkGesendet && (
                 <div className="login-field">
-                  <label htmlFor="email">E-Mail</label>
+                  <label htmlFor="email">{t.email}</label>
                   <input
                     id="email"
                     type="email"
@@ -333,7 +356,7 @@ export default function Login() {
 
               {!linkGesendet && (
                 <button className="login-submit" onClick={linkAnfordern} disabled={laedt}>
-                  {laedt ? "Sendet…" : "Link senden"}
+                  {laedt ? t.sendet : t.linkSenden}
                 </button>
               )}
 
@@ -346,21 +369,19 @@ export default function Login() {
                 }}
                 className="login-link"
               >
-                ← Zurück zum Login
+                {t.zurueckZumLogin}
               </button>
             </>
           ) : (
             <>
-              <h1>{modus === "passwort-setzen" ? "Passwort festlegen" : "Anmelden"}</h1>
+              <h1>{modus === "passwort-setzen" ? t.passwortFestlegen : t.anmelden}</h1>
               <p className="sub">
-                {modus === "passwort-setzen"
-                  ? "Letzter Schritt, dann bist du drin."
-                  : "Schön, dass du da bist."}
+                {modus === "passwort-setzen" ? t.letzterSchritt : t.schoenDassDuDaBist}
               </p>
 
               {modus === "anmelden" && (
                 <div className="login-field">
-                  <label htmlFor="email">E-Mail</label>
+                  <label htmlFor="email">{t.email}</label>
                   <input
                     id="email"
                     type="email"
@@ -373,7 +394,7 @@ export default function Login() {
 
               <div className="login-field">
                 <label htmlFor="passwort">
-                  {modus === "passwort-setzen" ? "Neues Passwort" : "Passwort"}
+                  {modus === "passwort-setzen" ? t.neuesPasswort : t.passwort}
                 </label>
                 <input
                   id="passwort"
@@ -395,7 +416,7 @@ export default function Login() {
                 onClick={modus === "passwort-setzen" ? passwortSetzen : anmelden}
                 disabled={laedt}
               >
-                {modus === "passwort-setzen" ? "Passwort speichern & weiter" : "Anmelden"}
+                {modus === "passwort-setzen" ? t.passwortSpeichernWeiter : t.anmelden}
               </button>
 
               {modus === "anmelden" && (
@@ -408,7 +429,7 @@ export default function Login() {
                   }}
                   className="login-link"
                 >
-                  Passwort vergessen?
+                  {t.passwortVergessenLink}
                 </button>
               )}
             </>

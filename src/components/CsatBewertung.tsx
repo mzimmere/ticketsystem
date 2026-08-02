@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 export default function CsatBewertung({ ticketId, bewertung }: { ticketId: string; bewertung: number | null }) {
+  const { sprache } = useSprache();
+  const t = texte(sprache).csat;
   const [aktuell, setAktuell] = useState<number | null>(bewertung);
   const [gesendet, setGesendet] = useState(false);
 
@@ -14,7 +18,7 @@ export default function CsatBewertung({ ticketId, bewertung }: { ticketId: strin
   if (aktuell !== null && !gesendet) {
     return (
       <div className="rounded-md bg-[var(--bg-muted)] p-3 text-center text-xs text-[var(--text-soft)]">
-        Du hast dieses Ticket bewertet: {aktuell === 1 ? "👍 Hilfreich" : "👎 Nicht hilfreich"} – Danke!
+        {aktuell === 1 ? t.bereitsBewertetJa : t.bereitsBewertetNein}
       </div>
     );
   }
@@ -22,26 +26,26 @@ export default function CsatBewertung({ ticketId, bewertung }: { ticketId: strin
   if (gesendet) {
     return (
       <div className="rounded-md bg-[var(--bg-muted)] p-3 text-center text-xs text-[var(--text-soft)]">
-        Danke für dein Feedback! 🙏
+        {t.danke}
       </div>
     );
   }
 
   return (
     <div className="rounded-md border border-[var(--border)] bg-[var(--bg-surface)] p-3 text-center">
-      <p className="mb-2 text-xs text-[var(--text-soft)]">War diese Hilfe nützlich?</p>
+      <p className="mb-2 text-xs text-[var(--text-soft)]">{t.frage}</p>
       <div className="flex justify-center gap-3">
         <button
           onClick={() => bewerten(1)}
           className="flex items-center gap-1.5 rounded-full border border-[var(--border)] px-4 py-1.5 text-sm hover:bg-green-50 hover:border-green-300"
         >
-          👍 Ja, danke
+          👍 {t.ja}
         </button>
         <button
           onClick={() => bewerten(2)}
           className="flex items-center gap-1.5 rounded-full border border-[var(--border)] px-4 py-1.5 text-sm hover:bg-red-50 hover:border-red-300"
         >
-          👎 Nicht wirklich
+          👎 {t.nein}
         </button>
       </div>
     </div>

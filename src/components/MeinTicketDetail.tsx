@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
 import { benachrichtigeMitarbeiter } from "../lib/benachrichtigungen";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 import Avatar from "./Avatar";
 import DateiAuswahl from "./DateiAuswahl";
 import StatusBadge from "./StatusBadge";
@@ -37,6 +39,8 @@ function formatDatum(iso: string): string {
 }
 
 export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
+  const { sprache } = useSprache();
+  const t = texte(sprache).meinTicketDetail;
   const [titel, setTitel] = useState("");
   const [status, setStatus] = useState<Status | null>(null);
   const [csatBewertung, setCsatBewertung] = useState<number | null>(null);
@@ -155,9 +159,7 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
       }
     }
     if (anhangFehler) {
-      alert(
-        "Mindestens ein Anhang konnte nicht gespeichert werden. Details siehe Browser-Konsole (F12).",
-      );
+      alert(t.anhangFehler);
     }
 
     setAntwort("");
@@ -185,14 +187,14 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
           {status && (
             <StatusBadge
               status={status}
-              labelOverride={status === "wartet_auf_kunde" ? "Wartet auf dich" : undefined}
+              labelOverride={status === "wartet_auf_kunde" ? t.statusWartetAufDich : undefined}
             />
           )}
         </div>
         {bearbeiter?.name && (
           <div className="mt-1 flex items-center gap-2">
             <Avatar name={bearbeiter.name} avatarUrl={bearbeiter.avatar_url} groesse="sm" />
-            <p className="text-xs text-[var(--text-soft)]">Bearbeitet von {bearbeiter.name}</p>
+            <p className="text-xs text-[var(--text-soft)]">{t.bearbeitetVon} {bearbeiter.name}</p>
           </div>
         )}
       </div>
@@ -212,7 +214,7 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
                     onClick={() => anhangOeffnen(a.storage_path)}
                     className="rounded border border-[var(--border)] bg-[var(--bg-surface)] px-2 py-1 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
                   >
-                    📎 {a.storage_path.split("-").slice(1).join("-") || "Anhang"}
+                    📎 {a.storage_path.split("-").slice(1).join("-") || t.anhangFallback}
                   </button>
                 ))}
               </div>
@@ -227,7 +229,7 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
             value={antwort}
             onChange={(e) => setAntwort(e.target.value)}
             rows={3}
-            placeholder="Antworten…"
+            placeholder={t.antwortPlatzhalter}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-2 text-sm"
           />
         </DateiAuswahl>
@@ -237,7 +239,7 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
             disabled={sendeLaedt}
             className="rounded bg-akzent px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50"
           >
-            {sendeLaedt ? "Wird gesendet…" : "Senden"}
+            {sendeLaedt ? t.wirdGesendet : t.senden}
           </button>
           {status && status !== "geschlossen" && (
             <button
@@ -245,7 +247,7 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
               disabled={laedt}
               className="text-xs text-[var(--text-faint)] hover:text-[var(--text-soft)] disabled:opacity-50"
             >
-              Für mich erledigt – Ticket schließen
+              {t.ticketSchliessen}
             </button>
           )}
         </div>

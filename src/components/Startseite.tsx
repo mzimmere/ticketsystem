@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 type Rolle = "super_admin" | "org_admin" | "techniker" | "kunde";
 
@@ -211,6 +213,8 @@ function tagesgruss(name: string | null): string {
 export default function Startseite({
   name, rolle, organisationId, orgName, logoUrl, akzentfarbe, onAktion,
 }: StartseiteProps) {
+  const { sprache } = useSprache();
+  const t = texte(sprache).startseite;
   const [stats, setStats] = useState<{
     meineOffenen: number | null;
     alleOffenen: number | null;
@@ -304,7 +308,7 @@ export default function Startseite({
             <p className="mt-0.5 text-sm text-[var(--text-soft)]">
               {istIntern
                 ? "Hier findest du alles auf einen Blick."
-                : "Wie können wir dir heute helfen?"}
+                : t.hilfeFrage}
             </p>
           </div>
         </div>
@@ -351,10 +355,10 @@ export default function Startseite({
               </>
             ) : (
               <>
-                <Schnellzahl wert={stats.meineTickets} label="Meine Anfragen" icon="📋" iconBg="rgba(99,102,241,0.12)" />
+                <Schnellzahl wert={stats.meineTickets} label={t.warenAnfragen} icon="📋" iconBg="rgba(99,102,241,0.12)" />
                 <Schnellzahl
                   wert={stats.wartenAufMich}
-                  label="Warten auf mich"
+                  label={t.wartetAufMich}
                   icon="⏳"
                   iconBg="rgba(234,179,8,0.12)"
                   farbe={(stats.wartenAufMich ?? 0) > 0 ? "text-yellow-500" : "text-[var(--text-strong)]"}
@@ -394,16 +398,16 @@ export default function Startseite({
           <>
             <AktionsButton
               icon="➕"
-              label="Neue Anfrage stellen"
-              sub="Beschreibe dein Anliegen – wir melden uns"
+              label={t.neueAnfrageStellen}
+              sub={t.neueAnfrageSub}
               onClick={() => onAktion("neues-ticket")}
               hervorgehoben
             />
             <AktionsButton
               icon="📋"
               iconBg="rgba(99,102,241,0.15)"
-              label="Meine Anfragen"
-              sub="Status und Verlauf aller deiner Tickets"
+              label={t.meineAnfragen}
+              sub={t.meineAnfragenSub}
               onClick={() => onAktion("tickets")}
             />
           </>

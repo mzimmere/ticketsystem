@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Sun, Moon, User, Settings, Building2, Receipt, Mail, Ticket as TicketIcon, BarChart2, Landmark } from "lucide-react";
 import { useProfil } from "./lib/useProfil";
 import { useTheme } from "./lib/useTheme";
+import { useSprache } from "./lib/SpracheContext";
 import { useOnlinePraesenz } from "./lib/praesenz";
 import { supabase } from "./lib/supabaseClient";
 import Login from "./components/Login";
@@ -78,6 +79,7 @@ function authLinkFehler(): string | null {
 export default function App() {
   const { profil, mitgliedschaften, eingeloggt, laedt, neuLaden } = useProfil();
   const { dunkel, umschalten } = useTheme();
+  const { sprache, setSprache } = useSprache();
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [ausgewaehltesTicket, setAusgewaehltesTicket] = useState<string | null>(null);
   const [zeigeNeuesTicket, setZeigeNeuesTicket] = useState(false);
@@ -525,6 +527,22 @@ export default function App() {
             }}
           />
           <div className="ml-auto flex items-center gap-2.5">
+            <div className="flex overflow-hidden rounded-full border border-[var(--border-input)] text-xs">
+              <button
+                onClick={() => setSprache("de")}
+                title="Deutsch"
+                className={`px-2 py-1 ${sprache === "de" ? "bg-akzent text-white" : "text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"}`}
+              >
+                DE
+              </button>
+              <button
+                onClick={() => setSprache("en")}
+                title="English"
+                className={`px-2 py-1 ${sprache === "en" ? "bg-akzent text-white" : "text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"}`}
+              >
+                EN
+              </button>
+            </div>
             <span className="hidden text-xs text-[var(--text-soft)] sm:inline">{profil.name ?? "Eingeloggt"}</span>
             <button
               onClick={() => supabase.auth.signOut()}

@@ -2892,3 +2892,19 @@ create policy benachrichtigungs_mails_delete on benachrichtigungs_mails for dele
     or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
     or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
   );
+
+-- ============================================================
+-- 66. UI-Sprache (Deutsch/Englisch) pro Nutzerkonto. Gilt
+-- geraeteuebergreifend (im Unterschied zu z.B. Dark Mode, das lokal im
+-- Browser gespeichert ist), damit die Wahl beim Login auf einem anderen
+-- Geraet erhalten bleibt. Vor dem Login dient localStorage als
+-- Zwischenspeicher (siehe SpracheContext.tsx), sobald ein Profil geladen
+-- ist, gewinnt der hier gespeicherte Wert.
+--
+-- Uebersetzt sind bisher nur die meistgenutzten Screens (Login, Startseite,
+-- Kunden-Portal: neues Ticket anlegen + Ticket ansehen/antworten,
+-- Status-Badges ueberall) - der Rest der App (Verwaltung, Abrechnung,
+-- Ticket-Ansicht fuer Mitarbeiter etc.) bleibt bewusst vorerst Deutsch und
+-- wird schrittweise ergaenzt (src/lib/uebersetzungen.ts).
+-- ============================================================
+alter table profiles add column if not exists sprache text not null default 'de' check (sprache in ('de', 'en'));

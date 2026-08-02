@@ -1,12 +1,7 @@
-type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
-const STATUS_LABEL: Record<Status, string> = {
-  offen: "Offen",
-  in_bearbeitung: "In Bearbeitung",
-  wartet_auf_kunde: "Wartet auf Kunde",
-  geloest: "Gelöst",
-  geschlossen: "Geschlossen",
-};
+type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 
 const STATUS_FARBEN: Record<Status, { bg: string; text: string }> = {
   offen: { bg: "var(--status-offen-bg)", text: "var(--status-offen-text)" },
@@ -27,6 +22,7 @@ interface StatusBadgeProps {
 }
 
 export default function StatusBadge({ status, labelOverride }: StatusBadgeProps) {
+  const { sprache } = useSprache();
   const farben = STATUS_FARBEN[status];
   return (
     <span
@@ -37,7 +33,7 @@ export default function StatusBadge({ status, labelOverride }: StatusBadgeProps)
         className={`h-1.5 w-1.5 rounded-full ${PULSIERT.includes(status) ? "status-dot-puls" : ""}`}
         style={{ background: "currentColor" }}
       />
-      {labelOverride ?? STATUS_LABEL[status]}
+      {labelOverride ?? texte(sprache).status[status]}
     </span>
   );
 }
