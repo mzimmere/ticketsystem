@@ -202,12 +202,11 @@ function SchnellNutzerAnlegen() {
   );
 }
 
-function tagesgruss(name: string | null): string {
+function tagesgruss(name: string | null, gruesse: { morgen: string; tag: string; abend: string }): string {
   const stunde = new Date().getHours();
   const vorname = name?.split(" ")[0] ?? "";
-  if (stunde < 12) return `Guten Morgen${vorname ? `, ${vorname}` : ""}`;
-  if (stunde < 17) return `Guten Tag${vorname ? `, ${vorname}` : ""}`;
-  return `Guten Abend${vorname ? `, ${vorname}` : ""}`;
+  const basis = stunde < 12 ? gruesse.morgen : stunde < 17 ? gruesse.tag : gruesse.abend;
+  return `${basis}${vorname ? `, ${vorname}` : ""}`;
 }
 
 export default function Startseite({
@@ -303,12 +302,10 @@ export default function Startseite({
               {orgName ?? "IT-Ticketsystem"}
             </p>
             <h1 className="text-xl font-bold text-[var(--text-strong)]">
-              {tagesgruss(name)} 👋
+              {tagesgruss(name, { morgen: t.gutenMorgen, tag: t.gutenTag, abend: t.gutenAbend })} 👋
             </h1>
             <p className="mt-0.5 text-sm text-[var(--text-soft)]">
-              {istIntern
-                ? "Hier findest du alles auf einen Blick."
-                : t.hilfeFrage}
+              {istIntern ? t.allesAufEinenBlick : t.hilfeFrage}
             </p>
           </div>
         </div>
@@ -320,7 +317,7 @@ export default function Startseite({
               <>
                 <Schnellzahl
                   wert={stats.alleOffenen}
-                  label="Offene Tickets"
+                  label={t.offeneTickets}
                   icon="🎫"
                   iconBg="rgba(249,115,22,0.12)"
                   farbe={(stats.alleOffenen ?? 0) > 0 ? "text-orange-500" : "text-green-600"}
@@ -328,7 +325,7 @@ export default function Startseite({
                 />
                 <Schnellzahl
                   wert={stats.meineOffenen}
-                  label="Mir zugewiesen"
+                  label={t.mirZugewiesen}
                   icon="👤"
                   iconBg="rgba(59,130,246,0.12)"
                   farbe={(stats.meineOffenen ?? 0) > 0 ? "text-blue-500" : "text-[var(--text-strong)]"}
@@ -336,7 +333,7 @@ export default function Startseite({
                 />
                 <Schnellzahl
                   wert={stats.wartenAufMich}
-                  label="Wartet auf Antwort"
+                  label={t.wartetAufAntwort}
                   icon="⏳"
                   iconBg="rgba(234,179,8,0.12)"
                   farbe={(stats.wartenAufMich ?? 0) > 0 ? "text-yellow-500" : "text-[var(--text-strong)]"}
@@ -345,7 +342,7 @@ export default function Startseite({
                 {istAdmin && (
                   <Schnellzahl
                     wert={stats.slaVerletzt}
-                    label="SLA verletzt"
+                    label={t.slaVerletzt}
                     icon="⚠️"
                     iconBg="rgba(220,38,38,0.12)"
                     farbe={(stats.slaVerletzt ?? 0) > 0 ? "text-red-600" : "text-[var(--text-strong)]"}
@@ -372,7 +369,7 @@ export default function Startseite({
       {/* Schnellzugriff */}
       <div className="space-y-2">
         <p className="px-1 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-          Schnellzugriff
+          {t.schnellzugriff}
         </p>
 
         {istIntern && organisationId && (
@@ -380,15 +377,15 @@ export default function Startseite({
             <AktionsButton
               icon="➕"
               iconBg="rgba(245,158,11,0.15)"
-              label="Neues Ticket"
-              sub="Ticket direkt anlegen"
+              label={t.neuesTicketIntern}
+              sub={t.neuesTicketInternSub}
               onClick={() => onAktion("neues-ticket-intern")}
               hervorgehoben
             />
             <AktionsButton
               icon="🎫"
-              label="Alle Tickets"
-              sub="Übersicht, Suche und Filter"
+              label={t.alleTickets}
+              sub={t.alleTicketsSub}
               onClick={() => onAktion("tickets")}
             />
           </>
@@ -418,16 +415,16 @@ export default function Startseite({
             <AktionsButton
               icon="📊"
               iconBg="rgba(59,130,246,0.15)"
-              label="Dashboard"
-              sub={rolle === "super_admin" && !organisationId ? "Alle Firmen im Überblick" : "Auswertungen & KPIs"}
+              label={t.dashboard}
+              sub={rolle === "super_admin" && !organisationId ? t.dashboardSubAlleFirmen : t.dashboardSubKpi}
               onClick={() => onAktion("dashboard")}
             />
             {organisationId && (
               <AktionsButton
                 icon="💶"
                 iconBg="rgba(34,197,94,0.15)"
-                label="Abrechnung"
-                sub="Rechnungen & Zeiterfassung"
+                label={t.abrechnung}
+                sub={t.abrechnungSub}
                 onClick={() => onAktion("abrechnung")}
               />
             )}
@@ -435,8 +432,8 @@ export default function Startseite({
               <AktionsButton
                 icon="👤"
                 iconBg="rgba(99,102,241,0.15)"
-                label="Team"
-                sub="Mitarbeiter & Techniker"
+                label={t.team}
+                sub={t.teamSub}
                 onClick={() => onAktion("verwaltung-team")}
               />
             )}
@@ -444,8 +441,8 @@ export default function Startseite({
               <AktionsButton
                 icon="🤝"
                 iconBg="rgba(236,72,153,0.15)"
-                label="Kunden"
-                sub="Kundenstamm verwalten"
+                label={t.kunden}
+                sub={t.kundenSub}
                 onClick={() => onAktion("verwaltung-kunden")}
               />
             )}
@@ -453,8 +450,8 @@ export default function Startseite({
               <AktionsButton
                 icon="🏢"
                 iconBg="rgba(148,163,184,0.2)"
-                label="Firmenprofil"
-                sub="Einstellungen & Branding"
+                label={t.firmenprofil}
+                sub={t.firmenprofilSub}
                 onClick={() => onAktion("verwaltung-firma")}
               />
             )}
@@ -462,8 +459,8 @@ export default function Startseite({
               <AktionsButton
                 icon="🔧"
                 iconBg="rgba(249,115,22,0.15)"
-                label="Werkzeuge"
-                sub="Makros, Tags, SLA, FAQ"
+                label={t.werkzeuge}
+                sub={t.werkzeugeSub}
                 onClick={() => onAktion("verwaltung-werkzeuge")}
               />
             )}
@@ -471,8 +468,8 @@ export default function Startseite({
               <AktionsButton
                 icon="🔌"
                 iconBg="rgba(168,85,247,0.15)"
-                label="Integrationen"
-                sub="E-Mail, WhatsApp"
+                label={t.integrationen}
+                sub={t.integrationenSub}
                 onClick={() => onAktion("verwaltung-integrationen")}
               />
             )}
@@ -483,8 +480,8 @@ export default function Startseite({
           <AktionsButton
             icon="🏢"
             iconBg="rgba(148,163,184,0.2)"
-            label="Über uns"
-            sub="Kontakt & Öffnungszeiten"
+            label={t.ueberUns}
+            sub={t.ueberUnsSub}
             onClick={() => onAktion("firmeninfo")}
           />
         )}
@@ -497,9 +494,9 @@ export default function Startseite({
           className="w-full rounded-xl border border-yellow-300 bg-yellow-50 p-4 text-left dark:border-yellow-700 dark:bg-yellow-900/20"
         >
           <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-            ⏳ {stats.wartenAufMich} {stats.wartenAufMich === 1 ? "Ticket wartet" : "Tickets warten"} auf eine Antwort vom Kunden
+            ⏳ {stats.wartenAufMich} {stats.wartenAufMich === 1 ? t.ticketWartetEinzahl : t.ticketsWartenMehrzahl} {t.aufAntwortVomKunden}
           </p>
-          <p className="mt-0.5 text-xs text-yellow-700 dark:text-yellow-300">Zur Ticketübersicht →</p>
+          <p className="mt-0.5 text-xs text-yellow-700 dark:text-yellow-300">{t.zurTicketuebersicht}</p>
         </button>
       )}
 

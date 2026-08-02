@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 import Avatar from "./Avatar";
 import BuzzerSoundEinstellung from "./BuzzerSoundEinstellung";
 import ProduktVerwaltung from "./ProduktVerwaltung";
@@ -17,12 +19,6 @@ interface NutzungsMonat {
   gesamt_minuten: number;
   gesamt_cent: number;
 }
-
-const VERFUEGBARKEIT_LABEL: Record<Verfuegbarkeit, string> = {
-  verfuegbar: "Verfügbar",
-  abwesend: "Abwesend",
-  urlaub: "Urlaub",
-};
 
 function formatEuro(cent: number): string {
   return (cent / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
@@ -43,6 +39,13 @@ interface MeinProfilProps {
 }
 
 export default function MeinProfil({ profilId, organisationId, istIntern }: MeinProfilProps) {
+  const { sprache } = useSprache();
+  const t = texte(sprache).meinProfil;
+  const VERFUEGBARKEIT_LABEL: Record<Verfuegbarkeit, string> = {
+    verfuegbar: t.verfuegbar,
+    abwesend: t.abwesend,
+    urlaub: t.urlaub,
+  };
   const [name, setName] = useState<string | null>(null);
   const [vorname, setVorname] = useState("");
   const [nachname, setNachname] = useState("");
@@ -101,7 +104,7 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
   }
 
   async function kundenProfilSpeichern() {
-    if (!vorname.trim()) { setHinweis("Vorname ist erforderlich."); return; }
+    if (!vorname.trim()) { setHinweis(t.fehlerVornameErforderlich); return; }
     setLaedt(true);
     const { error } = await supabase.from("profiles").update({
       vorname: vorname.trim(),
@@ -113,7 +116,7 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
       ort: ort.trim() || null,
     }).eq("id", profilId);
     setLaedt(false);
-    setHinweis(error ? "Fehler beim Speichern." : "Profil gespeichert.");
+    setHinweis(error ? t.fehlerSpeichern : t.erfolgProfilGespeichert);
     if (!error) ladeProfil();
   }
 
@@ -142,10 +145,10 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
       if (updateFehler) throw updateFehler;
 
       setAvatarUrl(oeffentlich.publicUrl);
-      setHinweis("Profilbild aktualisiert.");
+      setHinweis(t.erfolgBildAktualisiert);
     } catch (err) {
       console.error(err);
-      setHinweis("Hochladen fehlgeschlagen.");
+      setHinweis(t.fehlerHochladen);
     } finally {
       setLaedt(false);
     }
@@ -158,7 +161,7 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
       .eq("id", profilId);
     if (error) {
       console.error(error);
-      setHinweis("Speichern fehlgeschlagen.");
+      setHinweis(t.fehlerSpeichern);
       return;
     }
     setVerfuegbarkeit(wert);
@@ -167,23 +170,23 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
   async function passwortAendern() {
     setPasswortHinweis(null);
     if (neuesPasswort.length < 8) {
-      setPasswortHinweis("Mindestens 8 Zeichen.");
+      setPasswortHinweis(t.fehlerMindestZeichen);
       return;
     }
     if (neuesPasswort !== neuesPasswortWiederholen) {
-      setPasswortHinweis("Passwörter stimmen nicht überein.");
+      setPasswortHinweis(t.fehlerPasswoerterUngleich);
       return;
     }
     setPasswortLaedt(true);
     const { error } = await supabase.auth.updateUser({ password: neuesPasswort });
     setPasswortLaedt(false);
     if (error) {
-      setPasswortHinweis("Passwort konnte nicht geändert werden.");
+      setPasswortHinweis(t.fehlerPasswortAendern);
       return;
     }
     setNeuesPasswort("");
     setNeuesPasswortWiederholen("");
-    setPasswortHinweis("Passwort geändert.");
+    setPasswortHinweis(t.erfolgPasswortGeaendert);
   }
 
   async function ticketsUebergeben() {
@@ -196,22 +199,22 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
     });
     setLaedt(false);
     if (error) {
-      setHinweis("Übergabe fehlgeschlagen.");
+      setHinweis(t.fehlerUebergabeFehlgeschlagen);
     } else {
-      setHinweis(`${data ?? 0} Ticket(s) übertragen.`);
+      setHinweis(`${data ?? 0} ${t.ticketUebertragen}`);
     }
   }
 
   return (
     <div className="space-y-5">
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-4">
-        <h2 className="text-base font-semibold text-[var(--text-strong)]">Mein Profil</h2>
+        <h2 className="text-base font-semibold text-[var(--text-strong)]">{t.titel}</h2>
 
         <div className="flex items-center gap-4">
           <Avatar name={name} avatarUrl={avatarUrl} groesse="lg" />
           <div>
             <label className="inline-block cursor-pointer rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-1.5 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
-              Bild ändern
+              {t.bildAendern}
               <input
                 type="file"
                 accept="image/*"
@@ -225,7 +228,7 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
         {istIntern && (
           <div>
             <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-              Verfügbarkeit
+              {t.verfuegbarkeit}
             </label>
             <select
               value={verfuegbarkeit}
@@ -245,14 +248,14 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
       </div>
 
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
-        <h3 className="text-sm font-medium text-[var(--text-strong)]">Passwort ändern</h3>
+        <h3 className="text-sm font-medium text-[var(--text-strong)]">{t.passwortAendern}</h3>
         <div>
-          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Neues Passwort</label>
+          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{t.neuesPasswort}</label>
           <input type="password" value={neuesPasswort} onChange={(e) => setNeuesPasswort(e.target.value)}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Passwort wiederholen</label>
+          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{t.passwortWiederholen}</label>
           <input type="password" value={neuesPasswortWiederholen} onChange={(e) => setNeuesPasswortWiederholen(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && passwortAendern()}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
@@ -260,7 +263,7 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
         {passwortHinweis && <p className="text-xs text-[var(--text-soft)]">{passwortHinweis}</p>}
         <button onClick={passwortAendern} disabled={passwortLaedt || !neuesPasswort || !neuesPasswortWiederholen}
           className="w-full rounded border border-[var(--border-input)] py-2 text-sm font-medium text-[var(--text-soft)] hover:bg-[var(--bg-muted)] disabled:opacity-50">
-          {passwortLaedt ? "Ändert…" : "Passwort ändern"}
+          {passwortLaedt ? t.aendert : t.passwortAendern}
         </button>
       </div>
 
@@ -271,11 +274,10 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
       {istIntern && kollegen.length > 0 && (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
           <h3 className="text-sm font-medium text-[var(--text-strong)]">
-            Offene Tickets übergeben
+            {t.offeneTicketsUebergeben}
           </h3>
           <p className="text-xs text-[var(--text-soft)]">
-            Übergibt alle dir zugewiesenen, noch offenen Tickets an eine Kollegin/einen Kollegen –
-            z.B. bei Urlaub oder Abwesenheit.
+            {t.uebergabeBeschreibung}
           </p>
           <div className="flex gap-2">
             <select
@@ -283,10 +285,10 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
               onChange={(e) => setUebergabeAn(e.target.value)}
               className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
             >
-              <option value="">Kollege wählen…</option>
+              <option value="">{t.kollegeWaehlen}</option>
               {kollegen.map((k) => (
                 <option key={k.id} value={k.id}>
-                  {k.name ?? "Unbenannt"}
+                  {k.name ?? t.unbenannt}
                 </option>
               ))}
             </select>
@@ -295,58 +297,57 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
               disabled={!uebergabeAn || laedt}
               className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
             >
-              Übergeben
+              {t.uebergeben}
             </button>
           </div>
         </div>
       )}
       {!istIntern && (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
-          <h3 className="text-sm font-medium text-[var(--text-strong)]">Meine Kontaktdaten</h3>
+          <h3 className="text-sm font-medium text-[var(--text-strong)]">{t.meineKontaktdaten}</h3>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Vorname *</label>
+              <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{t.vornameLabel}</label>
               <input type="text" value={vorname} onChange={(e) => setVorname(e.target.value)}
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Nachname</label>
+              <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{t.nachnameLabel}</label>
               <input type="text" value={nachname} onChange={(e) => setNachname(e.target.value)}
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Telefon / WhatsApp</label>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{t.telefonLabel}</label>
             <input type="text" value={telefon} onChange={(e) => setTelefon(e.target.value)}
               className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
           </div>
           <div className="flex gap-2">
             <input type="text" value={strasse} onChange={(e) => setStrasse(e.target.value)}
-              placeholder="Straße" className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
+              placeholder={t.strassePlatzhalter} className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
             <input type="text" value={hausnummer} onChange={(e) => setHausnummer(e.target.value)}
-              placeholder="Nr." className="w-16 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
+              placeholder={t.nrPlatzhalter} className="w-16 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
           </div>
           <div className="flex gap-2">
             <input type="text" value={plz} onChange={(e) => setPlz(e.target.value)}
-              placeholder="PLZ" className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
+              placeholder={t.plzPlatzhalter} className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
             <input type="text" value={ort} onChange={(e) => setOrt(e.target.value)}
-              placeholder="Ort" className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
+              placeholder={t.ortPlatzhalter} className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
           </div>
           {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}
           <button onClick={kundenProfilSpeichern} disabled={laedt}
             className="w-full rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
-            {laedt ? "Speichert…" : "Speichern"}
+            {laedt ? t.speichert : t.speichern}
           </button>
         </div>
       )}
 
       {!istIntern && (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
-          <h3 className="text-sm font-medium text-[var(--text-strong)]">Meine Nutzung</h3>
+          <h3 className="text-sm font-medium text-[var(--text-strong)]">{t.meineNutzung}</h3>
           {nutzung.length === 0 ? (
             <p className="text-xs text-[var(--text-faint)]">
-              Noch keine erfasste Zeit – hier siehst du, sobald Arbeit an deinen Tickets erfasst
-              wurde, wie viele Minuten und Kosten das pro Monat ausmacht.
+              {t.nutzungLeer}
             </p>
           ) : (
             <div className="divide-y divide-[var(--border)]">
@@ -357,7 +358,7 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
                   </span>
                   <span className="flex items-center gap-3">
                     <span className="font-mono text-xs text-[var(--text-faint)]">
-                      {n.gesamt_minuten} Min.
+                      {n.gesamt_minuten} {t.minutenKuerzel}
                     </span>
                     <span className="font-mono text-sm text-[var(--text-strong)]">
                       {formatEuro(n.gesamt_cent)}

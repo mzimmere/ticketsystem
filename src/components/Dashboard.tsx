@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { supabase } from "../lib/supabaseClient";
 import { KpiSkeleton } from "./Skeleton";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface DashboardProps {
   organisationId: string;
@@ -77,14 +79,22 @@ function MiniBalken({ wert, max, farbe }: { wert: number; max: number; farbe: st
   );
 }
 
-function formatMinuten(min: number | null): string {
+function formatMinuten(min: number | null, sprache: "de" | "en"): string {
   if (min === null) return "—";
+  if (sprache === "en") {
+    if (min < 60) return `${Math.round(min)} min`;
+    if (min < 1440) return `${(min / 60).toFixed(1)} h`;
+    return `${(min / 1440).toFixed(1)} d`;
+  }
   if (min < 60) return `${Math.round(min)} Min.`;
   if (min < 1440) return `${(min / 60).toFixed(1)} Std.`;
   return `${(min / 1440).toFixed(1)} Tage`;
 }
 
 export default function Dashboard({ organisationId }: DashboardProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).dashboard;
+  const statusTxt = texte(sprache).status;
   const [stats, setStats] = useState<TicketStats | null>(null);
   const [techniker, setTechniker] = useState<TechnikerStat[]>([]);
   const [csat, setCsat] = useState<CsatStat>({ positiv: 0, negativ: 0 });
@@ -242,19 +252,19 @@ export default function Dashboard({ organisationId }: DashboardProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-[var(--text-strong)]">Dashboard</h2>
+        <h2 className="text-lg font-semibold text-[var(--text-strong)]">{txt.titel}</h2>
         <div className="flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--bg-muted)] p-0.5">
           {([7, 30, 90] as const).map((t) => (
             <button key={t} onClick={() => setZeitraum(t)}
               className={`rounded px-3 py-1 text-xs font-medium transition-colors ${zeitraum === t ? "bg-[var(--bg-surface)] text-[var(--text-strong)] shadow-sm" : "text-[var(--text-faint)] hover:text-[var(--text-soft)]"}`}>
-              {t} Tage
+              {t} {txt.tage}
             </button>
           ))}
         </div>
       </div>
 
       {laedt ? (
-        <p className="text-sm text-[var(--text-faint)]">Lädt…</p>
+        <p className="text-sm text-[var(--text-faint)]">{txt.laedt}</p>
       ) : (
         <>
           {/* KPI-Zeile */}
@@ -265,21 +275,21 @@ export default function Dashboard({ organisationId }: DashboardProps) {
               </>
             ) : (
               <>
-                <KpiKarte titel="Tickets gesamt" wert={stats?.gesamt ?? 0} streifen="var(--akzent)" />
-                <KpiKarte titel="Offen / aktiv"
+                <KpiKarte titel={txt.ticketsGesamt} wert={stats?.gesamt ?? 0} streifen="var(--akzent)" />
+                <KpiKarte titel={txt.offenAktiv}
                   wert={(stats?.offen ?? 0) + (stats?.in_bearbeitung ?? 0) + (stats?.wartet_auf_kunde ?? 0)}
                   farbe={(stats?.offen ?? 0) + (stats?.in_bearbeitung ?? 0) > 10 ? "text-orange-600" : "text-[var(--text-strong)]"}
                   streifen="var(--status-offen-text)"
                 />
-                <KpiKarte titel="Kundenzufriedenheit"
+                <KpiKarte titel={txt.kundenzufriedenheit}
                   wert={csatRate !== null ? `${csatRate}%` : "—"}
-                  sub={csatGesamt > 0 ? `${csatGesamt} Bewertungen` : "Noch keine Bewertungen"}
+                  sub={csatGesamt > 0 ? `${csatGesamt} ${txt.bewertungen}` : txt.nochKeineBewertungen}
                   farbe={csatRate !== null ? (csatRate >= 80 ? "text-green-600" : csatRate >= 60 ? "text-yellow-600" : "text-red-600") : undefined}
                   streifen={csatRate !== null ? (csatRate >= 80 ? "var(--status-geloest-text)" : csatRate >= 60 ? "var(--status-offen-text)" : "var(--badge-kritisch-text)") : undefined}
                 />
-                <KpiKarte titel="SLA-Einhaltung"
+                <KpiKarte titel={txt.slaEinhaltung}
                   wert={slaRate !== null ? `${slaRate}%` : "—"}
-                  sub={slaGesamt > 0 ? `${slaGesamt} Tickets mit SLA` : "Keine SLA konfiguriert"}
+                  sub={slaGesamt > 0 ? `${slaGesamt} ${txt.ticketsMitSla}` : txt.keineSlaKonfiguriert}
                   farbe={slaRate !== null ? (slaRate >= 90 ? "text-green-600" : slaRate >= 70 ? "text-yellow-600" : "text-red-600") : undefined}
                   streifen={slaRate !== null ? (slaRate >= 90 ? "var(--status-geloest-text)" : slaRate >= 70 ? "var(--status-offen-text)" : "var(--badge-kritisch-text)") : undefined}
                 />
@@ -289,14 +299,14 @@ export default function Dashboard({ organisationId }: DashboardProps) {
 
           {/* Status-Aufschlüsselung */}
           <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4">
-            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">Status-Verteilung</p>
+            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{txt.statusVerteilung}</p>
             <div className="space-y-2.5">
               {[
-                { label: "Offen", wert: stats?.offen ?? 0, farbe: "var(--status-offen-text)" },
-                { label: "In Bearbeitung", wert: stats?.in_bearbeitung ?? 0, farbe: "var(--status-bearbeitung-text)" },
-                { label: "Wartet auf Kunde", wert: stats?.wartet_auf_kunde ?? 0, farbe: "var(--status-warten-text)" },
-                { label: "Gelöst", wert: stats?.geloest ?? 0, farbe: "var(--status-geloest-text)" },
-                { label: "Geschlossen", wert: stats?.geschlossen ?? 0, farbe: "var(--text-faint)" },
+                { label: statusTxt.offen, wert: stats?.offen ?? 0, farbe: "var(--status-offen-text)" },
+                { label: statusTxt.in_bearbeitung, wert: stats?.in_bearbeitung ?? 0, farbe: "var(--status-bearbeitung-text)" },
+                { label: statusTxt.wartet_auf_kunde, wert: stats?.wartet_auf_kunde ?? 0, farbe: "var(--status-warten-text)" },
+                { label: statusTxt.geloest, wert: stats?.geloest ?? 0, farbe: "var(--status-geloest-text)" },
+                { label: statusTxt.geschlossen, wert: stats?.geschlossen ?? 0, farbe: "var(--text-faint)" },
               ].map((s) => (
                 <div key={s.label} className="flex items-center gap-3">
                   <span className="w-32 shrink-0 text-xs text-[var(--text-soft)]">{s.label}</span>
@@ -313,10 +323,10 @@ export default function Dashboard({ organisationId }: DashboardProps) {
           {volumen.length > 0 && !laedt && (
             <div className="animate-fade-in rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4">
               <div className="mb-3 flex items-center justify-between">
-                <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">Ticket-Volumen</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{txt.ticketVolumen}</p>
                 <div className="flex items-center gap-4 text-xs text-[var(--text-faint)]">
-                  <span className="flex items-center gap-1.5"><span className="h-2 w-3 rounded-sm" style={{ background: "#2f8fae" }} />Neu</span>
-                  <span className="flex items-center gap-1.5"><span className="h-2 w-3 rounded-sm" style={{ background: "#2e9c63" }} />Gelöst</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-3 rounded-sm" style={{ background: "#2f8fae" }} />{txt.neu}</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-3 rounded-sm" style={{ background: "#2e9c63" }} />{txt.geloestZeitraum}</span>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={140}>
@@ -356,7 +366,7 @@ export default function Dashboard({ organisationId }: DashboardProps) {
           {/* Reaktionszeit-Trend */}
           {techniker.length > 0 && !laedt && techniker.some((t) => t.durchschnitt_minuten !== null) && (
             <div className="animate-fade-in rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4">
-              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">Ø Reaktionszeit (Minuten)</p>
+              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{txt.reaktionszeitTrend}</p>
               <ResponsiveContainer width="100%" height={100}>
                 <BarChart data={techniker.filter((t) => t.durchschnitt_minuten !== null)} barSize={24}>
                   <defs>
@@ -383,23 +393,23 @@ export default function Dashboard({ organisationId }: DashboardProps) {
           {/* Techniker-Tabelle */}
           {techniker.length > 0 && (
             <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4">
-              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">Team-Auslastung</p>
+              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{txt.teamAuslastung}</p>
               <div className="space-y-0">
                 <div className="grid grid-cols-4 border-b border-[var(--border)] pb-1.5 text-[0.65rem] font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                  <span>Techniker</span>
-                  <span className="text-center">Offen</span>
-                  <span className="text-center">Gelöst ({zeitraum}d)</span>
-                  <span className="text-right">Ø Reaktion</span>
+                  <span>{txt.techniker}</span>
+                  <span className="text-center">{statusTxt.offen}</span>
+                  <span className="text-center">{txt.geloestZeitraum} ({zeitraum}d)</span>
+                  <span className="text-right">{txt.oReaktion}</span>
                 </div>
                 {techniker.map((t, i) => (
                   <div key={i} className="grid grid-cols-4 items-center border-b border-[var(--border)] py-2 text-sm last:border-b-0">
-                    <span className="text-[var(--text-strong)]">{t.name ?? "Unbenannt"}</span>
+                    <span className="text-[var(--text-strong)]">{t.name ?? txt.unbenannt}</span>
                     <span className={`text-center font-mono font-medium ${t.offen > 10 ? "text-orange-600" : "text-[var(--text-soft)]"}`}>
                       {t.offen}
                     </span>
                     <span className="text-center font-mono text-green-600 font-medium">{t.geloest_30d}</span>
                     <span className="text-right font-mono text-xs text-[var(--text-faint)]">
-                      {formatMinuten(t.durchschnitt_minuten)}
+                      {formatMinuten(t.durchschnitt_minuten, sprache)}
                     </span>
                   </div>
                 ))}
@@ -410,13 +420,13 @@ export default function Dashboard({ organisationId }: DashboardProps) {
           {/* CSAT Details */}
           {csatGesamt > 0 && (
             <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4">
-              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">Kundenzufriedenheit (CSAT)</p>
+              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{txt.csatTitel}</p>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">👍</span>
                   <div>
                     <p className="font-mono text-xl font-medium text-green-600">{csat.positiv}</p>
-                    <p className="text-xs text-[var(--text-faint)]">Positiv</p>
+                    <p className="text-xs text-[var(--text-faint)]">{txt.positiv}</p>
                   </div>
                 </div>
                 <div className="flex-1">
@@ -424,12 +434,12 @@ export default function Dashboard({ organisationId }: DashboardProps) {
                     <div className="h-3 rounded-full bg-green-500 transition-all"
                       style={{ width: `${csatRate ?? 0}%` }} />
                   </div>
-                  <p className="mt-1 text-center text-xs text-[var(--text-faint)]">{csatRate}% Zufriedenheit</p>
+                  <p className="mt-1 text-center text-xs text-[var(--text-faint)]">{csatRate}% {txt.zufriedenheit}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="text-right">
                     <p className="font-mono text-xl font-medium text-red-500">{csat.negativ}</p>
-                    <p className="text-xs text-[var(--text-faint)]">Negativ</p>
+                    <p className="text-xs text-[var(--text-faint)]">{txt.negativ}</p>
                   </div>
                   <span className="text-2xl">👎</span>
                 </div>
