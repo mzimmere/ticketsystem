@@ -3,6 +3,8 @@ import { supabase } from "../lib/supabaseClient";
 import { berechneTarifpreis, type TarifStaffel } from "../lib/tarifBerechnung";
 import TarifVerwaltung from "./TarifVerwaltung";
 import PlattformRechnungDetail from "./PlattformRechnungDetail";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface Tarif {
   id: string;
@@ -25,13 +27,15 @@ function formatEuro(cent: number): string {
   return (cent / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
 }
 
-function monatLabel(jahr: number, monat: number): string {
-  return new Date(jahr, monat - 1, 1).toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+function monatLabel(jahr: number, monat: number, sprache: "de" | "en"): string {
+  return new Date(jahr, monat - 1, 1).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE", { month: "long", year: "numeric" });
 }
 
 type Tab = "rechnungen" | "tarife" | "absender" | "login";
 
 export default function PlattformAbrechnung() {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).plattformAbrechnung;
   const heute = new Date();
   const [tab, setTab] = useState<Tab>("rechnungen");
   const [jahr, setJahr] = useState(heute.getFullYear());
@@ -226,12 +230,12 @@ export default function PlattformAbrechnung() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-[var(--text-strong)]">
-          Plattform-Abrechnung
+          {txt.titel}
         </h2>
       </div>
 
       <div className="flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--bg-muted)] p-0.5 w-fit">
-        {([["rechnungen", "Rechnungen"], ["tarife", "Tarife"], ["absender", "Absender"], ["login", "Anmeldeseite"]] as const).map(([k, label]) => (
+        {([["rechnungen", txt.tabRechnungen], ["tarife", txt.tabTarife], ["absender", txt.tabAbsender], ["login", txt.tabLogin]] as const).map(([k, label]) => (
           <button
             key={k}
             onClick={() => setTab(k)}
@@ -246,15 +250,15 @@ export default function PlattformAbrechnung() {
 
       {tab === "absender" && (
         <div className="max-w-md space-y-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
-          <p className="text-xs text-[var(--text-faint)]">Diese Angaben erscheinen als Absender auf den Rechnungen an die Firmen.</p>
+          <p className="text-xs text-[var(--text-faint)]">{txt.absenderHinweis}</p>
           {([
-            ["firmenname", "Firmenname"],
-            ["adresse", "Adresse"],
-            ["email", "E-Mail"],
-            ["telefon", "Telefon"],
-            ["ust_id", "USt-IdNr."],
-            ["steuernummer", "Steuernummer (falls keine USt-IdNr. vorhanden)"],
-            ["iban", "IBAN"],
+            ["firmenname", txt.feldFirmenname],
+            ["adresse", txt.feldAdresse],
+            ["email", txt.feldEmail],
+            ["telefon", txt.feldTelefon],
+            ["ust_id", txt.feldUstId],
+            ["steuernummer", txt.feldSteuernummer],
+            ["iban", txt.feldIban],
           ] as const).map(([feld, label]) => (
             <div key={feld}>
               <label className="mb-1 block text-xs text-[var(--text-faint)]">{label}</label>
@@ -268,9 +272,9 @@ export default function PlattformAbrechnung() {
           ))}
 
           <div className="border-t border-[var(--border)] pt-2.5">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">Rechnungsangaben</p>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{txt.rechnungsangaben}</p>
 
-            <label className="mb-1 block text-xs text-[var(--text-faint)]">Zahlungsziel (Tage)</label>
+            <label className="mb-1 block text-xs text-[var(--text-faint)]">{txt.zahlungszielLabel}</label>
             <input
               type="number" min={0}
               value={absender.zahlungsziel_tage}
@@ -278,7 +282,7 @@ export default function PlattformAbrechnung() {
               className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm"
             />
 
-            <label className="mb-1 mt-2.5 block text-xs text-[var(--text-faint)]">Rechtlicher Hinweis (z.B. "Rechnungsdatum ist Lieferdatum")</label>
+            <label className="mb-1 mt-2.5 block text-xs text-[var(--text-faint)]">{txt.rechtlicherHinweisLabel}</label>
             <textarea
               value={absender.rechtlicher_hinweis}
               onChange={(e) => setAbsender({ ...absender, rechtlicher_hinweis: e.target.value })}
@@ -286,27 +290,27 @@ export default function PlattformAbrechnung() {
               className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm"
             />
 
-            <label className="mb-1 mt-2.5 block text-xs text-[var(--text-faint)]">Freitext / Wunschtext (optional, z.B. Gruß oder Skonto-Hinweis)</label>
+            <label className="mb-1 mt-2.5 block text-xs text-[var(--text-faint)]">{txt.freitextLabel}</label>
             <textarea
               value={absender.freitext}
               onChange={(e) => setAbsender({ ...absender, freitext: e.target.value })}
               rows={2}
-              placeholder="Vielen Dank für die gute Zusammenarbeit!"
+              placeholder={txt.freitextPlatzhalter}
               className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm"
             />
           </div>
 
           <button onClick={absenderSpeichern} className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white">
-            {absenderGespeichert ? "Gespeichert ✓" : "Speichern"}
+            {absenderGespeichert ? txt.gespeichertHaken : txt.speichern}
           </button>
         </div>
       )}
 
       {tab === "login" && (
         <div className="max-w-md space-y-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
-          <p className="text-xs text-[var(--text-faint)]">Titel und Spruch, die auf der Anmeldeseite (vor dem Login) angezeigt werden.</p>
+          <p className="text-xs text-[var(--text-faint)]">{txt.loginHinweis}</p>
 
-          <label className="mb-1 block text-xs text-[var(--text-faint)]">Titel</label>
+          <label className="mb-1 block text-xs text-[var(--text-faint)]">{txt.titelLabel}</label>
           <input
             type="text"
             value={branding.login_titel}
@@ -314,7 +318,7 @@ export default function PlattformAbrechnung() {
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm"
           />
 
-          <label className="mb-1 mt-2.5 block text-xs text-[var(--text-faint)]">Spruch</label>
+          <label className="mb-1 mt-2.5 block text-xs text-[var(--text-faint)]">{txt.spruchLabel}</label>
           <textarea
             value={branding.login_spruch}
             onChange={(e) => setBranding({ ...branding, login_spruch: e.target.value })}
@@ -323,7 +327,7 @@ export default function PlattformAbrechnung() {
           />
 
           <button onClick={brandingSpeichern} className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white">
-            {brandingGespeichert ? "Gespeichert ✓" : "Speichern"}
+            {brandingGespeichert ? txt.gespeichertHaken : txt.speichern}
           </button>
         </div>
       )}
@@ -332,22 +336,22 @@ export default function PlattformAbrechnung() {
         <>
           <div className="flex items-center justify-between rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-2.5">
             <button onClick={() => monatWechseln(-1)} className="rounded px-2 py-1 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">←</button>
-            <span className="text-sm font-medium text-[var(--text-strong)]">{monatLabel(jahr, monat)}</span>
+            <span className="text-sm font-medium text-[var(--text-strong)]">{monatLabel(jahr, monat, sprache)}</span>
             <button onClick={() => monatWechseln(1)} className="rounded px-2 py-1 text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">→</button>
           </div>
 
           {laedt ? (
-            <p className="text-sm text-[var(--text-faint)]">Lädt…</p>
+            <p className="text-sm text-[var(--text-faint)]">{txt.laedt}</p>
           ) : orgZeilen.length === 0 ? (
-            <p className="text-sm text-[var(--text-faint)]">Noch keine Firmen angelegt.</p>
+            <p className="text-sm text-[var(--text-faint)]">{txt.nochKeineFirmen}</p>
           ) : (
             <div className="overflow-hidden rounded-lg border border-[var(--border)]">
               <div className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-muted)] px-4 py-1.5 text-[0.65rem] font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                <span className="flex-1">Firma</span>
-                <span className="w-40">Tarif</span>
-                <span className="w-16 text-right">MA</span>
-                <span className="w-24 text-right">Betrag</span>
-                <span className="w-40 text-right">Aktion</span>
+                <span className="flex-1">{txt.spalteFirma}</span>
+                <span className="w-40">{txt.spalteTarif}</span>
+                <span className="w-16 text-right">{txt.spalteMa}</span>
+                <span className="w-24 text-right">{txt.spalteBetrag}</span>
+                <span className="w-40 text-right">{txt.spalteAktion}</span>
               </div>
               {orgZeilen.map((z) => {
                 const tarif = tarife.find((t) => t.id === z.tarif_id);
@@ -362,7 +366,7 @@ export default function PlattformAbrechnung() {
                       disabled={!!z.rechnung}
                       className="w-40 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1 text-xs disabled:opacity-50"
                     >
-                      <option value="">– kein Tarif –</option>
+                      <option value="">{txt.keinTarif}</option>
                       {tarife.filter((t) => t.aktiv || t.id === z.tarif_id).map((t) => (
                         <option key={t.id} value={t.id}>{t.name}</option>
                       ))}
@@ -377,7 +381,7 @@ export default function PlattformAbrechnung() {
                           onClick={() => setOffeneRechnung(z.rechnung!.id)}
                           className={`rounded px-2.5 py-1 text-xs font-medium ${z.rechnung.status === "versendet" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-[var(--bg-muted)] text-[var(--text-soft)]"}`}
                         >
-                          {z.rechnung.status === "versendet" ? "✓ Versendet" : "Entwurf ansehen"}
+                          {z.rechnung.status === "versendet" ? txt.versendet : txt.entwurfAnsehen}
                         </button>
                       ) : tarif ? (
                         <button
@@ -385,10 +389,10 @@ export default function PlattformAbrechnung() {
                           disabled={erstellenLaeuft === z.id}
                           className="rounded bg-akzent px-2.5 py-1 text-xs font-medium text-white disabled:opacity-50"
                         >
-                          {erstellenLaeuft === z.id ? "…" : "Rechnung erstellen"}
+                          {erstellenLaeuft === z.id ? "…" : txt.rechnungErstellen}
                         </button>
                       ) : (
-                        <span className="text-xs text-[var(--text-faint)]">Kein Tarif zugewiesen</span>
+                        <span className="text-xs text-[var(--text-faint)]">{txt.keinTarifZugewiesen}</span>
                       )}
                     </span>
                   </div>

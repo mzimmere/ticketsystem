@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { berechneFreiminutenAbzug, type DongleFreiminuten, type ZeitEintragMitDongle } from "../lib/freiminuten";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface AbrechnungsZeile {
   kunde_id: string;
@@ -21,14 +23,16 @@ function formatEuro(cent: number): string {
   return (cent / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
 }
 
-function monatLabel(jahr: number, monat: number): string {
-  return new Date(jahr, monat - 1, 1).toLocaleDateString("de-DE", {
+function monatLabel(jahr: number, monat: number, sprache: "de" | "en"): string {
+  return new Date(jahr, monat - 1, 1).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE", {
     month: "long",
     year: "numeric",
   });
 }
 
 export default function Abrechnung({ organisationId, onKundeAuswahl }: AbrechnungProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).abrechnung;
   const heute = new Date();
   const [jahr, setJahr] = useState(heute.getFullYear());
   const [monat, setMonat] = useState(heute.getMonth() + 1); // 1-12
@@ -114,7 +118,7 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
       const abzug = berechneFreiminutenAbzug(eintraege, dongleJeKunde.get(kundeId) ?? []);
       karte.set(kundeId, {
         kunde_id: kundeId,
-        kunde_name: kundeInfo?.name ?? "Unbenannt",
+        kunde_name: kundeInfo?.name ?? txt.unbenannt,
         mwst_satz: kundeInfo?.mwst_satz ?? 0,
         gesamt_minuten: abzug.gesamtMinuten,
         netto_cent: abzug.zwischensummeNachAbzug,
@@ -132,7 +136,7 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
       } else {
         karte.set(a.kunde_id, {
           kunde_id: a.kunde_id,
-          kunde_name: a.kunde?.name ?? "Unbenannt",
+          kunde_name: a.kunde?.name ?? txt.unbenannt,
           mwst_satz: a.kunde?.mwst_satz ?? 0,
           gesamt_minuten: 0,
           netto_cent: a.betrag_cent,
@@ -172,7 +176,7 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
           `${z.kunde_name};${z.gesamt_minuten};${(z.netto_cent / 100).toFixed(2)};${(z.mwst_cent / 100).toFixed(2)};${(z.brutto_cent / 100).toFixed(2)}`,
       )
       .join("\n");
-    const csv = `Kunde;Minuten;Netto (EUR);MwSt (EUR);Brutto (EUR)\n${zeilenText}`;
+    const csv = `${txt.csvHeader}\n${zeilenText}`;
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -193,14 +197,14 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
         <h2
           className="text-lg font-semibold text-[var(--text-strong)]"
         >
-          Abrechnung
+          {txt.titel}
         </h2>
         {zeilen.length > 0 && (
           <button
             onClick={() => window.print()}
             className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white"
           >
-            Drucken / Als PDF
+            {txt.drucken}
           </button>
         )}
       </div>
@@ -213,7 +217,7 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
           ←
         </button>
         <span className="text-sm font-medium text-[var(--text-strong)]">
-          {monatLabel(jahr, monat)}
+          {monatLabel(jahr, monat, sprache)}
         </span>
         <button
           onClick={() => monatWechseln(1)}
@@ -224,23 +228,23 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
       </div>
 
       {laedt ? (
-        <p className="text-sm text-[var(--text-faint)]">Lädt…</p>
+        <p className="text-sm text-[var(--text-faint)]">{txt.laedt}</p>
       ) : zeilen.length === 0 ? (
         <p className="text-sm text-[var(--text-faint)]">
-          Keine erfassten Zeiten oder Anpassungen in diesem Monat.
+          {txt.keineDaten}
         </p>
       ) : (
         <>
           <div className="druckbereich overflow-hidden rounded-lg border border-[var(--border)]">
             <p className="hidden border-b border-[var(--border)] bg-[var(--bg-surface)] px-4 py-2 text-sm font-medium text-[var(--text-strong)] print:block">
-              Monatsübersicht – {monatLabel(jahr, monat)}
+              {txt.monatsuebersicht} {monatLabel(jahr, monat, sprache)}
             </p>
             <div className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-muted)] px-4 py-1.5 text-[0.65rem] font-medium uppercase tracking-wide text-[var(--text-faint)]">
-              <span className="flex-1">Kunde</span>
-              <span className="w-16 text-right">Min.</span>
-              <span className="w-20 text-right">Netto</span>
-              <span className="w-16 text-right">MwSt.</span>
-              <span className="w-20 text-right">Brutto</span>
+              <span className="flex-1">{txt.spalteKunde}</span>
+              <span className="w-16 text-right">{txt.spalteMin}</span>
+              <span className="w-20 text-right">{txt.spalteNetto}</span>
+              <span className="w-16 text-right">{txt.spalteMwst}</span>
+              <span className="w-20 text-right">{txt.spalteBrutto}</span>
             </div>
             {zeilen.map((z) => (
               <button
@@ -264,7 +268,7 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
               </button>
             ))}
             <div className="flex items-center gap-3 bg-[var(--bg-muted)] px-4 py-2.5 text-sm font-medium">
-              <span className="flex-1 text-[var(--text-strong)]">Gesamt</span>
+              <span className="flex-1 text-[var(--text-strong)]">{txt.gesamt}</span>
               <span className="w-16 text-right font-mono text-[var(--text-strong)]">
                 {gesamtMinuten}
               </span>
@@ -284,7 +288,7 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
             onClick={csvExportieren}
             className="keine-druckansicht w-full rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
           >
-            Als CSV exportieren
+            {txt.alsCsvExportieren}
           </button>
         </>
       )}

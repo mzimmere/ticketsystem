@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { berechneFreiminutenAbzug, type DongleFreiminuten } from "../lib/freiminuten";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface ZeitEintrag {
   id: string;
@@ -61,8 +63,8 @@ function formatEuro(cent: number): string {
   return (cent / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
 }
 
-function formatDatum(iso: string): string {
-  return new Date(iso).toLocaleDateString("de-DE");
+function formatDatum(iso: string, sprache: "de" | "en"): string {
+  return new Date(iso).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE");
 }
 
 export default function RechnungDetail({
@@ -72,6 +74,8 @@ export default function RechnungDetail({
   monat,
   onZurueck,
 }: RechnungDetailProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).rechnungDetail;
   const [kunde, setKunde] = useState<Kunde | null>(null);
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [eintraege, setEintraege] = useState<ZeitEintrag[]>([]);
@@ -98,8 +102,8 @@ export default function RechnungDetail({
   }, [jahr, monat]);
 
   const monatLabel = useMemo(
-    () => new Date(jahr, monat - 1, 1).toLocaleDateString("de-DE", { month: "long", year: "numeric" }),
-    [jahr, monat],
+    () => new Date(jahr, monat - 1, 1).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE", { month: "long", year: "numeric" }),
+    [jahr, monat, sprache],
   );
 
   useEffect(() => {
@@ -184,7 +188,7 @@ export default function RechnungDetail({
     if (!neueBeschreibung.trim() || !neuerBetragEuro.trim()) return;
     const wert = parseFloat(neuerBetragEuro.trim().replace(",", "."));
     if (isNaN(wert)) {
-      setHinweis("Ungültiger Betrag.");
+      setHinweis(txt.fehlerUngueltigerBetrag);
       return;
     }
     const { error } = await supabase.from("rechnungsanpassungen").insert({
@@ -196,7 +200,7 @@ export default function RechnungDetail({
     });
     if (error) {
       console.error(error);
-      setHinweis("Hinzufügen fehlgeschlagen.");
+      setHinweis(txt.fehlerHinzufuegen);
       return;
     }
     setNeueBeschreibung("");
@@ -220,10 +224,10 @@ export default function RechnungDetail({
   }
 
   async function positionHinzufuegen() {
-    if (!posBezeichnung.trim()) { setHinweis("Bitte eine Bezeichnung angeben."); return; }
+    if (!posBezeichnung.trim()) { setHinweis(txt.fehlerBezeichnungErforderlich); return; }
     const menge = parseFloat(posMenge.replace(",", ".")) || 1;
     const einzel = Math.round(parseFloat(posEinzelpreisEuro.replace(",", ".")) * 100);
-    if (isNaN(einzel)) { setHinweis("Ungültiger Einzelpreis."); return; }
+    if (isNaN(einzel)) { setHinweis(txt.fehlerUngueltigerEinzelpreis); return; }
 
     const gesamt = Math.round(menge * einzel);
     const { error } = await supabase.from("rechnungsanpassungen").insert({
@@ -237,7 +241,7 @@ export default function RechnungDetail({
       produkt_id: posProduktId || null,
       art: "position",
     });
-    if (error) { console.error(error); setHinweis("Position konnte nicht hinzugefügt werden."); return; }
+    if (error) { console.error(error); setHinweis(txt.fehlerPositionFehlgeschlagen); return; }
     setPosProduktId(""); setPosBezeichnung(""); setPosMenge("1"); setPosEinzelpreisEuro("");
     setHinweis(null);
     ladeAlles();
@@ -252,7 +256,7 @@ export default function RechnungDetail({
   const mwstBetrag = Math.round(nettosumme * (mwstSatz / 100));
   const bruttosumme = nettosumme + mwstBetrag;
 
-  if (laedt) return <p className="text-sm text-[var(--text-faint)]">Lädt…</p>;
+  if (laedt) return <p className="text-sm text-[var(--text-faint)]">{txt.laedt}</p>;
 
   return (
     <div className="space-y-4">
@@ -261,13 +265,13 @@ export default function RechnungDetail({
           onClick={onZurueck}
           className="text-sm text-[var(--text-soft)] hover:text-[var(--text-strong)]"
         >
-          ← Zurück zur Abrechnung
+          {txt.zurueckZurAbrechnung}
         </button>
         <button
           onClick={() => window.print()}
           className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white"
         >
-          Drucken / Als PDF speichern
+          {txt.druckenSpeichern}
         </button>
       </div>
 
@@ -300,15 +304,15 @@ export default function RechnungDetail({
             <h2
               className="text-lg font-semibold text-[var(--text-strong)]"
             >
-              Abrechnung
+              {txt.titel}
             </h2>
             <p className="text-sm text-[var(--text-soft)]">{monatLabel}</p>
           </div>
         </div>
 
         <div className="mb-6">
-          <p className="text-xs uppercase tracking-wide text-[var(--text-faint)]">Kunde</p>
-          <p className="text-sm font-medium text-[var(--text-strong)]">{kunde?.name ?? "Unbenannt"}</p>
+          <p className="text-xs uppercase tracking-wide text-[var(--text-faint)]">{txt.kunde}</p>
+          <p className="text-sm font-medium text-[var(--text-strong)]">{kunde?.name ?? txt.unbenannt}</p>
           {(kunde?.strasse || kunde?.ort) && (
             <p className="text-sm text-[var(--text-soft)]">
               {[kunde?.strasse, kunde?.hausnummer].filter(Boolean).join(" ")}
@@ -326,28 +330,28 @@ export default function RechnungDetail({
             <p className="text-sm text-[var(--text-soft)]">{kunde.telefonnummer}</p>
           )}
           {kunde?.ust_id && (
-            <p className="text-sm text-[var(--text-soft)]">USt-IdNr.: {kunde.ust_id}</p>
+            <p className="text-sm text-[var(--text-soft)]">{txt.ustIdLabel} {kunde.ust_id}</p>
           )}
         </div>
 
         {eintraege.length === 0 ? (
-          <p className="text-sm text-[var(--text-faint)]">Keine erfasste Zeit in diesem Monat.</p>
+          <p className="text-sm text-[var(--text-faint)]">{txt.keineZeit}</p>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--border)] text-left text-xs uppercase tracking-wide text-[var(--text-faint)]">
-                <th className="py-1.5 pr-2">Datum</th>
-                <th className="py-1.5 pr-2">Beschreibung</th>
-                <th className="py-1.5 pr-2 text-right">Min.</th>
-                <th className="py-1.5 pr-2 text-right">Preis/Min.</th>
-                <th className="py-1.5 text-right">Betrag</th>
+                <th className="py-1.5 pr-2">{txt.spalteDatum}</th>
+                <th className="py-1.5 pr-2">{txt.spalteBeschreibung}</th>
+                <th className="py-1.5 pr-2 text-right">{txt.spalteMin}</th>
+                <th className="py-1.5 pr-2 text-right">{txt.spaltePreisMin}</th>
+                <th className="py-1.5 text-right">{txt.spalteBetrag}</th>
               </tr>
             </thead>
             <tbody>
               {eintraege.map((e) => (
                 <tr key={e.id} className="border-b border-[var(--border)]">
                   <td className="py-1.5 pr-2 align-top font-mono text-xs text-[var(--text-soft)]">
-                    {formatDatum(e.erstellt_am)}
+                    {formatDatum(e.erstellt_am, sprache)}
                   </td>
                   <td className="py-1.5 pr-2 align-top text-[var(--text-strong)]">
                     {e.beschreibung || "–"}
@@ -366,7 +370,7 @@ export default function RechnungDetail({
               {anpassungen.filter((a) => a.art === "position").map((a) => (
                 <tr key={a.id} className="border-b border-[var(--border)]">
                   <td className="py-1.5 pr-2 align-top font-mono text-xs text-[var(--text-soft)]">
-                    {formatDatum(a.erstellt_am)}
+                    {formatDatum(a.erstellt_am, sprache)}
                   </td>
                   <td className="py-1.5 pr-2 align-top text-[var(--text-strong)]">
                     {a.beschreibung}
@@ -383,7 +387,7 @@ export default function RechnungDetail({
                       <button
                         onClick={() => anpassungLoeschen(a.id)}
                         className="keine-druckansicht text-[var(--text-faint)] hover:text-red-600"
-                        title="Entfernen"
+                        title={txt.entfernenTitle}
                       >
                         ×
                       </button>
@@ -398,14 +402,14 @@ export default function RechnungDetail({
         <div className="mt-3 flex justify-end">
           <div className="w-56 space-y-1 text-sm">
             <div className="flex justify-between text-[var(--text-soft)]">
-              <span>Gesamtzeit (ohne Abzug)</span>
-              <span className="font-mono">{gesamtMinuten} Min. / {formatEuro(zwischensummeOhneAbzug)}</span>
+              <span>{txt.gesamtzeitOhneAbzug}</span>
+              <span className="font-mono">{gesamtMinuten} {txt.spalteMin} / {formatEuro(zwischensummeOhneAbzug)}</span>
             </div>
 
             {abzuegeJeDongle.map((d) => (
               <div key={d.dongleId} className="flex justify-between text-[var(--text-soft)]">
                 <span className="truncate pr-2">
-                  − {d.freieMinuten} Freiminuten (Dongle {d.seriennummer})
+                  {txt.freiminutenTemplate.replace("{n}", String(d.freieMinuten)).replace("{seriennummer}", d.seriennummer)}
                 </span>
                 <span className="font-mono">− {formatEuro(d.abzugCent)}</span>
               </div>
@@ -413,7 +417,7 @@ export default function RechnungDetail({
 
             {abzugCent > 0 && (
               <div className="flex justify-between border-t border-[var(--border)] pt-1 text-[var(--text-soft)]">
-                <span>Berechnete Zeit</span>
+                <span>{txt.berechneteZeit}</span>
                 <span className="font-mono">{formatEuro(zwischensummeNachAbzug)}</span>
               </div>
             )}
@@ -426,7 +430,7 @@ export default function RechnungDetail({
                   <button
                     onClick={() => anpassungLoeschen(a.id)}
                     className="keine-druckansicht text-[var(--text-faint)] hover:text-red-600"
-                    title="Entfernen"
+                    title={txt.entfernenTitle}
                   >
                     ×
                   </button>
@@ -435,15 +439,15 @@ export default function RechnungDetail({
             ))}
 
             <div className="flex justify-between border-t border-[var(--border)] pt-1 text-[var(--text-soft)]">
-              <span>Netto</span>
+              <span>{txt.netto}</span>
               <span className="font-mono">{formatEuro(nettosumme)}</span>
             </div>
             <div className="flex justify-between text-[var(--text-soft)]">
-              <span>MwSt. ({mwstSatz.toLocaleString("de-DE")} %)</span>
+              <span>{txt.mwstTemplate.replace("{prozent}", mwstSatz.toLocaleString(sprache === "en" ? "en-US" : "de-DE"))}</span>
               <span className="font-mono">{formatEuro(mwstBetrag)}</span>
             </div>
             <div className="flex justify-between border-t border-[var(--border)] pt-1 font-semibold text-[var(--text-strong)]">
-              <span>Gesamt (Brutto)</span>
+              <span>{txt.gesamtBrutto}</span>
               <span className="font-mono">{formatEuro(bruttosumme)}</span>
             </div>
           </div>
@@ -452,20 +456,19 @@ export default function RechnungDetail({
         <div className="mt-4 space-y-1 border-t border-[var(--border)] pt-3 text-xs text-[var(--text-faint)]">
           {istInnergemeinschaftlich && (
             <p>
-              Steuerfreie innergemeinschaftliche Lieferung / Tax-free intra-Community supply
-              (Art. 138 MwStSystRL)
+              {txt.steuerfreiHinweis}
             </p>
           )}
-          <p>Rechnungsdatum ist Lieferdatum.</p>
+          <p>{txt.rechnungsdatumHinweis}</p>
         </div>
       </div>
 
       <div className="keine-druckansicht rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-2.5">
         <h3 className="text-sm font-medium text-[var(--text-strong)]">
-          Rechnungsposition hinzufügen
+          {txt.positionHinzufuegenTitel}
         </h3>
         <p className="text-xs text-[var(--text-faint)]">
-          Produkt/Leistung aus deiner Liste wählen oder frei eingeben. Menge × Einzelpreis wird als Position verrechnet.
+          {txt.positionHinzufuegenBeschreibung}
         </p>
 
         {produkte.length > 0 && (
@@ -474,7 +477,7 @@ export default function RechnungDetail({
             onChange={(e) => produktGewaehlt(e.target.value)}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-soft)]"
           >
-            <option value="">🛒 Produkt auswählen…</option>
+            <option value="">{txt.produktAuswaehlen}</option>
             {produkte.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.bezeichnung} – {formatEuro(p.einzelpreis_cent)} / {p.einheit}
@@ -487,12 +490,12 @@ export default function RechnungDetail({
           type="text"
           value={posBezeichnung}
           onChange={(e) => setPosBezeichnung(e.target.value)}
-          placeholder="Bezeichnung"
+          placeholder={txt.bezeichnungPlatzhalter}
           className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
         />
         <div className="flex gap-2">
           <div className="w-20">
-            <label className="mb-1 block text-xs text-[var(--text-faint)]">Menge</label>
+            <label className="mb-1 block text-xs text-[var(--text-faint)]">{txt.mengeLabel}</label>
             <input
               type="text" inputMode="decimal"
               value={posMenge}
@@ -501,7 +504,7 @@ export default function RechnungDetail({
             />
           </div>
           <div className="flex-1">
-            <label className="mb-1 block text-xs text-[var(--text-faint)]">Einzelpreis (€, netto)</label>
+            <label className="mb-1 block text-xs text-[var(--text-faint)]">{txt.einzelpreisLabel}</label>
             <input
               type="text" inputMode="decimal"
               value={posEinzelpreisEuro}
@@ -515,30 +518,30 @@ export default function RechnungDetail({
               onClick={positionHinzufuegen}
               className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white"
             >
-              + Position
+              {txt.positionButton}
             </button>
           </div>
         </div>
         {posMenge && posEinzelpreisEuro && (
           <p className="text-right text-xs text-[var(--text-faint)]">
-            Gesamt: {formatEuro(Math.round((parseFloat(posMenge.replace(",", ".")) || 0) * (parseFloat(posEinzelpreisEuro.replace(",", ".")) || 0) * 100))}
+            {txt.gesamtLabel} {formatEuro(Math.round((parseFloat(posMenge.replace(",", ".")) || 0) * (parseFloat(posEinzelpreisEuro.replace(",", ".")) || 0) * 100))}
           </p>
         )}
       </div>
 
       <div className="keine-druckansicht rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-2.5">
         <h3 className="text-sm font-medium text-[var(--text-strong)]">
-          Rabatt / Gutschrift / Zuschlag hinzufügen
+          {txt.rabattTitel}
         </h3>
         <p className="text-xs text-[var(--text-faint)]">
-          Negativer Betrag = Rabatt/Gutschrift, positiver Betrag = zusätzliche Position.
+          {txt.rabattBeschreibung}
         </p>
         <div className="flex gap-2">
           <input
             type="text"
             value={neueBeschreibung}
             onChange={(e) => setNeueBeschreibung(e.target.value)}
-            placeholder="Beschreibung, z.B. Treuerabatt"
+            placeholder={txt.beschreibungRabattPlatzhalter}
             className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
           />
           <input
@@ -553,7 +556,7 @@ export default function RechnungDetail({
             onClick={anpassungHinzufuegen}
             className="rounded bg-akzent px-4 py-2 text-sm font-medium text-white"
           >
-            Hinzufügen
+            {txt.hinzufuegenButton}
           </button>
         </div>
         {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}

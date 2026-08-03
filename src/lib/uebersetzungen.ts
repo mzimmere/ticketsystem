@@ -261,6 +261,100 @@ export interface Uebersetzung {
     minutenErfasstSuffix: string;
     manuellSuffix: string;
   };
+  abrechnung: {
+    titel: string;
+    drucken: string;
+    laedt: string;
+    keineDaten: string;
+    monatsuebersicht: string;
+    spalteKunde: string;
+    spalteMin: string;
+    spalteNetto: string;
+    spalteMwst: string;
+    spalteBrutto: string;
+    gesamt: string;
+    alsCsvExportieren: string;
+    unbenannt: string;
+    csvHeader: string;
+  };
+  rechnungDetail: {
+    laedt: string;
+    zurueckZurAbrechnung: string;
+    druckenSpeichern: string;
+    titel: string;
+    kunde: string;
+    unbenannt: string;
+    ustIdLabel: string;
+    keineZeit: string;
+    spalteDatum: string;
+    spalteBeschreibung: string;
+    spalteMin: string;
+    spaltePreisMin: string;
+    spalteBetrag: string;
+    entfernenTitle: string;
+    gesamtzeitOhneAbzug: string;
+    freiminutenTemplate: string;
+    berechneteZeit: string;
+    netto: string;
+    mwstTemplate: string;
+    gesamtBrutto: string;
+    steuerfreiHinweis: string;
+    rechnungsdatumHinweis: string;
+    positionHinzufuegenTitel: string;
+    positionHinzufuegenBeschreibung: string;
+    produktAuswaehlen: string;
+    bezeichnungPlatzhalter: string;
+    mengeLabel: string;
+    einzelpreisLabel: string;
+    positionButton: string;
+    gesamtLabel: string;
+    rabattTitel: string;
+    rabattBeschreibung: string;
+    beschreibungRabattPlatzhalter: string;
+    hinzufuegenButton: string;
+    fehlerUngueltigerBetrag: string;
+    fehlerHinzufuegen: string;
+    fehlerBezeichnungErforderlich: string;
+    fehlerUngueltigerEinzelpreis: string;
+    fehlerPositionFehlgeschlagen: string;
+  };
+  plattformAbrechnung: {
+    titel: string;
+    tabRechnungen: string;
+    tabTarife: string;
+    tabAbsender: string;
+    tabLogin: string;
+    absenderHinweis: string;
+    feldFirmenname: string;
+    feldAdresse: string;
+    feldEmail: string;
+    feldTelefon: string;
+    feldUstId: string;
+    feldSteuernummer: string;
+    feldIban: string;
+    rechnungsangaben: string;
+    zahlungszielLabel: string;
+    rechtlicherHinweisLabel: string;
+    freitextLabel: string;
+    freitextPlatzhalter: string;
+    gespeichertHaken: string;
+    speichern: string;
+    loginHinweis: string;
+    titelLabel: string;
+    spruchLabel: string;
+    laedt: string;
+    nochKeineFirmen: string;
+    spalteFirma: string;
+    spalteTarif: string;
+    spalteMa: string;
+    spalteBetrag: string;
+    spalteAktion: string;
+    keinTarif: string;
+    versendet: string;
+    entwurfAnsehen: string;
+    rechnungErstellen: string;
+    keinTarifZugewiesen: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -521,6 +615,100 @@ const de: Uebersetzung = {
     minutenErfasstSuffix: "Min. erfasst",
     manuellSuffix: " (manuell)",
   },
+  abrechnung: {
+    titel: "Abrechnung",
+    drucken: "Drucken / Als PDF",
+    laedt: "Lädt…",
+    keineDaten: "Keine erfassten Zeiten oder Anpassungen in diesem Monat.",
+    monatsuebersicht: "Monatsübersicht –",
+    spalteKunde: "Kunde",
+    spalteMin: "Min.",
+    spalteNetto: "Netto",
+    spalteMwst: "MwSt.",
+    spalteBrutto: "Brutto",
+    gesamt: "Gesamt",
+    alsCsvExportieren: "Als CSV exportieren",
+    unbenannt: "Unbenannt",
+    csvHeader: "Kunde;Minuten;Netto (EUR);MwSt (EUR);Brutto (EUR)",
+  },
+  rechnungDetail: {
+    laedt: "Lädt…",
+    zurueckZurAbrechnung: "← Zurück zur Abrechnung",
+    druckenSpeichern: "Drucken / Als PDF speichern",
+    titel: "Abrechnung",
+    kunde: "Kunde",
+    unbenannt: "Unbenannt",
+    ustIdLabel: "USt-IdNr.:",
+    keineZeit: "Keine erfasste Zeit in diesem Monat.",
+    spalteDatum: "Datum",
+    spalteBeschreibung: "Beschreibung",
+    spalteMin: "Min.",
+    spaltePreisMin: "Preis/Min.",
+    spalteBetrag: "Betrag",
+    entfernenTitle: "Entfernen",
+    gesamtzeitOhneAbzug: "Gesamtzeit (ohne Abzug)",
+    freiminutenTemplate: "− {n} Freiminuten (Dongle {seriennummer})",
+    berechneteZeit: "Berechnete Zeit",
+    netto: "Netto",
+    mwstTemplate: "MwSt. ({prozent} %)",
+    gesamtBrutto: "Gesamt (Brutto)",
+    steuerfreiHinweis: "Steuerfreie innergemeinschaftliche Lieferung / Tax-free intra-Community supply (Art. 138 MwStSystRL)",
+    rechnungsdatumHinweis: "Rechnungsdatum ist Lieferdatum.",
+    positionHinzufuegenTitel: "Rechnungsposition hinzufügen",
+    positionHinzufuegenBeschreibung: "Produkt/Leistung aus deiner Liste wählen oder frei eingeben. Menge × Einzelpreis wird als Position verrechnet.",
+    produktAuswaehlen: "🛒 Produkt auswählen…",
+    bezeichnungPlatzhalter: "Bezeichnung",
+    mengeLabel: "Menge",
+    einzelpreisLabel: "Einzelpreis (€, netto)",
+    positionButton: "+ Position",
+    gesamtLabel: "Gesamt:",
+    rabattTitel: "Rabatt / Gutschrift / Zuschlag hinzufügen",
+    rabattBeschreibung: "Negativer Betrag = Rabatt/Gutschrift, positiver Betrag = zusätzliche Position.",
+    beschreibungRabattPlatzhalter: "Beschreibung, z.B. Treuerabatt",
+    hinzufuegenButton: "Hinzufügen",
+    fehlerUngueltigerBetrag: "Ungültiger Betrag.",
+    fehlerHinzufuegen: "Hinzufügen fehlgeschlagen.",
+    fehlerBezeichnungErforderlich: "Bitte eine Bezeichnung angeben.",
+    fehlerUngueltigerEinzelpreis: "Ungültiger Einzelpreis.",
+    fehlerPositionFehlgeschlagen: "Position konnte nicht hinzugefügt werden.",
+  },
+  plattformAbrechnung: {
+    titel: "Plattform-Abrechnung",
+    tabRechnungen: "Rechnungen",
+    tabTarife: "Tarife",
+    tabAbsender: "Absender",
+    tabLogin: "Anmeldeseite",
+    absenderHinweis: "Diese Angaben erscheinen als Absender auf den Rechnungen an die Firmen.",
+    feldFirmenname: "Firmenname",
+    feldAdresse: "Adresse",
+    feldEmail: "E-Mail",
+    feldTelefon: "Telefon",
+    feldUstId: "USt-IdNr.",
+    feldSteuernummer: "Steuernummer (falls keine USt-IdNr. vorhanden)",
+    feldIban: "IBAN",
+    rechnungsangaben: "Rechnungsangaben",
+    zahlungszielLabel: "Zahlungsziel (Tage)",
+    rechtlicherHinweisLabel: 'Rechtlicher Hinweis (z.B. "Rechnungsdatum ist Lieferdatum")',
+    freitextLabel: "Freitext / Wunschtext (optional, z.B. Gruß oder Skonto-Hinweis)",
+    freitextPlatzhalter: "Vielen Dank für die gute Zusammenarbeit!",
+    gespeichertHaken: "Gespeichert ✓",
+    speichern: "Speichern",
+    loginHinweis: "Titel und Spruch, die auf der Anmeldeseite (vor dem Login) angezeigt werden.",
+    titelLabel: "Titel",
+    spruchLabel: "Spruch",
+    laedt: "Lädt…",
+    nochKeineFirmen: "Noch keine Firmen angelegt.",
+    spalteFirma: "Firma",
+    spalteTarif: "Tarif",
+    spalteMa: "MA",
+    spalteBetrag: "Betrag",
+    spalteAktion: "Aktion",
+    keinTarif: "– kein Tarif –",
+    versendet: "✓ Versendet",
+    entwurfAnsehen: "Entwurf ansehen",
+    rechnungErstellen: "Rechnung erstellen",
+    keinTarifZugewiesen: "Kein Tarif zugewiesen",
+  },
 };
 
 const en: Uebersetzung = {
@@ -780,6 +968,100 @@ const en: Uebersetzung = {
     anhangFehler: "At least one attachment could not be saved. See browser console (F12) for details.",
     minutenErfasstSuffix: "min logged",
     manuellSuffix: " (manual)",
+  },
+  abrechnung: {
+    titel: "Billing",
+    drucken: "Print / Save as PDF",
+    laedt: "Loading…",
+    keineDaten: "No tracked time or adjustments this month.",
+    monatsuebersicht: "Monthly overview –",
+    spalteKunde: "Customer",
+    spalteMin: "Min.",
+    spalteNetto: "Net",
+    spalteMwst: "VAT",
+    spalteBrutto: "Gross",
+    gesamt: "Total",
+    alsCsvExportieren: "Export as CSV",
+    unbenannt: "Unnamed",
+    csvHeader: "Customer;Minutes;Net (EUR);VAT (EUR);Gross (EUR)",
+  },
+  rechnungDetail: {
+    laedt: "Loading…",
+    zurueckZurAbrechnung: "← Back to billing",
+    druckenSpeichern: "Print / Save as PDF",
+    titel: "Invoice",
+    kunde: "Customer",
+    unbenannt: "Unnamed",
+    ustIdLabel: "VAT ID:",
+    keineZeit: "No time tracked this month.",
+    spalteDatum: "Date",
+    spalteBeschreibung: "Description",
+    spalteMin: "Min.",
+    spaltePreisMin: "Price/min",
+    spalteBetrag: "Amount",
+    entfernenTitle: "Remove",
+    gesamtzeitOhneAbzug: "Total time (before deduction)",
+    freiminutenTemplate: "− {n} free minutes (dongle {seriennummer})",
+    berechneteZeit: "Billed time",
+    netto: "Net",
+    mwstTemplate: "VAT ({prozent} %)",
+    gesamtBrutto: "Total (gross)",
+    steuerfreiHinweis: "Steuerfreie innergemeinschaftliche Lieferung / Tax-free intra-Community supply (Art. 138 MwStSystRL)",
+    rechnungsdatumHinweis: "Invoice date equals delivery date.",
+    positionHinzufuegenTitel: "Add invoice line item",
+    positionHinzufuegenBeschreibung: "Choose a product/service from your list or enter one freely. Quantity × unit price is billed as a line item.",
+    produktAuswaehlen: "🛒 Select product…",
+    bezeichnungPlatzhalter: "Description",
+    mengeLabel: "Quantity",
+    einzelpreisLabel: "Unit price (€, net)",
+    positionButton: "+ Line item",
+    gesamtLabel: "Total:",
+    rabattTitel: "Add discount / credit / surcharge",
+    rabattBeschreibung: "Negative amount = discount/credit, positive amount = additional charge.",
+    beschreibungRabattPlatzhalter: "Description, e.g. loyalty discount",
+    hinzufuegenButton: "Add",
+    fehlerUngueltigerBetrag: "Invalid amount.",
+    fehlerHinzufuegen: "Failed to add.",
+    fehlerBezeichnungErforderlich: "Please enter a description.",
+    fehlerUngueltigerEinzelpreis: "Invalid unit price.",
+    fehlerPositionFehlgeschlagen: "Could not add the line item.",
+  },
+  plattformAbrechnung: {
+    titel: "Platform billing",
+    tabRechnungen: "Invoices",
+    tabTarife: "Plans",
+    tabAbsender: "Sender",
+    tabLogin: "Login page",
+    absenderHinweis: "This information appears as the sender on invoices sent to companies.",
+    feldFirmenname: "Company name",
+    feldAdresse: "Address",
+    feldEmail: "Email",
+    feldTelefon: "Phone",
+    feldUstId: "VAT ID",
+    feldSteuernummer: "Tax number (if no VAT ID available)",
+    feldIban: "IBAN",
+    rechnungsangaben: "Invoice details",
+    zahlungszielLabel: "Payment term (days)",
+    rechtlicherHinweisLabel: 'Legal notice (e.g. "Invoice date equals delivery date")',
+    freitextLabel: "Free text / custom note (optional, e.g. thank-you or early-payment discount note)",
+    freitextPlatzhalter: "Thank you for the great collaboration!",
+    gespeichertHaken: "Saved ✓",
+    speichern: "Save",
+    loginHinweis: "Title and tagline shown on the login page (before signing in).",
+    titelLabel: "Title",
+    spruchLabel: "Tagline",
+    laedt: "Loading…",
+    nochKeineFirmen: "No companies created yet.",
+    spalteFirma: "Company",
+    spalteTarif: "Plan",
+    spalteMa: "Staff",
+    spalteBetrag: "Amount",
+    spalteAktion: "Action",
+    keinTarif: "– no plan –",
+    versendet: "✓ Sent",
+    entwurfAnsehen: "View draft",
+    rechnungErstellen: "Create invoice",
+    keinTarifZugewiesen: "No plan assigned",
   },
 };
 
