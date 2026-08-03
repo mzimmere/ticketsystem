@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Verwaltung-Grundgerüst übersetzt (Tabs, Firmenprofil-Formular, Mitarbeiter-/Kunden-Anlegen-Formulare) – die Tutorial-Kästen ('Anleitung') in den Werkzeuge-Unterseiten bleiben vorerst Deutsch" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Abrechnung, Rechnungsdetail (inkl. Rechnungsposition/Rabatt-Formulare) und Plattform-Abrechnung (Rechnungen/Absender/Anmeldeseite-Tabs) komplett übersetzt" },
   { datum: "2026-07-31", titel: "Englische Oberfläche erweitert: Mitarbeiter-Ticketansicht komplett übersetzt (Ticketübersicht mit Filtern/Suche/Tabelle sowie Ticket-Detail mit Verlauf, Status/Zuweisung, SLA, Tags, Notizfeld)" },
   { datum: "2026-07-31", titel: "Englische Oberfläche erweitert: Startseite jetzt komplett übersetzt (auch der Mitarbeiter-/Admin-Bereich), außerdem Mein Profil und Dashboard" },

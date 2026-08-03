@@ -19,6 +19,8 @@ import ReportingExport from "./ReportingExport";
 import IntegrationenVerwaltung from "./IntegrationenVerwaltung";
 import EmailTexteVerwaltung from "./EmailTexteVerwaltung";
 import KonfigurationsHilfe from "./KonfigurationsHilfe";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 type Rolle = "super_admin" | "org_admin" | "techniker" | "kunde";
 
@@ -55,6 +57,8 @@ interface VerwaltungProps {
 }
 
 export default function Verwaltung({ rolle, organisationId, onlineIds, initialTab = "firma" }: VerwaltungProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).verwaltung;
   const [aktiveTab, setAktiveTab] = useState<VerwaltungsTab>(initialTab);
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [orgName, setOrgName] = useState("");
@@ -158,7 +162,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
     if (orgStandardpreisEuro.trim() !== "") {
       const wert = parseFloat(orgStandardpreisEuro.trim().replace(",", "."));
       if (isNaN(wert)) {
-        preisFehler = "Ungültiger Standardpreis – andere Felder wurden trotzdem gespeichert.";
+        preisFehler = txt.fehlerUngueltigerPreis;
       } else {
         standardpreisCent = Math.round(wert * 100);
       }
@@ -202,8 +206,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
     if (error) {
       setHinweis(
         error.message.includes("duplicate")
-          ? "Dieser Link-Name ist schon vergeben, bitte einen anderen wählen."
-          : "Speichern fehlgeschlagen.",
+          ? txt.fehlerSlugVergeben
+          : txt.fehlerSpeichern,
       );
       return;
     }
@@ -219,7 +223,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
         : 80,
       sla_stunden: orgSlaStunden.trim() ? Math.max(1, Number(orgSlaStunden)) : null,
     });
-    setHinweis(preisFehler ?? "Gespeichert.");
+    setHinweis(preisFehler ?? txt.erfolgGespeichert);
   }
 
   async function logoHochladen(datei: File) {
@@ -248,10 +252,10 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
       if (updateFehler) throw updateFehler;
 
       setOrganisation({ ...organisation, logo_url: oeffentlich.publicUrl });
-      setHinweis(fehlermeldung ?? "Logo aktualisiert.");
+      setHinweis(fehlermeldung ?? txt.erfolgLogoAktualisiert);
     } catch (err) {
       console.error(err);
-      setHinweis("Logo-Upload fehlgeschlagen.");
+      setHinweis(txt.fehlerLogoUpload);
     } finally {
       setLaedt(false);
     }
@@ -283,10 +287,10 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
       if (updateFehler) throw updateFehler;
 
       setOrganisation({ ...organisation, hero_bild_url: oeffentlich.publicUrl });
-      setHinweis(fehlermeldung ?? "Bild aktualisiert.");
+      setHinweis(fehlermeldung ?? txt.erfolgBildAktualisiert);
     } catch (err) {
       console.error(err);
-      setHinweis("Bild-Upload fehlgeschlagen.");
+      setHinweis(txt.fehlerBildUpload);
     } finally {
       setLaedt(false);
     }
@@ -364,7 +368,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
       setKundenRefreshKey((k) => k + 1);
     } catch (err) {
       console.error(err);
-      setHinweis(err instanceof Error ? err.message : "Kunde anlegen fehlgeschlagen.");
+      setHinweis(err instanceof Error ? err.message : txt.fehlerAnlegenFehlgeschlagen);
     } finally {
       setLaedt(false);
     }
@@ -428,7 +432,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
       setTeamRefreshKey((k) => k + 1);
     } catch (err) {
       console.error(err);
-      setHinweis(err instanceof Error ? err.message : "Anlegen fehlgeschlagen.");
+      setHinweis(err instanceof Error ? err.message : txt.fehlerAnlegenFehlgeschlagen);
     } finally {
       setLaedt(false);
     }
@@ -464,23 +468,23 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
       if (!res.ok) {
         if (json.warnung) {
           setLaedt(false);
-          if (confirm(`${json.meldung}\n\nTrotzdem zuweisen?`)) {
+          if (confirm(`${json.meldung}\n\n${txt.trotzdemZuweisen}`)) {
             await nutzerZuweisen(true);
           } else {
-            setHinweis("Abgebrochen – niemand wurde umgezogen.");
+            setHinweis(txt.abgebrochenNiemand);
           }
           return;
         }
-        throw new Error(json.error ?? "Zuweisen fehlgeschlagen");
+        throw new Error(json.error ?? txt.fehlerZuweisenFehlgeschlagen);
       }
 
-      setHinweis(`${json.name ?? zuweisenEmail} ist jetzt Teil dieser Firma.`);
+      setHinweis(`${json.name ?? zuweisenEmail} ${txt.istJetztTeilDieserFirma}`);
       setZuweisenEmail("");
       setZeigeNutzerZuweisen(false);
       setTeamRefreshKey((k) => k + 1);
     } catch (err) {
       console.error(err);
-      setHinweis(err instanceof Error ? err.message : "Zuweisen fehlgeschlagen.");
+      setHinweis(err instanceof Error ? err.message : txt.fehlerZuweisenFehlgeschlagen);
     } finally {
       setLaedt(false);
     }
@@ -490,19 +494,19 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-[var(--text-strong)]">
-          Verwaltung{organisation && rolle === "super_admin" ? ` – ${organisation.name}` : ""}
+          {txt.titel}{organisation && rolle === "super_admin" ? ` – ${organisation.name}` : ""}
         </h2>
       </div>
 
       {/* Tab-Leiste */}
       <div className="flex gap-1 rounded-xl border border-[var(--border)] bg-[var(--bg-muted)] p-1">
         {([
-          { id: "firma", label: "🏢 Firma" },
-          { id: "team", label: "👥 Team" },
-          { id: "kunden", label: "🤝 Kunden" },
-          { id: "dongles", label: "🔑 Dongles & Lizenzen" },
-          { id: "werkzeuge", label: "🔧 Werkzeuge" },
-          { id: "integrationen", label: "🔌 Integrationen" },
+          { id: "firma", label: txt.tabFirma },
+          { id: "team", label: txt.tabTeam },
+          { id: "kunden", label: txt.tabKunden },
+          { id: "dongles", label: txt.tabDongles },
+          { id: "werkzeuge", label: txt.tabWerkzeuge },
+          { id: "integrationen", label: txt.tabIntegrationen },
         ] as { id: VerwaltungsTab; label: string }[]).map((t) => (
           <button
             key={t.id}
@@ -520,18 +524,18 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
 
       {/* Hinweis wenn kein Inhalt */}
       {!organisationId && aktiveTab !== "firma" && (
-        <p className="text-sm text-[var(--text-faint)]">Bitte zuerst eine Firma auswählen.</p>
+        <p className="text-sm text-[var(--text-faint)]">{txt.bitteFirmaWaehlen}</p>
       )}
 
       {aktiveTab === "firma" && organisation && (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
-          <h3 className="text-sm font-medium text-[var(--text-strong)]">Firmenprofil</h3>
+          <h3 className="text-sm font-medium text-[var(--text-strong)]">{txt.firmenprofil}</h3>
           <div className="flex items-center gap-4">
             {organisation.logo_url && (
               <img src={organisation.logo_url} alt={organisation.name} className="h-10 w-10 shrink-0 rounded bg-[var(--bg-muted)] object-contain p-0.5" />
             )}
             <label className="cursor-pointer rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-3 py-1.5 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
-              Logo ändern
+              {txt.logoAendern}
               <input
                 type="file"
                 accept="image/*"
@@ -541,13 +545,12 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
             </label>
           </div>
           <p className="text-xs text-[var(--text-faint)]">
-            Empfohlen: quadratisch, mind. 400×400px, max. 3 MB. Wird auf der Registrierungsseite
-            bis zu 192×192px groß angezeigt.
+            {txt.logoHinweis}
           </p>
 
           <div>
             <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-              Logo-Breite auf der Rechnung
+              {txt.logoBreiteLabel}
             </label>
             <div className="flex items-center gap-2">
               <input
@@ -558,13 +561,13 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                 onChange={(e) => setOrgRechnungslogoBreite(e.target.value)}
                 className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
               />
-              <span className="text-xs text-[var(--text-faint)]">px (20–300, Standard 80)</span>
+              <span className="text-xs text-[var(--text-faint)]">{txt.pxHinweis}</span>
             </div>
           </div>
 
           <div>
             <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-              SLA-Reaktionszeit (optional)
+              {txt.slaReaktionszeitLabel}
             </label>
             <div className="flex items-center gap-2">
               <input
@@ -572,14 +575,13 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                 min={1}
                 value={orgSlaStunden}
                 onChange={(e) => setOrgSlaStunden(e.target.value)}
-                placeholder="leer = kein SLA"
+                placeholder={txt.slaPlatzhalter}
                 className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
               />
-              <span className="text-xs text-[var(--text-faint)]">Stunden</span>
+              <span className="text-xs text-[var(--text-faint)]">{txt.stunden}</span>
             </div>
             <p className="mt-1 text-xs text-[var(--text-faint)]">
-              Tickets ohne Antwort innerhalb dieser Frist werden in der Übersicht als überfällig
-              markiert.
+              {txt.slaHinweis}
             </p>
           </div>
 
@@ -588,20 +590,20 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
               type="text"
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
-              placeholder="Firmenname"
+              placeholder={txt.firmennamePlatzhalter}
               className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
             />
           </div>
 
           <div>
             <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-              Adresse
+              {txt.adresseLabel}
             </label>
             <textarea
               value={orgAdresse}
               onChange={(e) => setOrgAdresse(e.target.value)}
               rows={2}
-              placeholder="Straße, PLZ, Ort"
+              placeholder={txt.adressePlatzhalter}
               className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
             />
           </div>
@@ -609,25 +611,25 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                Telefon
+                {txt.telefonLabel}
               </label>
               <input
                 type="text"
                 value={orgTelefon}
                 onChange={(e) => setOrgTelefon(e.target.value)}
-                placeholder="+49 ..."
+                placeholder={txt.telefonPlatzhalter}
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                E-Mail
+                {txt.emailLabel}
               </label>
               <input
                 type="email"
                 value={orgEmail}
                 onChange={(e) => setOrgEmail(e.target.value)}
-                placeholder="support@firma.de"
+                placeholder={txt.emailPlatzhalter}
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
               />
             </div>
@@ -635,7 +637,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
 
           <div>
             <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-              Website
+              {txt.websiteLabel}
             </label>
             <input
               type="text"
@@ -648,20 +650,20 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
 
           <div>
             <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-              Öffnungs- / Erreichbarkeitszeiten
+              {txt.oeffnungszeitenLabel}
             </label>
             <input
               type="text"
               value={orgOeffnungszeiten}
               onChange={(e) => setOrgOeffnungszeiten(e.target.value)}
-              placeholder="z.B. Mo–Fr 8–17 Uhr"
+              placeholder={txt.oeffnungszeitenPlatzhalter}
               className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
             />
           </div>
 
           <div>
             <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-              Standard-Minutenpreis in Euro (für die Abrechnung)
+              {txt.standardpreisLabel}
             </label>
             <input
               type="text"
@@ -675,25 +677,25 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
 
           <div className="border-t border-[var(--border)] pt-3">
             <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-              Individualisierung
+              {txt.individualisierung}
             </p>
 
             <div className="mb-3">
               <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                Motto / Begrüßungszeile
+                {txt.mottoLabel}
               </label>
               <input
                 type="text"
                 value={orgMotto}
                 onChange={(e) => setOrgMotto(e.target.value)}
-                placeholder='z.B. "Schnelle Hilfe, persönlich betreut"'
+                placeholder={txt.mottoPlatzhalter}
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
               />
             </div>
 
             <div className="mb-3">
               <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                Akzentfarbe
+                {txt.akzentfarbeLabel}
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -710,14 +712,13 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                 />
               </div>
               <p className="mt-1 text-xs text-[var(--text-faint)]">
-                Ersetzt die Button- und Akzentfarbe überall in der App für eure Mitarbeiter und
-                Kunden.
+                {txt.akzentfarbeHinweis}
               </p>
             </div>
 
             <div>
               <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                Bild für die Startseite (optional)
+                {txt.heroBildLabel}
               </label>
               {organisation?.hero_bild_url && (
                 <img
@@ -727,7 +728,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                 />
               )}
               <label className="block cursor-pointer rounded border border-dashed border-[var(--border-input)] px-3 py-2 text-center text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
-                {organisation?.hero_bild_url ? "Bild ändern" : "+ Bild hochladen"}
+                {organisation?.hero_bild_url ? txt.heroBildAendern : txt.heroBildHochladen}
                 <input
                   type="file"
                   accept="image/*"
@@ -736,13 +737,13 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                 />
               </label>
               <p className="mt-1 text-xs text-[var(--text-faint)]">
-                Empfohlen: Querformat, mind. 800px breit, max. 5 MB.
+                {txt.heroBildHinweis}
               </p>
             </div>
 
             <div className="mt-3 border-t border-[var(--border)] pt-3">
               <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                Registrierungslink für Kunden
+                {txt.registrierungslinkLabel}
               </label>
               <div className="flex items-center gap-1 text-sm">
                 <span className="text-[var(--text-faint)]">{window.location.origin}/?neukunde=</span>
@@ -770,40 +771,35 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                     }}
                     className="shrink-0 rounded border border-[var(--border-input)] px-2 py-1 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
                   >
-                    {slugKopiert ? "Kopiert ✓" : "Kopieren"}
+                    {slugKopiert ? txt.kopiert : txt.kopieren}
                   </button>
                 </div>
               )}
               <p className="mt-1 text-xs text-[var(--text-faint)]">
-                Diesen Link auf eurer Website verlinken – Kunden können sich darüber selbst
-                registrieren und landen direkt bei eurer Firma.
+                {txt.registrierungslinkHinweis}
               </p>
               {hinweis && <p className="mt-2 text-xs text-[var(--text-soft)]">{hinweis}</p>}
             </div>
 
             <div className="mt-3 border-t border-[var(--border)] pt-3">
               <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                Datenschutzerklärung
+                {txt.datenschutzLabel}
               </label>
               <p className="mb-2 text-xs text-[var(--text-faint)]">
-                Wird Kunden bei der Registrierung als Pflicht-Link angezeigt. Entweder eine
-                bestehende Seite verlinken, oder euren eigenen Text einfügen (z.B. von einem
-                Generator wie eRecht24 oder Datenschutz-Generator.de erstellt) – dann zeigen wir
-                ihn als eigene Seite innerhalb der App an. Link hat Vorrang, falls beides
-                ausgefüllt ist.
+                {txt.datenschutzHinweis}
               </p>
               <input
                 type="text"
                 value={orgDatenschutzUrl}
                 onChange={(e) => setOrgDatenschutzUrl(e.target.value)}
-                placeholder="https://eure-firma.de/datenschutz (optional)"
+                placeholder={txt.datenschutzUrlPlatzhalter}
                 className="mb-2 w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
               />
               <textarea
                 value={orgDatenschutzText}
                 onChange={(e) => setOrgDatenschutzText(e.target.value)}
                 rows={6}
-                placeholder="Oder hier den vollständigen Text eurer Datenschutzerklärung einfügen…"
+                placeholder={txt.datenschutzTextPlatzhalter}
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
               />
             </div>
@@ -814,7 +810,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
             disabled={laedt}
             className="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
-            {laedt ? "Speichert…" : "Speichern"}
+            {laedt ? txt.speichert : txt.speichern}
           </button>
         </div>
       )}
@@ -822,7 +818,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
       {aktiveTab === "team" && organisationId && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-[var(--text-strong)]">Team</h3>
+            <h3 className="text-sm font-medium text-[var(--text-strong)]">{txt.team}</h3>
             <div className="flex gap-3">
               <button
                 onClick={() => {
@@ -831,7 +827,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                 }}
                 className="text-xs text-amber-600 hover:underline"
               >
-                {zeigeNutzerZuweisen ? "Abbrechen" : "Bestehenden Nutzer zuweisen"}
+                {zeigeNutzerZuweisen ? txt.abbrechen : txt.bestehendenNutzerZuweisen}
               </button>
               <button
                 onClick={() => {
@@ -840,7 +836,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                 }}
                 className="text-xs text-amber-600 hover:underline"
               >
-                {zeigeMitarbeiterAnlegen ? "Abbrechen" : "+ Mitarbeiter anlegen"}
+                {zeigeMitarbeiterAnlegen ? txt.abbrechen : txt.mitarbeiterAnlegenPlus}
               </button>
             </div>
           </div>
@@ -848,17 +844,13 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
           {zeigeNutzerZuweisen && (
             <div className="space-y-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
               <p className="text-xs text-[var(--text-faint)]">
-                Für Personen, die schon einen Account haben – kein neuer Account nötig. Als
-                Techniker/Org-Admin arbeitet die Person danach zusätzlich hier, bestehende
-                Mitgliedschaften bei anderen Firmen bleiben bestehen. Nur als Kunde ist ein Account
-                weiterhin nur einer Firma zugeordnet (du bekommst dort vorher eine Warnung, falls
-                die Person schon Kunde woanders ist).
+                {txt.zuweisenHinweis}
               </p>
               <input
                 type="email"
                 value={zuweisenEmail}
                 onChange={(e) => setZuweisenEmail(e.target.value)}
-                placeholder="E-Mail des bestehenden Accounts"
+                placeholder={txt.emailBestehenderAccount}
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
               />
               <select
@@ -866,15 +858,15 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                 onChange={(e) => setZuweisenRolle(e.target.value as typeof zuweisenRolle)}
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
               >
-                <option value="techniker">Techniker</option>
-                <option value="org_admin">Org-Admin</option>
+                <option value="techniker">{txt.techniker}</option>
+                <option value="org_admin">{txt.orgAdmin}</option>
               </select>
               <button
                 onClick={() => nutzerZuweisen()}
                 disabled={laedt}
                 className="w-full rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
-                {laedt ? "Wird zugewiesen…" : "Zuweisen"}
+                {laedt ? txt.wirdZugewiesen : txt.zuweisen}
               </button>
             </div>
           )}
@@ -885,7 +877,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                 type="email"
                 value={neuerMitarbeiterEmail}
                 onChange={(e) => setNeuerMitarbeiterEmail(e.target.value)}
-                placeholder="E-Mail (für die Einladung)"
+                placeholder={txt.emailEinladungPlatzhalter}
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
               />
               <div className="flex gap-2">
@@ -893,14 +885,14 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                   type="text"
                   value={neuerMitarbeiterVorname}
                   onChange={(e) => setNeuerMitarbeiterVorname(e.target.value)}
-                  placeholder="Vorname"
+                  placeholder={txt.vornamePlatzhalter}
                   className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
                 />
                 <input
                   type="text"
                   value={neuerMitarbeiterNachname}
                   onChange={(e) => setNeuerMitarbeiterNachname(e.target.value)}
-                  placeholder="Nachname"
+                  placeholder={txt.nachnamePlatzhalter}
                   className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
                 />
               </div>
@@ -908,7 +900,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                 type="text"
                 value={neuerMitarbeiterTelefon}
                 onChange={(e) => setNeuerMitarbeiterTelefon(e.target.value)}
-                placeholder="Telefon (optional)"
+                placeholder={txt.telefonOptionalPlatzhalter}
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
               />
               <select
@@ -918,8 +910,8 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                 }
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
               >
-                <option value="techniker">Techniker</option>
-                <option value="org_admin">Org-Admin</option>
+                <option value="techniker">{txt.techniker}</option>
+                <option value="org_admin">{txt.orgAdmin}</option>
               </select>
 
               <div className="flex gap-2">
@@ -927,7 +919,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                   type="text"
                   value={neuerMitarbeiterPasswort}
                   onChange={(e) => setNeuerMitarbeiterPasswort(e.target.value)}
-                  placeholder="Passwort (optional, statt Mail-Einladung)"
+                  placeholder={txt.passwortOptionalPlatzhalter}
                   className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
                 />
                 <button
@@ -935,12 +927,11 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                   onClick={() => setNeuerMitarbeiterPasswort(generierePasswort())}
                   className="rounded border border-[var(--border-input)] px-3 py-2 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
                 >
-                  Generieren
+                  {txt.generieren}
                 </button>
               </div>
               <p className="text-xs text-[var(--text-faint)]">
-                Leer lassen, um einen Einladungslink zu erzeugen. Mit Passwort: Account ist sofort nutzbar,
-                keine Mail wird verschickt – du gibst die Zugangsdaten selbst weiter. Für WhatsApp empfehlenswert (Links können dort vorab verbraucht werden).
+                {txt.passwortHinweis}
               </p>
 
               <button
@@ -949,10 +940,10 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                 className="w-full rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
                 {laedt
-                  ? "Wird angelegt…"
+                  ? txt.wirdAngelegt
                   : neuerMitarbeiterPasswort.trim()
-                  ? "Mitarbeiter mit Passwort anlegen"
-                  : "Mitarbeiter anlegen & Link erzeugen"}
+                  ? txt.mitarbeiterMitPasswort
+                  : txt.mitarbeiterLinkErzeugen}
               </button>
             </div>
           )}
@@ -985,12 +976,12 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
       {aktiveTab === "kunden" && organisationId && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-[var(--text-strong)]">Kunden</h3>
+            <h3 className="text-sm font-medium text-[var(--text-strong)]">{txt.kunden}</h3>
             <button
               onClick={() => setZeigeKundeAnlegen((v) => !v)}
               className="text-xs text-amber-600 hover:underline"
             >
-              {zeigeKundeAnlegen ? "Abbrechen" : "+ Kunde anlegen"}
+              {zeigeKundeAnlegen ? txt.abbrechen : txt.kundeAnlegenPlus}
             </button>
           </div>
 
@@ -1000,7 +991,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                 type="email"
                 value={neuerKundeEmail}
                 onChange={(e) => setNeuerKundeEmail(e.target.value)}
-                placeholder="E-Mail (für die Einladung)"
+                placeholder={txt.emailEinladungPlatzhalter}
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
               />
               <div className="flex gap-2">
@@ -1008,14 +999,14 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                   type="text"
                   value={neuerKundeVorname}
                   onChange={(e) => setNeuerKundeVorname(e.target.value)}
-                  placeholder="Vorname"
+                  placeholder={txt.vornamePlatzhalter}
                   className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
                 <input
                   type="text"
                   value={neuerKundeNachname}
                   onChange={(e) => setNeuerKundeNachname(e.target.value)}
-                  placeholder="Nachname"
+                  placeholder={txt.nachnamePlatzhalter}
                   className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
               </div>
@@ -1023,7 +1014,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                 type="text"
                 value={neuerKundeTelefon}
                 onChange={(e) => setNeuerKundeTelefon(e.target.value)}
-                placeholder="Telefon / WhatsApp (optional)"
+                placeholder={txt.telefonWhatsappOptional}
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
               />
               <div className="flex gap-2">
@@ -1031,14 +1022,14 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                   type="text"
                   value={neuerKundeStrasse}
                   onChange={(e) => setNeuerKundeStrasse(e.target.value)}
-                  placeholder="Straße (optional)"
+                  placeholder={txt.strasseOptional}
                   className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
                 <input
                   type="text"
                   value={neuerKundeHausnummer}
                   onChange={(e) => setNeuerKundeHausnummer(e.target.value)}
-                  placeholder="Nr."
+                  placeholder={txt.nrLabel}
                   className="w-16 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
               </div>
@@ -1047,14 +1038,14 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                   type="text"
                   value={neuerKundePlz}
                   onChange={(e) => setNeuerKundePlz(e.target.value)}
-                  placeholder="PLZ"
+                  placeholder={txt.plzLabel}
                   className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
                 <input
                   type="text"
                   value={neuerKundeOrt}
                   onChange={(e) => setNeuerKundeOrt(e.target.value)}
-                  placeholder="Ort"
+                  placeholder={txt.ortLabel}
                   className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
               </div>
@@ -1092,13 +1083,13 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                 type="text"
                 value={neuerKundeUstId}
                 onChange={(e) => setNeuerKundeUstId(e.target.value)}
-                placeholder="USt-IdNr. (optional, z.B. ATU12345678)"
+                placeholder={txt.ustIdOptional}
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
               />
               <textarea
                 value={neuerKundeNotizen}
                 onChange={(e) => setNeuerKundeNotizen(e.target.value)}
-                placeholder="Notizen / Besonderheiten (optional)"
+                placeholder={txt.notizenOptional}
                 rows={2}
                 className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
               />
@@ -1108,7 +1099,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                   type="text"
                   value={neuerKundePasswort}
                   onChange={(e) => setNeuerKundePasswort(e.target.value)}
-                  placeholder="Passwort (optional, statt Mail-Einladung)"
+                  placeholder={txt.passwortOptionalPlatzhalter}
                   className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
                 <button
@@ -1116,12 +1107,11 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                   onClick={() => setNeuerKundePasswort(generierePasswort())}
                   className="rounded border border-[var(--border-input)] px-3 py-2 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
                 >
-                  Generieren
+                  {txt.generieren}
                 </button>
               </div>
               <p className="text-xs text-[var(--text-faint)]">
-                Leer lassen, um einen Einladungslink zu erzeugen. Mit Passwort: Account ist sofort nutzbar,
-                keine Mail wird verschickt – du gibst die Zugangsdaten selbst weiter. Für WhatsApp empfehlenswert (Links können dort vorab verbraucht werden).
+                {txt.passwortHinweis}
               </p>
 
               <button
@@ -1130,10 +1120,10 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                 className="w-full rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
                 {laedt
-                  ? "Wird angelegt…"
+                  ? txt.wirdAngelegt
                   : neuerKundePasswort.trim()
-                  ? "Kunde mit Passwort anlegen"
-                  : "Kunde anlegen & Link erzeugen"}
+                  ? txt.kundeMitPasswort
+                  : txt.kundeLinkErzeugen}
               </button>
             </div>
           )}

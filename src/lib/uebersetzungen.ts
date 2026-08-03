@@ -355,6 +355,99 @@ export interface Uebersetzung {
     rechnungErstellen: string;
     keinTarifZugewiesen: string;
   };
+  verwaltung: {
+    titel: string;
+    tabFirma: string;
+    tabTeam: string;
+    tabKunden: string;
+    tabDongles: string;
+    tabWerkzeuge: string;
+    tabIntegrationen: string;
+    bitteFirmaWaehlen: string;
+    firmenprofil: string;
+    logoAendern: string;
+    logoHinweis: string;
+    logoBreiteLabel: string;
+    pxHinweis: string;
+    slaReaktionszeitLabel: string;
+    slaPlatzhalter: string;
+    stunden: string;
+    slaHinweis: string;
+    firmennamePlatzhalter: string;
+    adresseLabel: string;
+    adressePlatzhalter: string;
+    telefonLabel: string;
+    telefonPlatzhalter: string;
+    emailLabel: string;
+    emailPlatzhalter: string;
+    websiteLabel: string;
+    oeffnungszeitenLabel: string;
+    oeffnungszeitenPlatzhalter: string;
+    standardpreisLabel: string;
+    individualisierung: string;
+    mottoLabel: string;
+    mottoPlatzhalter: string;
+    akzentfarbeLabel: string;
+    akzentfarbeHinweis: string;
+    heroBildLabel: string;
+    heroBildAendern: string;
+    heroBildHochladen: string;
+    heroBildHinweis: string;
+    registrierungslinkLabel: string;
+    kopiert: string;
+    kopieren: string;
+    registrierungslinkHinweis: string;
+    datenschutzLabel: string;
+    datenschutzHinweis: string;
+    datenschutzUrlPlatzhalter: string;
+    datenschutzTextPlatzhalter: string;
+    speichert: string;
+    speichern: string;
+    fehlerUngueltigerPreis: string;
+    fehlerSlugVergeben: string;
+    fehlerSpeichern: string;
+    erfolgGespeichert: string;
+    erfolgLogoAktualisiert: string;
+    fehlerLogoUpload: string;
+    erfolgBildAktualisiert: string;
+    fehlerBildUpload: string;
+    team: string;
+    abbrechen: string;
+    bestehendenNutzerZuweisen: string;
+    mitarbeiterAnlegenPlus: string;
+    zuweisenHinweis: string;
+    emailBestehenderAccount: string;
+    techniker: string;
+    orgAdmin: string;
+    wirdZugewiesen: string;
+    zuweisen: string;
+    emailEinladungPlatzhalter: string;
+    vornamePlatzhalter: string;
+    nachnamePlatzhalter: string;
+    telefonOptionalPlatzhalter: string;
+    passwortOptionalPlatzhalter: string;
+    generieren: string;
+    passwortHinweis: string;
+    wirdAngelegt: string;
+    mitarbeiterMitPasswort: string;
+    mitarbeiterLinkErzeugen: string;
+    abgebrochenNiemand: string;
+    istJetztTeilDieserFirma: string;
+    kunden: string;
+    kundeAnlegenPlus: string;
+    telefonWhatsappOptional: string;
+    strasseOptional: string;
+    nrLabel: string;
+    plzLabel: string;
+    ortLabel: string;
+    ustIdOptional: string;
+    notizenOptional: string;
+    kundeMitPasswort: string;
+    kundeLinkErzeugen: string;
+    fehlerAnlegenFehlgeschlagen: string;
+    fehlerZuweisenFehlgeschlagen: string;
+    trotzdemZuweisen: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -709,6 +802,99 @@ const de: Uebersetzung = {
     rechnungErstellen: "Rechnung erstellen",
     keinTarifZugewiesen: "Kein Tarif zugewiesen",
   },
+  verwaltung: {
+    titel: "Verwaltung",
+    tabFirma: "🏢 Firma",
+    tabTeam: "👥 Team",
+    tabKunden: "🤝 Kunden",
+    tabDongles: "🔑 Dongles & Lizenzen",
+    tabWerkzeuge: "🔧 Werkzeuge",
+    tabIntegrationen: "🔌 Integrationen",
+    bitteFirmaWaehlen: "Bitte zuerst eine Firma auswählen.",
+    firmenprofil: "Firmenprofil",
+    logoAendern: "Logo ändern",
+    logoHinweis: "Empfohlen: quadratisch, mind. 400×400px, max. 3 MB. Wird auf der Registrierungsseite bis zu 192×192px groß angezeigt.",
+    logoBreiteLabel: "Logo-Breite auf der Rechnung",
+    pxHinweis: "px (20–300, Standard 80)",
+    slaReaktionszeitLabel: "SLA-Reaktionszeit (optional)",
+    slaPlatzhalter: "leer = kein SLA",
+    stunden: "Stunden",
+    slaHinweis: "Tickets ohne Antwort innerhalb dieser Frist werden in der Übersicht als überfällig markiert.",
+    firmennamePlatzhalter: "Firmenname",
+    adresseLabel: "Adresse",
+    adressePlatzhalter: "Straße, PLZ, Ort",
+    telefonLabel: "Telefon",
+    telefonPlatzhalter: "+49 ...",
+    emailLabel: "E-Mail",
+    emailPlatzhalter: "support@firma.de",
+    websiteLabel: "Website",
+    oeffnungszeitenLabel: "Öffnungs- / Erreichbarkeitszeiten",
+    oeffnungszeitenPlatzhalter: "z.B. Mo–Fr 8–17 Uhr",
+    standardpreisLabel: "Standard-Minutenpreis in Euro (für die Abrechnung)",
+    individualisierung: "Individualisierung",
+    mottoLabel: "Motto / Begrüßungszeile",
+    mottoPlatzhalter: 'z.B. "Schnelle Hilfe, persönlich betreut"',
+    akzentfarbeLabel: "Akzentfarbe",
+    akzentfarbeHinweis: "Ersetzt die Button- und Akzentfarbe überall in der App für eure Mitarbeiter und Kunden.",
+    heroBildLabel: "Bild für die Startseite (optional)",
+    heroBildAendern: "Bild ändern",
+    heroBildHochladen: "+ Bild hochladen",
+    heroBildHinweis: "Empfohlen: Querformat, mind. 800px breit, max. 5 MB.",
+    registrierungslinkLabel: "Registrierungslink für Kunden",
+    kopiert: "Kopiert ✓",
+    kopieren: "Kopieren",
+    registrierungslinkHinweis: "Diesen Link auf eurer Website verlinken – Kunden können sich darüber selbst registrieren und landen direkt bei eurer Firma.",
+    datenschutzLabel: "Datenschutzerklärung",
+    datenschutzHinweis: "Wird Kunden bei der Registrierung als Pflicht-Link angezeigt. Entweder eine bestehende Seite verlinken, oder euren eigenen Text einfügen (z.B. von einem Generator wie eRecht24 oder Datenschutz-Generator.de erstellt) – dann zeigen wir ihn als eigene Seite innerhalb der App an. Link hat Vorrang, falls beides ausgefüllt ist.",
+    datenschutzUrlPlatzhalter: "https://eure-firma.de/datenschutz (optional)",
+    datenschutzTextPlatzhalter: "Oder hier den vollständigen Text eurer Datenschutzerklärung einfügen…",
+    speichert: "Speichert…",
+    speichern: "Speichern",
+    fehlerUngueltigerPreis: "Ungültiger Standardpreis – andere Felder wurden trotzdem gespeichert.",
+    fehlerSlugVergeben: "Dieser Link-Name ist schon vergeben, bitte einen anderen wählen.",
+    fehlerSpeichern: "Speichern fehlgeschlagen.",
+    erfolgGespeichert: "Gespeichert.",
+    erfolgLogoAktualisiert: "Logo aktualisiert.",
+    fehlerLogoUpload: "Logo-Upload fehlgeschlagen.",
+    erfolgBildAktualisiert: "Bild aktualisiert.",
+    fehlerBildUpload: "Bild-Upload fehlgeschlagen.",
+    team: "Team",
+    abbrechen: "Abbrechen",
+    bestehendenNutzerZuweisen: "Bestehenden Nutzer zuweisen",
+    mitarbeiterAnlegenPlus: "+ Mitarbeiter anlegen",
+    zuweisenHinweis: "Für Personen, die schon einen Account haben – kein neuer Account nötig. Als Techniker/Org-Admin arbeitet die Person danach zusätzlich hier, bestehende Mitgliedschaften bei anderen Firmen bleiben bestehen. Nur als Kunde ist ein Account weiterhin nur einer Firma zugeordnet (du bekommst dort vorher eine Warnung, falls die Person schon Kunde woanders ist).",
+    emailBestehenderAccount: "E-Mail des bestehenden Accounts",
+    techniker: "Techniker",
+    orgAdmin: "Org-Admin",
+    wirdZugewiesen: "Wird zugewiesen…",
+    zuweisen: "Zuweisen",
+    emailEinladungPlatzhalter: "E-Mail (für die Einladung)",
+    vornamePlatzhalter: "Vorname",
+    nachnamePlatzhalter: "Nachname",
+    telefonOptionalPlatzhalter: "Telefon (optional)",
+    passwortOptionalPlatzhalter: "Passwort (optional, statt Mail-Einladung)",
+    generieren: "Generieren",
+    passwortHinweis: "Leer lassen, um einen Einladungslink zu erzeugen. Mit Passwort: Account ist sofort nutzbar, keine Mail wird verschickt – du gibst die Zugangsdaten selbst weiter. Für WhatsApp empfehlenswert (Links können dort vorab verbraucht werden).",
+    wirdAngelegt: "Wird angelegt…",
+    mitarbeiterMitPasswort: "Mitarbeiter mit Passwort anlegen",
+    mitarbeiterLinkErzeugen: "Mitarbeiter anlegen & Link erzeugen",
+    abgebrochenNiemand: "Abgebrochen – niemand wurde umgezogen.",
+    istJetztTeilDieserFirma: "ist jetzt Teil dieser Firma.",
+    kunden: "Kunden",
+    kundeAnlegenPlus: "+ Kunde anlegen",
+    telefonWhatsappOptional: "Telefon / WhatsApp (optional)",
+    strasseOptional: "Straße (optional)",
+    nrLabel: "Nr.",
+    plzLabel: "PLZ",
+    ortLabel: "Ort",
+    ustIdOptional: "USt-IdNr. (optional, z.B. ATU12345678)",
+    notizenOptional: "Notizen / Besonderheiten (optional)",
+    kundeMitPasswort: "Kunde mit Passwort anlegen",
+    kundeLinkErzeugen: "Kunde anlegen & Link erzeugen",
+    fehlerAnlegenFehlgeschlagen: "Anlegen fehlgeschlagen.",
+    fehlerZuweisenFehlgeschlagen: "Zuweisen fehlgeschlagen.",
+    trotzdemZuweisen: "Trotzdem zuweisen?",
+  },
 };
 
 const en: Uebersetzung = {
@@ -1062,6 +1248,99 @@ const en: Uebersetzung = {
     entwurfAnsehen: "View draft",
     rechnungErstellen: "Create invoice",
     keinTarifZugewiesen: "No plan assigned",
+  },
+  verwaltung: {
+    titel: "Administration",
+    tabFirma: "🏢 Company",
+    tabTeam: "👥 Team",
+    tabKunden: "🤝 Customers",
+    tabDongles: "🔑 Dongles & Licenses",
+    tabWerkzeuge: "🔧 Tools",
+    tabIntegrationen: "🔌 Integrations",
+    bitteFirmaWaehlen: "Please choose a company first.",
+    firmenprofil: "Company profile",
+    logoAendern: "Change logo",
+    logoHinweis: "Recommended: square, at least 400×400px, max. 3 MB. Displayed up to 192×192px on the registration page.",
+    logoBreiteLabel: "Logo width on the invoice",
+    pxHinweis: "px (20–300, default 80)",
+    slaReaktionszeitLabel: "SLA response time (optional)",
+    slaPlatzhalter: "empty = no SLA",
+    stunden: "hours",
+    slaHinweis: "Tickets without a reply within this deadline are marked as overdue in the overview.",
+    firmennamePlatzhalter: "Company name",
+    adresseLabel: "Address",
+    adressePlatzhalter: "Street, ZIP, city",
+    telefonLabel: "Phone",
+    telefonPlatzhalter: "+1 ...",
+    emailLabel: "Email",
+    emailPlatzhalter: "support@company.com",
+    websiteLabel: "Website",
+    oeffnungszeitenLabel: "Opening / availability hours",
+    oeffnungszeitenPlatzhalter: "e.g. Mon–Fri 8am–5pm",
+    standardpreisLabel: "Default price per minute in EUR (for billing)",
+    individualisierung: "Customization",
+    mottoLabel: "Motto / greeting line",
+    mottoPlatzhalter: 'e.g. "Fast help, personal service"',
+    akzentfarbeLabel: "Accent color",
+    akzentfarbeHinweis: "Replaces the button and accent color throughout the app for your staff and customers.",
+    heroBildLabel: "Homepage image (optional)",
+    heroBildAendern: "Change image",
+    heroBildHochladen: "+ Upload image",
+    heroBildHinweis: "Recommended: landscape, at least 800px wide, max. 5 MB.",
+    registrierungslinkLabel: "Registration link for customers",
+    kopiert: "Copied ✓",
+    kopieren: "Copy",
+    registrierungslinkHinweis: "Link this on your website – customers can register through it themselves and land directly at your company.",
+    datenschutzLabel: "Privacy policy",
+    datenschutzHinweis: "Shown to customers as a required link during registration. Either link an existing page, or paste your own text (e.g. generated by a tool like eRecht24 or a privacy policy generator) – we'll then show it as its own page within the app. The link takes precedence if both are filled in.",
+    datenschutzUrlPlatzhalter: "https://your-company.com/privacy (optional)",
+    datenschutzTextPlatzhalter: "Or paste the full text of your privacy policy here…",
+    speichert: "Saving…",
+    speichern: "Save",
+    fehlerUngueltigerPreis: "Invalid default price – other fields were saved anyway.",
+    fehlerSlugVergeben: "This link name is already taken, please choose another.",
+    fehlerSpeichern: "Failed to save.",
+    erfolgGespeichert: "Saved.",
+    erfolgLogoAktualisiert: "Logo updated.",
+    fehlerLogoUpload: "Logo upload failed.",
+    erfolgBildAktualisiert: "Image updated.",
+    fehlerBildUpload: "Image upload failed.",
+    team: "Team",
+    abbrechen: "Cancel",
+    bestehendenNutzerZuweisen: "Assign existing user",
+    mitarbeiterAnlegenPlus: "+ Add staff member",
+    zuweisenHinweis: "For people who already have an account – no new account needed. As a technician/org admin, the person will then also work here; existing memberships at other companies remain. Only as a customer is an account still limited to a single company (you'll get a warning beforehand if the person is already a customer elsewhere).",
+    emailBestehenderAccount: "Email of the existing account",
+    techniker: "Technician",
+    orgAdmin: "Org admin",
+    wirdZugewiesen: "Assigning…",
+    zuweisen: "Assign",
+    emailEinladungPlatzhalter: "Email (for the invitation)",
+    vornamePlatzhalter: "First name",
+    nachnamePlatzhalter: "Last name",
+    telefonOptionalPlatzhalter: "Phone (optional)",
+    passwortOptionalPlatzhalter: "Password (optional, instead of email invite)",
+    generieren: "Generate",
+    passwortHinweis: "Leave empty to generate an invite link. With a password: the account is usable immediately, no email is sent – you pass on the credentials yourself. Recommended for WhatsApp (links can get consumed there in advance).",
+    wirdAngelegt: "Creating…",
+    mitarbeiterMitPasswort: "Create staff member with password",
+    mitarbeiterLinkErzeugen: "Create staff member & generate link",
+    abgebrochenNiemand: "Cancelled – nobody was moved.",
+    istJetztTeilDieserFirma: "is now part of this company.",
+    kunden: "Customers",
+    kundeAnlegenPlus: "+ Add customer",
+    telefonWhatsappOptional: "Phone / WhatsApp (optional)",
+    strasseOptional: "Street (optional)",
+    nrLabel: "No.",
+    plzLabel: "ZIP",
+    ortLabel: "City",
+    ustIdOptional: "VAT ID (optional, e.g. ATU12345678)",
+    notizenOptional: "Notes / special details (optional)",
+    kundeMitPasswort: "Create customer with password",
+    kundeLinkErzeugen: "Create customer & generate link",
+    fehlerAnlegenFehlgeschlagen: "Failed to create.",
+    fehlerZuweisenFehlgeschlagen: "Assignment failed.",
+    trotzdemZuweisen: "Assign anyway?",
   },
 };
 
