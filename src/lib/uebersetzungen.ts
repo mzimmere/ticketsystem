@@ -632,6 +632,49 @@ export interface Uebersetzung {
     nochKeineVorlagen: string;
     loeschen: string;
   };
+  faqVerwaltung: {
+    frageUndAntwortPflicht: string;
+    loeschenConfirm: string;
+    titel: string;
+    neuerEintrag: string;
+    oeffentlicherLink: string;
+    kopiert: string;
+    kopieren: string;
+    vorschau: string;
+    slugHinweisVor: string;
+    firmaRegistrierungslink: string;
+    slugHinweisNach: string;
+    sichtbarkeitHinweis: string;
+    fragePlatzhalter: string;
+    antwortPlatzhalter: string;
+    kategoriePlatzhalter: string;
+    oeffentlich: string;
+    speichern: string;
+    abbrechen: string;
+    nochKeineEintraege: string;
+    intern: string;
+    loeschen: string;
+    kategorieLabel: string;
+  };
+  reportingExport: {
+    titel: string;
+    beschreibung: string;
+    von: string;
+    bis: string;
+    ticketsLabel: string;
+    ticketsSub: string;
+    zeitLabel: string;
+    zeitSub: string;
+    csatLabel: string;
+    csatSub: string;
+    csvTicketsKopf: string[];
+    csvZeitKopf: string[];
+    csvCsatKopf: string[];
+    positiv: string;
+    negativ: string;
+    positivMitEmoji: string;
+    negativMitEmoji: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -1263,6 +1306,49 @@ const de: Uebersetzung = {
     nochKeineVorlagen: "Noch keine Vorlagen angelegt.",
     loeschen: "Löschen",
   },
+  faqVerwaltung: {
+    frageUndAntwortPflicht: "Frage und Antwort sind Pflichtfelder.",
+    loeschenConfirm: "FAQ-Eintrag wirklich löschen?",
+    titel: "FAQ / Wissensdatenbank",
+    neuerEintrag: "+ Neuer Eintrag",
+    oeffentlicherLink: "🔗 Öffentlicher Link:",
+    kopiert: "✓ Kopiert",
+    kopieren: "Kopieren",
+    vorschau: "↗ Vorschau",
+    slugHinweisVor: "Trage unter",
+    firmaRegistrierungslink: "Firma → Registrierungslink",
+    slugHinweisNach: "einen Slug ein, damit der öffentliche FAQ-Link aktiviert wird.",
+    sichtbarkeitHinweis: "Öffentliche Einträge sind für Kunden im Portal sichtbar. Interne Einträge nur für dein Team.",
+    fragePlatzhalter: "Frage (z.B. Wie setze ich mein Passwort zurück?)",
+    antwortPlatzhalter: "Antwort…",
+    kategoriePlatzhalter: "Kategorie (optional)",
+    oeffentlich: "Öffentlich",
+    speichern: "Speichern",
+    abbrechen: "Abbrechen",
+    nochKeineEintraege: "Noch keine Einträge. Füge häufig gestellte Fragen hinzu, damit Kunden sich selbst helfen können.",
+    intern: "Intern",
+    loeschen: "Löschen",
+    kategorieLabel: "Kategorie",
+  },
+  reportingExport: {
+    titel: "Daten exportieren",
+    beschreibung: "Alle Exporte als CSV-Datei (UTF-8, Komma-getrennt) – direkt in Excel oder Google Sheets öffenbar.",
+    von: "Von",
+    bis: "Bis",
+    ticketsLabel: "🎫 Tickets exportieren",
+    ticketsSub: "Alle Tickets mit Status, SLA, CSAT",
+    zeitLabel: "⏱ Zeiterfassung exportieren",
+    zeitSub: "Alle Zeiteinträge mit Minuten und Beschreibung",
+    csatLabel: "⭐ CSAT-Bewertungen exportieren",
+    csatSub: "Nur Tickets mit Kundenbewertung",
+    csvTicketsKopf: ["Ticket-Nr", "Titel", "Status", "Priorität", "Erstellt", "Erste Antwort", "Reaktion fällig", "Lösung fällig", "CSAT", "Kunde", "Zugewiesen"],
+    csvZeitKopf: ["Datum", "Minuten", "Stunden", "Beschreibung", "Art", "Ticket-Nr", "Ticket", "Techniker", "Kunde"],
+    csvCsatKopf: ["Ticket-Nr", "Titel", "Bewertung", "Bewertet am", "Kunde", "Techniker"],
+    positiv: "Positiv",
+    negativ: "Negativ",
+    positivMitEmoji: "Positiv 👍",
+    negativMitEmoji: "Negativ 👎",
+  },
 };
 
 const en: Uebersetzung = {
@@ -1893,6 +1979,49 @@ const en: Uebersetzung = {
     abbrechen: "Cancel",
     nochKeineVorlagen: "No templates created yet.",
     loeschen: "Delete",
+  },
+  faqVerwaltung: {
+    frageUndAntwortPflicht: "Question and answer are required fields.",
+    loeschenConfirm: "Really delete this FAQ entry?",
+    titel: "FAQ / Knowledge base",
+    neuerEintrag: "+ New entry",
+    oeffentlicherLink: "🔗 Public link:",
+    kopiert: "✓ Copied",
+    kopieren: "Copy",
+    vorschau: "↗ Preview",
+    slugHinweisVor: "Enter a slug under",
+    firmaRegistrierungslink: "Company → Registration link",
+    slugHinweisNach: "to activate the public FAQ link.",
+    sichtbarkeitHinweis: "Public entries are visible to customers in the portal. Internal entries are only visible to your team.",
+    fragePlatzhalter: "Question (e.g. How do I reset my password?)",
+    antwortPlatzhalter: "Answer…",
+    kategoriePlatzhalter: "Category (optional)",
+    oeffentlich: "Public",
+    speichern: "Save",
+    abbrechen: "Cancel",
+    nochKeineEintraege: "No entries yet. Add frequently asked questions so customers can help themselves.",
+    intern: "Internal",
+    loeschen: "Delete",
+    kategorieLabel: "Category",
+  },
+  reportingExport: {
+    titel: "Export data",
+    beschreibung: "All exports as CSV files (UTF-8, comma-separated) – can be opened directly in Excel or Google Sheets.",
+    von: "From",
+    bis: "To",
+    ticketsLabel: "🎫 Export tickets",
+    ticketsSub: "All tickets with status, SLA, CSAT",
+    zeitLabel: "⏱ Export time tracking",
+    zeitSub: "All time entries with minutes and description",
+    csatLabel: "⭐ Export CSAT ratings",
+    csatSub: "Only tickets with customer rating",
+    csvTicketsKopf: ["Ticket no.", "Title", "Status", "Priority", "Created", "First response", "Response due", "Resolution due", "CSAT", "Customer", "Assigned"],
+    csvZeitKopf: ["Date", "Minutes", "Hours", "Description", "Type", "Ticket no.", "Ticket", "Technician", "Customer"],
+    csvCsatKopf: ["Ticket no.", "Title", "Rating", "Rated on", "Customer", "Technician"],
+    positiv: "Positive",
+    negativ: "Negative",
+    positivMitEmoji: "Positive 👍",
+    negativMitEmoji: "Negative 👎",
   },
 };
 

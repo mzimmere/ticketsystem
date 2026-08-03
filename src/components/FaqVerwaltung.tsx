@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface FaqEintrag {
   id: string;
@@ -11,6 +13,8 @@ interface FaqEintrag {
 }
 
 export default function FaqVerwaltung({ organisationId, slug }: { organisationId: string; slug?: string | null }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).faqVerwaltung;
   const [eintraege, setEintraege] = useState<FaqEintrag[]>([]);
   const [offen, setOffen] = useState<string | null>(null);
   const [zeigeNeu, setZeigeNeu] = useState(false);
@@ -33,7 +37,7 @@ export default function FaqVerwaltung({ organisationId, slug }: { organisationId
   }
 
   async function speichern() {
-    if (!frage.trim() || !antwort.trim()) { setHinweis("Frage und Antwort sind Pflichtfelder."); return; }
+    if (!frage.trim() || !antwort.trim()) { setHinweis(txt.frageUndAntwortPflicht); return; }
     setLaedt(true);
     await supabase.from("faq_eintraege").insert({
       organisation_id: organisationId,
@@ -52,7 +56,7 @@ export default function FaqVerwaltung({ organisationId, slug }: { organisationId
   }
 
   async function loeschen(id: string) {
-    if (!confirm("FAQ-Eintrag wirklich löschen?")) return;
+    if (!confirm(txt.loeschenConfirm)) return;
     await supabase.from("faq_eintraege").delete().eq("id", id);
     laden();
   }
@@ -62,47 +66,47 @@ export default function FaqVerwaltung({ organisationId, slug }: { organisationId
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-[var(--text-strong)]">FAQ / Wissensdatenbank</h3>
+        <h3 className="text-sm font-medium text-[var(--text-strong)]">{txt.titel}</h3>
         <button onClick={() => setZeigeNeu(!zeigeNeu)} className="rounded bg-akzent px-3 py-1.5 text-xs font-medium text-white">
-          + Neuer Eintrag
+          {txt.neuerEintrag}
         </button>
       </div>
 
       {faqUrl ? (
         <div className="flex items-center gap-2 rounded-lg bg-[var(--bg-muted)] px-3 py-2">
-          <span className="text-xs text-[var(--text-faint)]">🔗 Öffentlicher Link:</span>
+          <span className="text-xs text-[var(--text-faint)]">{txt.oeffentlicherLink}</span>
           <code className="flex-1 truncate text-xs text-[var(--text-soft)]">{faqUrl}</code>
           <button
             onClick={() => { navigator.clipboard.writeText(faqUrl); setLinkKopiert(true); setTimeout(() => setLinkKopiert(false), 2000); }}
             className="shrink-0 rounded border border-[var(--border-input)] px-2 py-1 text-xs text-[var(--text-faint)] hover:bg-[var(--bg-muted)]"
           >
-            {linkKopiert ? "✓ Kopiert" : "Kopieren"}
+            {linkKopiert ? txt.kopiert : txt.kopieren}
           </button>
           <a href={faqUrl} target="_blank" rel="noreferrer"
             className="shrink-0 rounded border border-[var(--border-input)] px-2 py-1 text-xs text-[var(--text-faint)] hover:bg-[var(--bg-muted)]">
-            ↗ Vorschau
+            {txt.vorschau}
           </a>
         </div>
       ) : (
         <p className="text-xs text-[var(--text-faint)]">
-          Trage unter <strong>Firma → Registrierungslink</strong> einen Slug ein, damit der öffentliche FAQ-Link aktiviert wird.
+          {txt.slugHinweisVor} <strong>{txt.firmaRegistrierungslink}</strong> {txt.slugHinweisNach}
         </p>
       )}
       <p className="text-xs text-[var(--text-faint)]">
-        Öffentliche Einträge sind für Kunden im Portal sichtbar. Interne Einträge nur für dein Team.
+        {txt.sichtbarkeitHinweis}
       </p>
 
       {zeigeNeu && (
         <div className="space-y-2 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4">
           <input type="text" value={frage} onChange={(e) => setFrage(e.target.value)}
-            placeholder="Frage (z.B. Wie setze ich mein Passwort zurück?)"
+            placeholder={txt.fragePlatzhalter}
             className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
           <textarea value={antwort} onChange={(e) => setAntwort(e.target.value)}
-            rows={4} placeholder="Antwort…"
+            rows={4} placeholder={txt.antwortPlatzhalter}
             className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
           <div className="flex gap-2">
             <input type="text" value={kategorie} onChange={(e) => setKategorie(e.target.value)}
-              placeholder="Kategorie (optional)"
+              placeholder={txt.kategoriePlatzhalter}
               list="faq-kategorien"
               className="flex-1 rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
             <datalist id="faq-kategorien">
@@ -110,19 +114,19 @@ export default function FaqVerwaltung({ organisationId, slug }: { organisationId
             </datalist>
             <label className="flex items-center gap-1.5 text-xs text-[var(--text-soft)]">
               <input type="checkbox" checked={oeffentlich} onChange={(e) => setOeffentlich(e.target.checked)} className="accent-amber-500" />
-              Öffentlich
+              {txt.oeffentlich}
             </label>
           </div>
           {hinweis && <p className="text-xs text-red-600">{hinweis}</p>}
           <div className="flex gap-2">
-            <button onClick={speichern} disabled={laedt} className="rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">Speichern</button>
-            <button onClick={() => setZeigeNeu(false)} className="rounded border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-soft)]">Abbrechen</button>
+            <button onClick={speichern} disabled={laedt} className="rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">{txt.speichern}</button>
+            <button onClick={() => setZeigeNeu(false)} className="rounded border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-soft)]">{txt.abbrechen}</button>
           </div>
         </div>
       )}
 
       {eintraege.length === 0 && !zeigeNeu && (
-        <p className="text-xs text-[var(--text-faint)]">Noch keine Einträge. Füge häufig gestellte Fragen hinzu, damit Kunden sich selbst helfen können.</p>
+        <p className="text-xs text-[var(--text-faint)]">{txt.nochKeineEintraege}</p>
       )}
 
       <div className="space-y-1.5">
@@ -131,7 +135,7 @@ export default function FaqVerwaltung({ organisationId, slug }: { organisationId
             <button onClick={() => setOffen(offen === e.id ? null : e.id)}
               className="flex w-full items-center gap-2 px-4 py-3 text-left">
               <span className={`shrink-0 text-[0.6rem] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded ${e.oeffentlich ? "bg-green-100 text-green-700" : "bg-[var(--bg-muted)] text-[var(--text-faint)]"}`}>
-                {e.oeffentlich ? "Öffentlich" : "Intern"}
+                {e.oeffentlich ? txt.oeffentlich : txt.intern}
               </span>
               {e.kategorie && <span className="shrink-0 text-xs text-[var(--text-faint)]">{e.kategorie} ·</span>}
               <span className="flex-1 truncate text-sm text-[var(--text-strong)]">{e.frage}</span>
@@ -153,6 +157,8 @@ function FaqBearbeiten({ eintrag, onSpeichern, onLoeschen, kategorien }: {
   onLoeschen: (id: string) => void;
   kategorien: string[];
 }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).faqVerwaltung;
   const [e, setE] = useState({ ...eintrag });
   return (
     <div className="border-t border-[var(--border)] p-4 space-y-2">
@@ -162,17 +168,17 @@ function FaqBearbeiten({ eintrag, onSpeichern, onLoeschen, kategorien }: {
         rows={4} className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
       <div className="flex gap-2">
         <input type="text" value={e.kategorie ?? ""} onChange={(x) => setE({ ...e, kategorie: x.target.value || null })}
-          placeholder="Kategorie" list="faq-kat-edit"
+          placeholder={txt.kategorieLabel} list="faq-kat-edit"
           className="flex-1 rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
         <datalist id="faq-kat-edit">{kategorien.map((k) => <option key={k} value={k} />)}</datalist>
         <label className="flex items-center gap-1.5 text-xs text-[var(--text-soft)]">
           <input type="checkbox" checked={e.oeffentlich} onChange={(x) => setE({ ...e, oeffentlich: x.target.checked })} className="accent-amber-500" />
-          Öffentlich
+          {txt.oeffentlich}
         </label>
       </div>
       <div className="flex gap-2">
-        <button onClick={() => onSpeichern(e)} className="rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white">Speichern</button>
-        <button onClick={() => onLoeschen(eintrag.id)} className="rounded border border-red-300 px-3 py-1.5 text-xs text-red-600">Löschen</button>
+        <button onClick={() => onSpeichern(e)} className="rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white">{txt.speichern}</button>
+        <button onClick={() => onLoeschen(eintrag.id)} className="rounded border border-red-300 px-3 py-1.5 text-xs text-red-600">{txt.loeschen}</button>
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface ReportingExportProps {
   organisationId: string;
@@ -21,6 +23,8 @@ function download(inhalt: string, dateiname: string, typ = "text/csv;charset=utf
 }
 
 export default function ReportingExport({ organisationId }: ReportingExportProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).reportingExport;
   const [von, setVon] = useState(() => {
     const d = new Date(); d.setMonth(d.getMonth() - 1);
     return d.toISOString().slice(0, 10);
@@ -40,14 +44,14 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
 
     if (!data) { setLaedt(null); return; }
 
-    const kopf = csvZeile(["Ticket-Nr", "Titel", "Status", "Priorität", "Erstellt", "Erste Antwort", "Reaktion fällig", "Lösung fällig", "CSAT", "Kunde", "Zugewiesen"]);
+    const kopf = csvZeile(txt.csvTicketsKopf);
     const zeilen = data.map((t) => csvZeile([
       t.ticket_nr, t.titel, t.status, t.prioritaet,
       t.erstellt_am?.slice(0, 16).replace("T", " "),
       t.erste_antwort_am?.slice(0, 16).replace("T", " ") ?? null,
       t.reaktion_faellig_am?.slice(0, 16).replace("T", " ") ?? null,
       t.loesung_faellig_am?.slice(0, 16).replace("T", " ") ?? null,
-      t.csat_bewertung === 1 ? "Positiv" : t.csat_bewertung === 2 ? "Negativ" : null,
+      t.csat_bewertung === 1 ? txt.positiv : t.csat_bewertung === 2 ? txt.negativ : null,
       (t.kunde as unknown as { name: string | null } | null)?.name ?? null,
       (t.zugewiesen as unknown as { name: string | null } | null)?.name ?? null,
     ]));
@@ -67,7 +71,7 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
 
     if (!data) { setLaedt(null); return; }
 
-    const kopf = csvZeile(["Datum", "Minuten", "Stunden", "Beschreibung", "Art", "Ticket-Nr", "Ticket", "Techniker", "Kunde"]);
+    const kopf = csvZeile(txt.csvZeitKopf);
     const zeilen = data.map((z) => csvZeile([
       z.erstellt_am?.slice(0, 10),
       z.minuten, (z.minuten / 60).toFixed(2),
@@ -95,10 +99,10 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
 
     if (!data) { setLaedt(null); return; }
 
-    const kopf = csvZeile(["Ticket-Nr", "Titel", "Bewertung", "Bewertet am", "Kunde", "Techniker"]);
+    const kopf = csvZeile(txt.csvCsatKopf);
     const zeilen = data.map((t) => csvZeile([
       t.ticket_nr, t.titel,
-      t.csat_bewertung === 1 ? "Positiv 👍" : "Negativ 👎",
+      t.csat_bewertung === 1 ? txt.positivMitEmoji : txt.negativMitEmoji,
       t.csat_am?.slice(0, 10),
       (t.kunde as unknown as { name: string | null } | null)?.name ?? null,
       (t.zugewiesen as unknown as { name: string | null } | null)?.name ?? null,
@@ -109,19 +113,19 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium text-[var(--text-strong)]">Daten exportieren</h3>
+      <h3 className="text-sm font-medium text-[var(--text-strong)]">{txt.titel}</h3>
       <p className="text-xs text-[var(--text-faint)]">
-        Alle Exporte als CSV-Datei (UTF-8, Komma-getrennt) – direkt in Excel oder Google Sheets öffenbar.
+        {txt.beschreibung}
       </p>
 
       <div className="flex gap-3">
         <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Von</label>
+          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.von}</label>
           <input type="date" value={von} onChange={(e) => setVon(e.target.value)}
             className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
         </div>
         <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Bis</label>
+          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.bis}</label>
           <input type="date" value={bis} onChange={(e) => setBis(e.target.value)}
             className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
         </div>
@@ -129,9 +133,9 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
 
       <div className="grid grid-cols-1 gap-2">
         {[
-          { id: "tickets", label: "🎫 Tickets exportieren", sub: "Alle Tickets mit Status, SLA, CSAT", fn: exportTickets },
-          { id: "zeit", label: "⏱ Zeiterfassung exportieren", sub: "Alle Zeiteinträge mit Minuten und Beschreibung", fn: exportZeit },
-          { id: "csat", label: "⭐ CSAT-Bewertungen exportieren", sub: "Nur Tickets mit Kundenbewertung", fn: exportCsat },
+          { id: "tickets", label: txt.ticketsLabel, sub: txt.ticketsSub, fn: exportTickets },
+          { id: "zeit", label: txt.zeitLabel, sub: txt.zeitSub, fn: exportZeit },
+          { id: "csat", label: txt.csatLabel, sub: txt.csatSub, fn: exportCsat },
         ].map((exp) => (
           <button key={exp.id} onClick={exp.fn} disabled={laedt !== null}
             className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-3 text-left hover:bg-[var(--bg-muted)] disabled:opacity-50 transition-colors">
