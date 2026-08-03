@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface Kategorie {
   id: string;
@@ -7,6 +9,8 @@ interface Kategorie {
 }
 
 export default function HardwareKategorienVerwaltung({ organisationId }: { organisationId: string }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).hardwareKategorienVerwaltung;
   const [kategorien, setKategorien] = useState<Kategorie[]>([]);
   const [neuerName, setNeuerName] = useState("");
   const [laedt, setLaedt] = useState(false);
@@ -28,7 +32,7 @@ export default function HardwareKategorienVerwaltung({ organisationId }: { organ
 
   async function anlegen() {
     if (!neuerName.trim()) {
-      setHinweis("Name erforderlich.");
+      setHinweis(txt.nameErforderlich);
       return;
     }
     setLaedt(true);
@@ -37,7 +41,7 @@ export default function HardwareKategorienVerwaltung({ organisationId }: { organ
       .insert({ organisation_id: organisationId, name: neuerName.trim() });
     setLaedt(false);
     if (error) {
-      setHinweis(error.message.includes("unique") ? "Diese Kategorie existiert bereits." : "Fehler.");
+      setHinweis(error.message.includes("unique") ? txt.kategorieExistiertBereits : txt.fehler);
       return;
     }
     setNeuerName("");
@@ -46,7 +50,7 @@ export default function HardwareKategorienVerwaltung({ organisationId }: { organ
   }
 
   async function loeschen(id: string, name: string) {
-    if (!confirm(`Kategorie "${name}" löschen? Alle dazu erfassten Werte bei Kunden werden mitgelöscht.`)) {
+    if (!confirm(txt.loeschenConfirmTemplate.replace("{name}", name))) {
       return;
     }
     await supabase.from("hardware_kategorien").delete().eq("id", id);
@@ -55,10 +59,9 @@ export default function HardwareKategorienVerwaltung({ organisationId }: { organ
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-[var(--text-strong)]">Hardware-Kategorien</h3>
+      <h3 className="text-sm font-medium text-[var(--text-strong)]">{txt.titel}</h3>
       <p className="text-xs text-[var(--text-faint)]">
-        Frei definierbare Kategorien, z.B. Intraoral-Scanner, Desktop-Scanner, Exocad-Datenbank,
-        Fräsmaschine, Drucker. Erscheinen dann bei jedem Kunden zur schnellen Erfassung per Klick.
+        {txt.beschreibung}
       </p>
       <div className="flex flex-wrap gap-1.5">
         {kategorien.map((k) => (
@@ -72,7 +75,7 @@ export default function HardwareKategorienVerwaltung({ organisationId }: { organ
             </button>
           </span>
         ))}
-        {kategorien.length === 0 && <p className="text-xs text-[var(--text-faint)]">Noch keine Kategorien.</p>}
+        {kategorien.length === 0 && <p className="text-xs text-[var(--text-faint)]">{txt.nochKeineKategorien}</p>}
       </div>
       <div className="flex items-center gap-2">
         <input
@@ -80,7 +83,7 @@ export default function HardwareKategorienVerwaltung({ organisationId }: { organ
           value={neuerName}
           onChange={(e) => setNeuerName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && anlegen()}
-          placeholder="Neue Kategorie, z.B. Intraoral-Scanner…"
+          placeholder={txt.neueKategoriePlatzhalter}
           className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
         />
         <button

@@ -572,6 +572,66 @@ export interface Uebersetzung {
     wenigerAnzeigen: string;
     alleAnzeigenTemplate: string;
   };
+  tagVerwaltung: {
+    titel: string;
+    nameErforderlich: string;
+    tagExistiertBereits: string;
+    fehler: string;
+    tagLoeschenConfirm: string;
+    nochKeineTags: string;
+    neuerTagPlatzhalter: string;
+  };
+  slaVerwaltung: {
+    titel: string;
+    slaAktivLabel: string;
+    ersteReaktion: string;
+    loesung: string;
+    autoSchliessenLabel: string;
+    autoSchliessenPlatzhalter: string;
+    tage: string;
+    autoSchliessenHinweis: string;
+    fehlerSpeichern: string;
+    gespeichert: string;
+    speichert: string;
+    speichern: string;
+  };
+  hardwareKategorienVerwaltung: {
+    titel: string;
+    beschreibung: string;
+    nameErforderlich: string;
+    kategorieExistiertBereits: string;
+    fehler: string;
+    loeschenConfirmTemplate: string;
+    nochKeineKategorien: string;
+    neueKategoriePlatzhalter: string;
+  };
+  makroVerwaltung: {
+    titelUndInhaltErforderlich: string;
+    fehlerSpeichern: string;
+    makroLoeschenConfirm: string;
+    titel: string;
+    neuesMakro: string;
+    titelPlatzhalter: string;
+    inhaltPlatzhalter: string;
+    speichern: string;
+    abbrechen: string;
+    nochKeineMakros: string;
+    loeschen: string;
+  };
+  vorlagenVerwaltung: {
+    titelUndBeschreibungErforderlich: string;
+    fehlerSpeichern: string;
+    vorlageLoeschenConfirm: string;
+    titel: string;
+    neueVorlage: string;
+    beschreibung: string;
+    titelPlatzhalter: string;
+    beschreibungPlatzhalter: string;
+    speichern: string;
+    abbrechen: string;
+    nochKeineVorlagen: string;
+    loeschen: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -1143,6 +1203,66 @@ const de: Uebersetzung = {
     wenigerAnzeigen: "Weniger anzeigen",
     alleAnzeigenTemplate: "Alle {n} anzeigen",
   },
+  tagVerwaltung: {
+    titel: "Tags / Kategorien",
+    nameErforderlich: "Name erforderlich.",
+    tagExistiertBereits: "Dieser Tag existiert bereits.",
+    fehler: "Fehler.",
+    tagLoeschenConfirm: "Tag löschen? Er wird auch von allen Tickets entfernt.",
+    nochKeineTags: "Noch keine Tags.",
+    neuerTagPlatzhalter: "Neuer Tag…",
+  },
+  slaVerwaltung: {
+    titel: "SLA & Automatisierung",
+    slaAktivLabel: "SLA-Fristen aktiv (werden beim Anlegen neuer Tickets berechnet)",
+    ersteReaktion: "Erste Reaktion (Stunden)",
+    loesung: "Lösung (Stunden)",
+    autoSchliessenLabel: "Auto-Schließen (Tage ohne Kunden-Antwort, leer = deaktiviert)",
+    autoSchliessenPlatzhalter: "z.B. 7",
+    tage: "Tage",
+    autoSchliessenHinweis: 'Tickets im Status "Wartet auf Kunde" werden nach dieser Zeit automatisch geschlossen.',
+    fehlerSpeichern: "Fehler beim Speichern.",
+    gespeichert: "Gespeichert.",
+    speichert: "Speichert…",
+    speichern: "Speichern",
+  },
+  hardwareKategorienVerwaltung: {
+    titel: "Hardware-Kategorien",
+    beschreibung: "Frei definierbare Kategorien, z.B. Intraoral-Scanner, Desktop-Scanner, Exocad-Datenbank, Fräsmaschine, Drucker. Erscheinen dann bei jedem Kunden zur schnellen Erfassung per Klick.",
+    nameErforderlich: "Name erforderlich.",
+    kategorieExistiertBereits: "Diese Kategorie existiert bereits.",
+    fehler: "Fehler.",
+    loeschenConfirmTemplate: 'Kategorie "{name}" löschen? Alle dazu erfassten Werte bei Kunden werden mitgelöscht.',
+    nochKeineKategorien: "Noch keine Kategorien.",
+    neueKategoriePlatzhalter: "Neue Kategorie, z.B. Intraoral-Scanner…",
+  },
+  makroVerwaltung: {
+    titelUndInhaltErforderlich: "Titel und Inhalt sind erforderlich.",
+    fehlerSpeichern: "Fehler beim Speichern.",
+    makroLoeschenConfirm: "Makro wirklich löschen?",
+    titel: "Makros (Textbausteine)",
+    neuesMakro: "+ Neues Makro",
+    titelPlatzhalter: "Titel (z.B. Passwort zurücksetzen)",
+    inhaltPlatzhalter: "Inhalt der Antwort…",
+    speichern: "Speichern",
+    abbrechen: "Abbrechen",
+    nochKeineMakros: "Noch keine Makros angelegt.",
+    loeschen: "Löschen",
+  },
+  vorlagenVerwaltung: {
+    titelUndBeschreibungErforderlich: "Titel und Beschreibung sind erforderlich.",
+    fehlerSpeichern: "Fehler beim Speichern.",
+    vorlageLoeschenConfirm: "Vorlage wirklich löschen?",
+    titel: "Ticket-Vorlagen",
+    neueVorlage: "+ Neue Vorlage",
+    beschreibung: "Vorlagen füllen beim Anlegen eines neuen Tickets Titel, Beschreibung und Priorität automatisch aus.",
+    titelPlatzhalter: "Titel (z.B. VPN funktioniert nicht)",
+    beschreibungPlatzhalter: "Beschreibung, die das Ticket vorausfüllt…",
+    speichern: "Speichern",
+    abbrechen: "Abbrechen",
+    nochKeineVorlagen: "Noch keine Vorlagen angelegt.",
+    loeschen: "Löschen",
+  },
 };
 
 const en: Uebersetzung = {
@@ -1713,6 +1833,66 @@ const en: Uebersetzung = {
     kundeDeaktivieren: "Deactivate customer",
     wenigerAnzeigen: "Show less",
     alleAnzeigenTemplate: "Show all {n}",
+  },
+  tagVerwaltung: {
+    titel: "Tags / Categories",
+    nameErforderlich: "Name required.",
+    tagExistiertBereits: "This tag already exists.",
+    fehler: "Error.",
+    tagLoeschenConfirm: "Delete tag? It will also be removed from all tickets.",
+    nochKeineTags: "No tags yet.",
+    neuerTagPlatzhalter: "New tag…",
+  },
+  slaVerwaltung: {
+    titel: "SLA & automation",
+    slaAktivLabel: "SLA deadlines active (calculated when new tickets are created)",
+    ersteReaktion: "First response (hours)",
+    loesung: "Resolution (hours)",
+    autoSchliessenLabel: "Auto-close (days without customer reply, empty = disabled)",
+    autoSchliessenPlatzhalter: "e.g. 7",
+    tage: "days",
+    autoSchliessenHinweis: 'Tickets with status "Waiting for customer" are automatically closed after this time.',
+    fehlerSpeichern: "Error saving.",
+    gespeichert: "Saved.",
+    speichert: "Saving…",
+    speichern: "Save",
+  },
+  hardwareKategorienVerwaltung: {
+    titel: "Hardware categories",
+    beschreibung: "Freely definable categories, e.g. intraoral scanner, desktop scanner, exocad database, milling machine, printer. They then appear for every customer for quick one-click entry.",
+    nameErforderlich: "Name required.",
+    kategorieExistiertBereits: "This category already exists.",
+    fehler: "Error.",
+    loeschenConfirmTemplate: 'Delete category "{name}"? All values recorded for customers will also be deleted.',
+    nochKeineKategorien: "No categories yet.",
+    neueKategoriePlatzhalter: "New category, e.g. intraoral scanner…",
+  },
+  makroVerwaltung: {
+    titelUndInhaltErforderlich: "Title and content are required.",
+    fehlerSpeichern: "Error saving.",
+    makroLoeschenConfirm: "Really delete this macro?",
+    titel: "Macros (text snippets)",
+    neuesMakro: "+ New macro",
+    titelPlatzhalter: "Title (e.g. Reset password)",
+    inhaltPlatzhalter: "Reply content…",
+    speichern: "Save",
+    abbrechen: "Cancel",
+    nochKeineMakros: "No macros created yet.",
+    loeschen: "Delete",
+  },
+  vorlagenVerwaltung: {
+    titelUndBeschreibungErforderlich: "Title and description are required.",
+    fehlerSpeichern: "Error saving.",
+    vorlageLoeschenConfirm: "Really delete this template?",
+    titel: "Ticket templates",
+    neueVorlage: "+ New template",
+    beschreibung: "Templates automatically fill in the title, description, and priority when creating a new ticket.",
+    titelPlatzhalter: "Title (e.g. VPN not working)",
+    beschreibungPlatzhalter: "Description that pre-fills the ticket…",
+    speichern: "Save",
+    abbrechen: "Cancel",
+    nochKeineVorlagen: "No templates created yet.",
+    loeschen: "Delete",
   },
 };
 

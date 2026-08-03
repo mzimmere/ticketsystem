@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface Tag {
   id: string;
@@ -10,6 +12,8 @@ interface Tag {
 const FARBEN = ["#6b7280","#ef4444","#f97316","#eab308","#22c55e","#3b82f6","#8b5cf6","#ec4899"];
 
 export default function TagVerwaltung({ organisationId }: { organisationId: string }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).tagVerwaltung;
   const [tags, setTags] = useState<Tag[]>([]);
   const [neuerName, setNeuerName] = useState("");
   const [neueFarbe, setNeueFarbe] = useState(FARBEN[5]);
@@ -24,23 +28,23 @@ export default function TagVerwaltung({ organisationId }: { organisationId: stri
   }
 
   async function anlegen() {
-    if (!neuerName.trim()) { setHinweis("Name erforderlich."); return; }
+    if (!neuerName.trim()) { setHinweis(txt.nameErforderlich); return; }
     setLaedt(true);
     const { error } = await supabase.from("tags").insert({ organisation_id: organisationId, name: neuerName.trim(), farbe: neueFarbe });
     setLaedt(false);
-    if (error) { setHinweis(error.message.includes("unique") ? "Dieser Tag existiert bereits." : "Fehler."); return; }
+    if (error) { setHinweis(error.message.includes("unique") ? txt.tagExistiertBereits : txt.fehler); return; }
     setNeuerName(""); setHinweis(null); ladeTags();
   }
 
   async function loeschen(id: string) {
-    if (!confirm("Tag löschen? Er wird auch von allen Tickets entfernt.")) return;
+    if (!confirm(txt.tagLoeschenConfirm)) return;
     await supabase.from("tags").delete().eq("id", id);
     ladeTags();
   }
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-[var(--text-strong)]">Tags / Kategorien</h3>
+      <h3 className="text-sm font-medium text-[var(--text-strong)]">{txt.titel}</h3>
       <div className="flex flex-wrap gap-1.5">
         {tags.map((t) => (
           <span key={t.id} className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-white" style={{ background: t.farbe }}>
@@ -48,7 +52,7 @@ export default function TagVerwaltung({ organisationId }: { organisationId: stri
             <button onClick={() => loeschen(t.id)} className="hover:opacity-75">×</button>
           </span>
         ))}
-        {tags.length === 0 && <p className="text-xs text-[var(--text-faint)]">Noch keine Tags.</p>}
+        {tags.length === 0 && <p className="text-xs text-[var(--text-faint)]">{txt.nochKeineTags}</p>}
       </div>
       <div className="flex items-center gap-2">
         <input
@@ -56,7 +60,7 @@ export default function TagVerwaltung({ organisationId }: { organisationId: stri
           value={neuerName}
           onChange={(e) => setNeuerName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && anlegen()}
-          placeholder="Neuer Tag…"
+          placeholder={txt.neuerTagPlatzhalter}
           className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
         />
         <div className="flex gap-1">

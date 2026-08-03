@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface SlaKonfig {
   reaktionszeit_stunden: number;
@@ -8,6 +10,8 @@ interface SlaKonfig {
 }
 
 export default function SlaVerwaltung({ organisationId }: { organisationId: string }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).slaVerwaltung;
   const [konfig, setKonfig] = useState<SlaKonfig>({ reaktionszeit_stunden: 4, loesungszeit_stunden: 24, aktiv: false });
   const [laedt, setLaedt] = useState(false);
   const [hinweis, setHinweis] = useState<string | null>(null);
@@ -35,27 +39,27 @@ export default function SlaVerwaltung({ organisationId }: { organisationId: stri
     const tage = autoSchliessen.trim() ? Number(autoSchliessen) : null;
     await supabase.from("organisationen").update({ auto_schliessen_tage: tage }).eq("id", organisationId);
     setLaedt(false);
-    setHinweis(error ? "Fehler beim Speichern." : "Gespeichert.");
+    setHinweis(error ? txt.fehlerSpeichern : txt.gespeichert);
   }
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium text-[var(--text-strong)]">SLA & Automatisierung</h3>
+      <h3 className="text-sm font-medium text-[var(--text-strong)]">{txt.titel}</h3>
 
       <label className="flex items-center gap-2 text-sm text-[var(--text-soft)]">
         <input type="checkbox" checked={konfig.aktiv} onChange={(e) => setKonfig({ ...konfig, aktiv: e.target.checked })} className="accent-amber-500" />
-        SLA-Fristen aktiv (werden beim Anlegen neuer Tickets berechnet)
+        {txt.slaAktivLabel}
       </label>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Erste Reaktion (Stunden)</label>
+          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.ersteReaktion}</label>
           <input type="number" min={1} value={konfig.reaktionszeit_stunden}
             onChange={(e) => setKonfig({ ...konfig, reaktionszeit_stunden: Number(e.target.value) })}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Lösung (Stunden)</label>
+          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.loesung}</label>
           <input type="number" min={1} value={konfig.loesungszeit_stunden}
             onChange={(e) => setKonfig({ ...konfig, loesungszeit_stunden: Number(e.target.value) })}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
@@ -64,22 +68,22 @@ export default function SlaVerwaltung({ organisationId }: { organisationId: stri
 
       <div>
         <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-          Auto-Schließen (Tage ohne Kunden-Antwort, leer = deaktiviert)
+          {txt.autoSchliessenLabel}
         </label>
         <div className="flex items-center gap-2">
           <input type="number" min={1} value={autoSchliessen} onChange={(e) => setAutoSchliessen(e.target.value)}
-            placeholder="z.B. 7"
+            placeholder={txt.autoSchliessenPlatzhalter}
             className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm" />
-          <span className="text-xs text-[var(--text-faint)]">Tage</span>
+          <span className="text-xs text-[var(--text-faint)]">{txt.tage}</span>
         </div>
         <p className="mt-1 text-xs text-[var(--text-faint)]">
-          Tickets im Status "Wartet auf Kunde" werden nach dieser Zeit automatisch geschlossen.
+          {txt.autoSchliessenHinweis}
         </p>
       </div>
 
       {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}
       <button onClick={speichern} disabled={laedt} className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
-        {laedt ? "Speichert…" : "Speichern"}
+        {laedt ? txt.speichert : txt.speichern}
       </button>
     </div>
   );

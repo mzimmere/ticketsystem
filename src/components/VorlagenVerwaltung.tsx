@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
 
@@ -10,14 +12,14 @@ interface Vorlage {
   prioritaet: Prioritaet;
 }
 
-const PRIORITAET_LABEL: Record<Prioritaet, string> = {
-  niedrig: "Niedrig", mittel: "Mittel", hoch: "Hoch", kritisch: "Kritisch",
-};
 const PRIORITAET_FARBE: Record<Prioritaet, string> = {
   niedrig: "text-slate-500", mittel: "text-yellow-600", hoch: "text-orange-600", kritisch: "text-red-600",
 };
 
 export default function VorlagenVerwaltung({ organisationId }: { organisationId: string }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).vorlagenVerwaltung;
+  const prioritaetLabel = texte(sprache).prioritaet;
   const [vorlagen, setVorlagen] = useState<Vorlage[]>([]);
   const [offen, setOffen] = useState<string | null>(null);
   const [zeigeNeu, setZeigeNeu] = useState(false);
@@ -38,7 +40,7 @@ export default function VorlagenVerwaltung({ organisationId }: { organisationId:
 
   async function speichern() {
     if (!neuerTitel.trim() || !neueBeschreibung.trim()) {
-      setHinweis("Titel und Beschreibung sind erforderlich."); return;
+      setHinweis(txt.titelUndBeschreibungErforderlich); return;
     }
     setLaedt(true);
     const { error } = await supabase.from("vorlagen").insert({
@@ -48,7 +50,7 @@ export default function VorlagenVerwaltung({ organisationId }: { organisationId:
       prioritaet: neuePrioritaet,
     });
     setLaedt(false);
-    if (error) { setHinweis("Fehler beim Speichern."); return; }
+    if (error) { setHinweis(txt.fehlerSpeichern); return; }
     setNeuerTitel(""); setNeueBeschreibung(""); setNeuePrioritaet("mittel");
     setZeigeNeu(false); setHinweis(null); laden();
   }
@@ -59,7 +61,7 @@ export default function VorlagenVerwaltung({ organisationId }: { organisationId:
   }
 
   async function loeschen(id: string) {
-    if (!confirm("Vorlage wirklich löschen?")) return;
+    if (!confirm(txt.vorlageLoeschenConfirm)) return;
     await supabase.from("vorlagen").delete().eq("id", id);
     laden();
   }
@@ -67,39 +69,39 @@ export default function VorlagenVerwaltung({ organisationId }: { organisationId:
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-[var(--text-strong)]">Ticket-Vorlagen</h3>
+        <h3 className="text-sm font-medium text-[var(--text-strong)]">{txt.titel}</h3>
         <button onClick={() => setZeigeNeu(!zeigeNeu)} className="rounded bg-akzent px-3 py-1.5 text-xs font-medium text-white">
-          + Neue Vorlage
+          {txt.neueVorlage}
         </button>
       </div>
       <p className="text-xs text-[var(--text-faint)]">
-        Vorlagen füllen beim Anlegen eines neuen Tickets Titel, Beschreibung und Priorität automatisch aus.
+        {txt.beschreibung}
       </p>
 
       {zeigeNeu && (
         <div className="space-y-2 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-3">
           <input type="text" value={neuerTitel} onChange={(e) => setNeuerTitel(e.target.value)}
-            placeholder="Titel (z.B. VPN funktioniert nicht)"
+            placeholder={txt.titelPlatzhalter}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
           <textarea value={neueBeschreibung} onChange={(e) => setNeueBeschreibung(e.target.value)}
-            rows={4} placeholder="Beschreibung, die das Ticket vorausfüllt…"
+            rows={4} placeholder={txt.beschreibungPlatzhalter}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
           <select value={neuePrioritaet} onChange={(e) => setNeuePrioritaet(e.target.value as Prioritaet)}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm">
             {(["niedrig", "mittel", "hoch", "kritisch"] as Prioritaet[]).map((p) => (
-              <option key={p} value={p}>{PRIORITAET_LABEL[p]}</option>
+              <option key={p} value={p}>{prioritaetLabel[p]}</option>
             ))}
           </select>
           {hinweis && <p className="text-xs text-red-600">{hinweis}</p>}
           <div className="flex gap-2">
-            <button onClick={speichern} disabled={laedt} className="rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">Speichern</button>
-            <button onClick={() => { setZeigeNeu(false); setHinweis(null); }} className="rounded border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-soft)]">Abbrechen</button>
+            <button onClick={speichern} disabled={laedt} className="rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50">{txt.speichern}</button>
+            <button onClick={() => { setZeigeNeu(false); setHinweis(null); }} className="rounded border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-soft)]">{txt.abbrechen}</button>
           </div>
         </div>
       )}
 
       {vorlagen.length === 0 && !zeigeNeu && (
-        <p className="text-xs text-[var(--text-faint)]">Noch keine Vorlagen angelegt.</p>
+        <p className="text-xs text-[var(--text-faint)]">{txt.nochKeineVorlagen}</p>
       )}
 
       {vorlagen.map((v) => (
@@ -108,7 +110,7 @@ export default function VorlagenVerwaltung({ organisationId }: { organisationId:
             className="flex w-full items-center justify-between px-3 py-2.5 text-left">
             <div className="flex items-center gap-2">
               <span className={`text-xs font-medium ${PRIORITAET_FARBE[v.prioritaet]}`}>
-                {PRIORITAET_LABEL[v.prioritaet]}
+                {prioritaetLabel[v.prioritaet]}
               </span>
               <span className="text-sm text-[var(--text-strong)]">{v.titel}</span>
             </div>
@@ -128,6 +130,9 @@ function VorlageBearbeiten({ vorlage, onSpeichern, onLoeschen }: {
   onSpeichern: (id: string, titel: string, beschreibung: string, prioritaet: Prioritaet) => void;
   onLoeschen: (id: string) => void;
 }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).vorlagenVerwaltung;
+  const prioritaetLabel = texte(sprache).prioritaet;
   const [titel, setTitel] = useState(vorlage.titel);
   const [beschreibung, setBeschreibung] = useState(vorlage.beschreibung);
   const [prioritaet, setPrioritaet] = useState<Prioritaet>(vorlage.prioritaet);
@@ -141,14 +146,14 @@ function VorlageBearbeiten({ vorlage, onSpeichern, onLoeschen }: {
       <select value={prioritaet} onChange={(e) => setPrioritaet(e.target.value as Prioritaet)}
         className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm">
         {(["niedrig", "mittel", "hoch", "kritisch"] as Prioritaet[]).map((p) => (
-          <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+          <option key={p} value={p}>{prioritaetLabel[p]}</option>
         ))}
       </select>
       <div className="flex gap-2">
         <button onClick={() => onSpeichern(vorlage.id, titel, beschreibung, prioritaet)}
-          className="rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white">Speichern</button>
+          className="rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white">{txt.speichern}</button>
         <button onClick={() => onLoeschen(vorlage.id)}
-          className="rounded border border-red-300 px-3 py-1.5 text-xs text-red-600">Löschen</button>
+          className="rounded border border-red-300 px-3 py-1.5 text-xs text-red-600">{txt.loeschen}</button>
       </div>
     </div>
   );
