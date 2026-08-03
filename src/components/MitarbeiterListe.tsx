@@ -3,6 +3,8 @@ import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
 import Avatar from "./Avatar";
 import ZugangsdatenBox from "./ZugangsdatenBox";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 type Rolle = "super_admin" | "org_admin" | "techniker" | "kunde";
 type MitgliedRolle = "techniker" | "org_admin";
@@ -32,13 +34,6 @@ interface MitarbeiterListeProps {
   onlineIds?: Set<string>;
 }
 
-const ROLLE_LABEL: Record<Rolle, string> = {
-  super_admin: "Super-Admin",
-  org_admin: "Org-Admin",
-  techniker: "Techniker",
-  kunde: "Kunde",
-};
-
 export default function MitarbeiterListe({
   organisationId,
   eigeneRolle,
@@ -48,6 +43,14 @@ export default function MitarbeiterListe({
   organisationLogoUrl,
   onlineIds,
 }: MitarbeiterListeProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).mitarbeiterListe;
+  const ROLLE_LABEL: Record<Rolle, string> = {
+    super_admin: txt.superAdmin,
+    org_admin: txt.orgAdmin,
+    techniker: txt.techniker,
+    kunde: txt.kunde,
+  };
   const [mitglieder, setMitglieder] = useState<Mitglied[]>([]);
   const [zeigeArchivierte, setZeigeArchivierte] = useState(false);
   const [offenId, setOffenId] = useState<string | null>(null);
@@ -75,7 +78,7 @@ export default function MitarbeiterListe({
       .eq("deaktiviert", zeigeArchivierte);
     if (error) {
       console.error("[MitarbeiterListe] Laden fehlgeschlagen:", error);
-      setHinweis("Team konnte nicht geladen werden (Details in der Browser-Konsole).");
+      setHinweis(txt.fehlerLaden);
     }
     setMitglieder((data as Mitglied[]) ?? []);
   }
@@ -90,7 +93,7 @@ export default function MitarbeiterListe({
       .eq("id", mitgliedschaftId);
     if (error) {
       console.error(error);
-      setHinweis("Aktion fehlgeschlagen.");
+      setHinweis(txt.fehlerAktion);
       return;
     }
     setOffenId(null);
@@ -129,7 +132,7 @@ export default function MitarbeiterListe({
     setLaedt(false);
     if (profilFehler || mitgliedFehler) {
       console.error(profilFehler ?? mitgliedFehler);
-      setHinweis("Speichern fehlgeschlagen.");
+      setHinweis(txt.fehlerSpeichern);
       return;
     }
     setOffenId(null);
@@ -138,7 +141,7 @@ export default function MitarbeiterListe({
 
   async function emailAendern(mitgliedId: string) {
     if (!emailEntwurf.trim() || !emailEntwurf.includes("@")) {
-      setHinweis("Bitte eine gültige E-Mail-Adresse eingeben.");
+      setHinweis(txt.fehlerEmailUngueltig);
       return;
     }
     setEmailLaedt(true);
@@ -157,11 +160,11 @@ export default function MitarbeiterListe({
     const json = await res.json();
     setEmailLaedt(false);
     if (!res.ok) {
-      setHinweis(json.error ?? "E-Mail-Änderung fehlgeschlagen.");
+      setHinweis(json.error ?? txt.fehlerEmailAendern);
       return;
     }
     setEmailEntwurf("");
-    setHinweis("E-Mail geändert.");
+    setHinweis(txt.erfolgEmailGeaendert);
     ladeMitglieder();
   }
 
@@ -186,7 +189,7 @@ export default function MitarbeiterListe({
       ladeMitglieder();
     } catch (err) {
       console.error(err);
-      setHinweis("Profilbild-Upload fehlgeschlagen.");
+      setHinweis(txt.fehlerAvatarUpload);
     } finally {
       setLaedt(false);
     }
@@ -207,11 +210,11 @@ export default function MitarbeiterListe({
         body: JSON.stringify({ userId: mitgliedId }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Fehlgeschlagen");
+      if (!res.ok) throw new Error(json.error ?? txt.fehlerLinkFehlgeschlagen);
       setNeuerZugang({ email: json.email, link: json.link, telefon: telefon ?? undefined });
     } catch (err) {
       console.error(err);
-      setHinweis("Neuer Link konnte nicht erzeugt werden. Ist resend-zugang deployt?");
+      setHinweis(txt.fehlerNeuerLink);
     } finally {
       setLaedt(false);
     }
@@ -221,14 +224,14 @@ export default function MitarbeiterListe({
     return (
       <div className="space-y-2">
         <p className="text-sm text-[var(--text-faint)]">
-          {zeigeArchivierte ? "Keine deaktivierten Mitglieder." : "Noch keine Team-Mitglieder."}
+          {zeigeArchivierte ? txt.keineDeaktivierten : txt.nochKeineTeamMitglieder}
         </p>
         {darfBearbeiten && (
           <button
             onClick={() => setZeigeArchivierte((v) => !v)}
             className="text-xs text-[var(--text-faint)] hover:underline"
           >
-            {zeigeArchivierte ? "← Zurück zum aktiven Team" : "Deaktivierte Mitglieder anzeigen"}
+            {zeigeArchivierte ? txt.zurueckZumAktivenTeam : txt.deaktivierteAnzeigen}
           </button>
         )}
       </div>
@@ -242,7 +245,7 @@ export default function MitarbeiterListe({
           onClick={() => setZeigeArchivierte((v) => !v)}
           className="text-xs text-[var(--text-faint)] hover:underline"
         >
-          {zeigeArchivierte ? "← Zurück zum aktiven Team" : "Deaktivierte Mitglieder anzeigen"}
+          {zeigeArchivierte ? txt.zurueckZumAktivenTeam : txt.deaktivierteAnzeigen}
         </button>
       )}
       {mitglieder.map((m) => (
@@ -259,18 +262,18 @@ export default function MitarbeiterListe({
               {onlineIds?.has(m.id) && (
                 <span
                   className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border-2 border-[var(--bg-surface)] bg-emerald-500"
-                  title="Online"
+                  title={txt.online}
                 />
               )}
             </span>
             <div className="min-w-0">
-              <p className="truncate text-sm text-[var(--text-strong)]">{m.name ?? "Unbenannt"}</p>
+              <p className="truncate text-sm text-[var(--text-strong)]">{m.name ?? txt.unbenannt}</p>
               {m.email && (
                 <p className="truncate text-xs text-[var(--text-faint)]">{m.email}</p>
               )}
               {m.verfuegbarkeit !== "verfuegbar" && (
                 <p className="text-xs text-[var(--text-faint)]">
-                  {m.verfuegbarkeit === "urlaub" ? "Urlaub" : "Abwesend"}
+                  {m.verfuegbarkeit === "urlaub" ? txt.urlaub : txt.abwesend}
                 </p>
               )}
             </div>
@@ -288,7 +291,7 @@ export default function MitarbeiterListe({
                   groesse="lg"
                 />
                 <label className="cursor-pointer rounded border border-[var(--border-input)] px-3 py-1.5 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
-                  Profilbild ändern
+                  {txt.profilbildAendern}
                   <input
                     type="file"
                     accept="image/*"
@@ -303,7 +306,7 @@ export default function MitarbeiterListe({
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                    Vorname
+                    {txt.vorname}
                   </label>
                   <input
                     type="text"
@@ -314,7 +317,7 @@ export default function MitarbeiterListe({
                 </div>
                 <div className="flex-1">
                   <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                    Nachname
+                    {txt.nachname}
                   </label>
                   <input
                     type="text"
@@ -327,7 +330,7 @@ export default function MitarbeiterListe({
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  Telefon
+                  {txt.telefon}
                 </label>
                 <input
                   type="text"
@@ -340,20 +343,20 @@ export default function MitarbeiterListe({
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                    Rolle
+                    {txt.rolle}
                   </label>
                   <select
                     value={entwurf.rolle}
                     onChange={(e) => setEntwurf({ ...entwurf, rolle: e.target.value as MitgliedRolle })}
                     className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                   >
-                    <option value="techniker">Techniker</option>
-                    <option value="org_admin">Org-Admin</option>
+                    <option value="techniker">{txt.techniker}</option>
+                    <option value="org_admin">{txt.orgAdmin}</option>
                   </select>
                 </div>
                 <div className="flex-1">
                   <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                    Verfügbarkeit
+                    {txt.verfuegbarkeitLabel}
                   </label>
                   <select
                     value={entwurf.verfuegbarkeit}
@@ -362,9 +365,9 @@ export default function MitarbeiterListe({
                     }
                     className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                   >
-                    <option value="verfuegbar">Verfügbar</option>
-                    <option value="abwesend">Abwesend</option>
-                    <option value="urlaub">Urlaub</option>
+                    <option value="verfuegbar">{txt.verfuegbar}</option>
+                    <option value="abwesend">{txt.abwesend}</option>
+                    <option value="urlaub">{txt.urlaub}</option>
                   </select>
                 </div>
               </div>
@@ -376,21 +379,21 @@ export default function MitarbeiterListe({
                 disabled={laedt}
                 className="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
-                Speichern
+                {txt.speichern}
               </button>
 
               {/* E-Mail-Adresse ändern */}
               <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-muted)] p-3 space-y-2">
-                <p className="text-xs font-medium text-[var(--text-soft)]">E-Mail-Adresse ändern</p>
+                <p className="text-xs font-medium text-[var(--text-soft)]">{txt.emailAendernTitel}</p>
                 <p className="text-xs text-[var(--text-faint)]">
-                  Aktuell: <span className="font-mono">{m.email ?? "—"}</span>
+                  {txt.aktuellLabel} <span className="font-mono">{m.email ?? "—"}</span>
                 </p>
                 <div className="flex gap-2">
                   <input
                     type="email"
                     value={emailEntwurf}
                     onChange={(e) => setEmailEntwurf(e.target.value)}
-                    placeholder="neue@email.de"
+                    placeholder={txt.neueEmailPlatzhalter}
                     className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
                   />
                   <button
@@ -398,7 +401,7 @@ export default function MitarbeiterListe({
                     disabled={emailLaedt || !emailEntwurf.includes("@") || emailEntwurf === m.email}
                     className="rounded bg-slate-900 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
                   >
-                    {emailLaedt ? "…" : "Ändern"}
+                    {emailLaedt ? "…" : txt.aendern}
                   </button>
                 </div>
               </div>
@@ -408,7 +411,7 @@ export default function MitarbeiterListe({
                 disabled={laedt}
                 className="w-full rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)] disabled:opacity-50"
               >
-                Neuen Zugangslink erzeugen
+                {txt.neuenZugangslinkErzeugen}
               </button>
 
               {neuerZugang && (
@@ -429,15 +432,15 @@ export default function MitarbeiterListe({
                     onClick={() => statusUmschalten(m.mitgliedschaft_id, false)}
                     className="w-full rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
                   >
-                    Wieder aktivieren
+                    {txt.wiederAktivieren}
                   </button>
                 ) : (
                   <button
                     onClick={() => statusUmschalten(m.mitgliedschaft_id, true)}
                     className="w-full rounded border border-red-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30"
-                    title="Entfernt die Person nur aus DIESER Firma - andere Mitgliedschaften bleiben bestehen."
+                    title={txt.ausFirmaEntfernenTitle}
                   >
-                    Aus dieser Firma entfernen
+                    {txt.ausFirmaEntfernen}
                   </button>
                 )}
               </div>

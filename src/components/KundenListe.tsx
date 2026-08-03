@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { sichererDateiname } from "../lib/dateiname";
 import { LAENDER_MWST, LAENDER_LISTE } from "../lib/laender";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 import Avatar from "./Avatar";
 import ZugangsdatenBox from "./ZugangsdatenBox";
 import DongleVerwaltung from "./DongleVerwaltung";
@@ -100,6 +102,8 @@ export default function KundenListe({
   organisationLogoUrl,
   onlineIds,
 }: KundenListeProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).kundenListe;
   const [kunden, setKunden] = useState<Kunde[]>([]);
   const [suchbegriff, setSuchbegriff] = useState("");
   const [zeigeArchivierte, setZeigeArchivierte] = useState(false);
@@ -162,7 +166,7 @@ export default function KundenListe({
       .order("name");
     if (error) {
       console.error("[KundenListe] Laden fehlgeschlagen:", error);
-      setHinweis("Kunden konnten nicht geladen werden (Details in der Browser-Konsole).");
+      setHinweis(txt.fehlerLaden);
     }
     const geladeneKunden = (data as Kunde[]) ?? [];
     setKunden(geladeneKunden);
@@ -174,7 +178,7 @@ export default function KundenListe({
       const { data: ziele } = await supabase.from("profiles").select("id, name").in("id", zielIds);
       const map: Record<string, string> = {};
       for (const z of (ziele as { id: string; name: string | null }[]) ?? []) {
-        map[z.id] = z.name ?? "Unbenannt";
+        map[z.id] = z.name ?? txt.unbenannt;
       }
       setZielNamen(map);
     } else {
@@ -189,7 +193,7 @@ export default function KundenListe({
       .eq("id", kundeId);
     if (error) {
       console.error(error);
-      setHinweis("Aktion fehlgeschlagen.");
+      setHinweis(txt.fehlerAktion);
       return;
     }
     setOffenId(null);
@@ -263,8 +267,8 @@ export default function KundenListe({
     if (error) {
       setHinweis(
         error.code === "23505"
-          ? "Diese E-Mail-Adresse ist bereits einem Kunden zugeordnet."
-          : "E-Mail-Adresse konnte nicht hinzugefügt werden.",
+          ? txt.fehlerEmailVergeben
+          : txt.fehlerEmailHinzufuegen,
       );
       return;
     }
@@ -288,12 +292,12 @@ export default function KundenListe({
     setZusammenfuehrenLaedt(false);
     if (error) {
       console.error(error);
-      setHinweis(error.message ?? "Zusammenführen fehlgeschlagen.");
+      setHinweis(error.message ?? txt.fehlerZusammenfuehren);
       return;
     }
     setZeigeZusammenfuehren(false);
     setZusammenfuehrenQuelleId("");
-    setHinweis("Konten zusammengeführt.");
+    setHinweis(txt.erfolgZusammengefuehrt);
     setMergeVersion((v) => v + 1);
     ladeZusatzEmails(zielId);
     ladeDokumente(zielId);
@@ -306,7 +310,7 @@ export default function KundenListe({
     if (!neuesPreisDatum || neuerPreisEuro.trim() === "") return;
     const wert = parseFloat(neuerPreisEuro.trim().replace(",", "."));
     if (isNaN(wert)) {
-      setHinweis("Ungültiger Preis – bitte z.B. 1,99 eingeben.");
+      setHinweis(txt.fehlerUngueltigerPreis);
       return;
     }
     const { error } = await supabase.from("kunden_preise").insert({
@@ -317,7 +321,7 @@ export default function KundenListe({
     });
     if (error) {
       console.error(error);
-      setHinweis("Preis konnte nicht hinzugefügt werden.");
+      setHinweis(txt.fehlerPreisHinzufuegen);
       return;
     }
     setNeuerPreisEuro("");
@@ -351,7 +355,7 @@ export default function KundenListe({
     setLaedt(false);
     if (error) {
       console.error(error);
-      setHinweis("Speichern fehlgeschlagen.");
+      setHinweis(txt.fehlerSpeichern);
       return;
     }
     setOffenId(null);
@@ -379,7 +383,7 @@ export default function KundenListe({
       ladeKunden();
     } catch (err) {
       console.error(err);
-      setHinweis("Profilbild-Upload fehlgeschlagen.");
+      setHinweis(txt.fehlerAvatarUpload);
     } finally {
       setLaedt(false);
     }
@@ -409,7 +413,7 @@ export default function KundenListe({
       ladeDokumente(kundeId);
     } catch (err) {
       console.error(err);
-      setHinweis("Dokument-Upload fehlgeschlagen.");
+      setHinweis(txt.fehlerDokumentUpload);
     } finally {
       setLaedt(false);
     }
@@ -420,7 +424,7 @@ export default function KundenListe({
       .from("kundendokumente")
       .createSignedUrl(pfad, 60);
     if (error || !data) {
-      setHinweis("Konnte Dokument nicht öffnen.");
+      setHinweis(txt.fehlerDokumentOeffnen);
       return;
     }
     window.open(data.signedUrl, "_blank");
@@ -447,11 +451,11 @@ export default function KundenListe({
         body: JSON.stringify({ userId: kundeId }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Fehlgeschlagen");
+      if (!res.ok) throw new Error(json.error ?? txt.fehlerLinkFehlgeschlagen);
       setNeuerZugang({ email: json.email, link: json.link, telefon: telefon ?? undefined });
     } catch (err) {
       console.error(err);
-      setHinweis("Neuer Link konnte nicht erzeugt werden. Ist resend-zugang deployt?");
+      setHinweis(txt.fehlerNeuerLink);
     } finally {
       setLaedt(false);
     }
@@ -499,14 +503,14 @@ export default function KundenListe({
           type="text"
           value={suchbegriff}
           onChange={(e) => setSuchbegriff(e.target.value)}
-          placeholder="Suche nach Name, Telefon, Straße, PLZ oder Ort…"
+          placeholder={txt.suchePlatzhalter}
           className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
         />
         <button
           onClick={() => setZeigeArchivierte((v) => !v)}
           className="shrink-0 text-xs text-[var(--text-faint)] hover:underline"
         >
-          {zeigeArchivierte ? "← Aktive" : "Archiv"}
+          {zeigeArchivierte ? txt.zurueckAktive : txt.archiv}
         </button>
       </div>
 
@@ -520,7 +524,7 @@ export default function KundenListe({
             }}
             className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1.5 text-xs text-[var(--text-strong)]"
           >
-            <option value="">Nach Hardware filtern…</option>
+            <option value="">{txt.nachHardwareFiltern}</option>
             {hardwareKategorien.map((k) => (
               <option key={k.id} value={k.id}>
                 {k.name}
@@ -533,7 +537,7 @@ export default function KundenListe({
               onChange={(e) => setFilterWert(e.target.value)}
               className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1.5 text-xs text-[var(--text-strong)]"
             >
-              <option value="">Wert wählen…</option>
+              <option value="">{txt.wertWaehlen}</option>
               {hardwareWertOptionen.map((w) => (
                 <option key={w} value={w}>
                   {w}
@@ -549,7 +553,7 @@ export default function KundenListe({
               }}
               className="shrink-0 text-xs text-[var(--text-faint)] hover:underline"
             >
-              Zurücksetzen
+              {txt.zuruecksetzen}
             </button>
           )}
         </div>
@@ -559,9 +563,9 @@ export default function KundenListe({
         <p className="text-sm text-[var(--text-faint)]">
           {kunden.length === 0
             ? zeigeArchivierte
-              ? "Keine deaktivierten Kunden."
-              : "Noch keine Kunden vorhanden."
-            : "Keine Treffer für diese Suche."}
+              ? txt.keineDeaktiviertenKunden
+              : txt.nochKeineKunden
+            : txt.keineTreffer}
         </p>
       ) : (
         sichtbareKunden.map((k) => (
@@ -578,11 +582,11 @@ export default function KundenListe({
               {onlineIds?.has(k.id) && (
                 <span
                   className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border-2 border-[var(--bg-surface)] bg-emerald-500"
-                  title="Online"
+                  title={txt.online}
                 />
               )}
             </span>
-            <span className="text-sm text-[var(--text-strong)]">{k.name ?? "Unbenannt"}</span>
+            <span className="text-sm text-[var(--text-strong)]">{k.name ?? txt.unbenannt}</span>
             <span className="ml-auto truncate text-xs text-[var(--text-faint)]">
               {k.telefonnummer ?? "—"}
             </span>
@@ -593,7 +597,7 @@ export default function KundenListe({
               <div className="flex items-center gap-3">
                 <Avatar name={entwurf.name ?? k.name} avatarUrl={entwurf.avatar_url ?? null} groesse="lg" />
                 <label className="cursor-pointer rounded border border-[var(--border-input)] px-3 py-1.5 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
-                  Profilbild ändern
+                  {txt.profilbildAendern}
                   <input
                     type="file"
                     accept="image/*"
@@ -606,7 +610,7 @@ export default function KundenListe({
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                    Vorname
+                    {txt.vorname}
                   </label>
                   <input
                     type="text"
@@ -617,7 +621,7 @@ export default function KundenListe({
                 </div>
                 <div className="flex-1">
                   <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                    Nachname
+                    {txt.nachname}
                   </label>
                   <input
                     type="text"
@@ -630,7 +634,7 @@ export default function KundenListe({
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  E-Mail (Login) <span className="font-normal text-[var(--text-faint)]">– nicht änderbar</span>
+                  {txt.emailLoginLabel} <span className="font-normal text-[var(--text-faint)]">{txt.nichtAenderbar}</span>
                 </label>
                 <p className="rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm text-[var(--text-strong)]">
                   {kundeEmail ?? "—"}
@@ -639,9 +643,9 @@ export default function KundenListe({
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  Weitere E-Mail-Adressen{" "}
+                  {txt.weitereEmailsLabel}{" "}
                   <span className="font-normal text-[var(--text-faint)]">
-                    – z.B. wenn per Mail von einer anderen Adresse geschrieben wird
+                    {txt.weitereEmailsHinweis}
                   </span>
                 </label>
                 {zusatzEmails.length > 0 && (
@@ -656,7 +660,7 @@ export default function KundenListe({
                           onClick={() => zusatzEmailLoeschen(e.id, k.id)}
                           className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
                         >
-                          Entfernen
+                          {txt.entfernen}
                         </button>
                       </div>
                     ))}
@@ -668,7 +672,7 @@ export default function KundenListe({
                     value={neueZusatzEmail}
                     onChange={(e) => setNeueZusatzEmail(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && zusatzEmailHinzufuegen(k.id)}
-                    placeholder="weitere.adresse@beispiel.de"
+                    placeholder={txt.weitereEmailPlatzhalter}
                     className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                   />
                   <button
@@ -679,20 +683,19 @@ export default function KundenListe({
                   </button>
                 </div>
                 <p className="mt-1 text-xs text-[var(--text-faint)]">
-                  Mails von hinterlegten Adressen landen automatisch bei diesem Kunden (statt einen
-                  neuen Account anzulegen).
+                  {txt.zusatzEmailHinweis}
                 </p>
               </div>
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  Telefon / WhatsApp
+                  {txt.telefonWhatsapp}
                 </label>
                 <input
                   type="text"
                   value={entwurf.telefonnummer ?? ""}
                   onChange={(e) => setEntwurf({ ...entwurf, telefonnummer: e.target.value })}
-                  placeholder="z.B. 4915112345678"
+                  placeholder={txt.telefonPlatzhalter}
                   className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
               </div>
@@ -702,14 +705,14 @@ export default function KundenListe({
                   type="text"
                   value={entwurf.strasse ?? ""}
                   onChange={(e) => setEntwurf({ ...entwurf, strasse: e.target.value })}
-                  placeholder="Straße"
+                  placeholder={txt.strassePlatzhalter}
                   className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
                 <input
                   type="text"
                   value={entwurf.hausnummer ?? ""}
                   onChange={(e) => setEntwurf({ ...entwurf, hausnummer: e.target.value })}
-                  placeholder="Nr."
+                  placeholder={txt.nrPlatzhalter}
                   className="w-16 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
               </div>
@@ -718,14 +721,14 @@ export default function KundenListe({
                   type="text"
                   value={entwurf.plz ?? ""}
                   onChange={(e) => setEntwurf({ ...entwurf, plz: e.target.value })}
-                  placeholder="PLZ"
+                  placeholder={txt.plzPlatzhalter}
                   className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
                 <input
                   type="text"
                   value={entwurf.ort ?? ""}
                   onChange={(e) => setEntwurf({ ...entwurf, ort: e.target.value })}
-                  placeholder="Ort"
+                  placeholder={txt.ortPlatzhalter}
                   className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
               </div>
@@ -767,49 +770,46 @@ export default function KundenListe({
                 </div>
               </div>
               <p className="-mt-1 text-xs text-[var(--text-faint)]">
-                Vorschlagswert nach Land, Steuersatz bleibt frei änderbar (z.B. Kleinunternehmer,
-                Reverse-Charge).
+                {txt.mwstHinweis}
               </p>
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  USt-IdNr. (für steuerfreie innergemeinschaftliche Lieferung)
+                  {txt.ustIdLabel}
                 </label>
                 <input
                   type="text"
                   value={entwurf.ust_id ?? ""}
                   onChange={(e) => setEntwurf({ ...entwurf, ust_id: e.target.value })}
-                  placeholder="z.B. ATU12345678"
+                  placeholder={txt.ustIdPlatzhalter}
                   className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
                 <p className="mt-1 text-xs text-[var(--text-faint)]">
-                  Wenn ausgefüllt, weist die Rechnung automatisch 0% MwSt. aus und vermerkt
-                  "Steuerfreie innergemeinschaftliche Lieferung / Tax-free intra-Community
-                  supply".
+                  {txt.ustIdHinweis}
                 </p>
               </div>
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  Notizen / Besonderheiten
+                  {txt.notizenLabel}
                 </label>
                 <textarea
                   value={entwurf.notizen ?? ""}
                   onChange={(e) => setEntwurf({ ...entwurf, notizen: e.target.value })}
                   rows={3}
-                  placeholder="z.B. bevorzugte Erreichbarkeit, technische Besonderheiten…"
+                  placeholder={txt.notizenPlatzhalter}
                   className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
               </div>
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  Individueller Minutenpreis (Verlauf, optional)
+                  {txt.individuellerPreisLabel}
                 </label>
 
                 {preise.length === 0 ? (
                   <p className="mb-2 text-xs text-[var(--text-faint)]">
-                    Noch kein individueller Preis gesetzt – es gilt der Standardpreis der Firma.
+                    {txt.keinPreisGesetzt}
                   </p>
                 ) : (
                   <div className="mb-2 space-y-1">
@@ -822,19 +822,19 @@ export default function KundenListe({
                           className="flex items-center justify-between gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5 text-sm"
                         >
                           <span className="text-[var(--text-strong)]">
-                            ab {new Date(p.gueltig_ab).toLocaleDateString("de-DE")}:{" "}
-                            {(p.preis_pro_minute_cent / 100).toLocaleString("de-DE", {
+                            {txt.abPrefix} {new Date(p.gueltig_ab).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")}:{" "}
+                            {(p.preis_pro_minute_cent / 100).toLocaleString(sprache === "en" ? "en-US" : "de-DE", {
                               style: "currency",
                               currency: "EUR",
                             })}
                             {p.id === aktiveId && (
                               <span className="ml-2 rounded bg-akzent px-1.5 py-0.5 text-[0.65rem] font-medium text-white">
-                                Aktuell
+                                {txt.aktuell}
                               </span>
                             )}
                             {p.gueltig_ab > heute && (
                               <span className="ml-2 rounded bg-[var(--border)] px-1.5 py-0.5 text-[0.65rem] font-medium text-[var(--text-soft)]">
-                                Geplant
+                                {txt.geplant}
                               </span>
                             )}
                           </span>
@@ -842,7 +842,7 @@ export default function KundenListe({
                             onClick={() => preisLoeschen(p.id, k.id)}
                             className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
                           >
-                            Entfernen
+                            {txt.entfernen}
                           </button>
                         </div>
                       ));
@@ -862,7 +862,7 @@ export default function KundenListe({
                     inputMode="decimal"
                     value={neuerPreisEuro}
                     onChange={(e) => setNeuerPreisEuro(e.target.value)}
-                    placeholder="z.B. 1,99"
+                    placeholder={txt.preisPlatzhalter}
                     className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                   />
                   <button
@@ -873,8 +873,7 @@ export default function KundenListe({
                   </button>
                 </div>
                 <p className="mt-1 text-xs text-[var(--text-faint)]">
-                  Gilt automatisch ab dem gewählten Datum – ältere Zeiterfassungen bleiben mit
-                  ihrem damaligen Preis unangetastet.
+                  {txt.preisHinweis}
                 </p>
               </div>
 
@@ -883,12 +882,12 @@ export default function KundenListe({
                 disabled={laedt}
                 className="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
               >
-                Speichern
+                {txt.speichern}
               </button>
 
               <div className="border-t border-[var(--border)] pt-3">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                  Dokumente (unabhängig von Tickets)
+                  {txt.dokumenteLabel}
                 </p>
 
                 {dokumente.length > 0 && (
@@ -908,7 +907,7 @@ export default function KundenListe({
                           onClick={() => dokumentLoeschen(d.id, d.storage_path, k.id)}
                           className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
                         >
-                          Löschen
+                          {txt.loeschen}
                         </button>
                       </div>
                     ))}
@@ -916,7 +915,7 @@ export default function KundenListe({
                 )}
 
                 <label className="block cursor-pointer rounded border border-dashed border-[var(--border-input)] px-3 py-2 text-center text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
-                  + Dokument hochladen
+                  {txt.dokumentHochladen}
                   <input
                     type="file"
                     className="hidden"
@@ -929,7 +928,7 @@ export default function KundenListe({
 
               <div className="border-t border-[var(--border)] pt-3">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                  Todo-Liste
+                  {txt.todoListe}
                 </p>
                 <KundenTodoListe
                   key={`todos-${k.id}-${mergeVersion}`}
@@ -941,7 +940,7 @@ export default function KundenListe({
 
               <div className="border-t border-[var(--border)] pt-3">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                  Hardware
+                  {txt.hardware}
                 </p>
                 <KundenHardware
                   key={`hardware-${k.id}-${mergeVersion}`}
@@ -952,7 +951,7 @@ export default function KundenListe({
 
               <div className="border-t border-[var(--border)] pt-3">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                  Dongles / Lizenzen
+                  {txt.donglesLizenzen}
                 </p>
                 <DongleVerwaltung
                   key={`dongle-${k.id}-${mergeVersion}`}
@@ -964,7 +963,7 @@ export default function KundenListe({
               {vertraege.length > 0 && (
                 <div className="border-t border-[var(--border)] pt-3">
                   <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                    Lizenzverträge (Ablauf/Verlängerung)
+                    {txt.lizenzvertraegeLabel}
                   </p>
                   <div className="space-y-2">
                     {vertraege.map((v) => {
@@ -981,10 +980,10 @@ export default function KundenListe({
                           {v.vertrag_ende && info && (
                             <div className="mt-1.5">
                               <div className="mb-1 flex justify-between text-xs text-[var(--text-faint)]">
-                                <span>Laufzeit</span>
+                                <span>{txt.laufzeit}</span>
                                 <span style={{ color: info.farbe }} className="font-medium">
-                                  bis {new Date(v.vertrag_ende).toLocaleDateString("de-DE")}
-                                  {info.tage >= 0 ? ` (${info.tage} Tage)` : " (abgelaufen)"}
+                                  {txt.bisPrefix} {new Date(v.vertrag_ende).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")}
+                                  {info.tage >= 0 ? ` (${info.tage} ${txt.tageSuffix})` : ` ${txt.abgelaufen}`}
                                 </span>
                               </div>
                               <div className="h-1.5 overflow-hidden rounded-full bg-[var(--bg-surface)]">
@@ -1005,24 +1004,21 @@ export default function KundenListe({
               {!zeigeArchivierte && (
                 <div className="border-t border-[var(--border)] pt-3">
                   <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                    Konten zusammenführen
+                    {txt.kontenZusammenfuehrenLabel}
                   </p>
                   {!zeigeZusammenfuehren ? (
                     <button
                       onClick={() => setZeigeZusammenfuehren(true)}
                       className="w-full rounded border border-[var(--border-input)] px-3 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
                     >
-                      Mit anderem Kundenkonto zusammenführen…
+                      {txt.mitAnderemKontoZusammenfuehren}
                     </button>
                   ) : (
                     <div className="space-y-2 rounded border border-[var(--border-input)] p-3">
                       <p className="text-xs text-[var(--text-faint)]">
-                        Wähle das doppelte/ältere Konto (z.B. weil der Kunde von einer anderen
-                        Mail-Adresse geschrieben hat). Alle Tickets, Zeiteinträge, Dokumente,
-                        Preise, Todos, Dongles, Lizenzverträge und Hardware wandern zu{" "}
-                        <strong>{k.name ?? "diesem Kunden"}</strong>, dessen Login-Mail wird als
-                        zusätzliche Adresse hinterlegt und das doppelte Konto anschließend
-                        deaktiviert.
+                        {txt.zusammenfuehrenBeschreibungVor}{" "}
+                        <strong>{k.name ?? txt.diesemKunden}</strong>
+                        {txt.zusammenfuehrenBeschreibungNach}
                       </p>
                       <KundenAuswahl
                         organisationId={organisationId}
@@ -1037,7 +1033,7 @@ export default function KundenListe({
                           }
                           className="flex-1 rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
                         >
-                          {zusammenfuehrenLaedt ? "Wird zusammengeführt…" : "Zusammenführen"}
+                          {zusammenfuehrenLaedt ? txt.wirdZusammengefuehrt : txt.zusammenfuehren}
                         </button>
                         <button
                           onClick={() => {
@@ -1046,11 +1042,11 @@ export default function KundenListe({
                           }}
                           className="rounded border border-[var(--border-input)] px-3 py-2 text-sm text-[var(--text-soft)]"
                         >
-                          Abbrechen
+                          {txt.abbrechen}
                         </button>
                       </div>
                       {zusammenfuehrenQuelleId === k.id && (
-                        <p className="text-xs text-red-600">Bitte ein anderes Konto wählen.</p>
+                        <p className="text-xs text-red-600">{txt.bitteAnderesKontoWaehlen}</p>
                       )}
                     </div>
                   )}
@@ -1064,7 +1060,7 @@ export default function KundenListe({
                 disabled={laedt}
                 className="w-full rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)] disabled:opacity-50"
               >
-                Neuen Zugangslink erzeugen
+                {txt.neuenZugangslinkErzeugen}
               </button>
 
               {neuerZugang && (
@@ -1083,17 +1079,16 @@ export default function KundenListe({
                 {zeigeArchivierte ? (
                   k.zusammengefuehrt_in ? (
                     <p className="text-xs text-[var(--text-faint)]">
-                      Dieses Konto wurde in{" "}
-                      <strong>{zielNamen[k.zusammengefuehrt_in] ?? "ein anderes Konto"}</strong>{" "}
-                      zusammengeführt. Alle Tickets und Daten liegen dort – ein erneutes
-                      Aktivieren würde die Zuordnung nicht rückgängig machen.
+                      {txt.kontoZusammengefuehrtInVor}{" "}
+                      <strong>{zielNamen[k.zusammengefuehrt_in] ?? txt.einAnderesKonto}</strong>
+                      {txt.kontoZusammengefuehrtInNach}
                     </p>
                   ) : (
                     <button
                       onClick={() => statusUmschalten(k.id, false)}
                       className="w-full rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
                     >
-                      Wieder aktivieren
+                      {txt.wiederAktivieren}
                     </button>
                   )
                 ) : (
@@ -1101,7 +1096,7 @@ export default function KundenListe({
                     onClick={() => statusUmschalten(k.id, true)}
                     className="w-full rounded border border-red-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30"
                   >
-                    Kunde deaktivieren
+                    {txt.kundeDeaktivieren}
                   </button>
                 )}
               </div>
@@ -1116,7 +1111,7 @@ export default function KundenListe({
           onClick={() => setAlleKundenAnzeigen((v) => !v)}
           className="w-full rounded border border-[var(--border-input)] px-3 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
         >
-          {alleKundenAnzeigen ? "Weniger anzeigen" : `Alle ${gefilterteKunden.length} anzeigen`}
+          {alleKundenAnzeigen ? txt.wenigerAnzeigen : txt.alleAnzeigenTemplate.replace("{n}", String(gefilterteKunden.length))}
         </button>
       )}
     </div>

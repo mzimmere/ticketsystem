@@ -448,6 +448,130 @@ export interface Uebersetzung {
     fehlerZuweisenFehlgeschlagen: string;
     trotzdemZuweisen: string;
   };
+  mitarbeiterListe: {
+    superAdmin: string;
+    orgAdmin: string;
+    techniker: string;
+    kunde: string;
+    fehlerLaden: string;
+    fehlerAktion: string;
+    fehlerSpeichern: string;
+    fehlerEmailUngueltig: string;
+    fehlerEmailAendern: string;
+    erfolgEmailGeaendert: string;
+    fehlerAvatarUpload: string;
+    fehlerLinkFehlgeschlagen: string;
+    fehlerNeuerLink: string;
+    keineDeaktivierten: string;
+    nochKeineTeamMitglieder: string;
+    zurueckZumAktivenTeam: string;
+    deaktivierteAnzeigen: string;
+    online: string;
+    unbenannt: string;
+    urlaub: string;
+    abwesend: string;
+    profilbildAendern: string;
+    vorname: string;
+    nachname: string;
+    telefon: string;
+    rolle: string;
+    verfuegbarkeitLabel: string;
+    verfuegbar: string;
+    speichern: string;
+    emailAendernTitel: string;
+    aktuellLabel: string;
+    neueEmailPlatzhalter: string;
+    aendern: string;
+    neuenZugangslinkErzeugen: string;
+    wiederAktivieren: string;
+    ausFirmaEntfernen: string;
+    ausFirmaEntfernenTitle: string;
+  };
+  kundenListe: {
+    fehlerLaden: string;
+    unbenannt: string;
+    fehlerAktion: string;
+    fehlerEmailVergeben: string;
+    fehlerEmailHinzufuegen: string;
+    fehlerZusammenfuehren: string;
+    erfolgZusammengefuehrt: string;
+    fehlerUngueltigerPreis: string;
+    fehlerPreisHinzufuegen: string;
+    fehlerSpeichern: string;
+    fehlerAvatarUpload: string;
+    fehlerDokumentUpload: string;
+    fehlerDokumentOeffnen: string;
+    fehlerLinkFehlgeschlagen: string;
+    fehlerNeuerLink: string;
+    suchePlatzhalter: string;
+    zurueckAktive: string;
+    archiv: string;
+    nachHardwareFiltern: string;
+    wertWaehlen: string;
+    zuruecksetzen: string;
+    keineDeaktiviertenKunden: string;
+    nochKeineKunden: string;
+    keineTreffer: string;
+    online: string;
+    profilbildAendern: string;
+    vorname: string;
+    nachname: string;
+    emailLoginLabel: string;
+    nichtAenderbar: string;
+    weitereEmailsLabel: string;
+    weitereEmailsHinweis: string;
+    entfernen: string;
+    weitereEmailPlatzhalter: string;
+    zusatzEmailHinweis: string;
+    telefonWhatsapp: string;
+    telefonPlatzhalter: string;
+    strassePlatzhalter: string;
+    nrPlatzhalter: string;
+    plzPlatzhalter: string;
+    ortPlatzhalter: string;
+    mwstHinweis: string;
+    ustIdLabel: string;
+    ustIdPlatzhalter: string;
+    ustIdHinweis: string;
+    notizenLabel: string;
+    notizenPlatzhalter: string;
+    individuellerPreisLabel: string;
+    keinPreisGesetzt: string;
+    abPrefix: string;
+    aktuell: string;
+    geplant: string;
+    preisPlatzhalter: string;
+    preisHinweis: string;
+    speichern: string;
+    dokumenteLabel: string;
+    loeschen: string;
+    dokumentHochladen: string;
+    todoListe: string;
+    hardware: string;
+    donglesLizenzen: string;
+    lizenzvertraegeLabel: string;
+    laufzeit: string;
+    bisPrefix: string;
+    tageSuffix: string;
+    abgelaufen: string;
+    kontenZusammenfuehrenLabel: string;
+    mitAnderemKontoZusammenfuehren: string;
+    zusammenfuehrenBeschreibungVor: string;
+    zusammenfuehrenBeschreibungNach: string;
+    diesemKunden: string;
+    wirdZusammengefuehrt: string;
+    zusammenfuehren: string;
+    abbrechen: string;
+    bitteAnderesKontoWaehlen: string;
+    neuenZugangslinkErzeugen: string;
+    kontoZusammengefuehrtInVor: string;
+    kontoZusammengefuehrtInNach: string;
+    einAnderesKonto: string;
+    wiederAktivieren: string;
+    kundeDeaktivieren: string;
+    wenigerAnzeigen: string;
+    alleAnzeigenTemplate: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -895,6 +1019,130 @@ const de: Uebersetzung = {
     fehlerZuweisenFehlgeschlagen: "Zuweisen fehlgeschlagen.",
     trotzdemZuweisen: "Trotzdem zuweisen?",
   },
+  mitarbeiterListe: {
+    superAdmin: "Super-Admin",
+    orgAdmin: "Org-Admin",
+    techniker: "Techniker",
+    kunde: "Kunde",
+    fehlerLaden: "Team konnte nicht geladen werden (Details in der Browser-Konsole).",
+    fehlerAktion: "Aktion fehlgeschlagen.",
+    fehlerSpeichern: "Speichern fehlgeschlagen.",
+    fehlerEmailUngueltig: "Bitte eine gültige E-Mail-Adresse eingeben.",
+    fehlerEmailAendern: "E-Mail-Änderung fehlgeschlagen.",
+    erfolgEmailGeaendert: "E-Mail geändert.",
+    fehlerAvatarUpload: "Profilbild-Upload fehlgeschlagen.",
+    fehlerLinkFehlgeschlagen: "Fehlgeschlagen",
+    fehlerNeuerLink: "Neuer Link konnte nicht erzeugt werden. Ist resend-zugang deployt?",
+    keineDeaktivierten: "Keine deaktivierten Mitglieder.",
+    nochKeineTeamMitglieder: "Noch keine Team-Mitglieder.",
+    zurueckZumAktivenTeam: "← Zurück zum aktiven Team",
+    deaktivierteAnzeigen: "Deaktivierte Mitglieder anzeigen",
+    online: "Online",
+    unbenannt: "Unbenannt",
+    urlaub: "Urlaub",
+    abwesend: "Abwesend",
+    profilbildAendern: "Profilbild ändern",
+    vorname: "Vorname",
+    nachname: "Nachname",
+    telefon: "Telefon",
+    rolle: "Rolle",
+    verfuegbarkeitLabel: "Verfügbarkeit",
+    verfuegbar: "Verfügbar",
+    speichern: "Speichern",
+    emailAendernTitel: "E-Mail-Adresse ändern",
+    aktuellLabel: "Aktuell:",
+    neueEmailPlatzhalter: "neue@email.de",
+    aendern: "Ändern",
+    neuenZugangslinkErzeugen: "Neuen Zugangslink erzeugen",
+    wiederAktivieren: "Wieder aktivieren",
+    ausFirmaEntfernen: "Aus dieser Firma entfernen",
+    ausFirmaEntfernenTitle: "Entfernt die Person nur aus DIESER Firma - andere Mitgliedschaften bleiben bestehen.",
+  },
+  kundenListe: {
+    fehlerLaden: "Kunden konnten nicht geladen werden (Details in der Browser-Konsole).",
+    unbenannt: "Unbenannt",
+    fehlerAktion: "Aktion fehlgeschlagen.",
+    fehlerEmailVergeben: "Diese E-Mail-Adresse ist bereits einem Kunden zugeordnet.",
+    fehlerEmailHinzufuegen: "E-Mail-Adresse konnte nicht hinzugefügt werden.",
+    fehlerZusammenfuehren: "Zusammenführen fehlgeschlagen.",
+    erfolgZusammengefuehrt: "Konten zusammengeführt.",
+    fehlerUngueltigerPreis: "Ungültiger Preis – bitte z.B. 1,99 eingeben.",
+    fehlerPreisHinzufuegen: "Preis konnte nicht hinzugefügt werden.",
+    fehlerSpeichern: "Speichern fehlgeschlagen.",
+    fehlerAvatarUpload: "Profilbild-Upload fehlgeschlagen.",
+    fehlerDokumentUpload: "Dokument-Upload fehlgeschlagen.",
+    fehlerDokumentOeffnen: "Konnte Dokument nicht öffnen.",
+    fehlerLinkFehlgeschlagen: "Fehlgeschlagen",
+    fehlerNeuerLink: "Neuer Link konnte nicht erzeugt werden. Ist resend-zugang deployt?",
+    suchePlatzhalter: "Suche nach Name, Telefon, Straße, PLZ oder Ort…",
+    zurueckAktive: "← Aktive",
+    archiv: "Archiv",
+    nachHardwareFiltern: "Nach Hardware filtern…",
+    wertWaehlen: "Wert wählen…",
+    zuruecksetzen: "Zurücksetzen",
+    keineDeaktiviertenKunden: "Keine deaktivierten Kunden.",
+    nochKeineKunden: "Noch keine Kunden vorhanden.",
+    keineTreffer: "Keine Treffer für diese Suche.",
+    online: "Online",
+    profilbildAendern: "Profilbild ändern",
+    vorname: "Vorname",
+    nachname: "Nachname",
+    emailLoginLabel: "E-Mail (Login)",
+    nichtAenderbar: "– nicht änderbar",
+    weitereEmailsLabel: "Weitere E-Mail-Adressen",
+    weitereEmailsHinweis: "– z.B. wenn per Mail von einer anderen Adresse geschrieben wird",
+    entfernen: "Entfernen",
+    weitereEmailPlatzhalter: "weitere.adresse@beispiel.de",
+    zusatzEmailHinweis: "Mails von hinterlegten Adressen landen automatisch bei diesem Kunden (statt einen neuen Account anzulegen).",
+    telefonWhatsapp: "Telefon / WhatsApp",
+    telefonPlatzhalter: "z.B. 4915112345678",
+    strassePlatzhalter: "Straße",
+    nrPlatzhalter: "Nr.",
+    plzPlatzhalter: "PLZ",
+    ortPlatzhalter: "Ort",
+    mwstHinweis: "Vorschlagswert nach Land, Steuersatz bleibt frei änderbar (z.B. Kleinunternehmer, Reverse-Charge).",
+    ustIdLabel: "USt-IdNr. (für steuerfreie innergemeinschaftliche Lieferung)",
+    ustIdPlatzhalter: "z.B. ATU12345678",
+    ustIdHinweis: 'Wenn ausgefüllt, weist die Rechnung automatisch 0% MwSt. aus und vermerkt "Steuerfreie innergemeinschaftliche Lieferung / Tax-free intra-Community supply".',
+    notizenLabel: "Notizen / Besonderheiten",
+    notizenPlatzhalter: "z.B. bevorzugte Erreichbarkeit, technische Besonderheiten…",
+    individuellerPreisLabel: "Individueller Minutenpreis (Verlauf, optional)",
+    keinPreisGesetzt: "Noch kein individueller Preis gesetzt – es gilt der Standardpreis der Firma.",
+    abPrefix: "ab",
+    aktuell: "Aktuell",
+    geplant: "Geplant",
+    preisPlatzhalter: "z.B. 1,99",
+    preisHinweis: "Gilt automatisch ab dem gewählten Datum – ältere Zeiterfassungen bleiben mit ihrem damaligen Preis unangetastet.",
+    speichern: "Speichern",
+    dokumenteLabel: "Dokumente (unabhängig von Tickets)",
+    loeschen: "Löschen",
+    dokumentHochladen: "+ Dokument hochladen",
+    todoListe: "Todo-Liste",
+    hardware: "Hardware",
+    donglesLizenzen: "Dongles / Lizenzen",
+    lizenzvertraegeLabel: "Lizenzverträge (Ablauf/Verlängerung)",
+    laufzeit: "Laufzeit",
+    bisPrefix: "bis",
+    tageSuffix: "Tage",
+    abgelaufen: "(abgelaufen)",
+    kontenZusammenfuehrenLabel: "Konten zusammenführen",
+    mitAnderemKontoZusammenfuehren: "Mit anderem Kundenkonto zusammenführen…",
+    zusammenfuehrenBeschreibungVor: "Wähle das doppelte/ältere Konto (z.B. weil der Kunde von einer anderen Mail-Adresse geschrieben hat). Alle Tickets, Zeiteinträge, Dokumente, Preise, Todos, Dongles, Lizenzverträge und Hardware wandern zu",
+    zusammenfuehrenBeschreibungNach: ", dessen Login-Mail wird als zusätzliche Adresse hinterlegt und das doppelte Konto anschließend deaktiviert.",
+    diesemKunden: "diesem Kunden",
+    wirdZusammengefuehrt: "Wird zusammengeführt…",
+    zusammenfuehren: "Zusammenführen",
+    abbrechen: "Abbrechen",
+    bitteAnderesKontoWaehlen: "Bitte ein anderes Konto wählen.",
+    neuenZugangslinkErzeugen: "Neuen Zugangslink erzeugen",
+    kontoZusammengefuehrtInVor: "Dieses Konto wurde in",
+    kontoZusammengefuehrtInNach: " zusammengeführt. Alle Tickets und Daten liegen dort – ein erneutes Aktivieren würde die Zuordnung nicht rückgängig machen.",
+    einAnderesKonto: "ein anderes Konto",
+    wiederAktivieren: "Wieder aktivieren",
+    kundeDeaktivieren: "Kunde deaktivieren",
+    wenigerAnzeigen: "Weniger anzeigen",
+    alleAnzeigenTemplate: "Alle {n} anzeigen",
+  },
 };
 
 const en: Uebersetzung = {
@@ -1341,6 +1589,130 @@ const en: Uebersetzung = {
     fehlerAnlegenFehlgeschlagen: "Failed to create.",
     fehlerZuweisenFehlgeschlagen: "Assignment failed.",
     trotzdemZuweisen: "Assign anyway?",
+  },
+  mitarbeiterListe: {
+    superAdmin: "Super admin",
+    orgAdmin: "Org admin",
+    techniker: "Technician",
+    kunde: "Customer",
+    fehlerLaden: "Could not load the team (see browser console for details).",
+    fehlerAktion: "Action failed.",
+    fehlerSpeichern: "Failed to save.",
+    fehlerEmailUngueltig: "Please enter a valid email address.",
+    fehlerEmailAendern: "Failed to change email.",
+    erfolgEmailGeaendert: "Email changed.",
+    fehlerAvatarUpload: "Profile picture upload failed.",
+    fehlerLinkFehlgeschlagen: "Failed",
+    fehlerNeuerLink: "Could not generate a new link. Is resend-zugang deployed?",
+    keineDeaktivierten: "No deactivated members.",
+    nochKeineTeamMitglieder: "No team members yet.",
+    zurueckZumAktivenTeam: "← Back to active team",
+    deaktivierteAnzeigen: "Show deactivated members",
+    online: "Online",
+    unbenannt: "Unnamed",
+    urlaub: "On vacation",
+    abwesend: "Away",
+    profilbildAendern: "Change profile picture",
+    vorname: "First name",
+    nachname: "Last name",
+    telefon: "Phone",
+    rolle: "Role",
+    verfuegbarkeitLabel: "Availability",
+    verfuegbar: "Available",
+    speichern: "Save",
+    emailAendernTitel: "Change email address",
+    aktuellLabel: "Current:",
+    neueEmailPlatzhalter: "new@email.com",
+    aendern: "Change",
+    neuenZugangslinkErzeugen: "Generate new access link",
+    wiederAktivieren: "Reactivate",
+    ausFirmaEntfernen: "Remove from this company",
+    ausFirmaEntfernenTitle: "Removes the person only from THIS company - other memberships remain.",
+  },
+  kundenListe: {
+    fehlerLaden: "Customers could not be loaded (details in the browser console).",
+    unbenannt: "Unnamed",
+    fehlerAktion: "Action failed.",
+    fehlerEmailVergeben: "This email address is already assigned to a customer.",
+    fehlerEmailHinzufuegen: "Could not add email address.",
+    fehlerZusammenfuehren: "Merge failed.",
+    erfolgZusammengefuehrt: "Accounts merged.",
+    fehlerUngueltigerPreis: "Invalid price – please enter e.g. 1.99.",
+    fehlerPreisHinzufuegen: "Could not add price.",
+    fehlerSpeichern: "Save failed.",
+    fehlerAvatarUpload: "Profile picture upload failed.",
+    fehlerDokumentUpload: "Document upload failed.",
+    fehlerDokumentOeffnen: "Could not open document.",
+    fehlerLinkFehlgeschlagen: "Failed",
+    fehlerNeuerLink: "Could not generate new link. Is resend-zugang deployed?",
+    suchePlatzhalter: "Search by name, phone, street, zip code, or city…",
+    zurueckAktive: "← Active",
+    archiv: "Archive",
+    nachHardwareFiltern: "Filter by hardware…",
+    wertWaehlen: "Select value…",
+    zuruecksetzen: "Reset",
+    keineDeaktiviertenKunden: "No deactivated customers.",
+    nochKeineKunden: "No customers yet.",
+    keineTreffer: "No matches for this search.",
+    online: "Online",
+    profilbildAendern: "Change profile picture",
+    vorname: "First name",
+    nachname: "Last name",
+    emailLoginLabel: "Email (login)",
+    nichtAenderbar: "– not changeable",
+    weitereEmailsLabel: "Additional email addresses",
+    weitereEmailsHinweis: "– e.g. when writing in from a different address",
+    entfernen: "Remove",
+    weitereEmailPlatzhalter: "additional.address@example.com",
+    zusatzEmailHinweis: "Emails from saved addresses are automatically assigned to this customer (instead of creating a new account).",
+    telefonWhatsapp: "Phone / WhatsApp",
+    telefonPlatzhalter: "e.g. 4915112345678",
+    strassePlatzhalter: "Street",
+    nrPlatzhalter: "No.",
+    plzPlatzhalter: "Zip code",
+    ortPlatzhalter: "City",
+    mwstHinweis: "Suggested value based on country, tax rate remains freely adjustable (e.g. small business, reverse charge).",
+    ustIdLabel: "VAT ID (for tax-exempt intra-Community supply)",
+    ustIdPlatzhalter: "e.g. ATU12345678",
+    ustIdHinweis: 'If filled in, the invoice automatically shows 0% VAT and notes "Steuerfreie innergemeinschaftliche Lieferung / Tax-free intra-Community supply".',
+    notizenLabel: "Notes / special notes",
+    notizenPlatzhalter: "e.g. preferred availability, technical specifics…",
+    individuellerPreisLabel: "Individual per-minute price (history, optional)",
+    keinPreisGesetzt: "No individual price set yet – the company's standard price applies.",
+    abPrefix: "from",
+    aktuell: "Current",
+    geplant: "Planned",
+    preisPlatzhalter: "e.g. 1.99",
+    preisHinweis: "Applies automatically from the selected date – older time entries remain unaffected at their price at the time.",
+    speichern: "Save",
+    dokumenteLabel: "Documents (independent of tickets)",
+    loeschen: "Delete",
+    dokumentHochladen: "+ Upload document",
+    todoListe: "Todo list",
+    hardware: "Hardware",
+    donglesLizenzen: "Dongles / Licenses",
+    lizenzvertraegeLabel: "License contracts (expiry/renewal)",
+    laufzeit: "Term",
+    bisPrefix: "until",
+    tageSuffix: "days",
+    abgelaufen: "(expired)",
+    kontenZusammenfuehrenLabel: "Merge accounts",
+    mitAnderemKontoZusammenfuehren: "Merge with another customer account…",
+    zusammenfuehrenBeschreibungVor: "Choose the duplicate/older account (e.g. because the customer wrote from a different email address). All tickets, time entries, documents, prices, todos, dongles, license contracts, and hardware will move to",
+    zusammenfuehrenBeschreibungNach: ", whose login email will be saved as an additional address and the duplicate account will then be deactivated.",
+    diesemKunden: "this customer",
+    wirdZusammengefuehrt: "Merging…",
+    zusammenfuehren: "Merge",
+    abbrechen: "Cancel",
+    bitteAnderesKontoWaehlen: "Please select a different account.",
+    neuenZugangslinkErzeugen: "Generate new access link",
+    kontoZusammengefuehrtInVor: "This account was merged into",
+    kontoZusammengefuehrtInNach: ". All tickets and data are located there – reactivating it would not undo the assignment.",
+    einAnderesKonto: "another account",
+    wiederAktivieren: "Reactivate",
+    kundeDeaktivieren: "Deactivate customer",
+    wenigerAnzeigen: "Show less",
+    alleAnzeigenTemplate: "Show all {n}",
   },
 };
 
