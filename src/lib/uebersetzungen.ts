@@ -728,6 +728,68 @@ export interface Uebersetzung {
     faelligkeitsdatum: string;
     ueberweisungNach: string;
   };
+  integrationenVerwaltung: {
+    kopieren: string;
+    verbergen: string;
+    anzeigen: string;
+    titel: string;
+    emailTitel: string;
+    emailBeschreibung: string;
+    versandLabel: string;
+    versandEigenesPostfach: string;
+    versandGemeinsam: string;
+    empfangLabel: string;
+    empfangAktiv: string;
+    empfangNichtKonfiguriert: string;
+    emailHinweis: string;
+    smtpHost: string;
+    smtpHostPlatzhalter: string;
+    smtpPort: string;
+    smtpPortHinweis: string;
+    imapHost: string;
+    imapHostPlatzhalter: string;
+    imapPort: string;
+    imapPortHinweis: string;
+    benutzername: string;
+    benutzernamePlatzhalter: string;
+    benutzernameHinweis: string;
+    absenderadresse: string;
+    passwort: string;
+    passwortPlatzhalter: string;
+    passwortHinweis: string;
+    supportEmailLabel: string;
+    supportEmailKlammer: string;
+    supportEmailPlatzhalter: string;
+    supportEmailHinweis: string;
+    fehlerSpeichern: string;
+    gespeichert: string;
+    speichert: string;
+    emailZugangsdatenSpeichern: string;
+    whatsappTitel: string;
+    whatsappBeschreibung: string;
+    aktiv: string;
+    nichtKonfiguriert: string;
+    phoneNumberId: string;
+    phoneNumberIdHinweis: string;
+    accessToken: string;
+    appSecret: string;
+    appSecretKlammer: string;
+    appSecretPlatzhalter: string;
+    appSecretHinweis: string;
+    webhookVerifyToken: string;
+    webhookTokenPlatzhalter: string;
+    generieren: string;
+    webhookUrlLabel: string;
+    webhookUrlHinweis: string;
+    bitteZuerstEintragen: string;
+    tokenAbgelaufen: string;
+    testFehlgeschlagen: string;
+    verbundenTemplate: string;
+    qualitaetTemplate: string;
+    prueft: string;
+    verbindungTesten: string;
+    integrationenSpeichern: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -1455,6 +1517,68 @@ const de: Uebersetzung = {
     faelligkeitsdatum: "Fälligkeitsdatum",
     ueberweisungNach: "auf IBAN {iban}.",
   },
+  integrationenVerwaltung: {
+    kopieren: "Kopieren",
+    verbergen: "Verbergen",
+    anzeigen: "Anzeigen",
+    titel: "Integrationen",
+    emailTitel: "E-Mail (Senden & Empfangen)",
+    emailBeschreibung: "Ein Postfach für Kunden-Benachrichtigungen (SMTP) und automatische Tickets aus eingehenden Mails (IMAP)",
+    versandLabel: "Versand:",
+    versandEigenesPostfach: "Eigenes Postfach",
+    versandGemeinsam: "Gemeinsam",
+    empfangLabel: "Empfang:",
+    empfangAktiv: "Aktiv",
+    empfangNichtKonfiguriert: "Nicht konfiguriert",
+    emailHinweis: "Ohne eigene Angaben hier wird für den Versand das zentrale, gemeinsame Postfach der Plattform verwendet. Trage die Zugangsdaten eines eigenen Postfachs dieser Firma ein, damit Kunden Mails von der eigenen Adresse erhalten und Antworten an diese Adresse automatisch zu Tickets werden.",
+    smtpHost: "SMTP-Host (Versand)",
+    smtpHostPlatzhalter: "smtp-mail.outlook.com",
+    smtpPort: "SMTP-Port",
+    smtpPortHinweis: "587 = STARTTLS (üblich), 465 = TLS",
+    imapHost: "IMAP-Host (Empfang)",
+    imapHostPlatzhalter: "imap-mail.outlook.com",
+    imapPort: "IMAP-Port",
+    imapPortHinweis: "993 = IMAP über TLS (üblich)",
+    benutzername: "Benutzername",
+    benutzernamePlatzhalter: "firma@ihre-domain.de",
+    benutzernameHinweis: "Gilt für SMTP und IMAP – ein Postfach-Login.",
+    absenderadresse: "Absenderadresse",
+    passwort: "Passwort",
+    passwortPlatzhalter: "Postfach-Passwort oder App-Passwort…",
+    passwortHinweis: "Zu finden in den SMTP-/IMAP-/E-Mail-Client-Einstellungen des E-Mail-Anbieters. Bei manchen Anbietern (z.B. Outlook, Gmail) wird ein separat generiertes App-Passwort benötigt statt des normalen Login-Passworts.",
+    supportEmailLabel: "Support-E-Mail-Adresse",
+    supportEmailKlammer: "(für automatische Tickets)",
+    supportEmailPlatzhalter: "support@deine-firma.de",
+    supportEmailHinweis: 'Diese Adresse gibst du Kunden als Support-Kontakt – meist identisch mit der Absenderadresse oben. Alle paar Minuten wird das Postfach automatisch nach neuen Mails durchsucht und daraus Tickets angelegt (kleine Verzögerung statt sofortiger Zustellung, dafür ohne Drittanbieter-Konto/Domain-Einrichtung). Unbekannte Absenderadressen erzeugen automatisch einen neuen Kunden-Account; antwortet jemand auf eine Ticket-Mail mit "#123" im Betreff (unverändert), wird die Antwort dem bestehenden Ticket zugeordnet statt ein neues zu öffnen.',
+    fehlerSpeichern: "Fehler beim Speichern.",
+    gespeichert: "Gespeichert.",
+    speichert: "Speichert…",
+    emailZugangsdatenSpeichern: "E-Mail-Zugangsdaten speichern",
+    whatsappTitel: "WhatsApp → Ticket",
+    whatsappBeschreibung: "WhatsApp-Nachrichten als Ticket anlegen (Meta Cloud API)",
+    aktiv: "Aktiv",
+    nichtKonfiguriert: "Nicht konfiguriert",
+    phoneNumberId: "Phone Number ID",
+    phoneNumberIdHinweis: "Meta → Anwendungsfall → Schritt 2: Produktionseinrichtung → Telefonnummer (oder im WhatsApp Manager bei deiner Nummer)",
+    accessToken: "Access Token",
+    appSecret: "App Secret",
+    appSecretKlammer: "(optional)",
+    appSecretPlatzhalter: "App-Geheimnis aus Meta…",
+    appSecretHinweis: 'Nur nötig, wenn Meta "API calls require an appsecret_proof" meldet. Zu finden unter Meta → App-Einstellungen → Allgemein → App-Geheimnis.',
+    webhookVerifyToken: "Webhook Verify Token",
+    webhookTokenPlatzhalter: "Selbst gewählter geheimer Wert…",
+    generieren: "Generieren",
+    webhookUrlLabel: "Webhook-URL – bei Meta eintragen:",
+    webhookUrlHinweis: 'Bei Meta unter "Schritt 2: Produktionseinrichtung" → Webhooks: diese URL + deinen Verify Token eintragen und das Feld "messages" abonnieren.',
+    bitteZuerstEintragen: "Bitte zuerst Phone Number ID und Access Token eintragen und speichern.",
+    tokenAbgelaufen: "Access Token ist ungültig/abgelaufen. Bitte einen permanenten System-User-Token erstellen (siehe Anleitung unten).",
+    testFehlgeschlagen: "Test fehlgeschlagen.",
+    verbundenTemplate: "Verbunden: {name}",
+    qualitaetTemplate: " · Qualität: {qualitaet}",
+    prueft: "Prüft…",
+    verbindungTesten: "Verbindung testen",
+    integrationenSpeichern: "Integrationen speichern",
+  },
 };
 
 const en: Uebersetzung = {
@@ -2181,6 +2305,68 @@ const en: Uebersetzung = {
     ueberweisungVor: "Please transfer the amount by",
     faelligkeitsdatum: "the due date",
     ueberweisungNach: "to IBAN {iban}.",
+  },
+  integrationenVerwaltung: {
+    kopieren: "Copy",
+    verbergen: "Hide",
+    anzeigen: "Show",
+    titel: "Integrations",
+    emailTitel: "Email (send & receive)",
+    emailBeschreibung: "One mailbox for customer notifications (SMTP) and automatic tickets from incoming mail (IMAP)",
+    versandLabel: "Sending:",
+    versandEigenesPostfach: "Own mailbox",
+    versandGemeinsam: "Shared",
+    empfangLabel: "Receiving:",
+    empfangAktiv: "Active",
+    empfangNichtKonfiguriert: "Not configured",
+    emailHinweis: "Without your own settings here, the platform's central shared mailbox is used for sending. Enter this company's own mailbox credentials so customers receive mail from your own address and replies to that address automatically become tickets.",
+    smtpHost: "SMTP host (sending)",
+    smtpHostPlatzhalter: "smtp-mail.outlook.com",
+    smtpPort: "SMTP port",
+    smtpPortHinweis: "587 = STARTTLS (common), 465 = TLS",
+    imapHost: "IMAP host (receiving)",
+    imapHostPlatzhalter: "imap-mail.outlook.com",
+    imapPort: "IMAP port",
+    imapPortHinweis: "993 = IMAP over TLS (common)",
+    benutzername: "Username",
+    benutzernamePlatzhalter: "company@your-domain.com",
+    benutzernameHinweis: "Applies to both SMTP and IMAP – one mailbox login.",
+    absenderadresse: "Sender address",
+    passwort: "Password",
+    passwortPlatzhalter: "Mailbox password or app password…",
+    passwortHinweis: "Found in the email provider's SMTP/IMAP/email client settings. Some providers (e.g. Outlook, Gmail) require a separately generated app password instead of the normal login password.",
+    supportEmailLabel: "Support email address",
+    supportEmailKlammer: "(for automatic tickets)",
+    supportEmailPlatzhalter: "support@your-company.com",
+    supportEmailHinweis: 'You give this address to customers as the support contact – usually identical to the sender address above. Every few minutes, the mailbox is automatically checked for new mail and tickets are created from it (small delay instead of instant delivery, but without a third-party account/domain setup). Unknown sender addresses automatically create a new customer account; if someone replies to a ticket email with "#123" in the subject (unchanged), the reply is assigned to the existing ticket instead of opening a new one.',
+    fehlerSpeichern: "Error saving.",
+    gespeichert: "Saved.",
+    speichert: "Saving…",
+    emailZugangsdatenSpeichern: "Save email credentials",
+    whatsappTitel: "WhatsApp → Ticket",
+    whatsappBeschreibung: "Create tickets from WhatsApp messages (Meta Cloud API)",
+    aktiv: "Active",
+    nichtKonfiguriert: "Not configured",
+    phoneNumberId: "Phone Number ID",
+    phoneNumberIdHinweis: "Meta → Use case → Step 2: Production setup → Phone number (or in WhatsApp Manager under your number)",
+    accessToken: "Access Token",
+    appSecret: "App Secret",
+    appSecretKlammer: "(optional)",
+    appSecretPlatzhalter: "App secret from Meta…",
+    appSecretHinweis: 'Only needed if Meta reports "API calls require an appsecret_proof". Found under Meta → App settings → Basic → App secret.',
+    webhookVerifyToken: "Webhook Verify Token",
+    webhookTokenPlatzhalter: "Your own secret value…",
+    generieren: "Generate",
+    webhookUrlLabel: "Webhook URL – enter at Meta:",
+    webhookUrlHinweis: 'At Meta under "Step 2: Production setup" → Webhooks: enter this URL + your verify token and subscribe to the "messages" field.',
+    bitteZuerstEintragen: "Please enter and save the Phone Number ID and Access Token first.",
+    tokenAbgelaufen: "Access Token is invalid/expired. Please create a permanent system-user token (see instructions below).",
+    testFehlgeschlagen: "Test failed.",
+    verbundenTemplate: "Connected: {name}",
+    qualitaetTemplate: " · Quality: {qualitaet}",
+    prueft: "Checking…",
+    verbindungTesten: "Test connection",
+    integrationenSpeichern: "Save integrations",
   },
 };
 

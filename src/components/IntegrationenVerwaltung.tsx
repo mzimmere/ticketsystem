@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 import ApiVerwaltung from "./ApiVerwaltung";
 import KonfigurationsHilfe from "./KonfigurationsHilfe";
 
@@ -16,18 +18,22 @@ interface Konfig {
 }
 
 function KopierenButton({ wert }: { wert: string }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).integrationenVerwaltung;
   const [kopiert, setKopiert] = useState(false);
   return (
     <button
       onClick={() => { navigator.clipboard.writeText(wert); setKopiert(true); setTimeout(() => setKopiert(false), 2000); }}
       className="rounded border border-[var(--border-input)] px-2 py-1 text-xs text-[var(--text-faint)] hover:bg-[var(--bg-muted)]"
     >
-      {kopiert ? "✓" : "Kopieren"}
+      {kopiert ? "✓" : txt.kopieren}
     </button>
   );
 }
 
 function GeheimnisInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).integrationenVerwaltung;
   const [sichtbar, setSichtbar] = useState(false);
   return (
     <div className="flex gap-1">
@@ -40,7 +46,7 @@ function GeheimnisInput({ value, onChange, placeholder }: { value: string; onCha
       />
       <button type="button" onClick={() => setSichtbar(!sichtbar)}
         className="rounded-lg border border-[var(--border-input)] px-2 py-1 text-xs text-[var(--text-faint)] hover:bg-[var(--bg-muted)]">
-        {sichtbar ? "Verbergen" : "Anzeigen"}
+        {sichtbar ? txt.verbergen : txt.anzeigen}
       </button>
     </div>
   );
@@ -62,6 +68,8 @@ const SMTP_LEER: SmtpKonfig = {
 };
 
 export default function IntegrationenVerwaltung({ organisationId }: IntegrationenProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).integrationenVerwaltung;
   const [konfig, setKonfig] = useState<Konfig>({
     inbound_email_adresse: null,
     whatsapp_phone_number_id: null, whatsapp_access_token: null, whatsapp_webhook_secret: null,
@@ -130,7 +138,7 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
         .eq("id", organisationId),
     ]);
     setSmtpLaedt(false);
-    setSmtpHinweis(smtpFehler || inboundFehler ? "Fehler beim Speichern." : "Gespeichert.");
+    setSmtpHinweis(smtpFehler || inboundFehler ? txt.fehlerSpeichern : txt.gespeichert);
     setTimeout(() => setSmtpHinweis(null), 3000);
   }
 
@@ -143,7 +151,7 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
       whatsapp_app_secret: konfig.whatsapp_app_secret?.trim() || null,
     }).eq("id", organisationId);
     setLaedt(false);
-    setHinweis(error ? "Fehler beim Speichern." : "Gespeichert.");
+    setHinweis(error ? txt.fehlerSpeichern : txt.gespeichert);
     setTimeout(() => setHinweis(null), 3000);
   }
 
@@ -165,15 +173,19 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
       });
       const json = await res.json();
       if (!res.ok || json.error) {
-        setWaTestErgebnis({ ok: false, text: json.error ?? "Test fehlgeschlagen." });
+        setWaTestErgebnis({ ok: false, text: json.error ?? txt.testFehlgeschlagen });
       } else if (json.grund === "nicht_konfiguriert") {
-        setWaTestErgebnis({ ok: false, text: "Bitte zuerst Phone Number ID und Access Token eintragen und speichern." });
+        setWaTestErgebnis({ ok: false, text: txt.bitteZuerstEintragen });
       } else if (json.grund === "token_abgelaufen") {
-        setWaTestErgebnis({ ok: false, text: "Access Token ist ungültig/abgelaufen. Bitte einen permanenten System-User-Token erstellen (siehe Anleitung unten)." });
+        setWaTestErgebnis({ ok: false, text: txt.tokenAbgelaufen });
       } else if (json.ok) {
-        setWaTestErgebnis({ ok: true, text: `Verbunden: ${json.verifizierterName ?? json.telefonnummer ?? "OK"}${json.qualitaet ? ` · Qualität: ${json.qualitaet}` : ""}` });
+        setWaTestErgebnis({
+          ok: true,
+          text: txt.verbundenTemplate.replace("{name}", json.verifizierterName ?? json.telefonnummer ?? "OK") +
+            (json.qualitaet ? txt.qualitaetTemplate.replace("{qualitaet}", json.qualitaet) : ""),
+        });
       } else {
-        setWaTestErgebnis({ ok: false, text: json.meldung ?? "Test fehlgeschlagen." });
+        setWaTestErgebnis({ ok: false, text: json.meldung ?? txt.testFehlgeschlagen });
       }
     } catch (err) {
       setWaTestErgebnis({ ok: false, text: String(err) });
@@ -187,7 +199,7 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
 
   return (
     <div className="space-y-6">
-      <h3 className="text-sm font-medium text-[var(--text-strong)]">Integrationen</h3>
+      <h3 className="text-sm font-medium text-[var(--text-strong)]">{txt.titel}</h3>
 
       {/* ── E-Mail (Senden & Empfangen) ────────────────────────────── */}
       <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-4">
@@ -195,112 +207,103 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
           <div className="flex items-center gap-2">
             <span className="text-lg">✉️</span>
             <div>
-              <p className="text-sm font-medium text-[var(--text-strong)]">E-Mail (Senden &amp; Empfangen)</p>
+              <p className="text-sm font-medium text-[var(--text-strong)]">{txt.emailTitel}</p>
               <p className="text-xs text-[var(--text-faint)]">
-                Ein Postfach für Kunden-Benachrichtigungen (SMTP) und automatische Tickets aus eingehenden Mails (IMAP)
+                {txt.emailBeschreibung}
               </p>
             </div>
           </div>
           <div className="flex shrink-0 gap-1.5">
             <span className={`rounded-full px-2 py-0.5 text-[0.65rem] font-medium ${versandAktiv ? "bg-green-100 text-green-700" : "bg-[var(--bg-muted)] text-[var(--text-faint)]"}`}>
-              Versand: {versandAktiv ? "Eigenes Postfach" : "Gemeinsam"}
+              {txt.versandLabel} {versandAktiv ? txt.versandEigenesPostfach : txt.versandGemeinsam}
             </span>
             <span className={`rounded-full px-2 py-0.5 text-[0.65rem] font-medium ${empfangAktiv ? "bg-green-100 text-green-700" : "bg-[var(--bg-muted)] text-[var(--text-faint)]"}`}>
-              Empfang: {empfangAktiv ? "Aktiv" : "Nicht konfiguriert"}
+              {txt.empfangLabel} {empfangAktiv ? txt.empfangAktiv : txt.empfangNichtKonfiguriert}
             </span>
           </div>
         </div>
 
         <p className="text-xs text-[var(--text-faint)]">
-          Ohne eigene Angaben hier wird für den Versand das zentrale, gemeinsame Postfach der Plattform
-          verwendet. Trage die Zugangsdaten eines eigenen Postfachs dieser Firma ein, damit Kunden Mails
-          von der eigenen Adresse erhalten und Antworten an diese Adresse automatisch zu Tickets werden.
+          {txt.emailHinweis}
         </p>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">SMTP-Host (Versand)</label>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.smtpHost}</label>
             <input type="text" value={smtpKonfig.smtp_host}
               onChange={(e) => setSmtpKonfig({ ...smtpKonfig, smtp_host: e.target.value })}
-              placeholder="smtp-mail.outlook.com"
+              placeholder={txt.smtpHostPlatzhalter}
               className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm font-mono" />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">SMTP-Port</label>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.smtpPort}</label>
             <input type="number" value={smtpKonfig.smtp_port}
               onChange={(e) => setSmtpKonfig({ ...smtpKonfig, smtp_port: e.target.value })}
               placeholder="587"
               className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm font-mono" />
-            <p className="mt-1 text-xs text-[var(--text-faint)]">587 = STARTTLS (üblich), 465 = TLS</p>
+            <p className="mt-1 text-xs text-[var(--text-faint)]">{txt.smtpPortHinweis}</p>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">IMAP-Host (Empfang)</label>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.imapHost}</label>
             <input type="text" value={smtpKonfig.imap_host}
               onChange={(e) => setSmtpKonfig({ ...smtpKonfig, imap_host: e.target.value })}
-              placeholder="imap-mail.outlook.com"
+              placeholder={txt.imapHostPlatzhalter}
               className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm font-mono" />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">IMAP-Port</label>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.imapPort}</label>
             <input type="number" value={smtpKonfig.imap_port}
               onChange={(e) => setSmtpKonfig({ ...smtpKonfig, imap_port: e.target.value })}
               placeholder="993"
               className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm font-mono" />
-            <p className="mt-1 text-xs text-[var(--text-faint)]">993 = IMAP über TLS (üblich)</p>
+            <p className="mt-1 text-xs text-[var(--text-faint)]">{txt.imapPortHinweis}</p>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Benutzername</label>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.benutzername}</label>
             <input type="text" value={smtpKonfig.smtp_user}
               onChange={(e) => setSmtpKonfig({ ...smtpKonfig, smtp_user: e.target.value })}
-              placeholder="firma@ihre-domain.de"
+              placeholder={txt.benutzernamePlatzhalter}
               className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm font-mono" />
-            <p className="mt-1 text-xs text-[var(--text-faint)]">Gilt für SMTP und IMAP – ein Postfach-Login.</p>
+            <p className="mt-1 text-xs text-[var(--text-faint)]">{txt.benutzernameHinweis}</p>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Absenderadresse</label>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.absenderadresse}</label>
             <input type="email" value={smtpKonfig.absender_email}
               onChange={(e) => setSmtpKonfig({ ...smtpKonfig, absender_email: e.target.value })}
-              placeholder="firma@ihre-domain.de"
+              placeholder={txt.benutzernamePlatzhalter}
               className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm font-mono" />
           </div>
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Passwort</label>
+          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.passwort}</label>
           <GeheimnisInput
             value={smtpKonfig.smtp_password}
             onChange={(v) => setSmtpKonfig({ ...smtpKonfig, smtp_password: v })}
-            placeholder="Postfach-Passwort oder App-Passwort…"
+            placeholder={txt.passwortPlatzhalter}
           />
           <p className="mt-1 text-xs text-[var(--text-faint)]">
-            Zu finden in den SMTP-/IMAP-/E-Mail-Client-Einstellungen des E-Mail-Anbieters. Bei manchen
-            Anbietern (z.B. Outlook, Gmail) wird ein separat generiertes App-Passwort benötigt statt
-            des normalen Login-Passworts.
+            {txt.passwortHinweis}
           </p>
         </div>
 
         <div>
           <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-            Support-E-Mail-Adresse <span className="font-normal text-[var(--text-faint)]">(für automatische Tickets)</span>
+            {txt.supportEmailLabel} <span className="font-normal text-[var(--text-faint)]">{txt.supportEmailKlammer}</span>
           </label>
           <input type="email" value={konfig.inbound_email_adresse ?? ""}
             onChange={(e) => setKonfig({ ...konfig, inbound_email_adresse: e.target.value })}
-            placeholder="support@deine-firma.de"
+            placeholder={txt.supportEmailPlatzhalter}
             className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
           <p className="mt-1 text-xs text-[var(--text-faint)]">
-            Diese Adresse gibst du Kunden als Support-Kontakt – meist identisch mit der Absenderadresse
-            oben. Alle paar Minuten wird das Postfach automatisch nach neuen Mails durchsucht und daraus
-            Tickets angelegt (kleine Verzögerung statt sofortiger Zustellung, dafür ohne
-            Drittanbieter-Konto/Domain-Einrichtung). Unbekannte Absenderadressen erzeugen automatisch
-            einen neuen Kunden-Account; antwortet jemand auf eine Ticket-Mail mit "#123" im Betreff
-            (unverändert), wird die Antwort dem bestehenden Ticket zugeordnet statt ein neues zu öffnen.
+            {txt.supportEmailHinweis}
           </p>
         </div>
 
         {smtpHinweis && <p className="text-sm text-[var(--text-soft)]">{smtpHinweis}</p>}
         <button onClick={smtpSpeichern} disabled={smtpLaedt}
           className="w-full rounded-xl border border-[var(--border-input)] py-2 text-sm font-medium text-[var(--text-soft)] hover:bg-[var(--bg-muted)] disabled:opacity-50">
-          {smtpLaedt ? "Speichert…" : "E-Mail-Zugangsdaten speichern"}
+          {smtpLaedt ? txt.speichert : txt.emailZugangsdatenSpeichern}
         </button>
       </div>
 
@@ -310,30 +313,29 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
           <div className="flex items-center gap-2">
             <span className="text-lg">💬</span>
             <div>
-              <p className="text-sm font-medium text-[var(--text-strong)]">WhatsApp → Ticket</p>
-              <p className="text-xs text-[var(--text-faint)]">WhatsApp-Nachrichten als Ticket anlegen (Meta Cloud API)</p>
+              <p className="text-sm font-medium text-[var(--text-strong)]">{txt.whatsappTitel}</p>
+              <p className="text-xs text-[var(--text-faint)]">{txt.whatsappBeschreibung}</p>
             </div>
           </div>
           <span className={`rounded-full px-2 py-0.5 text-[0.65rem] font-medium ${waAktiv ? "bg-green-100 text-green-700" : "bg-[var(--bg-muted)] text-[var(--text-faint)]"}`}>
-            {waAktiv ? "Aktiv" : "Nicht konfiguriert"}
+            {waAktiv ? txt.aktiv : txt.nichtKonfiguriert}
           </span>
         </div>
 
         <div className="space-y-3">
           <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Phone Number ID</label>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.phoneNumberId}</label>
             <input type="text" value={konfig.whatsapp_phone_number_id ?? ""}
               onChange={(e) => setKonfig({ ...konfig, whatsapp_phone_number_id: e.target.value })}
               placeholder="1234567890123456"
               className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm font-mono" />
             <p className="mt-1 text-xs text-[var(--text-faint)]">
-              Meta → Anwendungsfall → Schritt 2: Produktionseinrichtung → Telefonnummer (oder im
-              WhatsApp Manager bei deiner Nummer)
+              {txt.phoneNumberIdHinweis}
             </p>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Access Token</label>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.accessToken}</label>
             <GeheimnisInput
               value={konfig.whatsapp_access_token ?? ""}
               onChange={(v) => setKonfig({ ...konfig, whatsapp_access_token: v })}
@@ -343,36 +345,35 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
 
           <div>
             <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-              App Secret <span className="font-normal text-[var(--text-faint)]">(optional)</span>
+              {txt.appSecret} <span className="font-normal text-[var(--text-faint)]">{txt.appSecretKlammer}</span>
             </label>
             <GeheimnisInput
               value={konfig.whatsapp_app_secret ?? ""}
               onChange={(v) => setKonfig({ ...konfig, whatsapp_app_secret: v })}
-              placeholder="App-Geheimnis aus Meta…"
+              placeholder={txt.appSecretPlatzhalter}
             />
             <p className="mt-1 text-xs text-[var(--text-faint)]">
-              Nur nötig, wenn Meta "API calls require an appsecret_proof" meldet. Zu finden unter
-              Meta → App-Einstellungen → Allgemein → App-Geheimnis.
+              {txt.appSecretHinweis}
             </p>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Webhook Verify Token</label>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.webhookVerifyToken}</label>
             <div className="flex gap-2">
               <GeheimnisInput
                 value={konfig.whatsapp_webhook_secret ?? ""}
                 onChange={(v) => setKonfig({ ...konfig, whatsapp_webhook_secret: v })}
-                placeholder="Selbst gewählter geheimer Wert…"
+                placeholder={txt.webhookTokenPlatzhalter}
               />
               <button onClick={() => setKonfig({ ...konfig, whatsapp_webhook_secret: crypto.randomUUID() })}
                 className="shrink-0 rounded-lg border border-[var(--border-input)] px-3 py-1 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
-                Generieren
+                {txt.generieren}
               </button>
             </div>
           </div>
 
           <div className="rounded-lg bg-[var(--bg-muted)] p-3 space-y-1.5">
-            <p className="text-xs font-medium text-[var(--text-soft)]">Webhook-URL – bei Meta eintragen:</p>
+            <p className="text-xs font-medium text-[var(--text-soft)]">{txt.webhookUrlLabel}</p>
             <div className="flex items-center gap-2">
               <code className="flex-1 truncate rounded bg-[var(--bg-surface)] px-2 py-1 text-xs font-mono text-[var(--text-strong)]">
                 {webhookBaseUrl}/whatsapp-webhook
@@ -380,8 +381,7 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
               <KopierenButton wert={`${webhookBaseUrl}/whatsapp-webhook`} />
             </div>
             <p className="text-xs text-[var(--text-faint)]">
-              Bei Meta unter "Schritt 2: Produktionseinrichtung" → Webhooks: diese URL + deinen
-              Verify Token eintragen und das Feld "messages" abonnieren.
+              {txt.webhookUrlHinweis}
             </p>
           </div>
 
@@ -391,7 +391,7 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
               disabled={waTestLaedt || !konfig.whatsapp_phone_number_id || !konfig.whatsapp_access_token}
               className="rounded-lg border border-[var(--border-input)] px-3 py-1.5 text-xs font-medium text-[var(--text-soft)] hover:bg-[var(--bg-muted)] disabled:opacity-50"
             >
-              {waTestLaedt ? "Prüft…" : "Verbindung testen"}
+              {waTestLaedt ? txt.prueft : txt.verbindungTesten}
             </button>
             {waTestErgebnis && (
               <p className={`mt-1.5 text-xs ${waTestErgebnis.ok ? "text-green-600" : "text-red-600"}`}>
@@ -446,7 +446,7 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
       {hinweis && <p className="text-sm text-[var(--text-soft)]">{hinweis}</p>}
       <button onClick={speichern} disabled={laedt}
         className="w-full rounded-xl bg-akzent py-2.5 text-sm font-medium text-white disabled:opacity-50">
-        {laedt ? "Speichert…" : "Integrationen speichern"}
+        {laedt ? txt.speichert : txt.integrationenSpeichern}
       </button>
 
       <div className="border-t border-[var(--border)] pt-6">
