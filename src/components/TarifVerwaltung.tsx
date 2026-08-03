@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface Staffel {
   id: string;
@@ -18,11 +20,13 @@ interface Tarif {
   staffeln: Staffel[];
 }
 
-function euro(cent: number): string {
-  return (cent / 100).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function euro(cent: number, sprache: "de" | "en"): string {
+  return (cent / 100).toLocaleString(sprache === "en" ? "en-US" : "de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 export default function TarifVerwaltung() {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).tarifVerwaltung;
   const [tarife, setTarife] = useState<Tarif[]>([]);
   const [laedt, setLaedt] = useState(true);
   const [zeigeNeu, setZeigeNeu] = useState(false);
@@ -48,9 +52,9 @@ export default function TarifVerwaltung() {
   }
 
   async function neuenTarifAnlegen() {
-    if (!neuName.trim()) { setHinweis("Bitte einen Namen angeben."); return; }
+    if (!neuName.trim()) { setHinweis(txt.namePflicht); return; }
     const { error } = await supabase.from("tarife").insert({ name: neuName.trim() });
-    if (error) { setHinweis("Anlegen fehlgeschlagen."); return; }
+    if (error) { setHinweis(txt.anlegenFehlgeschlagen); return; }
     setNeuName("");
     setZeigeNeu(false);
     setHinweis(null);
@@ -69,9 +73,9 @@ export default function TarifVerwaltung() {
   }
 
   async function tarifLoeschen(id: string) {
-    if (!confirm("Tarif wirklich löschen? Geht nur, wenn er keiner Firma zugewiesen ist.")) return;
+    if (!confirm(txt.loeschenConfirm)) return;
     const { error } = await supabase.from("tarife").delete().eq("id", id);
-    if (error) { setHinweis("Löschen fehlgeschlagen – Tarif ist noch mindestens einer Firma zugewiesen."); return; }
+    if (error) { setHinweis(txt.loeschenFehlgeschlagen); return; }
     laden();
   }
 
@@ -98,19 +102,19 @@ export default function TarifVerwaltung() {
     laden();
   }
 
-  if (laedt) return <p className="text-sm text-[var(--text-faint)]">Lädt…</p>;
+  if (laedt) return <p className="text-sm text-[var(--text-faint)]">{txt.laedt}</p>;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-xs text-[var(--text-faint)]">
-          Grundgebühr deckt eine bestimmte Mitarbeiterzahl ab. Darüber hinaus greifen die Staffeln (nach absoluter Mitarbeiterzahl gestaffelt).
+          {txt.beschreibung}
         </p>
         <button
           onClick={() => setZeigeNeu(!zeigeNeu)}
           className="shrink-0 rounded bg-akzent px-3 py-1.5 text-xs font-medium text-white"
         >
-          + Neuer Tarif
+          {txt.neuerTarif}
         </button>
       </div>
 
@@ -120,18 +124,18 @@ export default function TarifVerwaltung() {
             type="text"
             value={neuName}
             onChange={(e) => setNeuName(e.target.value)}
-            placeholder="Tarifname (z.B. Starter, Business)"
+            placeholder={txt.tarifNamePlatzhalter}
             className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
           />
           <button onClick={neuenTarifAnlegen} className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white">
-            Anlegen
+            {txt.anlegen}
           </button>
         </div>
       )}
       {hinweis && <p className="text-xs text-red-600">{hinweis}</p>}
 
       {tarife.length === 0 ? (
-        <p className="text-sm text-[var(--text-faint)]">Noch keine Tarife angelegt.</p>
+        <p className="text-sm text-[var(--text-faint)]">{txt.nochKeineTarife}</p>
       ) : (
         <div className="space-y-3">
           {tarife.map((t) => (
@@ -151,19 +155,19 @@ export default function TarifVerwaltung() {
                     onChange={(e) => { const upd = { ...t, aktiv: e.target.checked }; setTarife(tarife.map((x) => x.id === t.id ? upd : x)); tarifAktualisieren(upd); }}
                     className="accent-amber-500"
                   />
-                  Aktiv
+                  {txt.aktiv}
                 </label>
                 <button onClick={() => tarifLoeschen(t.id)} className="rounded border border-red-300 px-2 py-1.5 text-xs text-red-600">
-                  Löschen
+                  {txt.loeschen}
                 </button>
               </div>
 
               <div className="flex flex-wrap gap-3">
                 <div>
-                  <label className="mb-1 block text-xs text-[var(--text-faint)]">Grundgebühr (€/Monat)</label>
+                  <label className="mb-1 block text-xs text-[var(--text-faint)]">{txt.grundgebuehr}</label>
                   <input
                     type="text" inputMode="decimal"
-                    defaultValue={euro(t.grundpreis_cent)}
+                    defaultValue={euro(t.grundpreis_cent, sprache)}
                     onBlur={(e) => {
                       const cent = Math.round((parseFloat(e.target.value.replace(",", ".")) || 0) * 100);
                       tarifAktualisieren({ ...t, grundpreis_cent: cent });
@@ -172,7 +176,7 @@ export default function TarifVerwaltung() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-[var(--text-faint)]">Inklusive Mitarbeiter</label>
+                  <label className="mb-1 block text-xs text-[var(--text-faint)]">{txt.inklusiveMitarbeiter}</label>
                   <input
                     type="number" min={0}
                     defaultValue={t.inklusive_mitarbeiter}
@@ -181,7 +185,7 @@ export default function TarifVerwaltung() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-[var(--text-faint)]">MwSt. (%)</label>
+                  <label className="mb-1 block text-xs text-[var(--text-faint)]">{txt.mwst}</label>
                   <input
                     type="text" inputMode="decimal"
                     defaultValue={t.mwst_satz}
@@ -193,24 +197,24 @@ export default function TarifVerwaltung() {
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">Staffeln (ab Mitarbeiter #)</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{txt.staffelnLabel}</p>
                   <button onClick={() => staffelHinzufuegen(t.id)} className="text-xs text-akzent hover:underline">
-                    + Staffel
+                    {txt.staffelHinzufuegen}
                   </button>
                 </div>
                 {t.staffeln.length === 0 ? (
-                  <p className="text-xs text-[var(--text-faint)]">Keine Staffeln – über die Inklusivzahl hinaus wird nichts berechnet.</p>
+                  <p className="text-xs text-[var(--text-faint)]">{txt.keineStaffeln}</p>
                 ) : (
                   t.staffeln.map((s) => (
                     <div key={s.id} className="flex items-center gap-2 text-xs">
-                      <span className="text-[var(--text-faint)]">von</span>
+                      <span className="text-[var(--text-faint)]">{txt.von}</span>
                       <input
                         type="number" min={1}
                         defaultValue={s.von_mitarbeiter}
                         onBlur={(e) => staffelAktualisieren({ ...s, von_mitarbeiter: parseInt(e.target.value, 10) || 1 })}
                         className="w-16 rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2 py-1 text-xs"
                       />
-                      <span className="text-[var(--text-faint)]">bis</span>
+                      <span className="text-[var(--text-faint)]">{txt.bis}</span>
                       <input
                         type="number" min={1}
                         placeholder="∞"
@@ -221,11 +225,11 @@ export default function TarifVerwaltung() {
                       <span className="text-[var(--text-faint)]">à</span>
                       <input
                         type="text" inputMode="decimal"
-                        defaultValue={euro(s.preis_pro_mitarbeiter_cent)}
+                        defaultValue={euro(s.preis_pro_mitarbeiter_cent, sprache)}
                         onBlur={(e) => staffelAktualisieren({ ...s, preis_pro_mitarbeiter_cent: Math.round((parseFloat(e.target.value.replace(",", ".")) || 0) * 100) })}
                         className="w-20 rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2 py-1 text-xs"
                       />
-                      <span className="text-[var(--text-faint)]">€/MA</span>
+                      <span className="text-[var(--text-faint)]">{txt.proMa}</span>
                       <button onClick={() => staffelLoeschen(s.id)} className="ml-auto text-[var(--text-faint)] hover:text-red-600">
                         ×
                       </button>

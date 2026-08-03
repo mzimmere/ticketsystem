@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Plattform-Tarifverwaltung (Grundgebühr/Staffeln) und Plattform-Rechnungsdetail übersetzt" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: FAQ/Wissensdatenbank-Verwaltung und Reporting-Export (inkl. CSV-Spaltenüberschriften bei Tickets/Zeiterfassung/CSAT) übersetzt" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Werkzeuge-Unterseiten Tags, SLA & Automatisierung, Hardware-Kategorien, Makros und Ticket-Vorlagen übersetzt (Bedienoberfläche; lange Tutorial-Texte folgen später)" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Team-Verwaltung (Mitarbeiterliste inkl. Rollen, E-Mail-Änderung, Zugangslink) und Kundenverwaltung (Kundenliste inkl. E-Mail-Verwaltung, Preisverlauf, Dokumente, Lizenzverträge, Konten zusammenführen) komplett übersetzt" },

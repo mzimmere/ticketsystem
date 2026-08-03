@@ -675,6 +675,59 @@ export interface Uebersetzung {
     positivMitEmoji: string;
     negativMitEmoji: string;
   };
+  tarifVerwaltung: {
+    laedt: string;
+    beschreibung: string;
+    neuerTarif: string;
+    namePflicht: string;
+    anlegenFehlgeschlagen: string;
+    tarifNamePlatzhalter: string;
+    anlegen: string;
+    nochKeineTarife: string;
+    aktiv: string;
+    loeschen: string;
+    loeschenConfirm: string;
+    loeschenFehlgeschlagen: string;
+    grundgebuehr: string;
+    inklusiveMitarbeiter: string;
+    mwst: string;
+    staffelnLabel: string;
+    staffelHinzufuegen: string;
+    keineStaffeln: string;
+    von: string;
+    bis: string;
+    proMa: string;
+  };
+  plattformRechnungDetail: {
+    laedt: string;
+    nichtGefunden: string;
+    zurueck: string;
+    sende: string;
+    perEmailVersenden: string;
+    versendetAm: string;
+    drucken: string;
+    keineEmailHinterlegt: string;
+    smtpNichtKonfiguriert: string;
+    versandFehlgeschlagen: string;
+    versandFehlgeschlagenNetzwerk: string;
+    ustIdLabel: string;
+    steuernummerLabel: string;
+    rechnungTitel: string;
+    leistungszeitraum: string;
+    rechnungsdatum: string;
+    faelligAm: string;
+    tageSuffix: string;
+    firma: string;
+    tarifTemplate: string;
+    positionSpalte: string;
+    betragSpalte: string;
+    netto: string;
+    mwstTemplate: string;
+    gesamtBrutto: string;
+    ueberweisungVor: string;
+    faelligkeitsdatum: string;
+    ueberweisungNach: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -1349,6 +1402,59 @@ const de: Uebersetzung = {
     positivMitEmoji: "Positiv 👍",
     negativMitEmoji: "Negativ 👎",
   },
+  tarifVerwaltung: {
+    laedt: "Lädt…",
+    beschreibung: "Grundgebühr deckt eine bestimmte Mitarbeiterzahl ab. Darüber hinaus greifen die Staffeln (nach absoluter Mitarbeiterzahl gestaffelt).",
+    neuerTarif: "+ Neuer Tarif",
+    namePflicht: "Bitte einen Namen angeben.",
+    anlegenFehlgeschlagen: "Anlegen fehlgeschlagen.",
+    tarifNamePlatzhalter: "Tarifname (z.B. Starter, Business)",
+    anlegen: "Anlegen",
+    nochKeineTarife: "Noch keine Tarife angelegt.",
+    aktiv: "Aktiv",
+    loeschen: "Löschen",
+    loeschenConfirm: "Tarif wirklich löschen? Geht nur, wenn er keiner Firma zugewiesen ist.",
+    loeschenFehlgeschlagen: "Löschen fehlgeschlagen – Tarif ist noch mindestens einer Firma zugewiesen.",
+    grundgebuehr: "Grundgebühr (€/Monat)",
+    inklusiveMitarbeiter: "Inklusive Mitarbeiter",
+    mwst: "MwSt. (%)",
+    staffelnLabel: "Staffeln (ab Mitarbeiter #)",
+    staffelHinzufuegen: "+ Staffel",
+    keineStaffeln: "Keine Staffeln – über die Inklusivzahl hinaus wird nichts berechnet.",
+    von: "von",
+    bis: "bis",
+    proMa: "€/MA",
+  },
+  plattformRechnungDetail: {
+    laedt: "Lädt…",
+    nichtGefunden: "Rechnung nicht gefunden.",
+    zurueck: "← Zurück",
+    sende: "Sende…",
+    perEmailVersenden: "Per E-Mail versenden",
+    versendetAm: "✓ Versendet",
+    drucken: "Drucken / Als PDF",
+    keineEmailHinterlegt: "Diese Firma hat keine E-Mail-Adresse hinterlegt.",
+    smtpNichtKonfiguriert: "Mail-Versand ist noch nicht eingerichtet (SMTP_HOST/SMTP_USER/SMTP_PASSWORD fehlen).",
+    versandFehlgeschlagen: "Versand fehlgeschlagen.",
+    versandFehlgeschlagenNetzwerk: "Versand fehlgeschlagen (Netzwerkfehler).",
+    ustIdLabel: "USt-IdNr.:",
+    steuernummerLabel: "Steuernummer:",
+    rechnungTitel: "Rechnung",
+    leistungszeitraum: "Leistungszeitraum:",
+    rechnungsdatum: "Rechnungsdatum:",
+    faelligAm: "Fällig am:",
+    tageSuffix: "Tage",
+    firma: "Firma",
+    tarifTemplate: 'Tarif "{name}" · {n} aktive Mitarbeiter',
+    positionSpalte: "Position",
+    betragSpalte: "Betrag",
+    netto: "Netto",
+    mwstTemplate: "MwSt. ({satz} %)",
+    gesamtBrutto: "Gesamt (Brutto)",
+    ueberweisungVor: "Bitte überweise den Betrag bis zum",
+    faelligkeitsdatum: "Fälligkeitsdatum",
+    ueberweisungNach: "auf IBAN {iban}.",
+  },
 };
 
 const en: Uebersetzung = {
@@ -2022,6 +2128,59 @@ const en: Uebersetzung = {
     negativ: "Negative",
     positivMitEmoji: "Positive 👍",
     negativMitEmoji: "Negative 👎",
+  },
+  tarifVerwaltung: {
+    laedt: "Loading…",
+    beschreibung: "The base fee covers a certain number of employees. Beyond that, the tiers apply (staggered by absolute employee count).",
+    neuerTarif: "+ New plan",
+    namePflicht: "Please enter a name.",
+    anlegenFehlgeschlagen: "Failed to create.",
+    tarifNamePlatzhalter: "Plan name (e.g. Starter, Business)",
+    anlegen: "Create",
+    nochKeineTarife: "No plans created yet.",
+    aktiv: "Active",
+    loeschen: "Delete",
+    loeschenConfirm: "Really delete this plan? Only possible if it isn't assigned to any company.",
+    loeschenFehlgeschlagen: "Delete failed – this plan is still assigned to at least one company.",
+    grundgebuehr: "Base fee (€/month)",
+    inklusiveMitarbeiter: "Included employees",
+    mwst: "VAT (%)",
+    staffelnLabel: "Tiers (from employee #)",
+    staffelHinzufuegen: "+ Tier",
+    keineStaffeln: "No tiers – nothing is charged beyond the included number.",
+    von: "from",
+    bis: "to",
+    proMa: "€/employee",
+  },
+  plattformRechnungDetail: {
+    laedt: "Loading…",
+    nichtGefunden: "Invoice not found.",
+    zurueck: "← Back",
+    sende: "Sending…",
+    perEmailVersenden: "Send by email",
+    versendetAm: "✓ Sent",
+    drucken: "Print / Save as PDF",
+    keineEmailHinterlegt: "This company has no email address on file.",
+    smtpNichtKonfiguriert: "Mail sending is not set up yet (SMTP_HOST/SMTP_USER/SMTP_PASSWORD missing).",
+    versandFehlgeschlagen: "Sending failed.",
+    versandFehlgeschlagenNetzwerk: "Sending failed (network error).",
+    ustIdLabel: "VAT ID:",
+    steuernummerLabel: "Tax number:",
+    rechnungTitel: "Invoice",
+    leistungszeitraum: "Billing period:",
+    rechnungsdatum: "Invoice date:",
+    faelligAm: "Due on:",
+    tageSuffix: "days",
+    firma: "Company",
+    tarifTemplate: 'Plan "{name}" · {n} active employees',
+    positionSpalte: "Item",
+    betragSpalte: "Amount",
+    netto: "Net",
+    mwstTemplate: "VAT ({satz} %)",
+    gesamtBrutto: "Total (gross)",
+    ueberweisungVor: "Please transfer the amount by",
+    faelligkeitsdatum: "the due date",
+    ueberweisungNach: "to IBAN {iban}.",
   },
 };
 
