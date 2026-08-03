@@ -790,6 +790,32 @@ export interface Uebersetzung {
     verbindungTesten: string;
     integrationenSpeichern: string;
   };
+  emailTexteVerwaltung: {
+    betreffTextLeer: string;
+    fehlerSpeichern: string;
+    gespeichert: string;
+    zurueckgesetzt: string;
+    angepasst: string;
+    platzhalterLabel: string;
+    betreffLabel: string;
+    textLabel: string;
+    speichern: string;
+    aufStandardZuruecksetzen: string;
+    emailsAnKunden: string;
+    emailsAnMitarbeiter: string;
+    labelKundeStatusGeaendert: string;
+    beschreibungKundeStatusGeaendert: string;
+    labelKundeTicketGeschlossen: string;
+    beschreibungKundeTicketGeschlossen: string;
+    labelKundeNeueAntwort: string;
+    beschreibungKundeNeueAntwort: string;
+    labelMitarbeiterZugewiesen: string;
+    beschreibungMitarbeiterZugewiesen: string;
+    labelMitarbeiterStatusGeaendert: string;
+    beschreibungMitarbeiterStatusGeaendert: string;
+    labelMitarbeiterNeueKundenantwort: string;
+    beschreibungMitarbeiterNeueKundenantwort: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -1579,6 +1605,32 @@ const de: Uebersetzung = {
     verbindungTesten: "Verbindung testen",
     integrationenSpeichern: "Integrationen speichern",
   },
+  emailTexteVerwaltung: {
+    betreffTextLeer: "Betreff und Text dürfen nicht leer sein.",
+    fehlerSpeichern: "Speichern fehlgeschlagen.",
+    gespeichert: "Gespeichert.",
+    zurueckgesetzt: "Auf Standardtext zurückgesetzt.",
+    angepasst: "Angepasst",
+    platzhalterLabel: "Platzhalter:",
+    betreffLabel: "Betreff",
+    textLabel: "Text",
+    speichern: "Speichern",
+    aufStandardZuruecksetzen: "Auf Standard zurücksetzen",
+    emailsAnKunden: "E-Mails an Kunden",
+    emailsAnMitarbeiter: "E-Mails an Mitarbeiter",
+    labelKundeStatusGeaendert: "Status geändert",
+    beschreibungKundeStatusGeaendert: "An den Kunden, wenn sich der Ticket-Status ändert (außer bei Abschluss, siehe unten).",
+    labelKundeTicketGeschlossen: "Ticket geschlossen (mit Bewertung)",
+    beschreibungKundeTicketGeschlossen: "An den Kunden beim Schließen des Tickets – enthält zwei anklickbare Bewertungslinks ohne Login.",
+    labelKundeNeueAntwort: "Neue Antwort",
+    beschreibungKundeNeueAntwort: "An den Kunden, wenn ein Mitarbeiter im Ticket antwortet.",
+    labelMitarbeiterZugewiesen: "Ticket zugewiesen",
+    beschreibungMitarbeiterZugewiesen: "An den Mitarbeiter, dem ein Ticket zugewiesen wurde.",
+    labelMitarbeiterStatusGeaendert: "Status geändert",
+    beschreibungMitarbeiterStatusGeaendert: "An den zuständigen Mitarbeiter, wenn jemand anderes den Status ändert.",
+    labelMitarbeiterNeueKundenantwort: "Neue Kundenantwort",
+    beschreibungMitarbeiterNeueKundenantwort: "An den zuständigen Mitarbeiter, wenn der Kunde im Portal antwortet.",
+  },
 };
 
 const en: Uebersetzung = {
@@ -2367,6 +2419,32 @@ const en: Uebersetzung = {
     prueft: "Checking…",
     verbindungTesten: "Test connection",
     integrationenSpeichern: "Save integrations",
+  },
+  emailTexteVerwaltung: {
+    betreffTextLeer: "Subject and text must not be empty.",
+    fehlerSpeichern: "Save failed.",
+    gespeichert: "Saved.",
+    zurueckgesetzt: "Reset to default text.",
+    angepasst: "Customized",
+    platzhalterLabel: "Placeholders:",
+    betreffLabel: "Subject",
+    textLabel: "Text",
+    speichern: "Save",
+    aufStandardZuruecksetzen: "Reset to default",
+    emailsAnKunden: "Emails to customers",
+    emailsAnMitarbeiter: "Emails to staff",
+    labelKundeStatusGeaendert: "Status changed",
+    beschreibungKundeStatusGeaendert: "To the customer when the ticket status changes (except on closing, see below).",
+    labelKundeTicketGeschlossen: "Ticket closed (with rating)",
+    beschreibungKundeTicketGeschlossen: "To the customer when the ticket is closed – contains two clickable rating links, no login required.",
+    labelKundeNeueAntwort: "New reply",
+    beschreibungKundeNeueAntwort: "To the customer when a staff member replies to the ticket.",
+    labelMitarbeiterZugewiesen: "Ticket assigned",
+    beschreibungMitarbeiterZugewiesen: "To the staff member a ticket was assigned to.",
+    labelMitarbeiterStatusGeaendert: "Status changed",
+    beschreibungMitarbeiterStatusGeaendert: "To the responsible staff member when someone else changes the status.",
+    labelMitarbeiterNeueKundenantwort: "New customer reply",
+    beschreibungMitarbeiterNeueKundenantwort: "To the responsible staff member when the customer replies in the portal.",
   },
 };
 

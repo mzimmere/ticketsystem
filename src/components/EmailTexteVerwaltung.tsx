@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface EmailTexteVerwaltungProps {
   organisationId: string;
@@ -13,8 +15,6 @@ interface Vorlage {
 interface VorlagenMeta {
   key: string;
   gruppe: "kunde" | "mitarbeiter";
-  label: string;
-  beschreibung: string;
   platzhalter: string[];
 }
 
@@ -22,43 +22,31 @@ const VORLAGEN_META: VorlagenMeta[] = [
   {
     key: "kunde_status_geaendert",
     gruppe: "kunde",
-    label: "Status geändert",
-    beschreibung: "An den Kunden, wenn sich der Ticket-Status ändert (außer bei Abschluss, siehe unten).",
     platzhalter: ["kunde_name", "ticket_titel", "ticket_nr", "status", "link", "firmen_name"],
   },
   {
     key: "kunde_ticket_geschlossen",
     gruppe: "kunde",
-    label: "Ticket geschlossen (mit Bewertung)",
-    beschreibung: "An den Kunden beim Schließen des Tickets – enthält zwei anklickbare Bewertungslinks ohne Login.",
     platzhalter: ["kunde_name", "ticket_titel", "ticket_nr", "link", "bewertung_link_ja", "bewertung_link_nein", "firmen_name"],
   },
   {
     key: "kunde_neue_antwort",
     gruppe: "kunde",
-    label: "Neue Antwort",
-    beschreibung: "An den Kunden, wenn ein Mitarbeiter im Ticket antwortet.",
     platzhalter: ["kunde_name", "ticket_titel", "ticket_nr", "link", "firmen_name"],
   },
   {
     key: "mitarbeiter_zugewiesen",
     gruppe: "mitarbeiter",
-    label: "Ticket zugewiesen",
-    beschreibung: "An den Mitarbeiter, dem ein Ticket zugewiesen wurde.",
     platzhalter: ["ticket_titel", "ticket_nr", "aenderer_name", "link"],
   },
   {
     key: "mitarbeiter_status_geaendert",
     gruppe: "mitarbeiter",
-    label: "Status geändert",
-    beschreibung: "An den zuständigen Mitarbeiter, wenn jemand anderes den Status ändert.",
     platzhalter: ["ticket_titel", "ticket_nr", "aenderer_name", "status", "link"],
   },
   {
     key: "mitarbeiter_neue_kundenantwort",
     gruppe: "mitarbeiter",
-    label: "Neue Kundenantwort",
-    beschreibung: "An den zuständigen Mitarbeiter, wenn der Kunde im Portal antwortet.",
     platzhalter: ["ticket_titel", "ticket_nr", "aenderer_name", "link"],
   },
 ];
@@ -94,6 +82,16 @@ const STANDARD: Record<string, Vorlage> = {
 };
 
 export default function EmailTexteVerwaltung({ organisationId }: EmailTexteVerwaltungProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).emailTexteVerwaltung;
+  const META_TEXT: Record<string, { label: string; beschreibung: string }> = {
+    kunde_status_geaendert: { label: txt.labelKundeStatusGeaendert, beschreibung: txt.beschreibungKundeStatusGeaendert },
+    kunde_ticket_geschlossen: { label: txt.labelKundeTicketGeschlossen, beschreibung: txt.beschreibungKundeTicketGeschlossen },
+    kunde_neue_antwort: { label: txt.labelKundeNeueAntwort, beschreibung: txt.beschreibungKundeNeueAntwort },
+    mitarbeiter_zugewiesen: { label: txt.labelMitarbeiterZugewiesen, beschreibung: txt.beschreibungMitarbeiterZugewiesen },
+    mitarbeiter_status_geaendert: { label: txt.labelMitarbeiterStatusGeaendert, beschreibung: txt.beschreibungMitarbeiterStatusGeaendert },
+    mitarbeiter_neue_kundenantwort: { label: txt.labelMitarbeiterNeueKundenantwort, beschreibung: txt.beschreibungMitarbeiterNeueKundenantwort },
+  };
   const [angepasst, setAngepasst] = useState<Record<string, Vorlage>>({});
   const [entwuerfe, setEntwuerfe] = useState<Record<string, Vorlage>>({});
   const [offenerKey, setOffenerKey] = useState<string | null>(null);
@@ -130,7 +128,7 @@ export default function EmailTexteVerwaltung({ organisationId }: EmailTexteVerwa
   async function speichern(key: string) {
     const entwurf = entwuerfe[key];
     if (!entwurf?.betreff.trim() || !entwurf?.text.trim()) {
-      setHinweis("Betreff und Text dürfen nicht leer sein.");
+      setHinweis(txt.betreffTextLeer);
       return;
     }
     setLaedt(true);
@@ -146,10 +144,10 @@ export default function EmailTexteVerwaltung({ organisationId }: EmailTexteVerwa
     setLaedt(false);
     if (error) {
       console.error(error);
-      setHinweis("Speichern fehlgeschlagen.");
+      setHinweis(txt.fehlerSpeichern);
       return;
     }
-    setHinweis("Gespeichert.");
+    setHinweis(txt.gespeichert);
     laden();
   }
 
@@ -162,7 +160,7 @@ export default function EmailTexteVerwaltung({ organisationId }: EmailTexteVerwa
       .eq("vorlage_key", key);
     setLaedt(false);
     setEntwuerfe((e) => ({ ...e, [key]: STANDARD[key] }));
-    setHinweis("Auf Standardtext zurückgesetzt.");
+    setHinweis(txt.zurueckgesetzt);
     laden();
   }
 
@@ -170,6 +168,7 @@ export default function EmailTexteVerwaltung({ organisationId }: EmailTexteVerwa
     return VORLAGEN_META.filter((m) => m.gruppe === g).map((meta) => {
       const istAngepasst = !!angepasst[meta.key];
       const entwurf = entwuerfe[meta.key] ?? angepasst[meta.key] ?? STANDARD[meta.key];
+      const metaText = META_TEXT[meta.key];
       return (
         <div key={meta.key} className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)]">
           <button
@@ -177,10 +176,10 @@ export default function EmailTexteVerwaltung({ organisationId }: EmailTexteVerwa
             className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
           >
             <span className="flex items-center gap-2 text-sm font-medium text-[var(--text-strong)]">
-              {meta.label}
+              {metaText.label}
               {istAngepasst && (
                 <span className="rounded bg-akzent/15 px-1.5 py-0.5 text-[0.65rem] font-medium text-akzent">
-                  Angepasst
+                  {txt.angepasst}
                 </span>
               )}
             </span>
@@ -189,9 +188,9 @@ export default function EmailTexteVerwaltung({ organisationId }: EmailTexteVerwa
 
           {offenerKey === meta.key && (
             <div className="space-y-2 border-t border-[var(--border)] p-3">
-              <p className="text-xs text-[var(--text-faint)]">{meta.beschreibung}</p>
+              <p className="text-xs text-[var(--text-faint)]">{metaText.beschreibung}</p>
               <p className="text-xs text-[var(--text-faint)]">
-                Platzhalter:{" "}
+                {txt.platzhalterLabel}{" "}
                 {meta.platzhalter.map((p) => (
                   <code
                     key={p}
@@ -203,7 +202,7 @@ export default function EmailTexteVerwaltung({ organisationId }: EmailTexteVerwa
               </p>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Betreff</label>
+                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.betreffLabel}</label>
                 <input
                   type="text"
                   value={entwurf.betreff}
@@ -215,7 +214,7 @@ export default function EmailTexteVerwaltung({ organisationId }: EmailTexteVerwa
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Text</label>
+                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.textLabel}</label>
                 <textarea
                   value={entwurf.text}
                   onChange={(e) =>
@@ -232,7 +231,7 @@ export default function EmailTexteVerwaltung({ organisationId }: EmailTexteVerwa
                   disabled={laedt}
                   className="rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
                 >
-                  Speichern
+                  {txt.speichern}
                 </button>
                 {istAngepasst && (
                   <button
@@ -240,7 +239,7 @@ export default function EmailTexteVerwaltung({ organisationId }: EmailTexteVerwa
                     disabled={laedt}
                     className="rounded border border-[var(--border-input)] px-3 py-1.5 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
                   >
-                    Auf Standard zurücksetzen
+                    {txt.aufStandardZuruecksetzen}
                   </button>
                 )}
               </div>
@@ -254,11 +253,11 @@ export default function EmailTexteVerwaltung({ organisationId }: EmailTexteVerwa
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="mb-2 text-sm font-medium text-[var(--text-strong)]">E-Mails an Kunden</h3>
+        <h3 className="mb-2 text-sm font-medium text-[var(--text-strong)]">{txt.emailsAnKunden}</h3>
         <div className="space-y-2">{gruppe("kunde")}</div>
       </div>
       <div>
-        <h3 className="mb-2 text-sm font-medium text-[var(--text-strong)]">E-Mails an Mitarbeiter</h3>
+        <h3 className="mb-2 text-sm font-medium text-[var(--text-strong)]">{txt.emailsAnMitarbeiter}</h3>
         <div className="space-y-2">{gruppe("mitarbeiter")}</div>
       </div>
       {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}
