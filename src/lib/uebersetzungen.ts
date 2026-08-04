@@ -874,6 +874,47 @@ export interface Uebersetzung {
     abbrechen: string;
     dongleHinzufuegen: string;
   };
+  dongleImport: {
+    feldSeriennummerDongle: string;
+    feldModulname: string;
+    feldLieferdatum: string;
+    feldActivationKey: string;
+    feldArtikelnummer: string;
+    feldGruppenhinweis: string;
+    feldSeriennummerLizenz: string;
+    feldProduktname: string;
+    feldLizenztyp: string;
+    feldVertragsbeginn: string;
+    feldVertragsende: string;
+    feldAktiviertAm: string;
+    feldStatus: string;
+    feldFreierZeitraumBis: string;
+    feldLizenzAttribut: string;
+    dateiLeerFehler: string;
+    spalteZuordnenFehlerTemplate: string;
+    importFehlgeschlagen: string;
+    oeffnenButton: string;
+    titel: string;
+    schliessen: string;
+    ergebnisDongleTemplate: string;
+    ergebnisLizenzTemplate: string;
+    weitereDateiImportieren: string;
+    dateiAuswaehlenLabel: string;
+    dateiInfoTemplate: string;
+    erkanntAlsLizenz: string;
+    erkanntAlsDongle: string;
+    spaltenZuordnen: string;
+    nichtZuordnen: string;
+    prueft: string;
+    vorschauBerechnen: string;
+    vorschauDongleTemplate: string;
+    vorschauDongleHinweis: string;
+    vorschauLizenzTemplate: string;
+    vorschauLizenzHinweis: string;
+    uebersprungenTemplate: string;
+    importiert: string;
+    jetztImportieren: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -1747,6 +1788,47 @@ const de: Uebersetzung = {
     abbrechen: "Abbrechen",
     dongleHinzufuegen: "+ Dongle/Lizenz hinzufügen",
   },
+  dongleImport: {
+    feldSeriennummerDongle: "Seriennummer (Dongle)",
+    feldModulname: "Modulname",
+    feldLieferdatum: "Lieferdatum",
+    feldActivationKey: "Activation Key",
+    feldArtikelnummer: "Artikelnummer",
+    feldGruppenhinweis: "Kunden-/Gruppenhinweis",
+    feldSeriennummerLizenz: "Seriennummer (Lizenz)",
+    feldProduktname: "Produktname",
+    feldLizenztyp: "Lizenztyp",
+    feldVertragsbeginn: "Vertragsbeginn",
+    feldVertragsende: "Vertragsende / Ablauf",
+    feldAktiviertAm: "Aktiviert am",
+    feldStatus: "Status",
+    feldFreierZeitraumBis: "Freier Zeitraum bis",
+    feldLizenzAttribut: "Lizenz-Attribut",
+    dateiLeerFehler: "Datei konnte nicht gelesen werden oder ist leer.",
+    spalteZuordnenFehlerTemplate: 'Bitte Spalte für "{label}" zuordnen.',
+    importFehlgeschlagen: "Import fehlgeschlagen (Details in der Browser-Konsole).",
+    oeffnenButton: "Dongles/Module/Lizenzen aus Portal-Export importieren",
+    titel: "Portal-Export importieren",
+    schliessen: "Schließen",
+    ergebnisDongleTemplate: '✓ Import abgeschlossen: {neu} neue Dongles angelegt (im Pool „Nicht zugeordnet"), {bestehend} bestehende Dongles unverändert, {module} Module verarbeitet.',
+    ergebnisLizenzTemplate: '✓ Import abgeschlossen: {neu} neue Lizenzverträge angelegt (im Pool „Nicht zugeordnet"), {aktualisiert} bestehende Lizenzverträge aktualisiert (Vertragsende/Status).',
+    weitereDateiImportieren: "Weitere Datei importieren",
+    dateiAuswaehlenLabel: "CSV-Datei auswählen",
+    dateiInfoTemplate: "{dateiname} · {n} Zeilen erkannt ·",
+    erkanntAlsLizenz: "erkannt als Lizenzvertrags-Export",
+    erkanntAlsDongle: "erkannt als Dongle-/Modul-Export",
+    spaltenZuordnen: "Spalten zuordnen",
+    nichtZuordnen: "— nicht zuordnen —",
+    prueft: "Prüft…",
+    vorschauBerechnen: "Vorschau berechnen",
+    vorschauDongleTemplate: "{n} Dongles ({neu} neu, {bestehend} bestehend), {module} Modul-Zeilen werden verarbeitet.",
+    vorschauDongleHinweis: "Neue Dongles landen zunächst unzugeordnet und müssen einem Kunden zugewiesen werden. Bestehende Dongles (Wartungsvertrag, Freiminuten) bleiben unverändert.",
+    vorschauLizenzTemplate: "{n} Lizenzverträge ({neu} neu, {bestehend} bestehend/aktualisiert).",
+    vorschauLizenzHinweis: "Neue Lizenzverträge landen zunächst unzugeordnet. Bestehende Verträge werden mit Vertragsende/Status aus dem Export aktualisiert; eine bereits erfolgte Kundenzuordnung bleibt erhalten.",
+    uebersprungenTemplate: "{n} Zeilen übersprungen (Pflichtfeld fehlt).",
+    importiert: "Importiert…",
+    jetztImportieren: "Jetzt importieren",
+  },
 };
 
 const en: Uebersetzung = {
@@ -2619,6 +2701,47 @@ const en: Uebersetzung = {
     anlegen: "Create",
     abbrechen: "Cancel",
     dongleHinzufuegen: "+ Add dongle/license",
+  },
+  dongleImport: {
+    feldSeriennummerDongle: "Serial number (dongle)",
+    feldModulname: "Module name",
+    feldLieferdatum: "Delivery date",
+    feldActivationKey: "Activation Key",
+    feldArtikelnummer: "Article number",
+    feldGruppenhinweis: "Customer/group hint",
+    feldSeriennummerLizenz: "Serial number (license)",
+    feldProduktname: "Product name",
+    feldLizenztyp: "License type",
+    feldVertragsbeginn: "Contract start",
+    feldVertragsende: "Contract end / expiry",
+    feldAktiviertAm: "Activated on",
+    feldStatus: "Status",
+    feldFreierZeitraumBis: "Free period until",
+    feldLizenzAttribut: "License attribute",
+    dateiLeerFehler: "File could not be read or is empty.",
+    spalteZuordnenFehlerTemplate: 'Please map a column for "{label}".',
+    importFehlgeschlagen: "Import failed (details in the browser console).",
+    oeffnenButton: "Import dongles/modules/licenses from portal export",
+    titel: "Import portal export",
+    schliessen: "Close",
+    ergebnisDongleTemplate: '✓ Import complete: {neu} new dongles created (in the "Unassigned" pool), {bestehend} existing dongles unchanged, {module} modules processed.',
+    ergebnisLizenzTemplate: '✓ Import complete: {neu} new license contracts created (in the "Unassigned" pool), {aktualisiert} existing license contracts updated (end date/status).',
+    weitereDateiImportieren: "Import another file",
+    dateiAuswaehlenLabel: "Select CSV file",
+    dateiInfoTemplate: "{dateiname} · {n} rows detected ·",
+    erkanntAlsLizenz: "detected as license contract export",
+    erkanntAlsDongle: "detected as dongle/module export",
+    spaltenZuordnen: "Map columns",
+    nichtZuordnen: "— don't map —",
+    prueft: "Checking…",
+    vorschauBerechnen: "Compute preview",
+    vorschauDongleTemplate: "{n} dongles ({neu} new, {bestehend} existing), {module} module rows will be processed.",
+    vorschauDongleHinweis: "New dongles are initially unassigned and must be assigned to a customer. Existing dongles (maintenance contract, free minutes) remain unchanged.",
+    vorschauLizenzTemplate: "{n} license contracts ({neu} new, {bestehend} existing/updated).",
+    vorschauLizenzHinweis: "New license contracts are initially unassigned. Existing contracts are updated with the end date/status from the export; an existing customer assignment is preserved.",
+    uebersprungenTemplate: "{n} rows skipped (required field missing).",
+    importiert: "Importing…",
+    jetztImportieren: "Import now",
   },
 };
 

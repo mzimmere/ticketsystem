@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: exocad-Portal-Import (Dongles/Module und Lizenzverträge, Spalten-Zuordnung, Vorschau, Ergebnis-Meldung) übersetzt" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Kunden-Dongle-Verwaltung (Wartungsvertrag, Freiminuten, Lizenzvertrags-Verknüpfung, Software-Module) übersetzt" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Dongle-/Lizenzverwaltung (Nicht-zugeordnet-Pools, Gesamtübersicht Dongles/Lizenzverträge) übersetzt" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: E-Mail-Texte-Verwaltung (Vorlagen-Übersicht, Platzhalter, Bearbeiten/Zurücksetzen) übersetzt – die eigentlichen Standard-E-Mail-Texte an Kunden/Mitarbeiter bleiben bewusst Deutsch, da es echte Kunden-Mails sind" },

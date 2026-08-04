@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { parseCsv } from "../lib/csv";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 import DateiAuswahl from "./DateiAuswahl";
 
 type ImportZiel = "dongle" | "lizenz";
@@ -13,14 +15,16 @@ interface Feld {
 
 // Ziel 1: exocad "activation_keys"-Export -> Dongles/Module (Phase 1).
 // Ein Modul (= eine Zeile) je Seriennummer, gruppiert nach Seriennummer.
-const FELDER_DONGLE: Feld[] = [
-  { schluessel: "seriennummer", label: "Seriennummer (Dongle)", pflicht: true },
-  { schluessel: "modulname", label: "Modulname", pflicht: true },
-  { schluessel: "lieferdatum", label: "Lieferdatum", pflicht: false },
-  { schluessel: "activation_key", label: "Activation Key", pflicht: false },
-  { schluessel: "article_number", label: "Artikelnummer", pflicht: false },
-  { schluessel: "gruppe", label: "Kunden-/Gruppenhinweis", pflicht: false },
-];
+function felderDongle(txt: ReturnType<typeof texte>["dongleImport"]): Feld[] {
+  return [
+    { schluessel: "seriennummer", label: txt.feldSeriennummerDongle, pflicht: true },
+    { schluessel: "modulname", label: txt.feldModulname, pflicht: true },
+    { schluessel: "lieferdatum", label: txt.feldLieferdatum, pflicht: false },
+    { schluessel: "activation_key", label: txt.feldActivationKey, pflicht: false },
+    { schluessel: "article_number", label: txt.feldArtikelnummer, pflicht: false },
+    { schluessel: "gruppe", label: txt.feldGruppenhinweis, pflicht: false },
+  ];
+}
 const ALIASE_DONGLE: Record<string, string[]> = {
   seriennummer: ["serialnumber", "serial_number", "seriennummer", "serial"],
   modulname: ["name", "module", "modulename", "module_name"],
@@ -33,17 +37,19 @@ const ALIASE_DONGLE: Record<string, string[]> = {
 // Ziel 2: exocad "license_history"-Export -> Lizenzvertraege (Phase 3).
 // Eigenstaendiger Identifikator, ueberschneidet sich NICHT mit den
 // Dongle-Seriennummern aus Ziel 1. Eine Zeile = ein Lizenzvertrag.
-const FELDER_LIZENZ: Feld[] = [
-  { schluessel: "seriennummer", label: "Seriennummer (Lizenz)", pflicht: true },
-  { schluessel: "produkt_name", label: "Produktname", pflicht: true },
-  { schluessel: "lizenz_typ", label: "Lizenztyp", pflicht: false },
-  { schluessel: "vertrag_start", label: "Vertragsbeginn", pflicht: false },
-  { schluessel: "vertrag_ende", label: "Vertragsende / Ablauf", pflicht: false },
-  { schluessel: "aktiviert_am", label: "Aktiviert am", pflicht: false },
-  { schluessel: "status", label: "Status", pflicht: false },
-  { schluessel: "frei_zeitraum_ende", label: "Freier Zeitraum bis", pflicht: false },
-  { schluessel: "lizenz_attribut", label: "Lizenz-Attribut", pflicht: false },
-];
+function felderLizenz(txt: ReturnType<typeof texte>["dongleImport"]): Feld[] {
+  return [
+    { schluessel: "seriennummer", label: txt.feldSeriennummerLizenz, pflicht: true },
+    { schluessel: "produkt_name", label: txt.feldProduktname, pflicht: true },
+    { schluessel: "lizenz_typ", label: txt.feldLizenztyp, pflicht: false },
+    { schluessel: "vertrag_start", label: txt.feldVertragsbeginn, pflicht: false },
+    { schluessel: "vertrag_ende", label: txt.feldVertragsende, pflicht: false },
+    { schluessel: "aktiviert_am", label: txt.feldAktiviertAm, pflicht: false },
+    { schluessel: "status", label: txt.feldStatus, pflicht: false },
+    { schluessel: "frei_zeitraum_ende", label: txt.feldFreierZeitraumBis, pflicht: false },
+    { schluessel: "lizenz_attribut", label: txt.feldLizenzAttribut, pflicht: false },
+  ];
+}
 const ALIASE_LIZENZ: Record<string, string[]> = {
   seriennummer: ["serialnumber", "serial_number", "seriennummer", "serial"],
   produkt_name: ["productname", "product_name"],
@@ -119,6 +125,8 @@ function inChunks<T>(liste: T[], groesse: number): T[][] {
 }
 
 export default function DongleImport({ organisationId, onImportiert }: DongleImportProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).dongleImport;
   const [offen, setOffen] = useState(false);
   const [datei, setDatei] = useState<File | null>(null);
   const [header, setHeader] = useState<string[]>([]);
@@ -130,7 +138,7 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
   const [fehler, setFehler] = useState<string | null>(null);
   const [ergebnis, setErgebnis] = useState<Ergebnis | null>(null);
 
-  const felder = ziel === "lizenz" ? FELDER_LIZENZ : FELDER_DONGLE;
+  const felder = ziel === "lizenz" ? felderLizenz(txt) : felderDongle(txt);
 
   function zuruecksetzen() {
     setDatei(null);
@@ -149,7 +157,7 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
     const text = await f.text();
     const { header: h, zeilen: z } = parseCsv(text);
     if (h.length === 0) {
-      setFehler("Datei konnte nicht gelesen werden oder ist leer.");
+      setFehler(txt.dateiLeerFehler);
       return;
     }
     setHeader(h);
@@ -160,7 +168,7 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
 
     // Auto-Erkennung anhand gaengiger Spaltennamen
     const zielAliase = erkanntesZiel === "lizenz" ? ALIASE_LIZENZ : ALIASE_DONGLE;
-    const zielFelder = erkanntesZiel === "lizenz" ? FELDER_LIZENZ : FELDER_DONGLE;
+    const zielFelder = erkanntesZiel === "lizenz" ? felderLizenz(txt) : felderDongle(txt);
     const neuesMapping: Record<string, string> = {};
     for (const feld of zielFelder) {
       const treffer = h.find((spalte) => zielAliase[feld.schluessel].includes(spalte.toLowerCase()));
@@ -177,7 +185,7 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
     setFehler(null);
     const fehlendeFelder = felder.filter((f) => f.pflicht && !mapping[f.schluessel]);
     if (fehlendeFelder.length > 0) {
-      setFehler(`Bitte Spalte für "${fehlendeFelder[0].label}" zuordnen.`);
+      setFehler(txt.spalteZuordnenFehlerTemplate.replace("{label}", fehlendeFelder[0].label));
       return;
     }
     setLaedt(true);
@@ -314,7 +322,7 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
       onImportiert();
     } catch (err) {
       console.error(err);
-      setFehler("Import fehlgeschlagen (Details in der Browser-Konsole).");
+      setFehler(txt.importFehlgeschlagen);
     } finally {
       setLaedt(false);
     }
@@ -429,7 +437,7 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
         onClick={() => setOffen(true)}
         className="w-full rounded border border-dashed border-[var(--border-input)] px-3 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
       >
-        Dongles/Module/Lizenzen aus Portal-Export importieren
+        {txt.oeffnenButton}
       </button>
     );
   }
@@ -437,7 +445,7 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
   return (
     <div className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-[var(--text-strong)]">Portal-Export importieren</p>
+        <p className="text-sm font-medium text-[var(--text-strong)]">{txt.titel}</p>
         <button
           onClick={() => {
             setOffen(false);
@@ -445,7 +453,7 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
           }}
           className="text-xs text-[var(--text-faint)] hover:text-[var(--text-soft)]"
         >
-          Schließen
+          {txt.schliessen}
         </button>
       </div>
 
@@ -453,15 +461,16 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
         <div className="space-y-2">
           {ergebnis.ziel === "dongle" ? (
             <p className="text-sm text-[var(--text-strong)]">
-              ✓ Import abgeschlossen: {ergebnis.neueDongles} neue Dongles angelegt (im Pool
-              „Nicht zugeordnet"), {ergebnis.bestehendeDongles} bestehende Dongles unverändert,{" "}
-              {ergebnis.module} Module verarbeitet.
+              {txt.ergebnisDongleTemplate
+                .replace("{neu}", String(ergebnis.neueDongles))
+                .replace("{bestehend}", String(ergebnis.bestehendeDongles))
+                .replace("{module}", String(ergebnis.module))}
             </p>
           ) : (
             <p className="text-sm text-[var(--text-strong)]">
-              ✓ Import abgeschlossen: {ergebnis.neueVertraege} neue Lizenzverträge angelegt (im Pool
-              „Nicht zugeordnet"), {ergebnis.aktualisierteVertraege} bestehende Lizenzverträge aktualisiert
-              (Vertragsende/Status).
+              {txt.ergebnisLizenzTemplate
+                .replace("{neu}", String(ergebnis.neueVertraege))
+                .replace("{aktualisiert}", String(ergebnis.aktualisierteVertraege))}
             </p>
           )}
           <button
@@ -470,7 +479,7 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
             }}
             className="text-xs text-akzent hover:underline"
           >
-            Weitere Datei importieren
+            {txt.weitereDateiImportieren}
           </button>
         </div>
       ) : (
@@ -480,20 +489,20 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
               dateien={[]}
               onAendern={dateiVerarbeiten}
               mehrfach={false}
-              label="CSV-Datei auswählen"
+              label={txt.dateiAuswaehlenLabel}
             />
           )}
 
           {datei && header.length > 0 && (
             <div className="space-y-3">
               <p className="text-xs text-[var(--text-faint)]">
-                {datei.name} · {zeilen.length} Zeilen erkannt ·{" "}
-                {ziel === "lizenz" ? "erkannt als Lizenzvertrags-Export" : "erkannt als Dongle-/Modul-Export"}
+                {txt.dateiInfoTemplate.replace("{dateiname}", datei.name).replace("{n}", String(zeilen.length))}{" "}
+                {ziel === "lizenz" ? txt.erkanntAlsLizenz : txt.erkanntAlsDongle}
               </p>
 
               <div className="space-y-2">
                 <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                  Spalten zuordnen
+                  {txt.spaltenZuordnen}
                 </p>
                 {felder.map((feld) => (
                   <div key={feld.schluessel} className="flex items-center gap-2">
@@ -506,7 +515,7 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
                       onChange={(e) => setMapping((m) => ({ ...m, [feld.schluessel]: e.target.value }))}
                       className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2 py-1.5 text-sm text-[var(--text-strong)]"
                     >
-                      <option value="">— nicht zuordnen —</option>
+                      <option value="">{txt.nichtZuordnen}</option>
                       {header.map((h) => (
                         <option key={h} value={h}>
                           {h}
@@ -523,38 +532,39 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
                   disabled={laedt}
                   className="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
                 >
-                  {laedt ? "Prüft…" : "Vorschau berechnen"}
+                  {laedt ? txt.prueft : txt.vorschauBerechnen}
                 </button>
               ) : (
                 <div className="space-y-2 rounded-lg bg-[var(--bg-muted)] p-3">
                   {vorschau.ziel === "dongle" ? (
                     <>
                       <p className="text-sm text-[var(--text-strong)]">
-                        {vorschau.gruppiert.size} Dongles ({vorschau.neueDongles} neu,{" "}
-                        {vorschau.bestehendeDongles} bestehend), {vorschau.gesamtZeilen - vorschau.uebersprungen}{" "}
-                        Modul-Zeilen werden verarbeitet.
+                        {txt.vorschauDongleTemplate
+                          .replace("{n}", String(vorschau.gruppiert.size))
+                          .replace("{neu}", String(vorschau.neueDongles))
+                          .replace("{bestehend}", String(vorschau.bestehendeDongles))
+                          .replace("{module}", String(vorschau.gesamtZeilen - vorschau.uebersprungen))}
                       </p>
                       <p className="text-xs text-[var(--text-faint)]">
-                        Neue Dongles landen zunächst unzugeordnet und müssen einem Kunden zugewiesen werden.
-                        Bestehende Dongles (Wartungsvertrag, Freiminuten) bleiben unverändert.
+                        {txt.vorschauDongleHinweis}
                       </p>
                     </>
                   ) : (
                     <>
                       <p className="text-sm text-[var(--text-strong)]">
-                        {vorschau.zeilen.size} Lizenzverträge ({vorschau.neueVertraege} neu,{" "}
-                        {vorschau.bestehendeVertraege} bestehend/aktualisiert).
+                        {txt.vorschauLizenzTemplate
+                          .replace("{n}", String(vorschau.zeilen.size))
+                          .replace("{neu}", String(vorschau.neueVertraege))
+                          .replace("{bestehend}", String(vorschau.bestehendeVertraege))}
                       </p>
                       <p className="text-xs text-[var(--text-faint)]">
-                        Neue Lizenzverträge landen zunächst unzugeordnet. Bestehende Verträge werden mit
-                        Vertragsende/Status aus dem Export aktualisiert; eine bereits erfolgte Kundenzuordnung
-                        bleibt erhalten.
+                        {txt.vorschauLizenzHinweis}
                       </p>
                     </>
                   )}
                   {vorschau.uebersprungen > 0 && (
                     <p className="text-xs text-[var(--text-faint)]">
-                      {vorschau.uebersprungen} Zeilen übersprungen (Pflichtfeld fehlt).
+                      {txt.uebersprungenTemplate.replace("{n}", String(vorschau.uebersprungen))}
                     </p>
                   )}
                   <button
@@ -562,7 +572,7 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
                     disabled={laedt}
                     className="w-full rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
                   >
-                    {laedt ? "Importiert…" : "Jetzt importieren"}
+                    {laedt ? txt.importiert : txt.jetztImportieren}
                   </button>
                 </div>
               )}
