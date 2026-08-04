@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 type Wartungsvertrag = "aktiv" | "inaktiv" | "nicht_gewuenscht";
 
@@ -32,12 +34,6 @@ interface LizenzVertrag {
   dongle_id: string | null;
 }
 
-const WARTUNG_LABEL: Record<Wartungsvertrag, string> = {
-  aktiv: "Wartungsvertrag aktiv",
-  inaktiv: "Wartungsvertrag inaktiv",
-  nicht_gewuenscht: "Nicht gewünscht",
-};
-
 const WARTUNG_FARBE: Record<Wartungsvertrag, string> = {
   aktiv: "bg-[var(--status-geloest-bg)] text-[var(--status-geloest-text)]",
   inaktiv: "bg-[var(--badge-kritisch-bg)] text-[var(--badge-kritisch-text)]",
@@ -68,6 +64,13 @@ interface DongleVerwaltungProps {
 }
 
 export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerwaltungProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).dongleVerwaltung;
+  const WARTUNG_LABEL: Record<Wartungsvertrag, string> = {
+    aktiv: txt.wartungAktiv,
+    inaktiv: txt.wartungInaktiv,
+    nicht_gewuenscht: txt.wartungNichtGewuenscht,
+  };
   const [dongles, setDongles] = useState<Dongle[]>([]);
   const [offenDongleId, setOffenDongleId] = useState<string | null>(null);
   const [module, setModule] = useState<Record<string, Modul[]>>({});
@@ -98,7 +101,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
       .order("erstellt_am", { ascending: false });
     if (error) {
       console.error(error);
-      setHinweis("Dongles konnten nicht geladen werden.");
+      setHinweis(txt.fehlerLaden);
     }
     setDongles((data as Dongle[]) ?? []);
   }
@@ -143,8 +146,8 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
       console.error(error);
       setHinweis(
         error.code === "23505"
-          ? "Diese Seriennummer ist in dieser Firma bereits vergeben."
-          : "Dongle konnte nicht angelegt werden.",
+          ? txt.seriennummerVergeben
+          : txt.fehlerAnlegen,
       );
       return;
     }
@@ -160,14 +163,14 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
   }
 
   async function dongleLoeschen(id: string, seriennummer: string) {
-    if (!confirm(`Dongle "${seriennummer}" wirklich löschen? Zugehörige Module werden mitgelöscht, verknüpfte Tickets bleiben erhalten (verlieren nur den Link).`)) {
+    if (!confirm(txt.loeschenConfirmTemplate.replace("{seriennummer}", seriennummer))) {
       return;
     }
     setHinweis(null);
     const { error } = await supabase.from("kunden_dongles").delete().eq("id", id);
     if (error) {
       console.error(error);
-      setHinweis("Löschen fehlgeschlagen (Details in der Browser-Konsole).");
+      setHinweis(txt.fehlerLoeschen);
       return;
     }
     if (offenDongleId === id) setOffenDongleId(null);
@@ -180,7 +183,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
     const { error } = await supabase.from("dongle_module").insert({ dongle_id: dongleId, name });
     if (error) {
       console.error(error);
-      setHinweis(error.code === "23505" ? "Dieses Modul gibt es bei diesem Dongle schon." : "Modul konnte nicht angelegt werden.");
+      setHinweis(error.code === "23505" ? txt.modulExistiertBereits : txt.fehlerModulAnlegen);
       return;
     }
     setNeuesModul((m) => ({ ...m, [dongleId]: "" }));
@@ -229,7 +232,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
   return (
     <div className="space-y-2">
       {dongles.length === 0 && !zeigeNeuerDongle && (
-        <p className="text-xs text-[var(--text-faint)]">Noch keine Dongles/Lizenzen hinterlegt.</p>
+        <p className="text-xs text-[var(--text-faint)]">{txt.nochKeineDongles}</p>
       )}
 
       {dongles.length > ANZAHL_STANDARD_SICHTBAR && (
@@ -237,13 +240,13 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
           type="text"
           value={filterNummer}
           onChange={(e) => setFilterNummer(e.target.value)}
-          placeholder={`Nach Seriennummer filtern… (${dongles.length} Dongles)`}
+          placeholder={txt.filterPlatzhalterTemplate.replace("{n}", String(dongles.length))}
           className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-strong)]"
         />
       )}
 
       {suchtAktiv && gefiltert.length === 0 && (
-        <p className="text-xs text-[var(--text-faint)]">Keine Treffer für diesen Filter.</p>
+        <p className="text-xs text-[var(--text-faint)]">{txt.keineTrefferFilter}</p>
       )}
 
       {sichtbareDongles.map((d) => {
@@ -265,7 +268,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
                     style={{ width: `${info.prozent}%`, background: info.farbe }}
                   />
                 </span>
-                bis {new Date(laufzeit.vertrag_ende).toLocaleDateString("de-DE")}
+                {txt.bisPrefix} {new Date(laufzeit.vertrag_ende).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")}
               </span>
             )}
             <span className={`ml-auto rounded-full px-2 py-0.5 text-[0.65rem] font-medium ${WARTUNG_FARBE[d.wartungsvertrag]}`}>
@@ -276,11 +279,11 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
           {offenDongleId === d.id && (
             <div className="space-y-3 border-t border-[var(--border)] bg-[var(--bg-surface)] px-3 py-3">
               {d.gruppe && (
-                <p className="text-xs text-[var(--text-faint)]">Import-Hinweis: {d.gruppe}</p>
+                <p className="text-xs text-[var(--text-faint)]">{txt.importHinweis} {d.gruppe}</p>
               )}
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Wartungsvertrag</label>
+                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.wartungsvertragLabel}</label>
                 <div className="flex gap-1.5">
                   {(Object.keys(WARTUNG_LABEL) as Wartungsvertrag[]).map((w) => (
                     <button
@@ -299,7 +302,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
               </div>
 
               <div className="flex items-center gap-2">
-                <label className="text-xs font-medium text-[var(--text-soft)]">Ticket-Freiminuten/Monat</label>
+                <label className="text-xs font-medium text-[var(--text-soft)]">{txt.freiminutenLabel}</label>
                 <input
                   type="number"
                   min={0}
@@ -311,7 +314,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  Lizenzvertrag (Laufzeit)
+                  {txt.lizenzvertragLabel}
                 </label>
                 {laufzeit ? (
                   <div className="space-y-2 rounded bg-[var(--bg-muted)] px-2.5 py-2 text-sm">
@@ -323,7 +326,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
                         onClick={() => vertragLoesen(laufzeit.id)}
                         className="ml-auto shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
                       >
-                        Verknüpfung lösen
+                        {txt.verknuepfungLoesen}
                       </button>
                     </div>
                     {laufzeit.vertrag_ende &&
@@ -333,10 +336,10 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
                         return (
                           <div>
                             <div className="mb-1 flex justify-between text-xs text-[var(--text-faint)]">
-                              <span>Laufzeit</span>
+                              <span>{txt.laufzeit}</span>
                               <span style={{ color: info.farbe }} className="font-medium">
-                                bis {new Date(laufzeit.vertrag_ende!).toLocaleDateString("de-DE")}
-                                {info.tage >= 0 ? ` (${info.tage} Tage)` : " (abgelaufen)"}
+                                {txt.bisPrefix} {new Date(laufzeit.vertrag_ende!).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")}
+                                {info.tage >= 0 ? ` (${info.tage} ${txt.tageSuffix})` : ` ${txt.abgelaufen}`}
                               </span>
                             </div>
                             <div className="h-1.5 overflow-hidden rounded-full bg-[var(--bg-surface)]">
@@ -356,11 +359,11 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
                       onChange={(e) => setVerknuepfenAuswahl((v) => ({ ...v, [d.id]: e.target.value }))}
                       className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2.5 py-1.5 text-sm text-[var(--text-strong)]"
                     >
-                      <option value="">Lizenzvertrag wählen…</option>
+                      <option value="">{txt.lizenzvertragWaehlen}</option>
                       {unverknuepfteVertraege.map((v) => (
                         <option key={v.id} value={v.id}>
                           {v.produkt_name} ({v.lizenz_seriennummer})
-                          {v.vertrag_ende ? ` – bis ${new Date(v.vertrag_ende).toLocaleDateString("de-DE")}` : ""}
+                          {v.vertrag_ende ? txt.bisTemplate.replace("{datum}", new Date(v.vertrag_ende).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")) : ""}
                         </option>
                       ))}
                     </select>
@@ -369,21 +372,19 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
                       disabled={!verknuepfenAuswahl[d.id]}
                       className="shrink-0 rounded bg-akzent px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
                     >
-                      Verknüpfen
+                      {txt.verknuepfen}
                     </button>
                   </div>
                 ) : (
                   <p className="text-xs text-[var(--text-faint)]">
-                    Keine (noch nicht verknüpften) Lizenzverträge bei diesem Kunden hinterlegt. Diese
-                    kommen aus dem zweiten exocad-Import (license_history) und werden getrennt von den
-                    Dongles importiert.
+                    {txt.keineUnverknuepftenVertraege}
                   </p>
                 )}
               </div>
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  Software-Module <span className="font-normal text-[var(--text-faint)]">(rein informativ)</span>
+                  {txt.softwareModuleLabel} <span className="font-normal text-[var(--text-faint)]">{txt.reinInformativ}</span>
                 </label>
                 {(module[d.id] ?? []).length > 0 && (
                   <div className="mb-2 space-y-1">
@@ -405,7 +406,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
                           onClick={() => modulLoeschen(mod.id, d.id)}
                           className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
                         >
-                          Entfernen
+                          {txt.entfernen}
                         </button>
                       </label>
                     ))}
@@ -417,7 +418,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
                     value={neuesModul[d.id] ?? ""}
                     onChange={(e) => setNeuesModul((m) => ({ ...m, [d.id]: e.target.value }))}
                     onKeyDown={(e) => e.key === "Enter" && modulHinzufuegen(d.id)}
-                    placeholder="z.B. ImplantModule"
+                    placeholder={txt.neuesModulPlatzhalter}
                     className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2.5 py-1.5 text-sm text-[var(--text-strong)]"
                   />
                   <button
@@ -433,7 +434,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
                 onClick={() => dongleLoeschen(d.id, d.seriennummer)}
                 className="text-xs text-[var(--text-faint)] hover:text-red-600"
               >
-                Dongle löschen
+                {txt.dongleLoeschen}
               </button>
             </div>
           )}
@@ -446,7 +447,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
           onClick={() => setAlleAnzeigen((v) => !v)}
           className="w-full rounded border border-[var(--border-input)] px-3 py-1.5 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
         >
-          {alleAnzeigen ? "Weniger anzeigen" : `Alle ${gefiltert.length} anzeigen`}
+          {alleAnzeigen ? txt.wenigerAnzeigen : txt.alleAnzeigenTemplate.replace("{n}", String(gefiltert.length))}
         </button>
       )}
 
@@ -457,14 +458,14 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
               type="text"
               value={neueSeriennummer}
               onChange={(e) => setNeueSeriennummer(e.target.value)}
-              placeholder="Seriennummer"
+              placeholder={txt.seriennummerPlatzhalter}
               className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-sm text-[var(--text-strong)]"
             />
             <input
               type="text"
               value={neueSoftware}
               onChange={(e) => setNeueSoftware(e.target.value)}
-              placeholder="Software"
+              placeholder={txt.softwarePlatzhalter}
               className="w-28 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-sm text-[var(--text-strong)]"
             />
           </div>
@@ -473,7 +474,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
               onClick={dongleAnlegen}
               className="flex-1 rounded bg-akzent px-3 py-1.5 text-sm font-medium text-white"
             >
-              Anlegen
+              {txt.anlegen}
             </button>
             <button
               onClick={() => {
@@ -482,7 +483,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
               }}
               className="rounded border border-[var(--border-input)] px-3 py-1.5 text-sm text-[var(--text-soft)]"
             >
-              Abbrechen
+              {txt.abbrechen}
             </button>
           </div>
         </div>
@@ -491,7 +492,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
           onClick={() => setZeigeNeuerDongle(true)}
           className="w-full rounded border border-dashed border-[var(--border-input)] px-3 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
         >
-          + Dongle/Lizenz hinzufügen
+          {txt.dongleHinzufuegen}
         </button>
       )}
 

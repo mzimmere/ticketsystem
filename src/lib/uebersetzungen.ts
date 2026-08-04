@@ -834,6 +834,46 @@ export interface Uebersetzung {
     alleLizenzvertraegeTemplate: string;
     sucheSeriennummerProduktKunde: string;
   };
+  dongleVerwaltung: {
+    wartungAktiv: string;
+    wartungInaktiv: string;
+    wartungNichtGewuenscht: string;
+    fehlerLaden: string;
+    seriennummerVergeben: string;
+    fehlerAnlegen: string;
+    loeschenConfirmTemplate: string;
+    fehlerLoeschen: string;
+    modulExistiertBereits: string;
+    fehlerModulAnlegen: string;
+    nochKeineDongles: string;
+    filterPlatzhalterTemplate: string;
+    keineTrefferFilter: string;
+    bisPrefix: string;
+    importHinweis: string;
+    wartungsvertragLabel: string;
+    freiminutenLabel: string;
+    lizenzvertragLabel: string;
+    verknuepfungLoesen: string;
+    laufzeit: string;
+    tageSuffix: string;
+    abgelaufen: string;
+    lizenzvertragWaehlen: string;
+    bisTemplate: string;
+    verknuepfen: string;
+    keineUnverknuepftenVertraege: string;
+    softwareModuleLabel: string;
+    reinInformativ: string;
+    entfernen: string;
+    neuesModulPlatzhalter: string;
+    dongleLoeschen: string;
+    wenigerAnzeigen: string;
+    alleAnzeigenTemplate: string;
+    seriennummerPlatzhalter: string;
+    softwarePlatzhalter: string;
+    anlegen: string;
+    abbrechen: string;
+    dongleHinzufuegen: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -1667,6 +1707,46 @@ const de: Uebersetzung = {
     alleLizenzvertraegeTemplate: "Alle Lizenzverträge ({n})",
     sucheSeriennummerProduktKunde: "Suche nach Seriennummer, Produkt oder Kunde…",
   },
+  dongleVerwaltung: {
+    wartungAktiv: "Wartungsvertrag aktiv",
+    wartungInaktiv: "Wartungsvertrag inaktiv",
+    wartungNichtGewuenscht: "Nicht gewünscht",
+    fehlerLaden: "Dongles konnten nicht geladen werden.",
+    seriennummerVergeben: "Diese Seriennummer ist in dieser Firma bereits vergeben.",
+    fehlerAnlegen: "Dongle konnte nicht angelegt werden.",
+    loeschenConfirmTemplate: 'Dongle "{seriennummer}" wirklich löschen? Zugehörige Module werden mitgelöscht, verknüpfte Tickets bleiben erhalten (verlieren nur den Link).',
+    fehlerLoeschen: "Löschen fehlgeschlagen (Details in der Browser-Konsole).",
+    modulExistiertBereits: "Dieses Modul gibt es bei diesem Dongle schon.",
+    fehlerModulAnlegen: "Modul konnte nicht angelegt werden.",
+    nochKeineDongles: "Noch keine Dongles/Lizenzen hinterlegt.",
+    filterPlatzhalterTemplate: "Nach Seriennummer filtern… ({n} Dongles)",
+    keineTrefferFilter: "Keine Treffer für diesen Filter.",
+    bisPrefix: "bis",
+    importHinweis: "Import-Hinweis:",
+    wartungsvertragLabel: "Wartungsvertrag",
+    freiminutenLabel: "Ticket-Freiminuten/Monat",
+    lizenzvertragLabel: "Lizenzvertrag (Laufzeit)",
+    verknuepfungLoesen: "Verknüpfung lösen",
+    laufzeit: "Laufzeit",
+    tageSuffix: "Tage",
+    abgelaufen: "(abgelaufen)",
+    lizenzvertragWaehlen: "Lizenzvertrag wählen…",
+    bisTemplate: " – bis {datum}",
+    verknuepfen: "Verknüpfen",
+    keineUnverknuepftenVertraege: "Keine (noch nicht verknüpften) Lizenzverträge bei diesem Kunden hinterlegt. Diese kommen aus dem zweiten exocad-Import (license_history) und werden getrennt von den Dongles importiert.",
+    softwareModuleLabel: "Software-Module",
+    reinInformativ: "(rein informativ)",
+    entfernen: "Entfernen",
+    neuesModulPlatzhalter: "z.B. ImplantModule",
+    dongleLoeschen: "Dongle löschen",
+    wenigerAnzeigen: "Weniger anzeigen",
+    alleAnzeigenTemplate: "Alle {n} anzeigen",
+    seriennummerPlatzhalter: "Seriennummer",
+    softwarePlatzhalter: "Software",
+    anlegen: "Anlegen",
+    abbrechen: "Abbrechen",
+    dongleHinzufuegen: "+ Dongle/Lizenz hinzufügen",
+  },
 };
 
 const en: Uebersetzung = {
@@ -2499,6 +2579,46 @@ const en: Uebersetzung = {
     nichtZugeordnet: "Not assigned",
     alleLizenzvertraegeTemplate: "All license contracts ({n})",
     sucheSeriennummerProduktKunde: "Search by serial number, product, or customer…",
+  },
+  dongleVerwaltung: {
+    wartungAktiv: "Maintenance contract active",
+    wartungInaktiv: "Maintenance contract inactive",
+    wartungNichtGewuenscht: "Not desired",
+    fehlerLaden: "Dongles could not be loaded.",
+    seriennummerVergeben: "This serial number is already in use at this company.",
+    fehlerAnlegen: "Could not create dongle.",
+    loeschenConfirmTemplate: 'Really delete dongle "{seriennummer}"? Associated modules will also be deleted; linked tickets remain (they just lose the link).',
+    fehlerLoeschen: "Delete failed (details in the browser console).",
+    modulExistiertBereits: "This module already exists on this dongle.",
+    fehlerModulAnlegen: "Could not create module.",
+    nochKeineDongles: "No dongles/licenses on file yet.",
+    filterPlatzhalterTemplate: "Filter by serial number… ({n} dongles)",
+    keineTrefferFilter: "No matches for this filter.",
+    bisPrefix: "until",
+    importHinweis: "Import note:",
+    wartungsvertragLabel: "Maintenance contract",
+    freiminutenLabel: "Free ticket minutes/month",
+    lizenzvertragLabel: "License contract (term)",
+    verknuepfungLoesen: "Unlink",
+    laufzeit: "Term",
+    tageSuffix: "days",
+    abgelaufen: "(expired)",
+    lizenzvertragWaehlen: "Select license contract…",
+    bisTemplate: " – until {datum}",
+    verknuepfen: "Link",
+    keineUnverknuepftenVertraege: "No (not yet linked) license contracts on file for this customer. These come from the second exocad import (license_history) and are imported separately from the dongles.",
+    softwareModuleLabel: "Software modules",
+    reinInformativ: "(informational only)",
+    entfernen: "Remove",
+    neuesModulPlatzhalter: "e.g. ImplantModule",
+    dongleLoeschen: "Delete dongle",
+    wenigerAnzeigen: "Show less",
+    alleAnzeigenTemplate: "Show all {n}",
+    seriennummerPlatzhalter: "Serial number",
+    softwarePlatzhalter: "Software",
+    anlegen: "Create",
+    abbrechen: "Cancel",
+    dongleHinzufuegen: "+ Add dongle/license",
   },
 };
 
