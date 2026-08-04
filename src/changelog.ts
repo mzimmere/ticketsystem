@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Dongle-/Lizenzverwaltung (Nicht-zugeordnet-Pools, Gesamtübersicht Dongles/Lizenzverträge) übersetzt" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: E-Mail-Texte-Verwaltung (Vorlagen-Übersicht, Platzhalter, Bearbeiten/Zurücksetzen) übersetzt – die eigentlichen Standard-E-Mail-Texte an Kunden/Mitarbeiter bleiben bewusst Deutsch, da es echte Kunden-Mails sind" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Integrationen-Verwaltung (E-Mail-Zugangsdaten, WhatsApp-Anbindung) übersetzt – die WhatsApp-Einrichtungsanleitung mit den Schritt-für-Schritt-Texten bleibt vorerst Deutsch" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Plattform-Tarifverwaltung (Grundgebühr/Staffeln) und Plattform-Rechnungsdetail übersetzt" },

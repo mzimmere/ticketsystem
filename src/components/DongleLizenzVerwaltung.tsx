@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 import DongleImport from "./DongleImport";
 
 interface KundeKurz {
@@ -43,6 +45,8 @@ const ANZAHL_POOL_SICHTBAR = 5;
 const ANZAHL_UEBERSICHT_SICHTBAR = 10;
 
 export default function DongleLizenzVerwaltung({ organisationId }: { organisationId: string }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).dongleLizenzVerwaltung;
   const [kunden, setKunden] = useState<KundeKurz[]>([]);
 
   const [nichtZugeordnete, setNichtZugeordnete] = useState<NichtZugeordneterDongle[]>([]);
@@ -205,17 +209,17 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
       {nichtZugeordnete.length > 0 && (
         <div className="space-y-1.5 rounded-lg border border-dashed border-[var(--border-input)] p-3">
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-            Nicht zugeordnete Lizenzen ({gefilterteNichtZugeordnete.length}/{nichtZugeordnete.length})
+            {txt.nichtZugeordneteLizenzenTemplate.replace("{gefiltert}", String(gefilterteNichtZugeordnete.length)).replace("{gesamt}", String(nichtZugeordnete.length))}
           </p>
           <input
             type="text"
             value={filterDongleNummer}
             onChange={(e) => setFilterDongleNummer(e.target.value)}
-            placeholder="Nach Seriennummer filtern…"
+            placeholder={txt.seriennummerFilterPlatzhalter}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-strong)]"
           />
           {gefilterteNichtZugeordnete.length === 0 && (
-            <p className="text-xs text-[var(--text-faint)]">Keine Treffer für diesen Filter.</p>
+            <p className="text-xs text-[var(--text-faint)]">{txt.keineTrefferFilter}</p>
           )}
           <div className="space-y-1.5">
             {sichtbareNichtZugeordnete.map((d) => (
@@ -232,10 +236,10 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                     onChange={(e) => setZuweisenAn((z) => ({ ...z, [d.id]: e.target.value }))}
                     className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1 text-xs text-[var(--text-strong)]"
                   >
-                    <option value="">Kunde wählen…</option>
+                    <option value="">{txt.kundeWaehlen}</option>
                     {kunden.map((k) => (
                       <option key={k.id} value={k.id}>
-                        {k.name ?? "Unbenannt"}
+                        {k.name ?? txt.unbenannt}
                       </option>
                     ))}
                   </select>
@@ -244,7 +248,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                     disabled={!zuweisenAn[d.id]}
                     className="shrink-0 rounded bg-akzent px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
                   >
-                    Zuweisen
+                    {txt.zuweisen}
                   </button>
                 </div>
               </div>
@@ -255,7 +259,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
               onClick={() => setAlleDonglesPoolAnzeigen((v) => !v)}
               className="w-full rounded border border-[var(--border-input)] px-3 py-1.5 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
             >
-              {alleDonglesPoolAnzeigen ? "Weniger anzeigen" : `Alle ${gefilterteNichtZugeordnete.length} anzeigen`}
+              {alleDonglesPoolAnzeigen ? txt.wenigerAnzeigen : txt.alleAnzeigenTemplate.replace("{n}", String(gefilterteNichtZugeordnete.length))}
             </button>
           )}
         </div>
@@ -264,17 +268,17 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
       {nichtZugeordneteVertraege.length > 0 && (
         <div className="space-y-1.5 rounded-lg border border-dashed border-[var(--border-input)] p-3">
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-            Nicht zugeordnete Lizenzverträge ({gefilterteNichtZugeordneteVertraege.length}/{nichtZugeordneteVertraege.length})
+            {txt.nichtZugeordneteVertraegeTemplate.replace("{gefiltert}", String(gefilterteNichtZugeordneteVertraege.length)).replace("{gesamt}", String(nichtZugeordneteVertraege.length))}
           </p>
           <input
             type="text"
             value={filterVertragNummer}
             onChange={(e) => setFilterVertragNummer(e.target.value)}
-            placeholder="Nach Seriennummer filtern…"
+            placeholder={txt.seriennummerFilterPlatzhalter}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs text-[var(--text-strong)]"
           />
           {gefilterteNichtZugeordneteVertraege.length === 0 && (
-            <p className="text-xs text-[var(--text-faint)]">Keine Treffer für diesen Filter.</p>
+            <p className="text-xs text-[var(--text-faint)]">{txt.keineTrefferFilter}</p>
           )}
           <div className="space-y-1.5">
             {sichtbareNichtZugeordneteVertraege.map((v) => (
@@ -286,7 +290,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                 <span className="text-xs text-[var(--text-faint)]">· {v.produkt_name}</span>
                 {v.vertrag_ende && (
                   <span className="text-xs text-[var(--text-faint)]">
-                    (bis {new Date(v.vertrag_ende).toLocaleDateString("de-DE")})
+                    ({txt.bisPrefix} {new Date(v.vertrag_ende).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")})
                   </span>
                 )}
                 <div className="ml-auto flex items-center gap-1.5">
@@ -295,10 +299,10 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                     onChange={(e) => setZuweisenAnVertrag((z) => ({ ...z, [v.id]: e.target.value }))}
                     className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1 text-xs text-[var(--text-strong)]"
                   >
-                    <option value="">Kunde wählen…</option>
+                    <option value="">{txt.kundeWaehlen}</option>
                     {kunden.map((k) => (
                       <option key={k.id} value={k.id}>
-                        {k.name ?? "Unbenannt"}
+                        {k.name ?? txt.unbenannt}
                       </option>
                     ))}
                   </select>
@@ -307,7 +311,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                     disabled={!zuweisenAnVertrag[v.id]}
                     className="shrink-0 rounded bg-akzent px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
                   >
-                    Zuweisen
+                    {txt.zuweisen}
                   </button>
                 </div>
               </div>
@@ -318,7 +322,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
               onClick={() => setAlleVertraegePoolAnzeigen((v) => !v)}
               className="w-full rounded border border-[var(--border-input)] px-3 py-1.5 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
             >
-              {alleVertraegePoolAnzeigen ? "Weniger anzeigen" : `Alle ${gefilterteNichtZugeordneteVertraege.length} anzeigen`}
+              {alleVertraegePoolAnzeigen ? txt.wenigerAnzeigen : txt.alleAnzeigenTemplate.replace("{n}", String(gefilterteNichtZugeordneteVertraege.length))}
             </button>
           )}
         </div>
@@ -326,17 +330,17 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
 
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-2">
         <h3 className="text-sm font-medium text-[var(--text-strong)]">
-          Alle Dongles ({alleDongles.length})
+          {txt.alleDonglesTemplate.replace("{n}", String(alleDongles.length))}
         </h3>
         <input
           type="text"
           value={dongleUebersichtSuche}
           onChange={(e) => setDongleUebersichtSuche(e.target.value)}
-          placeholder="Suche nach Seriennummer oder Kunde…"
+          placeholder={txt.sucheSeriennummerOderKunde}
           className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-1.5 text-sm text-[var(--text-strong)]"
         />
         {dongleUebersichtGefiltert.length === 0 ? (
-          <p className="text-xs text-[var(--text-faint)]">Keine Treffer.</p>
+          <p className="text-xs text-[var(--text-faint)]">{txt.keineTreffer}</p>
         ) : (
           <div className="space-y-1">
             {sichtbareDongleUebersicht.map((d) => (
@@ -351,7 +355,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                     d.kunde?.name ? "text-[var(--text-soft)]" : "italic text-[var(--text-faint)]"
                   }`}
                 >
-                  {d.kunde?.name ?? "Nicht zugeordnet"}
+                  {d.kunde?.name ?? txt.nichtZugeordnet}
                 </span>
               </div>
             ))}
@@ -362,24 +366,24 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
             onClick={() => setDongleUebersichtAlleAnzeigen((v) => !v)}
             className="w-full rounded border border-[var(--border-input)] px-3 py-1.5 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
           >
-            {dongleUebersichtAlleAnzeigen ? "Weniger anzeigen" : `Alle ${dongleUebersichtGefiltert.length} anzeigen`}
+            {dongleUebersichtAlleAnzeigen ? txt.wenigerAnzeigen : txt.alleAnzeigenTemplate.replace("{n}", String(dongleUebersichtGefiltert.length))}
           </button>
         )}
       </div>
 
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-2">
         <h3 className="text-sm font-medium text-[var(--text-strong)]">
-          Alle Lizenzverträge ({alleVertraege.length})
+          {txt.alleLizenzvertraegeTemplate.replace("{n}", String(alleVertraege.length))}
         </h3>
         <input
           type="text"
           value={vertragUebersichtSuche}
           onChange={(e) => setVertragUebersichtSuche(e.target.value)}
-          placeholder="Suche nach Seriennummer, Produkt oder Kunde…"
+          placeholder={txt.sucheSeriennummerProduktKunde}
           className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-1.5 text-sm text-[var(--text-strong)]"
         />
         {vertragUebersichtGefiltert.length === 0 ? (
-          <p className="text-xs text-[var(--text-faint)]">Keine Treffer.</p>
+          <p className="text-xs text-[var(--text-faint)]">{txt.keineTreffer}</p>
         ) : (
           <div className="space-y-1">
             {sichtbareVertragUebersicht.map((v) => (
@@ -392,7 +396,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                 {v.status && <span className="text-xs text-[var(--text-faint)]">({v.status})</span>}
                 {v.vertrag_ende && (
                   <span className="text-xs text-[var(--text-faint)]">
-                    bis {new Date(v.vertrag_ende).toLocaleDateString("de-DE")}
+                    {txt.bisPrefix} {new Date(v.vertrag_ende).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")}
                   </span>
                 )}
                 <span
@@ -400,7 +404,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                     v.kunde?.name ? "text-[var(--text-soft)]" : "italic text-[var(--text-faint)]"
                   }`}
                 >
-                  {v.kunde?.name ?? "Nicht zugeordnet"}
+                  {v.kunde?.name ?? txt.nichtZugeordnet}
                 </span>
               </div>
             ))}
@@ -411,7 +415,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
             onClick={() => setVertragUebersichtAlleAnzeigen((v) => !v)}
             className="w-full rounded border border-[var(--border-input)] px-3 py-1.5 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
           >
-            {vertragUebersichtAlleAnzeigen ? "Weniger anzeigen" : `Alle ${vertragUebersichtGefiltert.length} anzeigen`}
+            {vertragUebersichtAlleAnzeigen ? txt.wenigerAnzeigen : txt.alleAnzeigenTemplate.replace("{n}", String(vertragUebersichtGefiltert.length))}
           </button>
         )}
       </div>

@@ -816,6 +816,24 @@ export interface Uebersetzung {
     labelMitarbeiterNeueKundenantwort: string;
     beschreibungMitarbeiterNeueKundenantwort: string;
   };
+  dongleLizenzVerwaltung: {
+    nichtZugeordneteLizenzenTemplate: string;
+    seriennummerFilterPlatzhalter: string;
+    keineTrefferFilter: string;
+    kundeWaehlen: string;
+    unbenannt: string;
+    zuweisen: string;
+    wenigerAnzeigen: string;
+    alleAnzeigenTemplate: string;
+    nichtZugeordneteVertraegeTemplate: string;
+    bisPrefix: string;
+    alleDonglesTemplate: string;
+    sucheSeriennummerOderKunde: string;
+    keineTreffer: string;
+    nichtZugeordnet: string;
+    alleLizenzvertraegeTemplate: string;
+    sucheSeriennummerProduktKunde: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -1631,6 +1649,24 @@ const de: Uebersetzung = {
     labelMitarbeiterNeueKundenantwort: "Neue Kundenantwort",
     beschreibungMitarbeiterNeueKundenantwort: "An den zuständigen Mitarbeiter, wenn der Kunde im Portal antwortet.",
   },
+  dongleLizenzVerwaltung: {
+    nichtZugeordneteLizenzenTemplate: "Nicht zugeordnete Lizenzen ({gefiltert}/{gesamt})",
+    seriennummerFilterPlatzhalter: "Nach Seriennummer filtern…",
+    keineTrefferFilter: "Keine Treffer für diesen Filter.",
+    kundeWaehlen: "Kunde wählen…",
+    unbenannt: "Unbenannt",
+    zuweisen: "Zuweisen",
+    wenigerAnzeigen: "Weniger anzeigen",
+    alleAnzeigenTemplate: "Alle {n} anzeigen",
+    nichtZugeordneteVertraegeTemplate: "Nicht zugeordnete Lizenzverträge ({gefiltert}/{gesamt})",
+    bisPrefix: "bis",
+    alleDonglesTemplate: "Alle Dongles ({n})",
+    sucheSeriennummerOderKunde: "Suche nach Seriennummer oder Kunde…",
+    keineTreffer: "Keine Treffer.",
+    nichtZugeordnet: "Nicht zugeordnet",
+    alleLizenzvertraegeTemplate: "Alle Lizenzverträge ({n})",
+    sucheSeriennummerProduktKunde: "Suche nach Seriennummer, Produkt oder Kunde…",
+  },
 };
 
 const en: Uebersetzung = {
@@ -2445,6 +2481,24 @@ const en: Uebersetzung = {
     beschreibungMitarbeiterStatusGeaendert: "To the responsible staff member when someone else changes the status.",
     labelMitarbeiterNeueKundenantwort: "New customer reply",
     beschreibungMitarbeiterNeueKundenantwort: "To the responsible staff member when the customer replies in the portal.",
+  },
+  dongleLizenzVerwaltung: {
+    nichtZugeordneteLizenzenTemplate: "Unassigned licenses ({gefiltert}/{gesamt})",
+    seriennummerFilterPlatzhalter: "Filter by serial number…",
+    keineTrefferFilter: "No matches for this filter.",
+    kundeWaehlen: "Select customer…",
+    unbenannt: "Unnamed",
+    zuweisen: "Assign",
+    wenigerAnzeigen: "Show less",
+    alleAnzeigenTemplate: "Show all {n}",
+    nichtZugeordneteVertraegeTemplate: "Unassigned license contracts ({gefiltert}/{gesamt})",
+    bisPrefix: "until",
+    alleDonglesTemplate: "All dongles ({n})",
+    sucheSeriennummerOderKunde: "Search by serial number or customer…",
+    keineTreffer: "No matches.",
+    nichtZugeordnet: "Not assigned",
+    alleLizenzvertraegeTemplate: "All license contracts ({n})",
+    sucheSeriennummerProduktKunde: "Search by serial number, product, or customer…",
   },
 };
 
