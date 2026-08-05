@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface OrgDatenschutz {
   name: string;
@@ -11,6 +13,8 @@ interface DatenschutzSeiteProps {
 }
 
 export default function DatenschutzSeite({ slug }: DatenschutzSeiteProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).datenschutzSeite;
   const [organisation, setOrganisation] = useState<OrgDatenschutz | null>(null);
   const [laedt, setLaedt] = useState(true);
 
@@ -29,7 +33,7 @@ export default function DatenschutzSeite({ slug }: DatenschutzSeiteProps) {
     <div className="min-h-screen bg-[var(--bg-muted)] p-6">
       <div className="mx-auto max-w-2xl rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-6">
         <h1 className="mb-4 text-lg font-semibold text-[var(--text-strong)]">
-          Datenschutzerklärung{organisation ? ` – ${organisation.name}` : ""}
+          {txt.titelTemplate.replace("{firma}", organisation ? ` – ${organisation.name}` : "")}
         </h1>
         {organisation?.datenschutz_text ? (
           <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--text-soft)]">
@@ -37,7 +41,7 @@ export default function DatenschutzSeite({ slug }: DatenschutzSeiteProps) {
           </p>
         ) : (
           <p className="text-sm text-[var(--text-faint)]">
-            Für diese Firma wurde noch keine Datenschutzerklärung hinterlegt.
+            {txt.keinTextHinterlegt}
           </p>
         )}
       </div>

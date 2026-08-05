@@ -1,15 +1,19 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { changelog, aktuelleVersion } from "../changelog";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 export default function Changelog() {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).changelog;
   const [offen, setOffen] = useState(false);
 
   return (
     <>
       <button
         onClick={() => setOffen(true)}
-        title="Was ist neu?"
+        title={txt.wasIstNeu}
         className="rounded-full border border-[var(--border)] px-2 py-0.5 font-mono text-[10px] font-medium text-[var(--text-faint)] transition-colors hover:border-[var(--akzent)] hover:text-[var(--akzent)]"
       >
         v{aktuelleVersion}
@@ -25,7 +29,7 @@ export default function Changelog() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
-              <h3 className="text-sm font-semibold text-[var(--text-strong)]">Änderungsverlauf</h3>
+              <h3 className="text-sm font-semibold text-[var(--text-strong)]">{txt.aenderungsverlauf}</h3>
               <button
                 onClick={() => setOffen(false)}
                 className="rounded p-1 text-[var(--text-faint)] hover:bg-[var(--bg-muted)]"

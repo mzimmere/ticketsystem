@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface Todo {
   id: string;
@@ -16,6 +18,8 @@ interface KundenTodoListeProps {
 const KOMPAKT_MAX = 5;
 
 export default function KundenTodoListe({ kundeId, organisationId, modus = "voll" }: KundenTodoListeProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).kundenTodoListe;
   const [todos, setTodos] = useState<Todo[]>([]);
   const [neuesTodo, setNeuesTodo] = useState("");
   const [hinweis, setHinweis] = useState<string | null>(null);
@@ -51,7 +55,7 @@ export default function KundenTodoListe({ kundeId, organisationId, modus = "voll
     });
     if (error) {
       console.error(error);
-      setHinweis("Todo konnte nicht hinzugefügt werden.");
+      setHinweis(txt.fehlerHinzufuegen);
       return;
     }
     setNeuesTodo("");
@@ -79,7 +83,7 @@ export default function KundenTodoListe({ kundeId, organisationId, modus = "voll
     return (
       <div className="space-y-1.5 rounded-lg border border-dashed border-[var(--border-input)] p-3">
         <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-          Offene Todos dieses Kunden ({offene.length})
+          {txt.offeneTodosTemplate.replace("{n}", String(offene.length))}
         </p>
         <ul className="space-y-0.5">
           {offene.slice(0, KOMPAKT_MAX).map((t) => (
@@ -90,7 +94,7 @@ export default function KundenTodoListe({ kundeId, organisationId, modus = "voll
         </ul>
         {offene.length > KOMPAKT_MAX && (
           <p className="text-xs text-[var(--text-faint)]">
-            +{offene.length - KOMPAKT_MAX} weitere…
+            {txt.weitereTemplate.replace("{n}", String(offene.length - KOMPAKT_MAX))}
           </p>
         )}
       </div>
@@ -125,7 +129,7 @@ export default function KundenTodoListe({ kundeId, organisationId, modus = "voll
                 onClick={() => todoLoeschen(t.id)}
                 className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
               >
-                Löschen
+                {txt.loeschen}
               </button>
             </label>
           ))}
@@ -138,7 +142,7 @@ export default function KundenTodoListe({ kundeId, organisationId, modus = "voll
           value={neuesTodo}
           onChange={(e) => setNeuesTodo(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && todoHinzufuegen()}
-          placeholder="Neues Todo…"
+          placeholder={txt.neuesTodoPlatzhalter}
           className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
         />
         <button

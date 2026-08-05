@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 // Zwischenseite fuer Zugangs-/Einladungslinks: Messenger wie WhatsApp rufen
 // geteilte Links selbst auf, um eine Vorschau zu erzeugen - dabei wuerde ein
@@ -8,6 +10,8 @@ import { useState } from "react";
 // tatsaechlichen Klick aufgerufen - Vorschau-Bots klicken nicht, sie lesen
 // nur den HTML-Quelltext.
 export default function ZugangsBestaetigen({ ziel }: { ziel: string }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).zugangsBestaetigen;
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
 
@@ -16,18 +20,18 @@ export default function ZugangsBestaetigen({ ziel }: { ziel: string }) {
     try {
       erlaubterUrsprung = new URL(import.meta.env.VITE_SUPABASE_URL).origin;
     } catch {
-      setFehler("Dieser Link ist ungültig.");
+      setFehler(txt.linkUngueltig);
       return;
     }
     let zielUrsprung: string;
     try {
       zielUrsprung = new URL(ziel).origin;
     } catch {
-      setFehler("Dieser Link ist ungültig.");
+      setFehler(txt.linkUngueltig);
       return;
     }
     if (zielUrsprung !== erlaubterUrsprung) {
-      setFehler("Dieser Link ist ungültig.");
+      setFehler(txt.linkUngueltig);
       return;
     }
     setLaedt(true);
@@ -38,11 +42,10 @@ export default function ZugangsBestaetigen({ ziel }: { ziel: string }) {
     <div className="flex min-h-screen items-center justify-center bg-[var(--bg-muted)] p-8">
       <div className="w-full max-w-sm space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-6 text-center">
         <p className="text-sm font-medium text-[var(--text-strong)]">
-          Fast geschafft – ein letzter Klick, um deinen Zugang zu aktivieren.
+          {txt.fastGeschafft}
         </p>
         <p className="text-xs text-[var(--text-faint)]">
-          Dieser Zwischenschritt sorgt dafür, dass WhatsApp & Co. deinen Link nicht schon beim
-          Erzeugen einer Vorschau verbrauchen.
+          {txt.zwischenschrittHinweis}
         </p>
         {fehler && <p className="text-xs text-red-600">{fehler}</p>}
         <button
@@ -50,7 +53,7 @@ export default function ZugangsBestaetigen({ ziel }: { ziel: string }) {
           disabled={laedt}
           className="w-full rounded bg-akzent px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
         >
-          {laedt ? "Öffne…" : "Zugang aktivieren"}
+          {laedt ? txt.oeffne : txt.zugangAktivieren}
         </button>
       </div>
     </div>

@@ -915,6 +915,44 @@ export interface Uebersetzung {
     importiert: string;
     jetztImportieren: string;
   };
+  datenschutzSeite: {
+    titelTemplate: string;
+    keinTextHinterlegt: string;
+  };
+  changelog: {
+    wasIstNeu: string;
+    aenderungsverlauf: string;
+  };
+  zugangsBestaetigen: {
+    linkUngueltig: string;
+    fastGeschafft: string;
+    zwischenschrittHinweis: string;
+    oeffne: string;
+    zugangAktivieren: string;
+  };
+  kundenHardware: {
+    fehlerHinzufuegen: string;
+    keineKategorien: string;
+    eigenerWertPlatzhalter: string;
+  };
+  kundenTodoListe: {
+    fehlerHinzufuegen: string;
+    offeneTodosTemplate: string;
+    weitereTemplate: string;
+    loeschen: string;
+    neuesTodoPlatzhalter: string;
+  };
+  zugangsdatenBox: {
+    accountAngelegtTitel: string;
+    linkErzeugtTitel: string;
+    linkBestaetigungHinweis: string;
+    perWhatsapp: string;
+    perEmail: string;
+    kopiertHaken: string;
+    kopieren: string;
+    ausblenden: string;
+    keineTelefonnummerHinweis: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -1829,6 +1867,44 @@ const de: Uebersetzung = {
     importiert: "Importiert…",
     jetztImportieren: "Jetzt importieren",
   },
+  datenschutzSeite: {
+    titelTemplate: "Datenschutzerklärung{firma}",
+    keinTextHinterlegt: "Für diese Firma wurde noch keine Datenschutzerklärung hinterlegt.",
+  },
+  changelog: {
+    wasIstNeu: "Was ist neu?",
+    aenderungsverlauf: "Änderungsverlauf",
+  },
+  zugangsBestaetigen: {
+    linkUngueltig: "Dieser Link ist ungültig.",
+    fastGeschafft: "Fast geschafft – ein letzter Klick, um deinen Zugang zu aktivieren.",
+    zwischenschrittHinweis: "Dieser Zwischenschritt sorgt dafür, dass WhatsApp & Co. deinen Link nicht schon beim Erzeugen einer Vorschau verbrauchen.",
+    oeffne: "Öffne…",
+    zugangAktivieren: "Zugang aktivieren",
+  },
+  kundenHardware: {
+    fehlerHinzufuegen: "Konnte nicht hinzugefügt werden.",
+    keineKategorien: "Noch keine Hardware-Kategorien definiert (Verwaltung → Werkzeuge → Hardware-Kategorien).",
+    eigenerWertPlatzhalter: "Eigener Wert…",
+  },
+  kundenTodoListe: {
+    fehlerHinzufuegen: "Todo konnte nicht hinzugefügt werden.",
+    offeneTodosTemplate: "Offene Todos dieses Kunden ({n})",
+    weitereTemplate: "+{n} weitere…",
+    loeschen: "Löschen",
+    neuesTodoPlatzhalter: "Neues Todo…",
+  },
+  zugangsdatenBox: {
+    accountAngelegtTitel: "Account angelegt – Zugangsdaten weitergeben:",
+    linkErzeugtTitel: "Link erzeugt – weitergeben:",
+    linkBestaetigungHinweis: "Der Link öffnet zuerst eine Bestätigungsseite – so verbraucht eine WhatsApp-Vorschau ihn nicht versehentlich, bevor die Person selbst klickt.",
+    perWhatsapp: "Per WhatsApp senden",
+    perEmail: "Per E-Mail senden",
+    kopiertHaken: "Kopiert ✓",
+    kopieren: "Kopieren",
+    ausblenden: "Ausblenden",
+    keineTelefonnummerHinweis: "Keine Telefonnummer hinterlegt – WhatsApp öffnet sich ohne vorausgewählten Empfänger, Nummer dann manuell eintragen.",
+  },
 };
 
 const en: Uebersetzung = {
@@ -2742,6 +2818,44 @@ const en: Uebersetzung = {
     uebersprungenTemplate: "{n} rows skipped (required field missing).",
     importiert: "Importing…",
     jetztImportieren: "Import now",
+  },
+  datenschutzSeite: {
+    titelTemplate: "Privacy Policy{firma}",
+    keinTextHinterlegt: "No privacy policy has been provided for this company yet.",
+  },
+  changelog: {
+    wasIstNeu: "What's new?",
+    aenderungsverlauf: "Change log",
+  },
+  zugangsBestaetigen: {
+    linkUngueltig: "This link is invalid.",
+    fastGeschafft: "Almost there – one last click to activate your access.",
+    zwischenschrittHinweis: "This intermediate step ensures WhatsApp & co. don't use up your link just by generating a preview.",
+    oeffne: "Opening…",
+    zugangAktivieren: "Activate access",
+  },
+  kundenHardware: {
+    fehlerHinzufuegen: "Could not add.",
+    keineKategorien: "No hardware categories defined yet (Administration → Tools → Hardware Categories).",
+    eigenerWertPlatzhalter: "Custom value…",
+  },
+  kundenTodoListe: {
+    fehlerHinzufuegen: "Could not add todo.",
+    offeneTodosTemplate: "Open todos for this customer ({n})",
+    weitereTemplate: "+{n} more…",
+    loeschen: "Delete",
+    neuesTodoPlatzhalter: "New todo…",
+  },
+  zugangsdatenBox: {
+    accountAngelegtTitel: "Account created – share the credentials:",
+    linkErzeugtTitel: "Link generated – share it:",
+    linkBestaetigungHinweis: "The link opens a confirmation page first – this way a WhatsApp preview doesn't accidentally use it up before the person clicks it themselves.",
+    perWhatsapp: "Send via WhatsApp",
+    perEmail: "Send via email",
+    kopiertHaken: "Copied ✓",
+    kopieren: "Copy",
+    ausblenden: "Hide",
+    keineTelefonnummerHinweis: "No phone number on file – WhatsApp will open without a preselected recipient; enter the number manually.",
   },
 };
 

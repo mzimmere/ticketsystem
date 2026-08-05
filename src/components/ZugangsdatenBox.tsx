@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface ZugangsdatenBoxProps {
   email: string;
@@ -21,6 +23,8 @@ export default function ZugangsdatenBox({
   logoUrl,
   onSchliessen,
 }: ZugangsdatenBoxProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).zugangsdatenBox;
   const [kopiert, setKopiert] = useState(false);
   const seitenUrl = window.location.origin;
   const absender = firmenName ? firmenName : "dein IT-Team";
@@ -80,7 +84,7 @@ export default function ZugangsdatenBox({
       <div className="mb-2 flex items-center gap-2">
         {logoUrl && <img src={logoUrl} alt={firmenName ?? ""} className="h-6 w-6 rounded" />}
         <p className="font-medium text-[var(--text-strong)]">
-          {passwort ? "Account angelegt – Zugangsdaten weitergeben:" : "Link erzeugt – weitergeben:"}
+          {passwort ? txt.accountAngelegtTitel : txt.linkErzeugtTitel}
         </p>
       </div>
 
@@ -92,8 +96,7 @@ export default function ZugangsdatenBox({
 
       {link && !passwort && (
         <p className="mb-2 text-xs text-[var(--text-faint)]">
-          Der Link öffnet zuerst eine Bestätigungsseite – so verbraucht eine WhatsApp-Vorschau ihn
-          nicht versehentlich, bevor die Person selbst klickt.
+          {txt.linkBestaetigungHinweis}
         </p>
       )}
 
@@ -102,32 +105,31 @@ export default function ZugangsdatenBox({
           onClick={perWhatsapp}
           className="rounded bg-[#25D366] px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
         >
-          Per WhatsApp senden
+          {txt.perWhatsapp}
         </button>
         <button
           onClick={perMail}
           className="rounded border border-[var(--border-input)] px-3 py-1.5 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
         >
-          Per E-Mail senden
+          {txt.perEmail}
         </button>
         <button
           onClick={kopieren}
           className="rounded border border-[var(--border-input)] px-3 py-1.5 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
         >
-          {kopiert ? "Kopiert ✓" : "Kopieren"}
+          {kopiert ? txt.kopiertHaken : txt.kopieren}
         </button>
         <button
           onClick={onSchliessen}
           className="ml-auto text-xs text-[var(--text-faint)] hover:underline"
         >
-          Ausblenden
+          {txt.ausblenden}
         </button>
       </div>
 
       {!telefon && (
         <p className="mt-2 text-xs text-[var(--text-faint)]">
-          Keine Telefonnummer hinterlegt – WhatsApp öffnet sich ohne vorausgewählten Empfänger,
-          Nummer dann manuell eintragen.
+          {txt.keineTelefonnummerHinweis}
         </p>
       )}
     </div>

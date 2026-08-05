@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface Kategorie {
   id: string;
@@ -18,6 +20,8 @@ interface KundenHardwareProps {
 }
 
 export default function KundenHardware({ kundeId, organisationId }: KundenHardwareProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).kundenHardware;
   const [kategorien, setKategorien] = useState<Kategorie[]>([]);
   const [eintraege, setEintraege] = useState<Eintrag[]>([]);
   const [neuerWert, setNeuerWert] = useState<Record<string, string>>({});
@@ -48,7 +52,7 @@ export default function KundenHardware({ kundeId, organisationId }: KundenHardwa
     });
     if (error) {
       console.error(error);
-      setHinweis("Konnte nicht hinzugefügt werden.");
+      setHinweis(txt.fehlerHinzufuegen);
       return;
     }
     setNeuerWert((n) => ({ ...n, [kategorieId]: "" }));
@@ -64,7 +68,7 @@ export default function KundenHardware({ kundeId, organisationId }: KundenHardwa
   if (kategorien.length === 0) {
     return (
       <p className="text-xs text-[var(--text-faint)]">
-        Noch keine Hardware-Kategorien definiert (Verwaltung → Werkzeuge → Hardware-Kategorien).
+        {txt.keineKategorien}
       </p>
     );
   }
@@ -96,7 +100,7 @@ export default function KundenHardware({ kundeId, organisationId }: KundenHardwa
                 onKeyDown={(e) => {
                   if (e.key === "Enter") wertHinzufuegen(k.id, neuerWert[k.id] ?? "");
                 }}
-                placeholder="Eigener Wert…"
+                placeholder={txt.eigenerWertPlatzhalter}
                 className="w-32 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1 text-xs text-[var(--text-strong)]"
               />
             </div>
