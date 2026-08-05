@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 type Stimmung = "positiv" | "neutral" | "frustriert" | "dringend";
 
@@ -41,6 +43,14 @@ async function kiAufruf(aktion: string, ticketId: string) {
 }
 
 export default function KiAssistent({ ticketId, onAntwortVorschlag, onTagsVorgeschlagen }: KiAssistentProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).kiAssistent;
+  const STIMMUNG_LABEL: Record<Stimmung, string> = {
+    positiv: txt.stimmungPositiv,
+    neutral: txt.stimmungNeutral,
+    frustriert: txt.stimmungFrustriert,
+    dringend: txt.stimmungDringend,
+  };
   const [zusammenfassung, setZusammenfassung] = useState<string | null>(null);
   const [stimmung, setStimmung] = useState<StimmungsAnalyse | null>(null);
   const [laedt, setLaedt] = useState<string | null>(null);
@@ -65,7 +75,7 @@ export default function KiAssistent({ ticketId, onAntwortVorschlag, onTagsVorges
         if (Array.isArray(parsed)) onTagsVorgeschlagen(parsed);
       }
     } catch (e) {
-      setFehler(e instanceof Error ? e.message : "KI-Aufruf fehlgeschlagen.");
+      setFehler(e instanceof Error ? e.message : txt.fehlerFallback);
     }
     setLaedt(null);
   }
@@ -78,7 +88,7 @@ export default function KiAssistent({ ticketId, onAntwortVorschlag, onTagsVorges
       >
         <div className="flex items-center gap-2">
           <span className="text-base">✨</span>
-          <span className="text-xs font-medium text-[var(--text-soft)]">KI-Assistent</span>
+          <span className="text-xs font-medium text-[var(--text-soft)]">{txt.titel}</span>
           {stimmung && (
             <span className="text-sm">{STIMMUNG_STYLE[stimmung.stimmung].emoji}</span>
           )}
@@ -98,7 +108,7 @@ export default function KiAssistent({ ticketId, onAntwortVorschlag, onTagsVorges
           {stimmung && (
             <div className={`rounded-lg border p-3 ${STIMMUNG_STYLE[stimmung.stimmung].bg}`}>
               <p className={`text-xs font-semibold ${STIMMUNG_STYLE[stimmung.stimmung].farbe}`}>
-                {STIMMUNG_STYLE[stimmung.stimmung].emoji} Stimmung: {stimmung.stimmung}
+                {STIMMUNG_STYLE[stimmung.stimmung].emoji} {txt.stimmungLabel} {STIMMUNG_LABEL[stimmung.stimmung]}
               </p>
               <p className="mt-1 text-xs text-[var(--text-soft)]">{stimmung.begruendung}</p>
               <p className="mt-1 text-xs font-medium text-[var(--text-strong)]">→ {stimmung.empfehlung}</p>
@@ -108,7 +118,7 @@ export default function KiAssistent({ ticketId, onAntwortVorschlag, onTagsVorges
           {/* Zusammenfassung */}
           {zusammenfassung && (
             <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:bg-blue-900/20 dark:border-blue-700">
-              <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">📋 Zusammenfassung</p>
+              <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">{txt.zusammenfassungTitel}</p>
               <p className="mt-1 text-xs leading-relaxed text-[var(--text-soft)]">{zusammenfassung}</p>
             </div>
           )}
@@ -116,10 +126,10 @@ export default function KiAssistent({ ticketId, onAntwortVorschlag, onTagsVorges
           {/* Aktions-Buttons */}
           <div className="grid grid-cols-2 gap-2">
             {[
-              { id: "stimmung",       label: "Stimmung analysieren", icon: "🎭" },
-              { id: "zusammenfassung",label: "Zusammenfassen",        icon: "📋" },
-              { id: "antwortvorschlag",label: "Antwort vorschlagen", icon: "💬" },
-              { id: "tags",           label: "Tags vorschlagen",      icon: "🏷️" },
+              { id: "stimmung",       label: txt.stimmungAnalysieren, icon: "🎭" },
+              { id: "zusammenfassung",label: txt.zusammenfassen,        icon: "📋" },
+              { id: "antwortvorschlag",label: txt.antwortVorschlagen, icon: "💬" },
+              { id: "tags",           label: txt.tagsVorschlagen,      icon: "🏷️" },
             ].map((a) => (
               <button
                 key={a.id}
@@ -132,13 +142,13 @@ export default function KiAssistent({ ticketId, onAntwortVorschlag, onTagsVorges
                 ) : (
                   <span>{a.icon}</span>
                 )}
-                {laedt === a.id ? "Analysiere…" : a.label}
+                {laedt === a.id ? txt.analysiere : a.label}
               </button>
             ))}
           </div>
 
           <p className="text-center text-[0.6rem] text-[var(--text-faint)]">
-            Powered by Claude · Vorschläge immer prüfen bevor sie gesendet werden
+            {txt.hinweis}
           </p>
         </div>
       )}

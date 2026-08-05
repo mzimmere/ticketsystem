@@ -1008,6 +1008,40 @@ export interface Uebersetzung {
     zusammenfuehren: string;
     abbrechen: string;
   };
+  lizenzVerlaengerungen: {
+    titel: string;
+    fristLabel: string;
+    tageVorVertragsende: string;
+    erinnerungSendenAn: string;
+    erinnerungEmailPlatzhalter: string;
+    erinnerungHinweis: string;
+    speichert: string;
+    speichern: string;
+    fehlerSpeichern: string;
+    gespeichert: string;
+    baldFaelligTemplate: string;
+    keineFaelligenLizenzen: string;
+    unbenannt: string;
+    bisPrefix: string;
+    tageSuffix: string;
+    abgelaufen: string;
+  };
+  kiAssistent: {
+    fehlerFallback: string;
+    titel: string;
+    stimmungLabel: string;
+    stimmungPositiv: string;
+    stimmungNeutral: string;
+    stimmungFrustriert: string;
+    stimmungDringend: string;
+    zusammenfassungTitel: string;
+    stimmungAnalysieren: string;
+    zusammenfassen: string;
+    antwortVorschlagen: string;
+    tagsVorschlagen: string;
+    analysiere: string;
+    hinweis: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -2015,6 +2049,40 @@ const de: Uebersetzung = {
     zusammenfuehren: "Zusammenführen",
     abbrechen: "Abbrechen",
   },
+  lizenzVerlaengerungen: {
+    titel: "Lizenz-Ablauf-Erinnerungen",
+    fristLabel: "Frist für die Erinnerung",
+    tageVorVertragsende: "Tage vor Vertragsende",
+    erinnerungSendenAn: "Erinnerung senden an",
+    erinnerungEmailPlatzhalter: "leer = alle Org-Admins dieser Firma",
+    erinnerungHinweis: "Aktive Lizenzverträge, deren Vertragsende innerhalb der Frist liegt, erscheinen unten und werden per E-Mail-Erinnerung gemeldet (kein automatischer Rechnungsversand, Kunden werden nie kontaktiert). Leer lassen = an alle Org-Admins; sonst nur an diese eine Adresse (z.B. Support-Postfach oder eine bestimmte Person).",
+    speichert: "Speichert…",
+    speichern: "Speichern",
+    fehlerSpeichern: "Fehler beim Speichern.",
+    gespeichert: "Gespeichert.",
+    baldFaelligTemplate: "Bald fällige Lizenzverlängerungen ({n})",
+    keineFaelligenLizenzen: "Aktuell keine Lizenzen, die innerhalb der Frist ablaufen.",
+    unbenannt: "Unbenannt",
+    bisPrefix: "bis",
+    tageSuffix: "Tage",
+    abgelaufen: "(abgelaufen)",
+  },
+  kiAssistent: {
+    fehlerFallback: "KI-Aufruf fehlgeschlagen.",
+    titel: "KI-Assistent",
+    stimmungLabel: "Stimmung:",
+    stimmungPositiv: "positiv",
+    stimmungNeutral: "neutral",
+    stimmungFrustriert: "frustriert",
+    stimmungDringend: "dringend",
+    zusammenfassungTitel: "📋 Zusammenfassung",
+    stimmungAnalysieren: "Stimmung analysieren",
+    zusammenfassen: "Zusammenfassen",
+    antwortVorschlagen: "Antwort vorschlagen",
+    tagsVorschlagen: "Tags vorschlagen",
+    analysiere: "Analysiere…",
+    hinweis: "Powered by Claude · Vorschläge immer prüfen bevor sie gesendet werden",
+  },
 };
 
 const en: Uebersetzung = {
@@ -3021,6 +3089,40 @@ const en: Uebersetzung = {
     fuehreZusammen: "Merging…",
     zusammenfuehren: "Merge",
     abbrechen: "Cancel",
+  },
+  lizenzVerlaengerungen: {
+    titel: "License expiry reminders",
+    fristLabel: "Reminder threshold",
+    tageVorVertragsende: "days before contract end",
+    erinnerungSendenAn: "Send reminder to",
+    erinnerungEmailPlatzhalter: "empty = all org admins of this company",
+    erinnerungHinweis: "Active license contracts whose end date falls within the threshold appear below and are reported via email reminder (no automatic invoicing, customers are never contacted). Leave empty to notify all org admins; otherwise only this one address (e.g. a support mailbox or a specific person).",
+    speichert: "Saving…",
+    speichern: "Save",
+    fehlerSpeichern: "Error saving.",
+    gespeichert: "Saved.",
+    baldFaelligTemplate: "License renewals due soon ({n})",
+    keineFaelligenLizenzen: "No licenses currently expiring within the threshold.",
+    unbenannt: "Unnamed",
+    bisPrefix: "until",
+    tageSuffix: "days",
+    abgelaufen: "(expired)",
+  },
+  kiAssistent: {
+    fehlerFallback: "AI request failed.",
+    titel: "AI Assistant",
+    stimmungLabel: "Sentiment:",
+    stimmungPositiv: "positive",
+    stimmungNeutral: "neutral",
+    stimmungFrustriert: "frustrated",
+    stimmungDringend: "urgent",
+    zusammenfassungTitel: "📋 Summary",
+    stimmungAnalysieren: "Analyze sentiment",
+    zusammenfassen: "Summarize",
+    antwortVorschlagen: "Suggest reply",
+    tagsVorschlagen: "Suggest tags",
+    analysiere: "Analyzing…",
+    hinweis: "Powered by Claude · Always review suggestions before sending",
   },
 };
 

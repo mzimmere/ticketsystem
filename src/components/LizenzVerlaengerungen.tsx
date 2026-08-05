@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface FaelligeLizenz {
   id: string;
@@ -11,6 +13,8 @@ interface FaelligeLizenz {
 }
 
 export default function LizenzVerlaengerungen({ organisationId }: { organisationId: string }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).lizenzVerlaengerungen;
   const [tageVorher, setTageVorher] = useState("30");
   const [erinnerungEmail, setErinnerungEmail] = useState("");
   const [lizenzen, setLizenzen] = useState<FaelligeLizenz[]>([]);
@@ -58,16 +62,16 @@ export default function LizenzVerlaengerungen({ organisationId }: { organisation
     });
     if (!error) await ladeLizenzen(tage);
     setLaedt(false);
-    setHinweis(error ? "Fehler beim Speichern." : "Gespeichert.");
+    setHinweis(error ? txt.fehlerSpeichern : txt.gespeichert);
   }
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium text-[var(--text-strong)]">Lizenz-Ablauf-Erinnerungen</h3>
+      <h3 className="text-sm font-medium text-[var(--text-strong)]">{txt.titel}</h3>
 
       <div>
         <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-          Frist für die Erinnerung
+          {txt.fristLabel}
         </label>
         <div className="flex items-center gap-2">
           <input
@@ -77,42 +81,39 @@ export default function LizenzVerlaengerungen({ organisationId }: { organisation
             onChange={(e) => setTageVorher(e.target.value)}
             className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
           />
-          <span className="text-xs text-[var(--text-faint)]">Tage vor Vertragsende</span>
+          <span className="text-xs text-[var(--text-faint)]">{txt.tageVorVertragsende}</span>
         </div>
 
         <label className="mb-1 mt-3 block text-xs font-medium text-[var(--text-soft)]">
-          Erinnerung senden an
+          {txt.erinnerungSendenAn}
         </label>
         <input
           type="email"
           value={erinnerungEmail}
           onChange={(e) => setErinnerungEmail(e.target.value)}
-          placeholder="leer = alle Org-Admins dieser Firma"
+          placeholder={txt.erinnerungEmailPlatzhalter}
           className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
         />
         <p className="mt-1 text-xs text-[var(--text-faint)]">
-          Aktive Lizenzverträge, deren Vertragsende innerhalb der Frist liegt, erscheinen unten und
-          werden per E-Mail-Erinnerung gemeldet (kein automatischer Rechnungsversand, Kunden werden
-          nie kontaktiert). Leer lassen = an alle Org-Admins; sonst nur an diese eine Adresse (z.B.
-          Support-Postfach oder eine bestimmte Person).
+          {txt.erinnerungHinweis}
         </p>
         <button
           onClick={speichern}
           disabled={laedt}
           className="mt-2 w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
-          {laedt ? "Speichert…" : "Speichern"}
+          {laedt ? txt.speichert : txt.speichern}
         </button>
         {hinweis && <p className="mt-1 text-xs text-[var(--text-soft)]">{hinweis}</p>}
       </div>
 
       <div>
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-          Bald fällige Lizenzverlängerungen ({lizenzen.length})
+          {txt.baldFaelligTemplate.replace("{n}", String(lizenzen.length))}
         </p>
         {lizenzen.length === 0 ? (
           <p className="text-sm text-[var(--text-faint)]">
-            Aktuell keine Lizenzen, die innerhalb der Frist ablaufen.
+            {txt.keineFaelligenLizenzen}
           </p>
         ) : (
           <div className="space-y-1.5">
@@ -129,7 +130,7 @@ export default function LizenzVerlaengerungen({ organisationId }: { organisation
                   }}
                 >
                   <span className="text-sm text-[var(--text-strong)]">
-                    {v.kunde?.name ?? "Unbenannt"}
+                    {v.kunde?.name ?? txt.unbenannt}
                   </span>
                   <span className="text-xs text-[var(--text-faint)]">· {v.produkt_name}</span>
                   <span className="font-mono text-xs text-[var(--text-faint)]">
@@ -141,8 +142,8 @@ export default function LizenzVerlaengerungen({ organisationId }: { organisation
                       color: tageBisAblauf < 0 ? "var(--badge-kritisch-text)" : "var(--status-offen-text)",
                     }}
                   >
-                    bis {new Date(v.vertrag_ende).toLocaleDateString("de-DE")}
-                    {tageBisAblauf >= 0 ? ` (${tageBisAblauf} Tage)` : " (abgelaufen)"}
+                    {txt.bisPrefix} {new Date(v.vertrag_ende).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")}
+                    {tageBisAblauf >= 0 ? ` (${tageBisAblauf} ${txt.tageSuffix})` : ` ${txt.abgelaufen}`}
                   </span>
                 </div>
               );
