@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface Ticket {
   id: string;
@@ -16,6 +18,8 @@ interface TicketMergeProps {
 }
 
 export default function TicketMerge({ ticketId, ticketNr, organisationId, onMerged }: TicketMergeProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).ticketMerge;
   const [zeigeDialog, setZeigeDialog] = useState(false);
   const [offeneTickets, setOffeneTickets] = useState<Ticket[]>([]);
   const [zielId, setZielId] = useState("");
@@ -35,7 +39,7 @@ export default function TicketMerge({ ticketId, ticketNr, organisationId, onMerg
   }, [zeigeDialog, ticketId, organisationId]);
 
   async function zusammenfuehren() {
-    if (!zielId) { setHinweis("Bitte ein Ziel-Ticket auswählen."); return; }
+    if (!zielId) { setHinweis(txt.zielTicketWaehlenFehler); return; }
     setLaedt(true);
     // Quell-Ticket als zusammengeführt markieren und schließen
     const { error } = await supabase.from("tickets").update({
@@ -44,7 +48,7 @@ export default function TicketMerge({ ticketId, ticketNr, organisationId, onMerg
       merged_am: new Date().toISOString(),
     }).eq("id", ticketId);
 
-    if (error) { setHinweis("Fehler beim Zusammenführen."); setLaedt(false); return; }
+    if (error) { setHinweis(txt.fehlerZusammenfuehren); setLaedt(false); return; }
 
     // System-Nachricht im Quell-Ticket
     await supabase.from("ticket_nachrichten").insert({
@@ -70,24 +74,24 @@ export default function TicketMerge({ ticketId, ticketNr, organisationId, onMerg
       <button
         onClick={() => setZeigeDialog(true)}
         className="text-xs text-[var(--text-faint)] hover:text-[var(--text-soft)]"
-        title="Mit anderem Ticket zusammenführen"
+        title={txt.zusammenfuehrenTitle}
       >
-        🔗 Zusammenführen
+        {txt.zusammenfuehrenButton}
       </button>
 
       {zeigeDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] p-5 shadow-xl space-y-4">
             <h3 className="text-sm font-semibold text-[var(--text-strong)]">
-              Ticket #{ticketNr} zusammenführen
+              {txt.titelTemplate.replace("{nr}", String(ticketNr))}
             </h3>
             <p className="text-xs text-[var(--text-soft)]">
-              Das aktuelle Ticket wird geschlossen und als Duplikat des gewählten Ziel-Tickets markiert. Nachrichten bleiben erhalten.
+              {txt.beschreibung}
             </p>
 
             <select value={zielId} onChange={(e) => setZielId(e.target.value)}
               className="w-full rounded-xl border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2.5 text-sm text-[var(--text-strong)]">
-              <option value="">Ziel-Ticket wählen…</option>
+              <option value="">{txt.zielTicketWaehlen}</option>
               {offeneTickets.map((t) => (
                 <option key={t.id} value={t.id}>
                   #{t.ticket_nr} – {t.titel}
@@ -100,11 +104,11 @@ export default function TicketMerge({ ticketId, ticketNr, organisationId, onMerg
             <div className="flex gap-2">
               <button onClick={zusammenfuehren} disabled={laedt}
                 className="flex-1 rounded-xl bg-slate-900 py-2.5 text-sm font-medium text-white disabled:opacity-50">
-                {laedt ? "Führe zusammen…" : "Zusammenführen"}
+                {laedt ? txt.fuehreZusammen : txt.zusammenfuehren}
               </button>
               <button onClick={() => setZeigeDialog(false)}
                 className="flex-1 rounded-xl border border-[var(--border)] py-2.5 text-sm text-[var(--text-soft)]">
-                Abbrechen
+                {txt.abbrechen}
               </button>
             </div>
           </div>

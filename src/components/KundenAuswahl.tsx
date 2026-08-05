@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { ChevronDown } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 import ZugangsdatenBox from "./ZugangsdatenBox";
 
 interface Kunde {
@@ -15,6 +17,8 @@ interface KundenAuswahlProps {
 }
 
 export default function KundenAuswahl({ organisationId, value, onChange }: KundenAuswahlProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).kundenAuswahl;
   const [kunden, setKunden] = useState<Kunde[]>([]);
   const [offen, setOffen] = useState(false);
   const [suche, setSuche] = useState("");
@@ -71,7 +75,7 @@ export default function KundenAuswahl({ organisationId, value, onChange }: Kunde
 
   async function neuenKundenAnlegen() {
     if (!vorname.trim() || !email.trim()) {
-      setFehler("Bitte mindestens Vorname und E-Mail angeben.");
+      setFehler(txt.vornameEmailPflichtFehler);
       return;
     }
     setFehler(null);
@@ -92,7 +96,7 @@ export default function KundenAuswahl({ organisationId, value, onChange }: Kunde
         }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Anlegen fehlgeschlagen");
+      if (!res.ok) throw new Error(json.error ?? txt.anlegenFehlgeschlagen);
 
       if (telefon.trim() && json.userId) {
         await supabase.from("profiles").update({ telefonnummer: telefon.trim() }).eq("id", json.userId);
@@ -123,7 +127,7 @@ export default function KundenAuswahl({ organisationId, value, onChange }: Kunde
           className="flex w-full items-center justify-between rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-left text-sm"
         >
           <span className={`truncate ${ausgewaehlterName ? "text-[var(--text-strong)]" : "text-[var(--text-faint)]"}`}>
-            {ausgewaehlterName ?? "Kunde wählen…"}
+            {ausgewaehlterName ?? txt.kundeWaehlen}
           </span>
           <ChevronDown size={14} className="shrink-0 text-[var(--text-faint)]" />
         </button>
@@ -137,7 +141,7 @@ export default function KundenAuswahl({ organisationId, value, onChange }: Kunde
                   autoFocus
                   value={suche}
                   onChange={(e) => setSuche(e.target.value)}
-                  placeholder="Kunde suchen…"
+                  placeholder={txt.kundeSuchen}
                   className="mb-2 w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2 py-1.5 text-xs text-[var(--text-strong)]"
                 />
                 <div className="max-h-56 space-y-0.5 overflow-y-auto">
@@ -150,11 +154,11 @@ export default function KundenAuswahl({ organisationId, value, onChange }: Kunde
                         value === k.id ? "font-semibold text-akzent" : "text-[var(--text-strong)]"
                       }`}
                     >
-                      {k.name ?? "Unbenannt"}
+                      {k.name ?? txt.unbenannt}
                     </button>
                   ))}
                   {gefiltert.length === 0 && (
-                    <p className="px-2 py-1 text-xs text-[var(--text-faint)]">Keine Treffer.</p>
+                    <p className="px-2 py-1 text-xs text-[var(--text-faint)]">{txt.keineTreffer}</p>
                   )}
                 </div>
                 <button
@@ -162,25 +166,25 @@ export default function KundenAuswahl({ organisationId, value, onChange }: Kunde
                   onClick={() => setZeigeNeuerKunde(true)}
                   className="mt-2 w-full rounded border border-dashed border-[var(--border-input)] px-2 py-1.5 text-xs font-medium text-akzent hover:bg-akzent/10"
                 >
-                  + Neuer Kunde
+                  {txt.neuerKunde}
                 </button>
               </>
             ) : (
               <div className="space-y-2">
-                <p className="text-xs font-medium text-[var(--text-soft)]">Neuen Kunden anlegen</p>
+                <p className="text-xs font-medium text-[var(--text-soft)]">{txt.neuenKundenAnlegen}</p>
                 <div className="flex gap-1.5">
                   <input
                     type="text"
                     value={vorname}
                     onChange={(e) => setVorname(e.target.value)}
-                    placeholder="Vorname*"
+                    placeholder={txt.vornamePflicht}
                     className="w-1/2 rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2 py-1.5 text-xs text-[var(--text-strong)]"
                   />
                   <input
                     type="text"
                     value={nachname}
                     onChange={(e) => setNachname(e.target.value)}
-                    placeholder="Nachname"
+                    placeholder={txt.nachname}
                     className="w-1/2 rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2 py-1.5 text-xs text-[var(--text-strong)]"
                   />
                 </div>
@@ -188,14 +192,14 @@ export default function KundenAuswahl({ organisationId, value, onChange }: Kunde
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="E-Mail*"
+                  placeholder={txt.emailPflicht}
                   className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2 py-1.5 text-xs text-[var(--text-strong)]"
                 />
                 <input
                   type="text"
                   value={telefon}
                   onChange={(e) => setTelefon(e.target.value)}
-                  placeholder="Telefon (optional)"
+                  placeholder={txt.telefonOptional}
                   className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2 py-1.5 text-xs text-[var(--text-strong)]"
                 />
                 {fehler && <p className="text-xs text-red-600">{fehler}</p>}
@@ -206,7 +210,7 @@ export default function KundenAuswahl({ organisationId, value, onChange }: Kunde
                     disabled={laedt}
                     className="flex-1 rounded bg-akzent px-2 py-1.5 text-xs font-medium text-white disabled:opacity-50"
                   >
-                    {laedt ? "Wird angelegt…" : "Anlegen & auswählen"}
+                    {laedt ? txt.wirdAngelegt : txt.anlegenUndAuswaehlen}
                   </button>
                   <button
                     type="button"
@@ -216,7 +220,7 @@ export default function KundenAuswahl({ organisationId, value, onChange }: Kunde
                     }}
                     className="rounded border border-[var(--border-input)] px-2 py-1.5 text-xs text-[var(--text-soft)]"
                   >
-                    Zurück
+                    {txt.zurueck}
                   </button>
                 </div>
               </div>
@@ -227,7 +231,7 @@ export default function KundenAuswahl({ organisationId, value, onChange }: Kunde
 
       {kunden.length === 0 && !offen && (
         <p className="mt-1 text-xs text-[var(--text-faint)]">
-          Noch keine Kunden vorhanden – über "Kunde wählen" → "+ Neuer Kunde" direkt anlegen.
+          {txt.nochKeineKunden}
         </p>
       )}
 

@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Kunden-Auswahl (inkl. Kunde-Anlegen-Dialog) und Ticket-Zusammenführen-Dialog übersetzt" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Meine-Anfragen-Liste sowie FAQ im Kunden-Portal und die öffentliche FAQ-Seite übersetzt" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Datenschutzseite, Änderungsverlauf, Zugangsbestätigung, Kunden-Hardware, Kunden-Todo-Liste und Zugangsdaten-Box übersetzt" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: exocad-Portal-Import (Dongles/Module und Lizenzverträge, Spalten-Zuordnung, Vorschau, Ergebnis-Meldung) übersetzt" },

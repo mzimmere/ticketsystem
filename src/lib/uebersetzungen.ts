@@ -978,6 +978,36 @@ export interface Uebersetzung {
     keineAntwortGefunden: string;
     anfrageStellen: string;
   };
+  kundenAuswahl: {
+    kundeWaehlen: string;
+    kundeSuchen: string;
+    unbenannt: string;
+    keineTreffer: string;
+    neuerKunde: string;
+    neuenKundenAnlegen: string;
+    vornamePflicht: string;
+    nachname: string;
+    emailPflicht: string;
+    telefonOptional: string;
+    vornameEmailPflichtFehler: string;
+    anlegenFehlgeschlagen: string;
+    wirdAngelegt: string;
+    anlegenUndAuswaehlen: string;
+    zurueck: string;
+    nochKeineKunden: string;
+  };
+  ticketMerge: {
+    zusammenfuehrenTitle: string;
+    zusammenfuehrenButton: string;
+    zielTicketWaehlenFehler: string;
+    fehlerZusammenfuehren: string;
+    titelTemplate: string;
+    beschreibung: string;
+    zielTicketWaehlen: string;
+    fuehreZusammen: string;
+    zusammenfuehren: string;
+    abbrechen: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -1955,6 +1985,36 @@ const de: Uebersetzung = {
     keineAntwortGefunden: "Keine Antwort gefunden?",
     anfrageStellen: "Anfrage stellen →",
   },
+  kundenAuswahl: {
+    kundeWaehlen: "Kunde wählen…",
+    kundeSuchen: "Kunde suchen…",
+    unbenannt: "Unbenannt",
+    keineTreffer: "Keine Treffer.",
+    neuerKunde: "+ Neuer Kunde",
+    neuenKundenAnlegen: "Neuen Kunden anlegen",
+    vornamePflicht: "Vorname*",
+    nachname: "Nachname",
+    emailPflicht: "E-Mail*",
+    telefonOptional: "Telefon (optional)",
+    vornameEmailPflichtFehler: "Bitte mindestens Vorname und E-Mail angeben.",
+    anlegenFehlgeschlagen: "Anlegen fehlgeschlagen",
+    wirdAngelegt: "Wird angelegt…",
+    anlegenUndAuswaehlen: "Anlegen & auswählen",
+    zurueck: "Zurück",
+    nochKeineKunden: 'Noch keine Kunden vorhanden – über "Kunde wählen" → "+ Neuer Kunde" direkt anlegen.',
+  },
+  ticketMerge: {
+    zusammenfuehrenTitle: "Mit anderem Ticket zusammenführen",
+    zusammenfuehrenButton: "🔗 Zusammenführen",
+    zielTicketWaehlenFehler: "Bitte ein Ziel-Ticket auswählen.",
+    fehlerZusammenfuehren: "Fehler beim Zusammenführen.",
+    titelTemplate: "Ticket #{nr} zusammenführen",
+    beschreibung: "Das aktuelle Ticket wird geschlossen und als Duplikat des gewählten Ziel-Tickets markiert. Nachrichten bleiben erhalten.",
+    zielTicketWaehlen: "Ziel-Ticket wählen…",
+    fuehreZusammen: "Führe zusammen…",
+    zusammenfuehren: "Zusammenführen",
+    abbrechen: "Abbrechen",
+  },
 };
 
 const en: Uebersetzung = {
@@ -2931,6 +2991,36 @@ const en: Uebersetzung = {
     nochKeineEintraege: "No FAQ entries yet.",
     keineAntwortGefunden: "Didn't find an answer?",
     anfrageStellen: "Submit a request →",
+  },
+  kundenAuswahl: {
+    kundeWaehlen: "Select customer…",
+    kundeSuchen: "Search customer…",
+    unbenannt: "Unnamed",
+    keineTreffer: "No matches.",
+    neuerKunde: "+ New customer",
+    neuenKundenAnlegen: "Create new customer",
+    vornamePflicht: "First name*",
+    nachname: "Last name",
+    emailPflicht: "Email*",
+    telefonOptional: "Phone (optional)",
+    vornameEmailPflichtFehler: "Please provide at least a first name and email.",
+    anlegenFehlgeschlagen: "Creation failed",
+    wirdAngelegt: "Creating…",
+    anlegenUndAuswaehlen: "Create & select",
+    zurueck: "Back",
+    nochKeineKunden: 'No customers yet – create one directly via "Select customer" → "+ New customer".',
+  },
+  ticketMerge: {
+    zusammenfuehrenTitle: "Merge with another ticket",
+    zusammenfuehrenButton: "🔗 Merge",
+    zielTicketWaehlenFehler: "Please select a target ticket.",
+    fehlerZusammenfuehren: "Error merging.",
+    titelTemplate: "Merge ticket #{nr}",
+    beschreibung: "The current ticket will be closed and marked as a duplicate of the selected target ticket. Messages are preserved.",
+    zielTicketWaehlen: "Select target ticket…",
+    fuehreZusammen: "Merging…",
+    zusammenfuehren: "Merge",
+    abbrechen: "Cancel",
   },
 };
 
