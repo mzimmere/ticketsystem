@@ -1,4 +1,6 @@
 import { useRef, useState, type ReactNode } from "react";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface DateiAuswahlProps {
   dateien: File[];
@@ -12,9 +14,12 @@ export default function DateiAuswahl({
   dateien,
   onAendern,
   mehrfach = true,
-  label = "Datei anhängen",
+  label,
   children,
 }: DateiAuswahlProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).dateiAuswahl;
+  const effectiveLabel = label ?? txt.dateiAnhaengen;
   const inputRef = useRef<HTMLInputElement>(null);
   const [wirdUebergezogen, setWirdUebergezogen] = useState(false);
 
@@ -58,7 +63,7 @@ export default function DateiAuswahl({
     >
       {wirdUebergezogen && (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-[var(--bg-surface)]/90 text-sm font-medium text-akzent">
-          Datei hier loslassen zum Anhängen…
+          {txt.hierLoslassen}
         </div>
       )}
       {children}
@@ -75,7 +80,7 @@ export default function DateiAuswahl({
             d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
           />
         </svg>
-        {label} <span className="text-[var(--text-faint)]">(oder hierher ziehen)</span>
+        {effectiveLabel} <span className="text-[var(--text-faint)]">{txt.hierherZiehen}</span>
       </button>
       <input
         ref={inputRef}

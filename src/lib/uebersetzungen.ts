@@ -1067,6 +1067,18 @@ export interface Uebersetzung {
     ticketAnlegen: string;
     abbrechen: string;
   };
+  dateiAuswahl: {
+    dateiAnhaengen: string;
+    hierherZiehen: string;
+    hierLoslassen: string;
+  };
+  firmenInfo: {
+    laedt: string;
+    unserTeam: string;
+    unbenannt: string;
+    rolleTechniker: string;
+    rolleAdmin: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -2133,6 +2145,18 @@ const de: Uebersetzung = {
     ticketAnlegen: "Ticket anlegen",
     abbrechen: "Abbrechen",
   },
+  dateiAuswahl: {
+    dateiAnhaengen: "Datei anhängen",
+    hierherZiehen: "(oder hierher ziehen)",
+    hierLoslassen: "Datei hier loslassen zum Anhängen…",
+  },
+  firmenInfo: {
+    laedt: "Lädt…",
+    unserTeam: "Unser Team",
+    unbenannt: "Unbenannt",
+    rolleTechniker: "Techniker",
+    rolleAdmin: "Admin",
+  },
 };
 
 const en: Uebersetzung = {
@@ -3198,6 +3222,18 @@ const en: Uebersetzung = {
     wirdAngelegt: "Creating…",
     ticketAnlegen: "Create ticket",
     abbrechen: "Cancel",
+  },
+  dateiAuswahl: {
+    dateiAnhaengen: "Attach file",
+    hierherZiehen: "(or drag it here)",
+    hierLoslassen: "Drop file here to attach…",
+  },
+  firmenInfo: {
+    laedt: "Loading…",
+    unserTeam: "Our team",
+    unbenannt: "Unnamed",
+    rolleTechniker: "Technician",
+    rolleAdmin: "Admin",
   },
 };
 

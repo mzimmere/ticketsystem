@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 import Avatar from "./Avatar";
 
 interface Organisation {
@@ -20,17 +22,18 @@ interface Mitglied {
   verfuegbarkeit: string;
 }
 
-const ROLLE_LABEL: Record<string, string> = {
-  techniker: "Techniker",
-  org_admin: "Admin",
-  super_admin: "Admin",
-};
-
 interface FirmenInfoProps {
   organisationId: string;
 }
 
 export default function FirmenInfo({ organisationId }: FirmenInfoProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).firmenInfo;
+  const ROLLE_LABEL: Record<string, string> = {
+    techniker: txt.rolleTechniker,
+    org_admin: txt.rolleAdmin,
+    super_admin: txt.rolleAdmin,
+  };
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [team, setTeam] = useState<Mitglied[]>([]);
 
@@ -48,7 +51,7 @@ export default function FirmenInfo({ organisationId }: FirmenInfoProps) {
       .then(({ data }) => setTeam((data as Mitglied[]) ?? []));
   }, [organisationId]);
 
-  if (!organisation) return <p className="text-sm text-[var(--text-faint)]">Lädt…</p>;
+  if (!organisation) return <p className="text-sm text-[var(--text-faint)]">{txt.laedt}</p>;
 
   const website = organisation.website
     ? organisation.website.startsWith("http")
@@ -111,12 +114,12 @@ export default function FirmenInfo({ organisationId }: FirmenInfoProps) {
 
       {team.length > 0 && (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
-          <h3 className="mb-3 text-sm font-medium text-[var(--text-strong)]">Unser Team</h3>
+          <h3 className="mb-3 text-sm font-medium text-[var(--text-strong)]">{txt.unserTeam}</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {team.map((m) => (
               <div key={m.id} className="flex flex-col items-center gap-1.5 text-center">
                 <Avatar name={m.name} avatarUrl={m.avatar_url} groesse="lg" />
-                <p className="text-sm text-[var(--text-strong)]">{m.name ?? "Unbenannt"}</p>
+                <p className="text-sm text-[var(--text-strong)]">{m.name ?? txt.unbenannt}</p>
                 <p className="text-xs text-[var(--text-faint)]">{ROLLE_LABEL[m.rolle]}</p>
               </div>
             ))}
