@@ -2908,3 +2908,43 @@ create policy benachrichtigungs_mails_delete on benachrichtigungs_mails for dele
 -- wird schrittweise ergaenzt (src/lib/uebersetzungen.ts).
 -- ============================================================
 alter table profiles add column if not exists sprache text not null default 'de' check (sprache in ('de', 'en'));
+
+-- ============================================================
+-- 67. Absender-Domain-Sperrliste pro Firma fuer den E-Mail-zu-Ticket-Import
+-- (email-abrufen). Verhindert u.a. Bounce-Schleifen (z.B. wenn eine
+-- Kunden-Benachrichtigung an eine ungueltige Adresse bounct und die
+-- Rueckmeldung im eigenen Support-Postfach landet - die eigene
+-- Absenderdomain kann so geblockt werden) sowie wiederkehrenden Spam an
+-- die Support-Adresse. Domain wird ohne "@" gespeichert, Vergleich
+-- case-insensitiv gegen den Teil nach dem "@" der Absenderadresse.
+-- ============================================================
+create table email_sperrliste (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  domain text not null,
+  erstellt_am timestamptz default now(),
+  unique (organisation_id, domain)
+);
+create index idx_email_sperrliste_org on email_sperrliste(organisation_id);
+alter table email_sperrliste enable row level security;
+
+create policy email_sperrliste_select on email_sperrliste for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy email_sperrliste_insert on email_sperrliste for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy email_sperrliste_delete on email_sperrliste for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );

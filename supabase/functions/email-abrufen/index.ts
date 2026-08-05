@@ -7,11 +7,15 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 // Postfach per IMAP nach neuen Mails ab (Supabase Edge Functions koennen
 // selbst kein IMAP/SMTP - siehe api/send-mail.ts fuer den Hintergrund).
 //
-// Fuer jede neue Mail: Kunde per Absenderadresse finden oder anlegen,
-// bestehendes Ticket per "#<Nummer>" im Betreff finden oder neues Ticket
-// anlegen, Nachricht + Anhaenge speichern. Dedupe zusaetzlich ueber den
-// unique index auf ticket_nachrichten.email_message_id (Mails koennten
-// sonst durch Retries/Ueberschneidungen doppelt landen).
+// Fuer jede neue Mail: zuerst gegen die Absender-Domain-Sperrliste der
+// Firma pruefen (email_sperrliste, Verwaltung -> Integrationen) - u.a.
+// wichtig gegen Bounce-Schleifen, wenn eine Kunden-Benachrichtigung an
+// eine ungueltige Adresse bounct und die Rueckmeldung im eigenen
+// Support-Postfach landet. Danach: Kunde per Absenderadresse finden oder
+// anlegen, bestehendes Ticket per "#<Nummer>" im Betreff finden oder
+// neues Ticket anlegen, Nachricht + Anhaenge speichern. Dedupe zusaetzlich
+// ueber den unique index auf ticket_nachrichten.email_message_id (Mails
+// koennten sonst durch Retries/Ueberschneidungen doppelt landen).
 //
 // Auth: verify_jwt=false, stattdessen Pruefung gegen dasselbe Shared
 // Secret aus Supabase Vault wie bei den anderen Cron-Functions.
@@ -122,6 +126,18 @@ async function kundeFindenOderAnlegen(organisationId: string, email: string, nam
   return neuerNutzer.user.id;
 }
 
+function domainAusAdresse(email: string): string {
+  return (email.split("@")[1] ?? "").trim().toLowerCase();
+}
+
+async function gesperrteDomains(organisationId: string): Promise<Set<string>> {
+  const { data } = await supabase
+    .from("email_sperrliste")
+    .select("domain")
+    .eq("organisation_id", organisationId);
+  return new Set((data ?? []).map((d) => d.domain.toLowerCase()));
+}
+
 async function ticketFindenOderAnlegen(organisationId: string, kundeId: string, betreff: string): Promise<string> {
   const nummerMatch = betreff.match(/#(\d+)/);
   if (nummerMatch) {
@@ -179,10 +195,12 @@ Deno.serve(async (req) => {
       imap_host: smtpKonfig.imap_host,
       imap_port: smtpKonfig.imap_port,
     });
+    const sperrliste = mails.length > 0 ? await gesperrteDomains(org.id) : new Set<string>();
 
     for (const mail of mails) {
       try {
         if (!mail.fromEmail) continue;
+        if (sperrliste.has(domainAusAdresse(mail.fromEmail))) continue;
 
         const kundeId = await kundeFindenOderAnlegen(org.id, mail.fromEmail, mail.fromName);
         if (!kundeId) continue;

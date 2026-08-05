@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-05", titel: "Neu: Absender-Domain-Sperrliste für den E-Mail-Import (Verwaltung → Integrationen). Mails von gesperrten Domains werden komplett ignoriert – verhindert u.a., dass Bounce-Meldungen (z.B. von einer ungültigen Kunden-E-Mail-Adresse) an die eigene Support-Adresse als endlose neue Tickets landen" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Anleitungs-Dialog (\"So funktioniert das Ticketsystem\", inkl. App-Installation) für Mitarbeiter und Kunden übersetzt" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Buzzer-Sound-Einstellung (Presets, eigene Sounds hochladen) übersetzt" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Zeiterfassungs-Buzzer (Start/Stop-Timer, manuelle Eingabe) übersetzt" },

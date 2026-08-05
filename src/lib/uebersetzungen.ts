@@ -789,6 +789,11 @@ export interface Uebersetzung {
     prueft: string;
     verbindungTesten: string;
     integrationenSpeichern: string;
+    sperrlisteLabel: string;
+    sperrlisteHinweis: string;
+    sperrDomainPlatzhalter: string;
+    sperrDomainVorhanden: string;
+    entfernenDomain: string;
   };
   emailTexteVerwaltung: {
     betreffTextLeer: string;
@@ -1940,6 +1945,11 @@ const de: Uebersetzung = {
     prueft: "Prüft…",
     verbindungTesten: "Verbindung testen",
     integrationenSpeichern: "Integrationen speichern",
+    sperrlisteLabel: "Absender-Domain-Sperrliste",
+    sperrlisteHinweis: "Mails von diesen Domains werden beim Import komplett ignoriert (kein Kunde, kein Ticket) – nützlich gegen Spam an die Support-Adresse oder Bounce-Meldungen von der eigenen Absenderdomain.",
+    sperrDomainPlatzhalter: "z.B. beispiel-spam.de",
+    sperrDomainVorhanden: "Diese Domain ist bereits gesperrt.",
+    entfernenDomain: "Entfernen",
   },
   emailTexteVerwaltung: {
     betreffTextLeer: "Betreff und Text dürfen nicht leer sein.",
@@ -3091,6 +3101,11 @@ const en: Uebersetzung = {
     prueft: "Checking…",
     verbindungTesten: "Test connection",
     integrationenSpeichern: "Save integrations",
+    sperrlisteLabel: "Sender domain blocklist",
+    sperrlisteHinweis: "Emails from these domains are completely ignored during import (no customer, no ticket) – useful against spam to the support address or bounce notifications from your own sender domain.",
+    sperrDomainPlatzhalter: "e.g. example-spam.com",
+    sperrDomainVorhanden: "This domain is already blocked.",
+    entfernenDomain: "Remove",
   },
   emailTexteVerwaltung: {
     betreffTextLeer: "Subject and text must not be empty.",

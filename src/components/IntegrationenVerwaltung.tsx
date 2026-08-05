@@ -17,6 +17,11 @@ interface Konfig {
   whatsapp_app_secret: string | null;
 }
 
+interface SperrDomain {
+  id: string;
+  domain: string;
+}
+
 function KopierenButton({ wert }: { wert: string }) {
   const { sprache } = useSprache();
   const txt = texte(sprache).integrationenVerwaltung;
@@ -82,10 +87,13 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
   const [smtpKonfig, setSmtpKonfig] = useState<SmtpKonfig>(SMTP_LEER);
   const [smtpLaedt, setSmtpLaedt] = useState(false);
   const [smtpHinweis, setSmtpHinweis] = useState<string | null>(null);
+  const [sperrDomains, setSperrDomains] = useState<SperrDomain[]>([]);
+  const [neueSperrDomain, setNeueSperrDomain] = useState("");
+  const [sperrlisteHinweis, setSperrlisteHinweis] = useState<string | null>(null);
 
   const webhookBaseUrl = `${typeof window !== "undefined" ? "https://wfntgmavwzuldwjjhhlp.supabase.co" : ""}/functions/v1`;
 
-  useEffect(() => { laden(); ladeSmtp(); }, [organisationId]);
+  useEffect(() => { laden(); ladeSmtp(); ladeSperrliste(); }, [organisationId]);
 
   async function laden() {
     const { data } = await supabase
@@ -140,6 +148,36 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
     setSmtpLaedt(false);
     setSmtpHinweis(smtpFehler || inboundFehler ? txt.fehlerSpeichern : txt.gespeichert);
     setTimeout(() => setSmtpHinweis(null), 3000);
+  }
+
+  async function ladeSperrliste() {
+    const { data } = await supabase
+      .from("email_sperrliste")
+      .select("id, domain")
+      .eq("organisation_id", organisationId)
+      .order("domain");
+    setSperrDomains((data as SperrDomain[]) ?? []);
+  }
+
+  async function sperrDomainHinzufuegen() {
+    const domain = neueSperrDomain.trim().toLowerCase().replace(/^@/, "");
+    if (!domain) return;
+    setSperrlisteHinweis(null);
+    const { error } = await supabase.from("email_sperrliste").insert({
+      organisation_id: organisationId,
+      domain,
+    });
+    if (error) {
+      setSperrlisteHinweis(error.code === "23505" ? txt.sperrDomainVorhanden : txt.fehlerSpeichern);
+      return;
+    }
+    setNeueSperrDomain("");
+    ladeSperrliste();
+  }
+
+  async function sperrDomainEntfernen(id: string) {
+    await supabase.from("email_sperrliste").delete().eq("id", id);
+    ladeSperrliste();
   }
 
   async function speichern() {
@@ -298,6 +336,50 @@ export default function IntegrationenVerwaltung({ organisationId }: Integratione
           <p className="mt-1 text-xs text-[var(--text-faint)]">
             {txt.supportEmailHinweis}
           </p>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+            {txt.sperrlisteLabel}
+          </label>
+          <p className="mb-2 text-xs text-[var(--text-faint)]">
+            {txt.sperrlisteHinweis}
+          </p>
+          {sperrDomains.length > 0 && (
+            <div className="mb-2 space-y-1">
+              {sperrDomains.map((d) => (
+                <div
+                  key={d.id}
+                  className="flex items-center justify-between gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5 text-sm"
+                >
+                  <span className="truncate font-mono text-[var(--text-strong)]">{d.domain}</span>
+                  <button
+                    onClick={() => sperrDomainEntfernen(d.id)}
+                    className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
+                  >
+                    {txt.entfernenDomain}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={neueSperrDomain}
+              onChange={(e) => setNeueSperrDomain(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sperrDomainHinzufuegen()}
+              placeholder={txt.sperrDomainPlatzhalter}
+              className="flex-1 rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm font-mono"
+            />
+            <button
+              onClick={sperrDomainHinzufuegen}
+              className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white"
+            >
+              +
+            </button>
+          </div>
+          {sperrlisteHinweis && <p className="mt-1 text-xs text-red-600">{sperrlisteHinweis}</p>}
         </div>
 
         {smtpHinweis && <p className="text-sm text-[var(--text-soft)]">{smtpHinweis}</p>}
