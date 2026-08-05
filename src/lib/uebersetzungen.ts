@@ -1079,6 +1079,19 @@ export interface Uebersetzung {
     rolleTechniker: string;
     rolleAdmin: string;
   };
+  zeiterfassung: {
+    titel: string;
+    laeuftSeitTemplate: string;
+    gestartetTemplate: string;
+    uhr: string;
+    stop: string;
+    start: string;
+    beschreibungLaeuftPlatzhalter: string;
+    manuelleEingabeAusblenden: string;
+    zeitManuellEintragen: string;
+    minutenPlatzhalter: string;
+    beschreibungPlatzhalter: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -2157,6 +2170,19 @@ const de: Uebersetzung = {
     rolleTechniker: "Techniker",
     rolleAdmin: "Admin",
   },
+  zeiterfassung: {
+    titel: "Zeiterfassung",
+    laeuftSeitTemplate: "läuft seit {n} Min.",
+    gestartetTemplate: "gestartet {zeit}",
+    uhr: "Uhr",
+    stop: "Stop",
+    start: "Start",
+    beschreibungLaeuftPlatzhalter: "Was wird gerade gemacht? (optional)",
+    manuelleEingabeAusblenden: "▲ Manuelle Eingabe ausblenden",
+    zeitManuellEintragen: "▼ Zeit manuell eintragen",
+    minutenPlatzhalter: "Min.",
+    beschreibungPlatzhalter: "Beschreibung",
+  },
 };
 
 const en: Uebersetzung = {
@@ -3234,6 +3260,19 @@ const en: Uebersetzung = {
     unbenannt: "Unnamed",
     rolleTechniker: "Technician",
     rolleAdmin: "Admin",
+  },
+  zeiterfassung: {
+    titel: "Time tracking",
+    laeuftSeitTemplate: "running for {n} min.",
+    gestartetTemplate: "started {zeit}",
+    uhr: "",
+    stop: "Stop",
+    start: "Start",
+    beschreibungLaeuftPlatzhalter: "What are you working on? (optional)",
+    manuelleEingabeAusblenden: "▲ Hide manual entry",
+    zeitManuellEintragen: "▼ Enter time manually",
+    minutenPlatzhalter: "Min.",
+    beschreibungPlatzhalter: "Description",
   },
 };
 

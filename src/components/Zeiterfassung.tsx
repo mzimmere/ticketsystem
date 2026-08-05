@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { spieleBuzzerSound, type SoundPreset } from "../lib/buzzerSounds";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 type AktiverTimer = { id: string; start_zeit: string };
 
@@ -27,6 +29,8 @@ function Ziffer({ wert, cls }: { wert: number; cls?: string }) {
 export default function Zeiterfassung({
   ticketId, kundeId, technikerId, organisationId, onZeitErfasst,
 }: ZeiterfassungProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).zeiterfassung;
   const [aktiverTimer, setAktiverTimer] = useState<AktiverTimer | null>(null);
   const [sek, setSek] = useState(0);
   const [beschreibung, setBeschreibung] = useState("");
@@ -134,12 +138,12 @@ export default function Zeiterfassung({
     <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-4">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium uppercase tracking-wide text-[var(--text-soft)]">
-          Zeiterfassung
+          {txt.titel}
         </span>
         {läuft && (
           <span className="flex items-center gap-1.5 text-xs font-medium text-amber-500">
             <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-            läuft seit {Math.floor(sek / 60)} Min.
+            {txt.laeuftSeitTemplate.replace("{n}", String(Math.floor(sek / 60)))}
           </span>
         )}
       </div>
@@ -158,7 +162,7 @@ export default function Zeiterfassung({
         </div>
         {läuft && (
           <div className="mt-1 text-[0.65rem] text-[var(--text-faint)]">
-            gestartet {new Date(aktiverTimer!.start_zeit).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })} Uhr
+            {txt.gestartetTemplate.replace("{zeit}", new Date(aktiverTimer!.start_zeit).toLocaleTimeString(sprache === "en" ? "en-US" : "de-DE", { hour: "2-digit", minute: "2-digit" }))} {txt.uhr}
           </div>
         )}
       </div>
@@ -205,7 +209,7 @@ export default function Zeiterfassung({
           <span className="relative z-10 flex flex-col items-center gap-0.5">
             <span className="text-2xl">{läuft ? "⏹" : "▶"}</span>
             <span className="text-[0.6rem] font-medium tracking-widest uppercase">
-              {läuft ? "Stop" : "Start"}
+              {läuft ? txt.stop : txt.start}
             </span>
           </span>
         </button>
@@ -217,7 +221,7 @@ export default function Zeiterfassung({
           type="text"
           value={beschreibung}
           onChange={(e) => setBeschreibung(e.target.value)}
-          placeholder="Was wird gerade gemacht? (optional)"
+          placeholder={txt.beschreibungLaeuftPlatzhalter}
           className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
         />
       )}
@@ -229,20 +233,20 @@ export default function Zeiterfassung({
             onClick={() => setZeigeManuell(!zeigeManuell)}
             className="w-full text-center text-xs text-[var(--text-faint)] hover:text-[var(--text-soft)]"
           >
-            {zeigeManuell ? "▲ Manuelle Eingabe ausblenden" : "▼ Zeit manuell eintragen"}
+            {zeigeManuell ? txt.manuelleEingabeAusblenden : txt.zeitManuellEintragen}
           </button>
           {zeigeManuell && (
             <div className="mt-2 flex gap-2">
               <input
                 type="number" min={1} value={manuelleMin}
                 onChange={(e) => setManuelleMin(e.target.value)}
-                placeholder="Min."
+                placeholder={txt.minutenPlatzhalter}
                 className="w-20 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-2 text-sm"
               />
               <input
                 type="text" value={beschreibung}
                 onChange={(e) => setBeschreibung(e.target.value)}
-                placeholder="Beschreibung"
+                placeholder={txt.beschreibungPlatzhalter}
                 className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
               />
               <button
