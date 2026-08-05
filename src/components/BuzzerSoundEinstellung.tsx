@@ -1,10 +1,21 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { spieleBuzzerSound, PRESET_LABEL, type SoundPreset } from "../lib/buzzerSounds";
+import { spieleBuzzerSound, type SoundPreset } from "../lib/buzzerSounds";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 const PRESETS: SoundPreset[] = ["klassisch", "arcade", "glocke", "horn", "eigene"];
 
 export default function BuzzerSoundEinstellung({ profilId }: { profilId: string }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).buzzerSoundEinstellung;
+  const PRESET_LABEL: Record<SoundPreset, string> = {
+    klassisch: txt.presetKlassisch,
+    arcade: txt.presetArcade,
+    glocke: txt.presetGlocke,
+    horn: txt.presetHorn,
+    eigene: txt.presetEigene,
+  };
   const [preset, setPreset] = useState<SoundPreset>("klassisch");
   const [startUrl, setStartUrl] = useState<string | null>(null);
   const [stopUrl, setStopUrl] = useState<string | null>(null);
@@ -33,11 +44,11 @@ export default function BuzzerSoundEinstellung({ profilId }: { profilId: string 
 
   async function soundHochladen(richtung: "start" | "stop", datei: File) {
     if (datei.size > 1024 * 1024) {
-      setHinweis("Datei zu groß – maximal 1 MB.");
+      setHinweis(txt.fehlerZuGross);
       return;
     }
     if (!datei.type.startsWith("audio/")) {
-      setHinweis("Bitte eine Audio-Datei wählen (MP3, WAV, OGG).");
+      setHinweis(txt.fehlerKeinAudio);
       return;
     }
     setLaedt(true);
@@ -48,7 +59,7 @@ export default function BuzzerSoundEinstellung({ profilId }: { profilId: string 
 
     const { error } = await supabase.storage.from("sounds").upload(pfad, datei, { upsert: true });
     if (error) {
-      setHinweis("Upload fehlgeschlagen: " + error.message);
+      setHinweis(txt.fehlerUploadTemplate.replace("{fehler}", error.message));
       setLaedt(false);
       return;
     }
@@ -63,7 +74,7 @@ export default function BuzzerSoundEinstellung({ profilId }: { profilId: string 
     else setStopUrl(url);
     setPreset("eigene");
     setLaedt(false);
-    setHinweis(`${richtung === "start" ? "Start" : "Stop"}-Sound hochgeladen.`);
+    setHinweis(richtung === "start" ? txt.startSoundHochgeladen : txt.stopSoundHochgeladen);
 
     // Vorspielen
     spieleBuzzerSound(richtung, "eigene", {
@@ -74,9 +85,9 @@ export default function BuzzerSoundEinstellung({ profilId }: { profilId: string 
 
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
-      <h3 className="text-sm font-medium text-[var(--text-strong)]">🔊 Buzzer-Sound</h3>
+      <h3 className="text-sm font-medium text-[var(--text-strong)]">{txt.titel}</h3>
       <p className="text-xs text-[var(--text-faint)]">
-        Der Sound beim Starten/Stoppen der Zeiterfassung. Klick auf ein Preset spielt es direkt vor.
+        {txt.beschreibung}
       </p>
 
       <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
@@ -100,9 +111,9 @@ export default function BuzzerSoundEinstellung({ profilId }: { profilId: string 
         <div className="space-y-2 rounded-lg bg-[var(--bg-muted)] p-3">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-xs font-medium text-[var(--text-soft)]">Start-Sound</p>
+              <p className="text-xs font-medium text-[var(--text-soft)]">{txt.startSound}</p>
               <p className="truncate text-[0.65rem] text-[var(--text-faint)]">
-                {startUrl ? "✓ Hochgeladen" : "Noch keiner"}
+                {startUrl ? txt.hochgeladen : txt.nochKeiner}
               </p>
             </div>
             <div className="flex shrink-0 gap-1.5">
@@ -115,7 +126,7 @@ export default function BuzzerSoundEinstellung({ profilId }: { profilId: string 
                 </button>
               )}
               <label className="cursor-pointer rounded bg-slate-900 px-2.5 py-1 text-xs font-medium text-white">
-                {laedt ? "…" : "Hochladen"}
+                {laedt ? txt.laedtKurz : txt.hochladen}
                 <input type="file" accept="audio/*" className="hidden" disabled={laedt}
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) soundHochladen("start", f); e.target.value = ""; }} />
               </label>
@@ -124,9 +135,9 @@ export default function BuzzerSoundEinstellung({ profilId }: { profilId: string 
 
           <div className="flex items-center justify-between gap-2 border-t border-[var(--border)] pt-2">
             <div className="min-w-0">
-              <p className="text-xs font-medium text-[var(--text-soft)]">Stop-Sound</p>
+              <p className="text-xs font-medium text-[var(--text-soft)]">{txt.stopSound}</p>
               <p className="truncate text-[0.65rem] text-[var(--text-faint)]">
-                {stopUrl ? "✓ Hochgeladen" : "Noch keiner"}
+                {stopUrl ? txt.hochgeladen : txt.nochKeiner}
               </p>
             </div>
             <div className="flex shrink-0 gap-1.5">
@@ -139,7 +150,7 @@ export default function BuzzerSoundEinstellung({ profilId }: { profilId: string 
                 </button>
               )}
               <label className="cursor-pointer rounded bg-slate-900 px-2.5 py-1 text-xs font-medium text-white">
-                {laedt ? "…" : "Hochladen"}
+                {laedt ? txt.laedtKurz : txt.hochladen}
                 <input type="file" accept="audio/*" className="hidden" disabled={laedt}
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) soundHochladen("stop", f); e.target.value = ""; }} />
               </label>
@@ -147,7 +158,7 @@ export default function BuzzerSoundEinstellung({ profilId }: { profilId: string 
           </div>
 
           <p className="text-[0.65rem] text-[var(--text-faint)]">
-            MP3, WAV oder OGG · max. 1 MB · am besten kurz (unter 2 Sekunden)
+            {txt.formatHinweis}
           </p>
         </div>
       )}

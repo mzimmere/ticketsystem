@@ -1092,6 +1092,27 @@ export interface Uebersetzung {
     minutenPlatzhalter: string;
     beschreibungPlatzhalter: string;
   };
+  buzzerSoundEinstellung: {
+    titel: string;
+    beschreibung: string;
+    presetKlassisch: string;
+    presetArcade: string;
+    presetGlocke: string;
+    presetHorn: string;
+    presetEigene: string;
+    fehlerZuGross: string;
+    fehlerKeinAudio: string;
+    startSound: string;
+    stopSound: string;
+    hochgeladen: string;
+    nochKeiner: string;
+    laedtKurz: string;
+    hochladen: string;
+    startSoundHochgeladen: string;
+    stopSoundHochgeladen: string;
+    fehlerUploadTemplate: string;
+    formatHinweis: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -2183,6 +2204,27 @@ const de: Uebersetzung = {
     minutenPlatzhalter: "Min.",
     beschreibungPlatzhalter: "Beschreibung",
   },
+  buzzerSoundEinstellung: {
+    titel: "🔊 Buzzer-Sound",
+    beschreibung: "Der Sound beim Starten/Stoppen der Zeiterfassung. Klick auf ein Preset spielt es direkt vor.",
+    presetKlassisch: "🎵 Klassisch (Dreiklang)",
+    presetArcade: "👾 Arcade (Retro-Blips)",
+    presetGlocke: "🔔 Glocke",
+    presetHorn: "📯 Horn",
+    presetEigene: "📁 Eigene Sounds",
+    fehlerZuGross: "Datei zu groß – maximal 1 MB.",
+    fehlerKeinAudio: "Bitte eine Audio-Datei wählen (MP3, WAV, OGG).",
+    startSound: "Start-Sound",
+    stopSound: "Stop-Sound",
+    hochgeladen: "✓ Hochgeladen",
+    nochKeiner: "Noch keiner",
+    laedtKurz: "…",
+    hochladen: "Hochladen",
+    startSoundHochgeladen: "Start-Sound hochgeladen.",
+    stopSoundHochgeladen: "Stop-Sound hochgeladen.",
+    fehlerUploadTemplate: "Upload fehlgeschlagen: {fehler}",
+    formatHinweis: "MP3, WAV oder OGG · max. 1 MB · am besten kurz (unter 2 Sekunden)",
+  },
 };
 
 const en: Uebersetzung = {
@@ -3273,6 +3315,27 @@ const en: Uebersetzung = {
     zeitManuellEintragen: "▼ Enter time manually",
     minutenPlatzhalter: "Min.",
     beschreibungPlatzhalter: "Description",
+  },
+  buzzerSoundEinstellung: {
+    titel: "🔊 Buzzer sound",
+    beschreibung: "The sound played when starting/stopping time tracking. Click a preset to play it back immediately.",
+    presetKlassisch: "🎵 Classic (triad)",
+    presetArcade: "👾 Arcade (retro blips)",
+    presetGlocke: "🔔 Bell",
+    presetHorn: "📯 Horn",
+    presetEigene: "📁 Custom sounds",
+    fehlerZuGross: "File too large – 1 MB maximum.",
+    fehlerKeinAudio: "Please choose an audio file (MP3, WAV, OGG).",
+    startSound: "Start sound",
+    stopSound: "Stop sound",
+    hochgeladen: "✓ Uploaded",
+    nochKeiner: "None yet",
+    laedtKurz: "…",
+    hochladen: "Upload",
+    startSoundHochgeladen: "Start sound uploaded.",
+    stopSoundHochgeladen: "Stop sound uploaded.",
+    fehlerUploadTemplate: "Upload failed: {fehler}",
+    formatHinweis: "MP3, WAV, or OGG · max. 1 MB · ideally short (under 2 seconds)",
   },
 };
 
