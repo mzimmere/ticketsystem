@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface FaqEintrag {
   id: string;
@@ -9,6 +11,8 @@ interface FaqEintrag {
 }
 
 export default function FaqSeite({ organisationId }: { organisationId: string }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).faqSeite;
   const [eintraege, setEintraege] = useState<FaqEintrag[]>([]);
   const [offen, setOffen] = useState<string | null>(null);
   const [suche, setSuche] = useState("");
@@ -37,19 +41,19 @@ export default function FaqSeite({ organisationId }: { organisationId: string })
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-base font-semibold text-[var(--text-strong)]">Häufige Fragen</h2>
-        <p className="text-xs text-[var(--text-soft)] mt-0.5">Finde schnell Antworten auf häufige Fragen.</p>
+        <h2 className="text-base font-semibold text-[var(--text-strong)]">{txt.titel}</h2>
+        <p className="text-xs text-[var(--text-soft)] mt-0.5">{txt.beschreibung}</p>
       </div>
 
       <input type="text" value={suche} onChange={(e) => setSuche(e.target.value)}
-        placeholder="Frage suchen…"
+        placeholder={txt.suchePlatzhalter}
         className="w-full rounded-xl border border-[var(--border-input)] bg-[var(--bg-surface)] px-4 py-2.5 text-sm" />
 
       {kategorien.length > 1 && (
         <div className="flex flex-wrap gap-1.5">
           <button onClick={() => setAktiveKat(null)}
             className={`rounded-full px-3 py-1 text-xs font-medium ${!aktiveKat ? "bg-akzent text-white" : "border border-[var(--border)] text-[var(--text-soft)]"}`}>
-            Alle
+            {txt.alle}
           </button>
           {kategorien.map((k) => (
             <button key={k} onClick={() => setAktiveKat(aktiveKat === k ? null : k)}
@@ -61,7 +65,7 @@ export default function FaqSeite({ organisationId }: { organisationId: string })
       )}
 
       {gefiltert.length === 0 && (
-        <p className="text-sm text-[var(--text-faint)]">Keine Treffer für „{suche}".</p>
+        <p className="text-sm text-[var(--text-faint)]">{txt.keineTrefferTemplate.replace("{begriff}", suche)}</p>
       )}
 
       <div className="space-y-2">

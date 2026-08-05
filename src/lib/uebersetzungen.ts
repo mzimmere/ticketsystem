@@ -953,6 +953,31 @@ export interface Uebersetzung {
     ausblenden: string;
     keineTelefonnummerHinweis: string;
   };
+  meineTickets: {
+    laedt: string;
+    nochKeineAnfragen: string;
+    suchePlatzhalter: string;
+    keineTrefferTemplate: string;
+    wartetAufDich: string;
+  };
+  faqSeite: {
+    titel: string;
+    beschreibung: string;
+    suchePlatzhalter: string;
+    alle: string;
+    keineTrefferTemplate: string;
+  };
+  faqOeffentlich: {
+    seiteExistiertNicht: string;
+    titel: string;
+    beschreibung: string;
+    suchePlatzhalter: string;
+    alle: string;
+    keineTrefferTemplate: string;
+    nochKeineEintraege: string;
+    keineAntwortGefunden: string;
+    anfrageStellen: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -1905,6 +1930,31 @@ const de: Uebersetzung = {
     ausblenden: "Ausblenden",
     keineTelefonnummerHinweis: "Keine Telefonnummer hinterlegt – WhatsApp öffnet sich ohne vorausgewählten Empfänger, Nummer dann manuell eintragen.",
   },
+  meineTickets: {
+    laedt: "Lädt…",
+    nochKeineAnfragen: "Du hast noch keine Anfragen gestellt.",
+    suchePlatzhalter: "Anfragen durchsuchen…",
+    keineTrefferTemplate: 'Keine Treffer für „{begriff}".',
+    wartetAufDich: "Wartet auf dich",
+  },
+  faqSeite: {
+    titel: "Häufige Fragen",
+    beschreibung: "Finde schnell Antworten auf häufige Fragen.",
+    suchePlatzhalter: "Frage suchen…",
+    alle: "Alle",
+    keineTrefferTemplate: 'Keine Treffer für „{begriff}".',
+  },
+  faqOeffentlich: {
+    seiteExistiertNicht: "Diese Seite existiert nicht.",
+    titel: "Häufige Fragen",
+    beschreibung: "Hier findest du Antworten auf die häufigsten Fragen.",
+    suchePlatzhalter: "Frage suchen…",
+    alle: "Alle",
+    keineTrefferTemplate: 'Keine Treffer für „{begriff}".',
+    nochKeineEintraege: "Noch keine FAQ-Einträge vorhanden.",
+    keineAntwortGefunden: "Keine Antwort gefunden?",
+    anfrageStellen: "Anfrage stellen →",
+  },
 };
 
 const en: Uebersetzung = {
@@ -2856,6 +2906,31 @@ const en: Uebersetzung = {
     kopieren: "Copy",
     ausblenden: "Hide",
     keineTelefonnummerHinweis: "No phone number on file – WhatsApp will open without a preselected recipient; enter the number manually.",
+  },
+  meineTickets: {
+    laedt: "Loading…",
+    nochKeineAnfragen: "You haven't submitted any requests yet.",
+    suchePlatzhalter: "Search requests…",
+    keineTrefferTemplate: 'No matches for "{begriff}".',
+    wartetAufDich: "Waiting for you",
+  },
+  faqSeite: {
+    titel: "Frequently asked questions",
+    beschreibung: "Quickly find answers to common questions.",
+    suchePlatzhalter: "Search questions…",
+    alle: "All",
+    keineTrefferTemplate: 'No matches for "{begriff}".',
+  },
+  faqOeffentlich: {
+    seiteExistiertNicht: "This page doesn't exist.",
+    titel: "Frequently asked questions",
+    beschreibung: "Find answers to the most common questions here.",
+    suchePlatzhalter: "Search questions…",
+    alle: "All",
+    keineTrefferTemplate: 'No matches for "{begriff}".',
+    nochKeineEintraege: "No FAQ entries yet.",
+    keineAntwortGefunden: "Didn't find an answer?",
+    anfrageStellen: "Submit a request →",
   },
 };
 

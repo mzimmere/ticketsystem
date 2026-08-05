@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 import StatusBadge from "./StatusBadge";
 import FaqSeite from "./FaqSeite";
 
@@ -18,6 +20,8 @@ interface MeineTicketsProps {
 }
 
 export default function MeineTickets({ onAuswahl, organisationId }: MeineTicketsProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).meineTickets;
   const [tickets, setTickets] = useState<TicketZeile[]>([]);
   const [laedt, setLaedt] = useState(true);
   const [suchbegriff, setSuchbegriff] = useState("");
@@ -61,10 +65,10 @@ export default function MeineTickets({ onAuswahl, organisationId }: MeineTickets
     );
   }, [tickets, suchbegriff, nachrichtTrefferIds]);
 
-  if (laedt) return <p className="text-sm text-[var(--text-faint)]">Lädt…</p>;
+  if (laedt) return <p className="text-sm text-[var(--text-faint)]">{txt.laedt}</p>;
 
   if (tickets.length === 0) {
-    return <p className="text-sm text-[var(--text-faint)]">Du hast noch keine Anfragen gestellt.</p>;
+    return <p className="text-sm text-[var(--text-faint)]">{txt.nochKeineAnfragen}</p>;
   }
 
   return (
@@ -73,11 +77,11 @@ export default function MeineTickets({ onAuswahl, organisationId }: MeineTickets
         type="text"
         value={suchbegriff}
         onChange={(e) => setSuchbegriff(e.target.value)}
-        placeholder="Anfragen durchsuchen…"
+        placeholder={txt.suchePlatzhalter}
         className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
       />
       {gefilterteTickets.length === 0 ? (
-        <p className="text-sm text-[var(--text-faint)]">Keine Treffer für „{suchbegriff}".</p>
+        <p className="text-sm text-[var(--text-faint)]">{txt.keineTrefferTemplate.replace("{begriff}", suchbegriff)}</p>
       ) : (
       <div className="divide-y divide-[var(--border)] rounded-lg border border-[var(--border)] bg-[var(--bg-surface)]">
         {gefilterteTickets.map((ticket) => (
@@ -89,7 +93,7 @@ export default function MeineTickets({ onAuswahl, organisationId }: MeineTickets
             <p className="truncate text-sm font-medium text-[var(--text-strong)]">{ticket.titel}</p>
             <StatusBadge
               status={ticket.status}
-              labelOverride={ticket.status === "wartet_auf_kunde" ? "Wartet auf dich" : undefined}
+              labelOverride={ticket.status === "wartet_auf_kunde" ? txt.wartetAufDich : undefined}
             />
           </button>
         ))}

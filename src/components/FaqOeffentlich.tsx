@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface FaqEintrag {
   id: string;
@@ -16,6 +18,8 @@ interface Org {
 }
 
 export default function FaqOeffentlich({ slug }: { slug: string }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).faqOeffentlich;
   const [org, setOrg] = useState<Org | null>(null);
   const [eintraege, setEintraege] = useState<FaqEintrag[]>([]);
   const [offen, setOffen] = useState<string | null>(null);
@@ -60,7 +64,7 @@ export default function FaqOeffentlich({ slug }: { slug: string }) {
   if (!org) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--bg-muted)] p-8">
-        <p className="text-sm text-[var(--text-soft)]">Diese Seite existiert nicht.</p>
+        <p className="text-sm text-[var(--text-soft)]">{txt.seiteExistiertNicht}</p>
       </div>
     );
   }
@@ -87,9 +91,9 @@ export default function FaqOeffentlich({ slug }: { slug: string }) {
       {/* Inhalt */}
       <div className="mx-auto max-w-2xl px-6 py-8 space-y-5">
         <div>
-          <h2 className="text-xl font-bold text-[var(--text-strong)]">Häufige Fragen</h2>
+          <h2 className="text-xl font-bold text-[var(--text-strong)]">{txt.titel}</h2>
           <p className="mt-1 text-sm text-[var(--text-soft)]">
-            Hier findest du Antworten auf die häufigsten Fragen.
+            {txt.beschreibung}
           </p>
         </div>
 
@@ -98,7 +102,7 @@ export default function FaqOeffentlich({ slug }: { slug: string }) {
           type="text"
           value={suche}
           onChange={(e) => setSuche(e.target.value)}
-          placeholder="Frage suchen…"
+          placeholder={txt.suchePlatzhalter}
           className="w-full rounded-xl border border-[var(--border-input)] bg-[var(--bg-surface)] px-4 py-3 text-sm shadow-sm"
         />
 
@@ -109,7 +113,7 @@ export default function FaqOeffentlich({ slug }: { slug: string }) {
               onClick={() => setAktiveKat(null)}
               className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${!aktiveKat ? "bg-akzent text-white" : "border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-soft)]"}`}
             >
-              Alle
+              {txt.alle}
             </button>
             {kategorien.map((k) => (
               <button key={k}
@@ -126,7 +130,7 @@ export default function FaqOeffentlich({ slug }: { slug: string }) {
         {gefiltert.length === 0 && (
           <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-8 text-center">
             <p className="text-sm text-[var(--text-faint)]">
-              {suche ? `Keine Treffer für „${suche}".` : "Noch keine FAQ-Einträge vorhanden."}
+              {suche ? txt.keineTrefferTemplate.replace("{begriff}", suche) : txt.nochKeineEintraege}
             </p>
           </div>
         )}
@@ -159,10 +163,10 @@ export default function FaqOeffentlich({ slug }: { slug: string }) {
 
         {/* Link zum Portal */}
         <p className="text-center text-xs text-[var(--text-faint)]">
-          Keine Antwort gefunden?{" "}
+          {txt.keineAntwortGefunden}{" "}
           <a href={`${window.location.origin}/?neukunde=${slug}`}
             className="underline hover:text-[var(--text-soft)]">
-            Anfrage stellen →
+            {txt.anfrageStellen}
           </a>
         </p>
       </div>
