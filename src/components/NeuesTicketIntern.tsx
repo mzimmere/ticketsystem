@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useUngespeichertWarnung } from "../lib/useUngespeichertWarnung";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 import KundenAuswahl from "./KundenAuswahl";
 import KundenTodoListe from "./KundenTodoListe";
 
@@ -30,6 +32,9 @@ export default function NeuesTicketIntern({
   onErstellt,
   onAbbrechen,
 }: NeuesTicketInternProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).neuesTicketIntern;
+  const prioritaetLabel = texte(sprache).prioritaet;
   const [techniker, setTechniker] = useState<Techniker[]>([]);
   const [kundeId, setKundeId] = useState("");
   const [dongles, setDongles] = useState<Dongle[]>([]);
@@ -77,7 +82,7 @@ export default function NeuesTicketIntern({
 
   async function absenden() {
     if (!kundeId || !titel.trim()) {
-      setFehler("Bitte Kunde und Titel angeben.");
+      setFehler(txt.fehlerKundeUndTitel);
       return;
     }
     setFehler(null);
@@ -111,7 +116,7 @@ export default function NeuesTicketIntern({
       onErstellt(ticket.id);
     } catch (err) {
       console.error(err);
-      setFehler("Anlegen fehlgeschlagen.");
+      setFehler(txt.fehlerAnlegen);
     } finally {
       setLaedt(false);
     }
@@ -119,10 +124,10 @@ export default function NeuesTicketIntern({
 
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-3">
-      <h3 className="text-sm font-medium text-[var(--text-strong)]">Neues Ticket anlegen</h3>
+      <h3 className="text-sm font-medium text-[var(--text-strong)]">{txt.titel}</h3>
 
       <div>
-        <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Kunde</label>
+        <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.kunde}</label>
         <KundenAuswahl organisationId={organisationId} value={kundeId} onChange={setKundeId} />
       </div>
 
@@ -133,14 +138,14 @@ export default function NeuesTicketIntern({
       {kundeId && dongles.length > 0 && (
         <div>
           <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-            Dongle / Lizenz <span className="font-normal text-[var(--text-faint)]">(optional)</span>
+            {txt.dongleLabel} <span className="font-normal text-[var(--text-faint)]">{txt.optional}</span>
           </label>
           <select
             value={dongleId}
             onChange={(e) => setDongleId(e.target.value)}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
           >
-            <option value="">Kein Dongle zugeordnet</option>
+            <option value="">{txt.keinDongle}</option>
             {dongles.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.seriennummer} ({d.software})
@@ -148,7 +153,7 @@ export default function NeuesTicketIntern({
             ))}
           </select>
           <p className="mt-1 text-xs text-[var(--text-faint)]">
-            Hilft später bei der Abrechnung (Freiminuten pro Lizenz).
+            {txt.dongleHinweis}
           </p>
         </div>
       )}
@@ -156,7 +161,7 @@ export default function NeuesTicketIntern({
       {vorlagen.length > 0 && (
         <div>
           <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-            Vorlage verwenden (optional)
+            {txt.vorlageVerwenden}
           </label>
           <select
             onChange={(e) => {
@@ -170,73 +175,73 @@ export default function NeuesTicketIntern({
             }}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-soft)]"
           >
-            <option value="">📋 Vorlage auswählen…</option>
+            <option value="">{txt.vorlageAuswaehlen}</option>
             {vorlagen.map((v) => (
               <option key={v.id} value={v.id}>
-                {v.titel} ({v.prioritaet})
+                {v.titel} ({prioritaetLabel[v.prioritaet]})
               </option>
             ))}
           </select>
           <p className="mt-1 text-xs text-[var(--text-faint)]">
-            Füllt Titel, Beschreibung und Priorität vor – alles bleibt danach bearbeitbar.
+            {txt.vorlageHinweis}
           </p>
         </div>
       )}
 
       <div>
-        <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Titel</label>
+        <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.titelLabel}</label>
         <input
           type="text"
           value={titel}
           onChange={(e) => setTitel(e.target.value)}
-          placeholder='z.B. "Drucker im Büro offline"'
+          placeholder={txt.titelPlatzhalter}
           className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
         />
       </div>
 
       <div>
         <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-          Beschreibung
+          {txt.beschreibungLabel}
         </label>
         <textarea
           value={beschreibung}
           onChange={(e) => setBeschreibung(e.target.value)}
           rows={3}
-          placeholder="z.B. was am Telefon berichtet wurde"
+          placeholder={txt.beschreibungPlatzhalter}
           className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
         />
       </div>
 
       <div>
         <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-          Zuweisen an
+          {txt.zuweisenAn}
         </label>
         <select
           value={zugewiesenAn}
           onChange={(e) => setZugewiesenAn(e.target.value)}
           className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
         >
-          <option value="">Nicht zugewiesen</option>
+          <option value="">{txt.nichtZugewiesen}</option>
           {techniker.map((t) => (
             <option key={t.id} value={t.id}>
-              {t.name ?? "Unbenannt"}
-              {t.id === technikerId ? " (ich)" : ""}
+              {t.name ?? txt.unbenannt}
+              {t.id === technikerId ? txt.ich : ""}
             </option>
           ))}
         </select>
       </div>
 
       <div>
-        <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">Priorität</label>
+        <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">{txt.prioritaetLabel}</label>
         <select
           value={prioritaet}
           onChange={(e) => setPrioritaet(e.target.value as Prioritaet)}
           className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
         >
-          <option value="niedrig">Niedrig</option>
-          <option value="mittel">Mittel</option>
-          <option value="hoch">Hoch</option>
-          <option value="kritisch">Kritisch</option>
+          <option value="niedrig">{prioritaetLabel.niedrig}</option>
+          <option value="mittel">{prioritaetLabel.mittel}</option>
+          <option value="hoch">{prioritaetLabel.hoch}</option>
+          <option value="kritisch">{prioritaetLabel.kritisch}</option>
         </select>
       </div>
 
@@ -248,13 +253,13 @@ export default function NeuesTicketIntern({
           disabled={laedt}
           className="flex-1 rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
-          {laedt ? "Wird angelegt…" : "Ticket anlegen"}
+          {laedt ? txt.wirdAngelegt : txt.ticketAnlegen}
         </button>
         <button
           onClick={onAbbrechen}
           className="rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)]"
         >
-          Abbrechen
+          {txt.abbrechen}
         </button>
       </div>
     </div>

@@ -1042,6 +1042,31 @@ export interface Uebersetzung {
     analysiere: string;
     hinweis: string;
   };
+  neuesTicketIntern: {
+    fehlerKundeUndTitel: string;
+    fehlerAnlegen: string;
+    titel: string;
+    kunde: string;
+    dongleLabel: string;
+    optional: string;
+    keinDongle: string;
+    dongleHinweis: string;
+    vorlageVerwenden: string;
+    vorlageAuswaehlen: string;
+    vorlageHinweis: string;
+    titelLabel: string;
+    titelPlatzhalter: string;
+    beschreibungLabel: string;
+    beschreibungPlatzhalter: string;
+    zuweisenAn: string;
+    nichtZugewiesen: string;
+    unbenannt: string;
+    ich: string;
+    prioritaetLabel: string;
+    wirdAngelegt: string;
+    ticketAnlegen: string;
+    abbrechen: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -2083,6 +2108,31 @@ const de: Uebersetzung = {
     analysiere: "Analysiere…",
     hinweis: "Powered by Claude · Vorschläge immer prüfen bevor sie gesendet werden",
   },
+  neuesTicketIntern: {
+    fehlerKundeUndTitel: "Bitte Kunde und Titel angeben.",
+    fehlerAnlegen: "Anlegen fehlgeschlagen.",
+    titel: "Neues Ticket anlegen",
+    kunde: "Kunde",
+    dongleLabel: "Dongle / Lizenz",
+    optional: "(optional)",
+    keinDongle: "Kein Dongle zugeordnet",
+    dongleHinweis: "Hilft später bei der Abrechnung (Freiminuten pro Lizenz).",
+    vorlageVerwenden: "Vorlage verwenden (optional)",
+    vorlageAuswaehlen: "📋 Vorlage auswählen…",
+    vorlageHinweis: "Füllt Titel, Beschreibung und Priorität vor – alles bleibt danach bearbeitbar.",
+    titelLabel: "Titel",
+    titelPlatzhalter: 'z.B. "Drucker im Büro offline"',
+    beschreibungLabel: "Beschreibung",
+    beschreibungPlatzhalter: "z.B. was am Telefon berichtet wurde",
+    zuweisenAn: "Zuweisen an",
+    nichtZugewiesen: "Nicht zugewiesen",
+    unbenannt: "Unbenannt",
+    ich: " (ich)",
+    prioritaetLabel: "Priorität",
+    wirdAngelegt: "Wird angelegt…",
+    ticketAnlegen: "Ticket anlegen",
+    abbrechen: "Abbrechen",
+  },
 };
 
 const en: Uebersetzung = {
@@ -3123,6 +3173,31 @@ const en: Uebersetzung = {
     tagsVorschlagen: "Suggest tags",
     analysiere: "Analyzing…",
     hinweis: "Powered by Claude · Always review suggestions before sending",
+  },
+  neuesTicketIntern: {
+    fehlerKundeUndTitel: "Please provide a customer and title.",
+    fehlerAnlegen: "Failed to create.",
+    titel: "Create new ticket",
+    kunde: "Customer",
+    dongleLabel: "Dongle / License",
+    optional: "(optional)",
+    keinDongle: "No dongle assigned",
+    dongleHinweis: "Helps later with billing (free minutes per license).",
+    vorlageVerwenden: "Use template (optional)",
+    vorlageAuswaehlen: "📋 Select template…",
+    vorlageHinweis: "Pre-fills title, description, and priority – everything remains editable afterward.",
+    titelLabel: "Title",
+    titelPlatzhalter: 'e.g. "Printer in the office offline"',
+    beschreibungLabel: "Description",
+    beschreibungPlatzhalter: "e.g. what was reported on the phone",
+    zuweisenAn: "Assign to",
+    nichtZugewiesen: "Unassigned",
+    unbenannt: "Unnamed",
+    ich: " (me)",
+    prioritaetLabel: "Priority",
+    wirdAngelegt: "Creating…",
+    ticketAnlegen: "Create ticket",
+    abbrechen: "Cancel",
   },
 };
 
