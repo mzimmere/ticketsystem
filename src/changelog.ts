@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Anleitungs-Dialog (\"So funktioniert das Ticketsystem\", inkl. App-Installation) für Mitarbeiter und Kunden übersetzt" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Buzzer-Sound-Einstellung (Presets, eigene Sounds hochladen) übersetzt" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Zeiterfassungs-Buzzer (Start/Stop-Timer, manuelle Eingabe) übersetzt" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Datei-Anhang-Auswahl (Drag&Drop) und Kunden-Portal-Firmeninfo (Kontakt, Team) übersetzt" },

@@ -1113,6 +1113,45 @@ export interface Uebersetzung {
     fehlerUploadTemplate: string;
     formatHinweis: string;
   };
+  howTo: {
+    internTitel1: string;
+    internText1: string;
+    internTitel2: string;
+    internText2: string;
+    internTitel3: string;
+    internText3: string;
+    internTitel4: string;
+    internText4: string;
+    internTitel5: string;
+    internText5: string;
+    kundeTitel1: string;
+    kundeText1: string;
+    kundeTitel2: string;
+    kundeText2: string;
+    kundeTitel3: string;
+    kundeText3: string;
+    kundeTitel4: string;
+    kundeText4: string;
+    alsAppInstallieren: string;
+    installHinweisText: string;
+    wirdInstalliert: string;
+    jetztInstallieren: string;
+    abgebrochenHinweis: string;
+    anleitungTooltip: string;
+    dialogTitel: string;
+    verstanden: string;
+    iosVor: string;
+    iosSafari: string;
+    iosMid1: string;
+    iosMid2: string;
+    iosZumHome: string;
+    iosNach: string;
+    andereVor: string;
+    andereAppInstallieren: string;
+    andereOder: string;
+    andereZumStartbildschirm: string;
+    andereNach: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -2225,6 +2264,45 @@ const de: Uebersetzung = {
     fehlerUploadTemplate: "Upload fehlgeschlagen: {fehler}",
     formatHinweis: "MP3, WAV oder OGG · max. 1 MB · am besten kurz (unter 2 Sekunden)",
   },
+  howTo: {
+    internTitel1: "Ticketübersicht",
+    internText1: "Alle Anfragen der Firma auf einen Blick. Über die Chips oben filtern (Nur meine, SLA verletzt, Status, Priorität) und über die Suche nach Titel, Kunde, Nr. oder direkt im Nachrichtenverlauf suchen.",
+    internTitel2: "Ticket bearbeiten",
+    internText2: "Status ändern, einem Techniker zuweisen, öffentlich (für den Kunden sichtbar) oder intern (nur fürs Team) antworten. Dateien können per Drag & Drop angehängt werden.",
+    internTitel3: "Schnelle Antworten",
+    internText3: "Unter Verwaltung → Werkzeuge stehen Vorlagen (fertige Antworttexte) und Makros (mehrere Aktionen auf einmal, z.B. Status + Antwort) bereit.",
+    internTitel4: "SLA & Eskalation",
+    internText4: "Ist für die Firma eine SLA-Frist hinterlegt, zeigt das Ticket eine Reaktions- und Lösungsfrist. Wird eine Frist gerissen, erscheint automatisch eine Warnung im Ticket und eine E-Mail geht an den zuständigen Techniker bzw. die Admins.",
+    internTitel5: "Dashboard",
+    internText5: "Kennzahlen zu Ticketaufkommen, Reaktionszeiten und SLA-Einhaltung – zu finden über das Balken-Symbol in der linken Leiste.",
+    kundeTitel1: "Neue Anfrage stellen",
+    kundeText1: 'Über "+ Neue Anfrage" ein Anliegen kurz beschreiben. Das Team meldet sich direkt im Ticket zurück.',
+    kundeTitel2: "Status verfolgen",
+    kundeText2: "Der Bearbeitungsstand (Offen, In Bearbeitung, Wartet auf dich, Gelöst) ist jederzeit live sichtbar – keine Nachfrage per Telefon nötig.",
+    kundeTitel3: "Antworten & Dateien",
+    kundeText3: "Auf Rückfragen direkt im Ticket antworten, auch Dateien (z.B. Fotos) lassen sich anhängen.",
+    kundeTitel4: "Häufige Fragen",
+    kundeText4: "Unter dem FAQ-Bereich stehen Antworten auf die häufigsten Fragen – oft schneller als eine neue Anfrage zu stellen.",
+    alsAppInstallieren: "Als App installieren",
+    installHinweisText: "Das Ticketsystem lässt sich wie eine normale App auf dem Gerät ablegen – eigenes Symbol, Vollbild, kein Suchen im Browser. Die Daten sind dieselben wie hier.",
+    wirdInstalliert: "Wird installiert…",
+    jetztInstallieren: "Jetzt installieren",
+    abgebrochenHinweis: "Abgebrochen – du kannst es hier jederzeit erneut versuchen.",
+    anleitungTooltip: "Anleitung: So funktioniert das Ticketsystem",
+    dialogTitel: "So funktioniert das Ticketsystem",
+    verstanden: "Verstanden",
+    iosVor: "Auf iPhone/iPad in",
+    iosSafari: "Safari",
+    iosMid1: "unten auf das Teilen-Symbol",
+    iosMid2: "tippen, dann",
+    iosZumHome: '„Zum Home-Bildschirm"',
+    iosNach: "wählen. Danach startet das Ticketsystem wie eine normale App – mit denselben Daten wie hier.",
+    andereVor: "Im Browser-Menü (⋮ bzw. ···) gibt es den Eintrag",
+    andereAppInstallieren: '„App installieren"',
+    andereOder: "oder",
+    andereZumStartbildschirm: '„Zum Startbildschirm hinzufügen"',
+    andereNach: "– am Computer oft auch als kleines Symbol rechts in der Adressleiste. Danach startet das Ticketsystem wie eine normale App, mit denselben Daten wie hier.",
+  },
 };
 
 const en: Uebersetzung = {
@@ -3336,6 +3414,45 @@ const en: Uebersetzung = {
     stopSoundHochgeladen: "Stop sound uploaded.",
     fehlerUploadTemplate: "Upload failed: {fehler}",
     formatHinweis: "MP3, WAV, or OGG · max. 1 MB · ideally short (under 2 seconds)",
+  },
+  howTo: {
+    internTitel1: "Ticket overview",
+    internText1: "All requests for the company at a glance. Filter using the chips at the top (Mine only, SLA breached, status, priority) and search by title, customer, number, or directly within message history.",
+    internTitel2: "Editing a ticket",
+    internText2: "Change status, assign to a technician, reply publicly (visible to the customer) or internally (team only). Files can be attached via drag & drop.",
+    internTitel3: "Quick replies",
+    internText3: "Under Administration → Tools you'll find templates (ready-made reply texts) and macros (several actions at once, e.g. status + reply).",
+    internTitel4: "SLA & escalation",
+    internText4: "If an SLA deadline is configured for the company, the ticket shows a response and resolution deadline. If a deadline is missed, a warning automatically appears on the ticket and an email goes to the responsible technician or the admins.",
+    internTitel5: "Dashboard",
+    internText5: "Metrics on ticket volume, response times, and SLA compliance – found via the bar-chart icon in the left sidebar.",
+    kundeTitel1: "Submit a new request",
+    kundeText1: 'Use "+ New request" to briefly describe an issue. The team will reply directly within the ticket.',
+    kundeTitel2: "Track status",
+    kundeText2: "The current status (Open, In progress, Waiting for you, Resolved) is always visible live – no need to call and ask.",
+    kundeTitel3: "Replies & files",
+    kundeText3: "Reply to follow-up questions directly in the ticket; files (e.g. photos) can be attached too.",
+    kundeTitel4: "Frequently asked questions",
+    kundeText4: "The FAQ section has answers to the most common questions – often faster than submitting a new request.",
+    alsAppInstallieren: "Install as app",
+    installHinweisText: "The ticket system can be installed on your device like a regular app – its own icon, full screen, no searching in the browser. The data is the same as here.",
+    wirdInstalliert: "Installing…",
+    jetztInstallieren: "Install now",
+    abgebrochenHinweis: "Cancelled – you can try again here anytime.",
+    anleitungTooltip: "Guide: How the ticket system works",
+    dialogTitel: "How the ticket system works",
+    verstanden: "Got it",
+    iosVor: "On iPhone/iPad in",
+    iosSafari: "Safari",
+    iosMid1: "tap the share icon",
+    iosMid2: "at the bottom, then choose",
+    iosZumHome: '"Add to Home Screen"',
+    iosNach: ". The ticket system will then launch like a regular app – with the same data as here.",
+    andereVor: "In the browser menu (⋮ or ···) there's an entry called",
+    andereAppInstallieren: '"Install app"',
+    andereOder: "or",
+    andereZumStartbildschirm: '"Add to Home screen"',
+    andereNach: "– on a computer often also as a small icon on the right side of the address bar. The ticket system will then launch like a regular app, with the same data as here.",
   },
 };
 
