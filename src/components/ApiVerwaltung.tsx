@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import KonfigurationsHilfe from "./KonfigurationsHilfe";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
+import type { Sprache } from "../lib/SpracheContext";
 
 interface ApiKey {
   id: string;
@@ -22,25 +25,18 @@ interface Webhook {
   letzter_call_am: string | null;
 }
 
-const ALLE_BERECHTIGUNGEN = [
-  { id: "tickets:read", label: "Tickets lesen" },
-  { id: "tickets:create", label: "Tickets erstellen" },
-  { id: "tickets:update", label: "Tickets aktualisieren" },
-  { id: "kunden:read", label: "Kunden lesen" },
-];
-
-const ALLE_EREIGNISSE = [
-  { id: "ticket.created", label: "Ticket erstellt" },
-  { id: "ticket.updated", label: "Ticket aktualisiert" },
-  { id: "ticket.closed", label: "Ticket geschlossen" },
-];
-
 const SUPABASE_URL = "https://wfntgmavwzuldwjjhhlp.supabase.co";
 
-function formatRelativ(iso: string | null): string {
-  if (!iso) return "Noch nie";
+function formatRelativ(iso: string | null, sprache: Sprache): string {
+  if (!iso) return sprache === "en" ? "Never" : "Noch nie";
   const diff = Date.now() - new Date(iso).getTime();
   const min = Math.floor(diff / 60000);
+  if (sprache === "en") {
+    if (min < 1) return "Just now";
+    if (min < 60) return `${min} min ago`;
+    if (min < 1440) return `${Math.floor(min / 60)}h ago`;
+    return `${Math.floor(min / 1440)} days ago`;
+  }
   if (min < 1) return "Gerade eben";
   if (min < 60) return `vor ${min} Min.`;
   if (min < 1440) return `vor ${Math.floor(min / 60)} Std.`;
@@ -59,6 +55,19 @@ async function hashKey(key: string): Promise<string> {
 }
 
 export default function ApiVerwaltung({ organisationId }: { organisationId: string }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).apiVerwaltung;
+  const ALLE_BERECHTIGUNGEN = [
+    { id: "tickets:read", label: txt.berechtigungTicketsLesen },
+    { id: "tickets:create", label: txt.berechtigungTicketsErstellen },
+    { id: "tickets:update", label: txt.berechtigungTicketsAktualisieren },
+    { id: "kunden:read", label: txt.berechtigungKundenLesen },
+  ];
+  const ALLE_EREIGNISSE = [
+    { id: "ticket.created", label: txt.ereignisTicketErstellt },
+    { id: "ticket.updated", label: txt.ereignisTicketAktualisiert },
+    { id: "ticket.closed", label: txt.ereignisTicketGeschlossen },
+  ];
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [neuerKeyName, setNeuerKeyName] = useState("");
@@ -105,7 +114,7 @@ export default function ApiVerwaltung({ organisationId }: { organisationId: stri
   }
 
   async function apiKeyLoeschen(id: string) {
-    if (!confirm("API-Key wirklich löschen? Dieser Vorgang kann nicht rückgängig gemacht werden.")) return;
+    if (!confirm(txt.loeschenKeyBestaetigen)) return;
     await supabase.from("api_keys").delete().eq("id", id);
     laden();
   }
@@ -133,7 +142,7 @@ export default function ApiVerwaltung({ organisationId }: { organisationId: stri
   }
 
   async function webhookLoeschen(id: string) {
-    if (!confirm("Webhook-Endpunkt wirklich löschen?")) return;
+    if (!confirm(txt.loeschenWebhookBestaetigen)) return;
     await supabase.from("webhook_endpunkte").delete().eq("id", id);
     laden();
   }
@@ -149,32 +158,32 @@ export default function ApiVerwaltung({ organisationId }: { organisationId: stri
   return (
     <div className="space-y-8">
       <div>
-        <h3 className="text-sm font-medium text-[var(--text-strong)]">API & Webhooks</h3>
+        <h3 className="text-sm font-medium text-[var(--text-strong)]">{txt.titel}</h3>
         <p className="mt-1 text-xs text-[var(--text-faint)]">
-          Verbinde externe Systeme mit dem Ticketsystem – eingehend per API-Key, ausgehend per Webhook.
+          {txt.beschreibung}
         </p>
       </div>
 
       {/* API-Dokumentation */}
       <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-muted)] p-4 space-y-2">
-        <p className="text-xs font-medium text-[var(--text-soft)]">API-Basis-URL</p>
+        <p className="text-xs font-medium text-[var(--text-soft)]">{txt.apiBasisUrl}</p>
         <div className="flex items-center gap-2">
           <code className="flex-1 truncate rounded bg-[var(--bg-surface)] px-3 py-2 text-xs font-mono text-[var(--text-strong)]">
             {apiBaseUrl}
           </code>
           <button onClick={() => navigator.clipboard.writeText(apiBaseUrl)}
             className="shrink-0 rounded border border-[var(--border-input)] px-2 py-1.5 text-xs text-[var(--text-faint)] hover:bg-[var(--bg-muted)]">
-            Kopieren
+            {txt.kopieren}
           </button>
         </div>
         <div className="grid grid-cols-1 gap-1 text-xs text-[var(--text-faint)]">
           {[
-            ["GET", "/tickets", "Tickets abrufen (?status=offen&limit=50)"],
-            ["GET", "/tickets/:id", "Einzelnes Ticket mit Nachrichten"],
-            ["POST", "/tickets", "Ticket erstellen (titel, kunde_email, beschreibung, prioritaet)"],
-            ["PATCH", "/tickets/:id", "Ticket aktualisieren (status, prioritaet, titel)"],
-            ["POST", "/tickets/:id/nachrichten", "Nachricht hinzufügen (inhalt)"],
-            ["GET", "/kunden", "Kunden abrufen"],
+            ["GET", "/tickets", txt.endpointTicketsAbrufen],
+            ["GET", "/tickets/:id", txt.endpointTicketEinzeln],
+            ["POST", "/tickets", txt.endpointTicketErstellen],
+            ["PATCH", "/tickets/:id", txt.endpointTicketAktualisieren],
+            ["POST", "/tickets/:id/nachrichten", txt.endpointNachrichtHinzufuegen],
+            ["GET", "/kunden", txt.endpointKundenAbrufen],
           ].map(([m, p, d]) => (
             <div key={p} className="flex items-start gap-2 py-0.5">
               <span className={`shrink-0 rounded px-1.5 py-0.5 text-[0.6rem] font-bold ${m === "GET" ? "bg-blue-100 text-blue-700" : m === "POST" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>{m}</span>
@@ -184,7 +193,7 @@ export default function ApiVerwaltung({ organisationId }: { organisationId: stri
           ))}
         </div>
         <p className="text-xs text-[var(--text-faint)]">
-          Header: <code className="font-mono">x-api-key: ts_xxxxxxxx…</code>
+          {txt.headerHinweis} <code className="font-mono">x-api-key: ts_xxxxxxxx…</code>
         </p>
       </div>
 
@@ -251,7 +260,7 @@ export default function ApiVerwaltung({ organisationId }: { organisationId: stri
       {generierterKey && (
         <div className="rounded-xl border-2 border-green-400 bg-green-50 p-4 dark:bg-green-900/20">
           <p className="mb-2 text-sm font-semibold text-green-800 dark:text-green-200">
-            ✓ Neuer API-Key – jetzt kopieren, wird danach nicht mehr angezeigt!
+            {txt.neuerKeyHinweis}
           </p>
           <div className="flex items-center gap-2">
             <code className="flex-1 break-all rounded bg-white px-3 py-2 text-xs font-mono text-green-900 dark:bg-green-900/30 dark:text-green-100">
@@ -259,18 +268,18 @@ export default function ApiVerwaltung({ organisationId }: { organisationId: stri
             </code>
             <button onClick={() => kopierenKey(generierterKey)}
               className="shrink-0 rounded-lg bg-green-600 px-3 py-2 text-xs font-medium text-white hover:bg-green-700">
-              {kopiert ? "Kopiert ✓" : "Kopieren"}
+              {kopiert ? txt.neuerKeyKopieren : txt.kopieren}
             </button>
           </div>
           <button onClick={() => setGenerierterKey(null)} className="mt-2 text-xs text-green-700 underline dark:text-green-400">
-            Ich habe den Key gespeichert – ausblenden
+            {txt.neuerKeyAusblenden}
           </button>
         </div>
       )}
 
       {/* API-Keys */}
       <div className="space-y-3">
-        <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">API-Keys (eingehend)</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{txt.apiKeysUeberschrift}</p>
 
         {apiKeys.map((k) => (
           <div key={k.id} className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-3">
@@ -281,25 +290,25 @@ export default function ApiVerwaltung({ organisationId }: { organisationId: stri
                 <code className="text-xs text-[var(--text-faint)]">{k.key_preview}…</code>
               </div>
               <p className="mt-0.5 text-xs text-[var(--text-faint)]">
-                {k.berechtigungen.join(", ")} · Zuletzt: {formatRelativ(k.zuletzt_genutzt_am)}
+                {k.berechtigungen.join(", ")} · {txt.zuletzt}: {formatRelativ(k.zuletzt_genutzt_am, sprache)}
               </p>
             </div>
             <div className="flex shrink-0 gap-1.5">
               <button onClick={() => apiKeyToggle(k.id, k.aktiv)}
                 className={`rounded-lg border px-2.5 py-1.5 text-xs ${k.aktiv ? "border-[var(--border)] text-[var(--text-soft)]" : "border-green-300 text-green-600"}`}>
-                {k.aktiv ? "Deaktivieren" : "Aktivieren"}
+                {k.aktiv ? txt.deaktivieren : txt.aktivieren}
               </button>
               <button onClick={() => apiKeyLoeschen(k.id)} className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs text-red-500">
-                Löschen
+                {txt.loeschen}
               </button>
             </div>
           </div>
         ))}
 
         <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-3">
-          <p className="text-xs font-medium text-[var(--text-soft)]">Neuen API-Key erstellen</p>
+          <p className="text-xs font-medium text-[var(--text-soft)]">{txt.neuenKeyErstellen}</p>
           <input type="text" value={neuerKeyName} onChange={(e) => setNeuerKeyName(e.target.value)}
-            placeholder='Name (z.B. "Monitoring" oder "CRM")'
+            placeholder={txt.keyNamePlatzhalter}
             className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
           <div className="flex flex-wrap gap-2">
             {ALLE_BERECHTIGUNGEN.map((b) => (
@@ -315,14 +324,14 @@ export default function ApiVerwaltung({ organisationId }: { organisationId: stri
           </div>
           <button onClick={apiKeyErstellen} disabled={laedt || !neuerKeyName.trim()}
             className="w-full rounded-lg bg-akzent py-2 text-sm font-medium text-white disabled:opacity-50">
-            API-Key generieren
+            {txt.keyGenerieren}
           </button>
         </div>
       </div>
 
       {/* Webhooks */}
       <div className="space-y-3">
-        <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">Webhook-Endpunkte (ausgehend)</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{txt.webhooksUeberschrift}</p>
 
         {webhooks.map((wh) => (
           <div key={wh.id} className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-3 space-y-1.5">
@@ -339,22 +348,22 @@ export default function ApiVerwaltung({ organisationId }: { organisationId: stri
               <div className="flex shrink-0 gap-1.5">
                 <button onClick={() => webhookToggle(wh.id, wh.aktiv)}
                   className={`rounded border px-2 py-1 text-xs ${wh.aktiv ? "border-[var(--border)] text-[var(--text-soft)]" : "border-green-300 text-green-600"}`}>
-                  {wh.aktiv ? "Pause" : "Aktivieren"}
+                  {wh.aktiv ? txt.pause : txt.aktivieren}
                 </button>
                 <button onClick={() => webhookLoeschen(wh.id)} className="rounded border border-red-200 px-2 py-1 text-xs text-red-500">✕</button>
               </div>
             </div>
             <p className="truncate text-xs font-mono text-[var(--text-faint)]">{wh.url}</p>
             <p className="text-xs text-[var(--text-faint)]">
-              {wh.ereignisse.join(", ")} · Letzter Call: {formatRelativ(wh.letzter_call_am)}
+              {wh.ereignisse.join(", ")} · {txt.letzterCall}: {formatRelativ(wh.letzter_call_am, sprache)}
             </p>
           </div>
         ))}
 
         <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-3">
-          <p className="text-xs font-medium text-[var(--text-soft)]">Neuen Webhook hinzufügen</p>
+          <p className="text-xs font-medium text-[var(--text-soft)]">{txt.neuenWebhookHinzufuegen}</p>
           <input type="text" value={neuerWebhookName} onChange={(e) => setNeuerWebhookName(e.target.value)}
-            placeholder='Name (z.B. "Slack", "Teams", "Zapier")'
+            placeholder={txt.webhookNamePlatzhalter}
             className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
           <input type="url" value={neuerWebhookUrl} onChange={(e) => setNeuerWebhookUrl(e.target.value)}
             placeholder="https://…"
@@ -373,7 +382,7 @@ export default function ApiVerwaltung({ organisationId }: { organisationId: stri
           </div>
           <button onClick={webhookErstellen} disabled={laedt || !neuerWebhookName.trim() || !neuerWebhookUrl.trim()}
             className="w-full rounded-lg bg-akzent py-2 text-sm font-medium text-white disabled:opacity-50">
-            Webhook hinzufügen
+            {txt.webhookHinzufuegen}
           </button>
         </div>
       </div>

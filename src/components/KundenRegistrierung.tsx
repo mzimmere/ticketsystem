@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface OrgOeffentlich {
   id: string;
@@ -20,6 +22,8 @@ interface KundenRegistrierungProps {
 }
 
 export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).kundenRegistrierung;
   const [organisation, setOrganisation] = useState<OrgOeffentlich | null>(null);
   const [ladeOrg, setLadeOrg] = useState(true);
   const [vorname, setVorname] = useState("");
@@ -64,11 +68,11 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
   async function registrieren() {
     if (!organisation) return;
     if (!vorname.trim() || !nachname.trim() || !email.trim() || passwort.length < 8) {
-      setFehler("Bitte mindestens Vor- und Nachname, E-Mail und ein Passwort mit 8+ Zeichen angeben.");
+      setFehler(txt.fehlerPflichtfelder);
       return;
     }
     if (hatDatenschutz && !datenschutzAkzeptiert) {
-      setFehler("Bitte die Datenschutzerklärung akzeptieren.");
+      setFehler(txt.fehlerDatenschutz);
       return;
     }
     setFehler(null);
@@ -97,8 +101,8 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
     if (error) {
       setFehler(
         error.message.toLowerCase().includes("already")
-          ? "Für diese E-Mail existiert schon ein Account. Bitte normal einloggen."
-          : "Registrierung fehlgeschlagen. Bitte später erneut versuchen.",
+          ? txt.fehlerExistiertSchon
+          : txt.fehlerAllgemein,
       );
       return;
     }
@@ -112,7 +116,7 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--bg-muted)] p-8">
         <p className="text-sm text-[var(--text-soft)]">
-          Dieser Registrierungslink ist ungültig oder nicht mehr aktiv.
+          {txt.linkUngueltig}
         </p>
       </div>
     );
@@ -133,9 +137,7 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
             />
           )}
           <p className="text-sm text-[var(--text-strong)]">
-            {fertig === "sofort"
-              ? "Account erstellt! Du wirst gleich weitergeleitet."
-              : "Fast geschafft – wir haben dir eine Bestätigungsmail geschickt. Bitte klicke den Link darin an, dann kannst du dich einloggen."}
+            {fertig === "sofort" ? txt.fertigSofort : txt.fertigBestaetigung}
           </p>
         </div>
       </div>
@@ -166,12 +168,10 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
 
         <div className="mb-5 rounded-md bg-[var(--bg-muted)] p-3 text-center">
           <p className="text-sm text-[var(--text-strong)]">
-            <strong>{organisation.name}</strong> lädt dich ein, ihr Ticketsystem zu nutzen.
+            <strong>{organisation.name}</strong> {txt.einladungstext}
           </p>
           <p className="mt-1 text-xs text-[var(--text-soft)]">
-            Hier stellst du Anfragen, siehst den Bearbeitungsstand live und musst nie wieder
-            nachfragen, ob deine Mail überhaupt angekommen ist – kein Zettel, kein Anrufbeantworter,
-            keine Warteschleife.
+            {txt.beschreibungstext}
           </p>
           {(organisation.adresse || organisation.telefon || organisation.email || organisation.website) && (
             <div className="mt-2 space-y-0.5 border-t border-[var(--border)] pt-2 text-xs text-[var(--text-faint)]">
@@ -192,12 +192,12 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
             rel="noreferrer"
             className="mb-5 flex items-center justify-center gap-2 rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-4 py-2.5 text-sm font-medium text-[var(--text-strong)] transition-colors hover:bg-akzent/10 hover:text-akzent"
           >
-            ❓ Häufige Fragen ansehen
+            {txt.faqAnsehen}
           </a>
         )}
 
         <div className="mb-2 text-center">
-          <p className="text-sm text-[var(--text-soft)]">Neuen Account anlegen</p>
+          <p className="text-sm text-[var(--text-soft)]">{txt.neuerAccount}</p>
         </div>
 
         <div className="space-y-2.5">
@@ -206,14 +206,14 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
               type="text"
               value={vorname}
               onChange={(e) => setVorname(e.target.value)}
-              placeholder="Vorname"
+              placeholder={txt.vorname}
               className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
             />
             <input
               type="text"
               value={nachname}
               onChange={(e) => setNachname(e.target.value)}
-              placeholder="Nachname"
+              placeholder={txt.nachname}
               className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
             />
           </div>
@@ -221,7 +221,7 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
             type="text"
             value={telefon}
             onChange={(e) => setTelefon(e.target.value)}
-            placeholder="Telefon / WhatsApp (optional)"
+            placeholder={txt.telefonOptional}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
           />
 
@@ -230,14 +230,14 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
               type="text"
               value={strasse}
               onChange={(e) => setStrasse(e.target.value)}
-              placeholder="Straße (optional)"
+              placeholder={txt.strasseOptional}
               className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
             />
             <input
               type="text"
               value={hausnummer}
               onChange={(e) => setHausnummer(e.target.value)}
-              placeholder="Nr."
+              placeholder={txt.hausnummerKurz}
               className="w-16 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
             />
           </div>
@@ -246,14 +246,14 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
               type="text"
               value={plz}
               onChange={(e) => setPlz(e.target.value)}
-              placeholder="PLZ"
+              placeholder={txt.plz}
               className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
             />
             <input
               type="text"
               value={ort}
               onChange={(e) => setOrt(e.target.value)}
-              placeholder="Ort"
+              placeholder={txt.ort}
               className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
             />
           </div>
@@ -264,14 +264,14 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="E-Mail"
+            placeholder={txt.email}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
           />
           <input
             type="password"
             value={passwort}
             onChange={(e) => setPasswort(e.target.value)}
-            placeholder="Passwort (mind. 8 Zeichen)"
+            placeholder={txt.passwortPlatzhalter}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
           />
 
@@ -284,7 +284,7 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
                 className="mt-0.5 accent-amber-500"
               />
               <span>
-                Ich habe die{" "}
+                {txt.datenschutzVor}{" "}
                 <a
                   href={
                     organisation?.datenschutz_url ||
@@ -294,9 +294,9 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
                   rel="noreferrer"
                   className="underline hover:text-[var(--text-strong)]"
                 >
-                  Datenschutzerklärung
+                  {txt.datenschutzLink}
                 </a>{" "}
-                gelesen und akzeptiere sie.
+                {txt.datenschutzNach}
               </span>
             </label>
           )}
@@ -308,7 +308,7 @@ export default function KundenRegistrierung({ slug }: KundenRegistrierungProps) 
             disabled={laedt}
             className="w-full rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
-            {laedt ? "Wird angelegt…" : "Account erstellen"}
+            {laedt ? txt.wirdAngelegt : txt.accountErstellen}
           </button>
         </div>
       </div>

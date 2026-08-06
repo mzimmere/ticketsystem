@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
+import type { Sprache } from "../lib/SpracheContext";
 
 interface Nachricht {
   id: string;
@@ -18,8 +21,8 @@ interface AdminPostfachProps {
   organisationId: string | null;
 }
 
-function formatDatum(iso: string): string {
-  return new Date(iso).toLocaleString("de-DE", {
+function formatDatum(iso: string, sprache: Sprache): string {
+  return new Date(iso).toLocaleString(sprache === "en" ? "en-US" : "de-DE", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -29,6 +32,8 @@ function formatDatum(iso: string): string {
 }
 
 export default function AdminPostfach({ rolle, organisationId }: AdminPostfachProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).adminPostfach;
   const [nachrichten, setNachrichten] = useState<Nachricht[]>([]);
   const [betreff, setBetreff] = useState("");
   const [inhalt, setInhalt] = useState("");
@@ -83,12 +88,12 @@ export default function AdminPostfach({ rolle, organisationId }: AdminPostfachPr
     setLaedt(false);
     if (error) {
       console.error(error);
-      setHinweis("Senden fehlgeschlagen.");
+      setHinweis(txt.fehlerSenden);
       return;
     }
     setBetreff("");
     setInhalt("");
-    setHinweis("Nachricht gesendet.");
+    setHinweis(txt.erfolgGesendet);
     ladeNachrichten();
   }
 
@@ -101,7 +106,7 @@ export default function AdminPostfach({ rolle, organisationId }: AdminPostfachPr
       .eq("id", id);
     if (error) {
       console.error(error);
-      setHinweis("Antwort fehlgeschlagen.");
+      setHinweis(txt.fehlerAntworten);
       return;
     }
     setAntwortEntwurf((e) => ({ ...e, [id]: "" }));
@@ -113,7 +118,7 @@ export default function AdminPostfach({ rolle, organisationId }: AdminPostfachPr
       <h2
         className="text-lg font-semibold text-[var(--text-strong)]"
       >
-        {istSuperAdmin ? "Nachrichten von Firmen" : "Nachricht an Super-Admin"}
+        {istSuperAdmin ? txt.titelSuperAdmin : txt.titelOrg}
       </h2>
 
       {!istSuperAdmin && (
@@ -122,14 +127,14 @@ export default function AdminPostfach({ rolle, organisationId }: AdminPostfachPr
             type="text"
             value={betreff}
             onChange={(e) => setBetreff(e.target.value)}
-            placeholder="Betreff"
+            placeholder={txt.betreffPlatzhalter}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
           />
           <textarea
             value={inhalt}
             onChange={(e) => setInhalt(e.target.value)}
             rows={4}
-            placeholder="Worum geht's?"
+            placeholder={txt.inhaltPlatzhalter}
             className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
           />
           <button
@@ -137,7 +142,7 @@ export default function AdminPostfach({ rolle, organisationId }: AdminPostfachPr
             disabled={laedt}
             className="w-full rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
-            {laedt ? "Wird gesendet…" : "Senden"}
+            {laedt ? txt.wirdGesendet : txt.senden}
           </button>
           {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}
         </div>
@@ -145,7 +150,7 @@ export default function AdminPostfach({ rolle, organisationId }: AdminPostfachPr
 
       {nachrichten.length === 0 ? (
         <p className="text-sm text-[var(--text-faint)]">
-          {istSuperAdmin ? "Keine Nachrichten vorhanden." : "Noch keine Nachrichten gesendet."}
+          {istSuperAdmin ? txt.keineNachrichtenSuperAdmin : txt.keineNachrichtenOrg}
         </p>
       ) : (
         <div className="space-y-2">
@@ -158,27 +163,27 @@ export default function AdminPostfach({ rolle, organisationId }: AdminPostfachPr
                 <p className="text-sm font-medium text-[var(--text-strong)]">{n.betreff}</p>
                 {!n.gelesen && istSuperAdmin && (
                   <span className="shrink-0 rounded-full bg-akzent px-2 py-0.5 text-[0.65rem] font-medium text-white">
-                    Neu
+                    {txt.neu}
                   </span>
                 )}
               </div>
               {istSuperAdmin && n.organisation?.name && (
-                <p className="text-xs text-[var(--text-faint)]">Von: {n.organisation.name}</p>
+                <p className="text-xs text-[var(--text-faint)]">{txt.von}: {n.organisation.name}</p>
               )}
               <p className="text-sm text-[var(--text-soft)]">{n.inhalt}</p>
               <p className="font-mono text-xs text-[var(--text-faint)]">
-                {formatDatum(n.erstellt_am)}
+                {formatDatum(n.erstellt_am, sprache)}
               </p>
 
               {n.antwort && (
                 <div className="rounded bg-[var(--bg-muted)] p-3">
                   <p className="mb-1 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                    Antwort
+                    {txt.antwort}
                   </p>
                   <p className="text-sm text-[var(--text-strong)]">{n.antwort}</p>
                   {n.beantwortet_am && (
                     <p className="mt-1 font-mono text-xs text-[var(--text-faint)]">
-                      {formatDatum(n.beantwortet_am)}
+                      {formatDatum(n.beantwortet_am, sprache)}
                     </p>
                   )}
                 </div>
@@ -192,14 +197,14 @@ export default function AdminPostfach({ rolle, organisationId }: AdminPostfachPr
                     onChange={(e) =>
                       setAntwortEntwurf((s) => ({ ...s, [n.id]: e.target.value }))
                     }
-                    placeholder="Antworten…"
+                    placeholder={txt.antwortPlatzhalter}
                     className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                   />
                   <button
                     onClick={() => antworten(n.id)}
                     className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white"
                   >
-                    Antworten
+                    {txt.antworten}
                   </button>
                 </div>
               )}

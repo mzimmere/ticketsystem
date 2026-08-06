@@ -1208,6 +1208,91 @@ export interface Uebersetzung {
     loeschen: string;
     loeschenBestaetigen: string;
   };
+  adminPostfach: {
+    titelSuperAdmin: string;
+    titelOrg: string;
+    betreffPlatzhalter: string;
+    inhaltPlatzhalter: string;
+    wirdGesendet: string;
+    senden: string;
+    fehlerSenden: string;
+    erfolgGesendet: string;
+    fehlerAntworten: string;
+    keineNachrichtenSuperAdmin: string;
+    keineNachrichtenOrg: string;
+    neu: string;
+    von: string;
+    antwort: string;
+    antwortPlatzhalter: string;
+    antworten: string;
+  };
+  kundenRegistrierung: {
+    fehlerPflichtfelder: string;
+    fehlerDatenschutz: string;
+    fehlerExistiertSchon: string;
+    fehlerAllgemein: string;
+    linkUngueltig: string;
+    fertigSofort: string;
+    fertigBestaetigung: string;
+    einladungstext: string;
+    beschreibungstext: string;
+    faqAnsehen: string;
+    neuerAccount: string;
+    vorname: string;
+    nachname: string;
+    telefonOptional: string;
+    strasseOptional: string;
+    hausnummerKurz: string;
+    plz: string;
+    ort: string;
+    email: string;
+    passwortPlatzhalter: string;
+    datenschutzVor: string;
+    datenschutzLink: string;
+    datenschutzNach: string;
+    wirdAngelegt: string;
+    accountErstellen: string;
+  };
+  apiVerwaltung: {
+    berechtigungTicketsLesen: string;
+    berechtigungTicketsErstellen: string;
+    berechtigungTicketsAktualisieren: string;
+    berechtigungKundenLesen: string;
+    ereignisTicketErstellt: string;
+    ereignisTicketAktualisiert: string;
+    ereignisTicketGeschlossen: string;
+    titel: string;
+    beschreibung: string;
+    apiBasisUrl: string;
+    kopieren: string;
+    endpointTicketsAbrufen: string;
+    endpointTicketEinzeln: string;
+    endpointTicketErstellen: string;
+    endpointTicketAktualisieren: string;
+    endpointNachrichtHinzufuegen: string;
+    endpointKundenAbrufen: string;
+    headerHinweis: string;
+    neuerKeyHinweis: string;
+    neuerKeyKopieren: string;
+    neuerKeyAusblenden: string;
+    apiKeysUeberschrift: string;
+    zuletzt: string;
+    deaktivieren: string;
+    aktivieren: string;
+    loeschen: string;
+    neuenKeyErstellen: string;
+    keyNamePlatzhalter: string;
+    keyGenerieren: string;
+    loeschenKeyBestaetigen: string;
+    webhooksUeberschrift: string;
+    pause: string;
+    letzterCall: string;
+    neuenWebhookHinzufuegen: string;
+    webhookNamePlatzhalter: string;
+    webhookHinzufuegen: string;
+    loeschenWebhookBestaetigen: string;
+    kopiert: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -2415,6 +2500,91 @@ const de: Uebersetzung = {
     loeschen: "Löschen",
     loeschenBestaetigen: "Produkt wirklich löschen?",
   },
+  adminPostfach: {
+    titelSuperAdmin: "Nachrichten von Firmen",
+    titelOrg: "Nachricht an Super-Admin",
+    betreffPlatzhalter: "Betreff",
+    inhaltPlatzhalter: "Worum geht's?",
+    wirdGesendet: "Wird gesendet…",
+    senden: "Senden",
+    fehlerSenden: "Senden fehlgeschlagen.",
+    erfolgGesendet: "Nachricht gesendet.",
+    fehlerAntworten: "Antwort fehlgeschlagen.",
+    keineNachrichtenSuperAdmin: "Keine Nachrichten vorhanden.",
+    keineNachrichtenOrg: "Noch keine Nachrichten gesendet.",
+    neu: "Neu",
+    von: "Von",
+    antwort: "Antwort",
+    antwortPlatzhalter: "Antworten…",
+    antworten: "Antworten",
+  },
+  kundenRegistrierung: {
+    fehlerPflichtfelder: "Bitte mindestens Vor- und Nachname, E-Mail und ein Passwort mit 8+ Zeichen angeben.",
+    fehlerDatenschutz: "Bitte die Datenschutzerklärung akzeptieren.",
+    fehlerExistiertSchon: "Für diese E-Mail existiert schon ein Account. Bitte normal einloggen.",
+    fehlerAllgemein: "Registrierung fehlgeschlagen. Bitte später erneut versuchen.",
+    linkUngueltig: "Dieser Registrierungslink ist ungültig oder nicht mehr aktiv.",
+    fertigSofort: "Account erstellt! Du wirst gleich weitergeleitet.",
+    fertigBestaetigung: "Fast geschafft – wir haben dir eine Bestätigungsmail geschickt. Bitte klicke den Link darin an, dann kannst du dich einloggen.",
+    einladungstext: "lädt dich ein, ihr Ticketsystem zu nutzen.",
+    beschreibungstext: "Hier stellst du Anfragen, siehst den Bearbeitungsstand live und musst nie wieder nachfragen, ob deine Mail überhaupt angekommen ist – kein Zettel, kein Anrufbeantworter, keine Warteschleife.",
+    faqAnsehen: "❓ Häufige Fragen ansehen",
+    neuerAccount: "Neuen Account anlegen",
+    vorname: "Vorname",
+    nachname: "Nachname",
+    telefonOptional: "Telefon / WhatsApp (optional)",
+    strasseOptional: "Straße (optional)",
+    hausnummerKurz: "Nr.",
+    plz: "PLZ",
+    ort: "Ort",
+    email: "E-Mail",
+    passwortPlatzhalter: "Passwort (mind. 8 Zeichen)",
+    datenschutzVor: "Ich habe die",
+    datenschutzLink: "Datenschutzerklärung",
+    datenschutzNach: "gelesen und akzeptiere sie.",
+    wirdAngelegt: "Wird angelegt…",
+    accountErstellen: "Account erstellen",
+  },
+  apiVerwaltung: {
+    berechtigungTicketsLesen: "Tickets lesen",
+    berechtigungTicketsErstellen: "Tickets erstellen",
+    berechtigungTicketsAktualisieren: "Tickets aktualisieren",
+    berechtigungKundenLesen: "Kunden lesen",
+    ereignisTicketErstellt: "Ticket erstellt",
+    ereignisTicketAktualisiert: "Ticket aktualisiert",
+    ereignisTicketGeschlossen: "Ticket geschlossen",
+    titel: "API & Webhooks",
+    beschreibung: "Verbinde externe Systeme mit dem Ticketsystem – eingehend per API-Key, ausgehend per Webhook.",
+    apiBasisUrl: "API-Basis-URL",
+    kopieren: "Kopieren",
+    endpointTicketsAbrufen: "Tickets abrufen (?status=offen&limit=50)",
+    endpointTicketEinzeln: "Einzelnes Ticket mit Nachrichten",
+    endpointTicketErstellen: "Ticket erstellen (titel, kunde_email, beschreibung, prioritaet)",
+    endpointTicketAktualisieren: "Ticket aktualisieren (status, prioritaet, titel)",
+    endpointNachrichtHinzufuegen: "Nachricht hinzufügen (inhalt)",
+    endpointKundenAbrufen: "Kunden abrufen",
+    headerHinweis: "Header:",
+    neuerKeyHinweis: "✓ Neuer API-Key – jetzt kopieren, wird danach nicht mehr angezeigt!",
+    neuerKeyKopieren: "Kopiert ✓",
+    neuerKeyAusblenden: "Ich habe den Key gespeichert – ausblenden",
+    apiKeysUeberschrift: "API-Keys (eingehend)",
+    zuletzt: "Zuletzt",
+    deaktivieren: "Deaktivieren",
+    aktivieren: "Aktivieren",
+    loeschen: "Löschen",
+    neuenKeyErstellen: "Neuen API-Key erstellen",
+    keyNamePlatzhalter: 'Name (z.B. "Monitoring" oder "CRM")',
+    keyGenerieren: "API-Key generieren",
+    loeschenKeyBestaetigen: "API-Key wirklich löschen? Dieser Vorgang kann nicht rückgängig gemacht werden.",
+    webhooksUeberschrift: "Webhook-Endpunkte (ausgehend)",
+    pause: "Pause",
+    letzterCall: "Letzter Call",
+    neuenWebhookHinzufuegen: "Neuen Webhook hinzufügen",
+    webhookNamePlatzhalter: 'Name (z.B. "Slack", "Teams", "Zapier")',
+    webhookHinzufuegen: "Webhook hinzufügen",
+    loeschenWebhookBestaetigen: "Webhook-Endpunkt wirklich löschen?",
+    kopiert: "Kopiert ✓",
+  },
 };
 
 const en: Uebersetzung = {
@@ -3621,6 +3791,91 @@ const en: Uebersetzung = {
     aktivHinweis: "Active (selectable on invoices)",
     loeschen: "Delete",
     loeschenBestaetigen: "Really delete this product?",
+  },
+  adminPostfach: {
+    titelSuperAdmin: "Messages from companies",
+    titelOrg: "Message to super admin",
+    betreffPlatzhalter: "Subject",
+    inhaltPlatzhalter: "What's this about?",
+    wirdGesendet: "Sending…",
+    senden: "Send",
+    fehlerSenden: "Sending failed.",
+    erfolgGesendet: "Message sent.",
+    fehlerAntworten: "Reply failed.",
+    keineNachrichtenSuperAdmin: "No messages yet.",
+    keineNachrichtenOrg: "No messages sent yet.",
+    neu: "New",
+    von: "From",
+    antwort: "Reply",
+    antwortPlatzhalter: "Reply…",
+    antworten: "Reply",
+  },
+  kundenRegistrierung: {
+    fehlerPflichtfelder: "Please provide at least first and last name, email, and a password with 8+ characters.",
+    fehlerDatenschutz: "Please accept the privacy policy.",
+    fehlerExistiertSchon: "An account already exists for this email. Please log in normally.",
+    fehlerAllgemein: "Registration failed. Please try again later.",
+    linkUngueltig: "This registration link is invalid or no longer active.",
+    fertigSofort: "Account created! You'll be redirected shortly.",
+    fertigBestaetigung: "Almost done – we've sent you a confirmation email. Please click the link in it, then you can log in.",
+    einladungstext: "invites you to use their ticket system.",
+    beschreibungstext: "Here you can submit requests, see the processing status live, and never have to wonder again whether your message even arrived – no paper notes, no answering machine, no hold music.",
+    faqAnsehen: "❓ View frequently asked questions",
+    neuerAccount: "Create new account",
+    vorname: "First name",
+    nachname: "Last name",
+    telefonOptional: "Phone / WhatsApp (optional)",
+    strasseOptional: "Street (optional)",
+    hausnummerKurz: "No.",
+    plz: "ZIP",
+    ort: "City",
+    email: "Email",
+    passwortPlatzhalter: "Password (min. 8 characters)",
+    datenschutzVor: "I have read the",
+    datenschutzLink: "privacy policy",
+    datenschutzNach: "and accept it.",
+    wirdAngelegt: "Creating…",
+    accountErstellen: "Create account",
+  },
+  apiVerwaltung: {
+    berechtigungTicketsLesen: "Read tickets",
+    berechtigungTicketsErstellen: "Create tickets",
+    berechtigungTicketsAktualisieren: "Update tickets",
+    berechtigungKundenLesen: "Read customers",
+    ereignisTicketErstellt: "Ticket created",
+    ereignisTicketAktualisiert: "Ticket updated",
+    ereignisTicketGeschlossen: "Ticket closed",
+    titel: "API & Webhooks",
+    beschreibung: "Connect external systems to the ticket system – incoming via API key, outgoing via webhook.",
+    apiBasisUrl: "API base URL",
+    kopieren: "Copy",
+    endpointTicketsAbrufen: "Fetch tickets (?status=offen&limit=50)",
+    endpointTicketEinzeln: "Single ticket with messages",
+    endpointTicketErstellen: "Create ticket (titel, kunde_email, beschreibung, prioritaet)",
+    endpointTicketAktualisieren: "Update ticket (status, prioritaet, titel)",
+    endpointNachrichtHinzufuegen: "Add message (inhalt)",
+    endpointKundenAbrufen: "Fetch customers",
+    headerHinweis: "Header:",
+    neuerKeyHinweis: "✓ New API key – copy it now, it won't be shown again!",
+    neuerKeyKopieren: "Copied ✓",
+    neuerKeyAusblenden: "I've saved the key – hide",
+    apiKeysUeberschrift: "API keys (incoming)",
+    zuletzt: "Last used",
+    deaktivieren: "Deactivate",
+    aktivieren: "Activate",
+    loeschen: "Delete",
+    neuenKeyErstellen: "Create new API key",
+    keyNamePlatzhalter: 'Name (e.g. "Monitoring" or "CRM")',
+    keyGenerieren: "Generate API key",
+    loeschenKeyBestaetigen: "Really delete this API key? This cannot be undone.",
+    webhooksUeberschrift: "Webhook endpoints (outgoing)",
+    pause: "Pause",
+    letzterCall: "Last call",
+    neuenWebhookHinzufuegen: "Add new webhook",
+    webhookNamePlatzhalter: 'Name (e.g. "Slack", "Teams", "Zapier")',
+    webhookHinzufuegen: "Add webhook",
+    loeschenWebhookBestaetigen: "Really delete this webhook endpoint?",
+    kopiert: "Copied ✓",
   },
 };
 
