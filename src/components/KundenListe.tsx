@@ -122,6 +122,8 @@ export default function KundenListe({
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
   const [kundeEmail, setKundeEmail] = useState<string | null>(null);
+  const [emailEntwurf, setEmailEntwurf] = useState("");
+  const [emailLaedt, setEmailLaedt] = useState(false);
   const [zusatzEmails, setZusatzEmails] = useState<ZusatzEmail[]>([]);
   const [neueZusatzEmail, setNeueZusatzEmail] = useState("");
   const [zeigeZusammenfuehren, setZeigeZusammenfuehren] = useState(false);
@@ -234,6 +236,7 @@ export default function KundenListe({
     setNeuerPreisEuro("");
     setHinweis(null);
     setKundeEmail(null);
+    setEmailEntwurf("");
     setNeueZusatzEmail("");
     setZeigeZusammenfuehren(false);
     setZusammenfuehrenQuelleId("");
@@ -247,6 +250,35 @@ export default function KundenListe({
   async function ladeKundeEmail(kundeId: string) {
     const { data } = await supabase.rpc("get_kunde_email", { p_kunde_id: kundeId });
     setKundeEmail((data as string | null) ?? null);
+  }
+
+  async function kundeEmailAendern(kundeId: string) {
+    if (!emailEntwurf.trim() || !emailEntwurf.includes("@")) {
+      setHinweis(txt.fehlerEmailUngueltig);
+      return;
+    }
+    setEmailLaedt(true);
+    const { data: session } = await supabase.auth.getSession();
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/aendere-email`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+        body: JSON.stringify({ nutzerId: kundeId, neueEmail: emailEntwurf.trim() }),
+      },
+    );
+    const json = await res.json();
+    setEmailLaedt(false);
+    if (!res.ok) {
+      setHinweis(json.error ?? txt.fehlerEmailAendern);
+      return;
+    }
+    setEmailEntwurf("");
+    setHinweis(txt.erfolgEmailGeaendert);
+    ladeKundeEmail(kundeId);
   }
 
   async function ladeZusatzEmails(kundeId: string) {
@@ -634,11 +666,27 @@ export default function KundenListe({
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  {txt.emailLoginLabel} <span className="font-normal text-[var(--text-faint)]">{txt.nichtAenderbar}</span>
+                  {txt.emailLoginLabel}
                 </label>
-                <p className="rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm text-[var(--text-strong)]">
+                <p className="mb-1.5 rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm text-[var(--text-strong)]">
                   {kundeEmail ?? "—"}
                 </p>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    value={emailEntwurf}
+                    onChange={(e) => setEmailEntwurf(e.target.value)}
+                    placeholder={txt.neueEmailPlatzhalter}
+                    className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                  />
+                  <button
+                    onClick={() => kundeEmailAendern(k.id)}
+                    disabled={emailLaedt || !emailEntwurf.includes("@") || emailEntwurf === kundeEmail}
+                    className="shrink-0 rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+                  >
+                    {emailLaedt ? "…" : txt.emailAendern}
+                  </button>
+                </div>
               </div>
 
               <div>

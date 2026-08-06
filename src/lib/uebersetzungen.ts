@@ -517,7 +517,11 @@ export interface Uebersetzung {
     vorname: string;
     nachname: string;
     emailLoginLabel: string;
-    nichtAenderbar: string;
+    neueEmailPlatzhalter: string;
+    emailAendern: string;
+    fehlerEmailUngueltig: string;
+    fehlerEmailAendern: string;
+    erfolgEmailGeaendert: string;
     weitereEmailsLabel: string;
     weitereEmailsHinweis: string;
     entfernen: string;
@@ -1673,7 +1677,11 @@ const de: Uebersetzung = {
     vorname: "Vorname",
     nachname: "Nachname",
     emailLoginLabel: "E-Mail (Login)",
-    nichtAenderbar: "– nicht änderbar",
+    neueEmailPlatzhalter: "neue@email.de",
+    emailAendern: "Ändern",
+    fehlerEmailUngueltig: "Bitte eine gültige E-Mail-Adresse eingeben.",
+    fehlerEmailAendern: "E-Mail-Änderung fehlgeschlagen.",
+    erfolgEmailGeaendert: "E-Mail geändert.",
     weitereEmailsLabel: "Weitere E-Mail-Adressen",
     weitereEmailsHinweis: "– z.B. wenn per Mail von einer anderen Adresse geschrieben wird",
     entfernen: "Entfernen",
@@ -2829,7 +2837,11 @@ const en: Uebersetzung = {
     vorname: "First name",
     nachname: "Last name",
     emailLoginLabel: "Email (login)",
-    nichtAenderbar: "– not changeable",
+    neueEmailPlatzhalter: "new@email.com",
+    emailAendern: "Change",
+    fehlerEmailUngueltig: "Please enter a valid email address.",
+    fehlerEmailAendern: "Email change failed.",
+    erfolgEmailGeaendert: "Email changed.",
     weitereEmailsLabel: "Additional email addresses",
     weitereEmailsHinweis: "– e.g. when writing in from a different address",
     entfernen: "Remove",
