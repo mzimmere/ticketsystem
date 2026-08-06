@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-06", titel: "Englische Oberfläche erweitert: Super-Admin-Firmenübersicht, Super-Admin-Dashboard und Produktverwaltung (Rechnungspositionen) übersetzt" },
   { datum: "2026-08-05", titel: "Neu: Login-E-Mail-Adresse eines Kunden kann jetzt in der Kundenverwaltung geändert werden (z.B. bei Tippfehlern) – bisher ging das nur für Mitarbeiter" },
   { datum: "2026-08-05", titel: "Neu: Absender-Domain-Sperrliste für den E-Mail-Import (Verwaltung → Integrationen). Mails von gesperrten Domains werden komplett ignoriert – verhindert u.a., dass Bounce-Meldungen (z.B. von einer ungültigen Kunden-E-Mail-Adresse) an die eigene Support-Adresse als endlose neue Tickets landen" },
   { datum: "2026-08-03", titel: "Englische Oberfläche erweitert: Anleitungs-Dialog (\"So funktioniert das Ticketsystem\", inkl. App-Installation) für Mitarbeiter und Kunden übersetzt" },

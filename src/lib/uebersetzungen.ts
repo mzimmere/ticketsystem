@@ -1161,6 +1161,53 @@ export interface Uebersetzung {
     andereZumStartbildschirm: string;
     andereNach: string;
   };
+  superAdminUebersicht: {
+    titel: string;
+    neueFirmaAnlegen: string;
+    firmaNamePlatzhalter: string;
+    anlegen: string;
+    fehlerAnlegen: string;
+    erfolgAngelegt: string;
+    kopiert: string;
+    kopieren: string;
+    hinweisNaechsterSchritt: string;
+    anleitungAdminAnlegen: string;
+    keinAdminZugewiesen: string;
+    unbenannt: string;
+  };
+  superAdminDashboard: {
+    titel: string;
+    firmen: string;
+    ticketsGesamt: string;
+    aktiveNutzer: string;
+    firmenUebersicht: string;
+    laedt: string;
+    nutzer: string;
+    letzteAktivitaet: string;
+    tickets: string;
+    offen: string;
+    keineFirmen: string;
+  };
+  produktVerwaltung: {
+    titel: string;
+    neu: string;
+    hinweisText: string;
+    bezeichnungPlatzhalter: string;
+    beschreibungPlatzhalter: string;
+    einzelpreis: string;
+    einheit: string;
+    fehlerPflichtfelder: string;
+    fehlerPreis: string;
+    fehlerSpeichern: string;
+    speichern: string;
+    abbrechen: string;
+    keineProdukte: string;
+    inaktiv: string;
+    beschreibungOptional: string;
+    aktivHinweis: string;
+    loeschen: string;
+    loeschenBestaetigen: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -2321,6 +2368,53 @@ const de: Uebersetzung = {
     andereZumStartbildschirm: '„Zum Startbildschirm hinzufügen"',
     andereNach: "– am Computer oft auch als kleines Symbol rechts in der Adressleiste. Danach startet das Ticketsystem wie eine normale App, mit denselben Daten wie hier.",
   },
+  superAdminUebersicht: {
+    titel: "Alle Firmen",
+    neueFirmaAnlegen: "Neue Firma anlegen",
+    firmaNamePlatzhalter: "Name der neuen Firma",
+    anlegen: "Anlegen",
+    fehlerAnlegen: "Anlegen fehlgeschlagen.",
+    erfolgAngelegt: "Firma angelegt. Lege als Nächstes einen Org-Admin für sie an.",
+    kopiert: "✓",
+    kopieren: "Kopieren",
+    hinweisNaechsterSchritt: "Lege als Nächstes einen Org-Admin für die neue Firma an, damit sie sich einloggen kann.",
+    anleitungAdminAnlegen: 'Nach dem Anlegen: Firma unten öffnen → Verwaltung → "+ Mitarbeiter anlegen" mit Rolle "Org-Admin", um der Firma einen eigenen Admin zu geben.',
+    keinAdminZugewiesen: "Noch kein Admin zugewiesen",
+    unbenannt: "Unbenannt",
+  },
+  superAdminDashboard: {
+    titel: "Super-Admin Dashboard",
+    firmen: "Firmen",
+    ticketsGesamt: "Tickets gesamt",
+    aktiveNutzer: "Aktive Nutzer",
+    firmenUebersicht: "Firmen-Übersicht",
+    laedt: "Lädt…",
+    nutzer: "Nutzer",
+    letzteAktivitaet: "letzte Aktivität",
+    tickets: "Tickets",
+    offen: "Offen",
+    keineFirmen: "Noch keine Firmen angelegt.",
+  },
+  produktVerwaltung: {
+    titel: "🛒 Meine Produkte & Leistungen",
+    neu: "+ Neu",
+    hinweisText: "Hinterlege häufig abgerechnete Produkte und Leistungen – bei der Rechnung wählst du sie dann direkt aus.",
+    bezeichnungPlatzhalter: "Bezeichnung (z.B. SSD 500GB, Vor-Ort-Einsatz)",
+    beschreibungPlatzhalter: "Beschreibung (optional)",
+    einzelpreis: "Einzelpreis (€, netto)",
+    einheit: "Einheit",
+    fehlerPflichtfelder: "Bezeichnung und Preis sind Pflichtfelder.",
+    fehlerPreis: "Ungültiger Preis.",
+    fehlerSpeichern: "Fehler beim Speichern.",
+    speichern: "Speichern",
+    abbrechen: "Abbrechen",
+    keineProdukte: "Noch keine Produkte angelegt.",
+    inaktiv: "inaktiv",
+    beschreibungOptional: "Beschreibung",
+    aktivHinweis: "Aktiv (bei der Rechnung auswählbar)",
+    loeschen: "Löschen",
+    loeschenBestaetigen: "Produkt wirklich löschen?",
+  },
 };
 
 const en: Uebersetzung = {
@@ -3480,6 +3574,53 @@ const en: Uebersetzung = {
     andereOder: "or",
     andereZumStartbildschirm: '"Add to Home screen"',
     andereNach: "– on a computer often also as a small icon on the right side of the address bar. The ticket system will then launch like a regular app, with the same data as here.",
+  },
+  superAdminUebersicht: {
+    titel: "All Companies",
+    neueFirmaAnlegen: "Create new company",
+    firmaNamePlatzhalter: "Name of the new company",
+    anlegen: "Create",
+    fehlerAnlegen: "Creation failed.",
+    erfolgAngelegt: "Company created. Next, create an org admin for it.",
+    kopiert: "✓",
+    kopieren: "Copy",
+    hinweisNaechsterSchritt: "Next, create an org admin for the new company so it can log in.",
+    anleitungAdminAnlegen: 'After creating it: open the company below → Management → "+ Create employee" with role "Org admin" to give the company its own admin.',
+    keinAdminZugewiesen: "No admin assigned yet",
+    unbenannt: "Unnamed",
+  },
+  superAdminDashboard: {
+    titel: "Super Admin Dashboard",
+    firmen: "Companies",
+    ticketsGesamt: "Tickets total",
+    aktiveNutzer: "Active users",
+    firmenUebersicht: "Company overview",
+    laedt: "Loading…",
+    nutzer: "users",
+    letzteAktivitaet: "last activity",
+    tickets: "Tickets",
+    offen: "Open",
+    keineFirmen: "No companies created yet.",
+  },
+  produktVerwaltung: {
+    titel: "🛒 My Products & Services",
+    neu: "+ New",
+    hinweisText: "Save frequently billed products and services – you can then select them directly when creating an invoice.",
+    bezeichnungPlatzhalter: "Name (e.g. SSD 500GB, on-site visit)",
+    beschreibungPlatzhalter: "Description (optional)",
+    einzelpreis: "Unit price (€, net)",
+    einheit: "Unit",
+    fehlerPflichtfelder: "Name and price are required.",
+    fehlerPreis: "Invalid price.",
+    fehlerSpeichern: "Error while saving.",
+    speichern: "Save",
+    abbrechen: "Cancel",
+    keineProdukte: "No products created yet.",
+    inaktiv: "inactive",
+    beschreibungOptional: "Description",
+    aktivHinweis: "Active (selectable on invoices)",
+    loeschen: "Delete",
+    loeschenBestaetigen: "Really delete this product?",
   },
 };
 

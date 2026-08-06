@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import Avatar from "./Avatar";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface Organisation {
   id: string;
@@ -20,6 +22,8 @@ interface SuperAdminUebersichtProps {
 }
 
 export default function SuperAdminUebersicht({ onFirmaOeffnen }: SuperAdminUebersichtProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).superAdminUebersicht;
   const [organisationen, setOrganisationen] = useState<Organisation[]>([]);
   const [adminsProOrg, setAdminsProOrg] = useState<Record<string, AdminEintrag[]>>({});
   const [neueOrgName, setNeueOrgName] = useState("");
@@ -64,12 +68,12 @@ export default function SuperAdminUebersicht({ onFirmaOeffnen }: SuperAdminUeber
       .single();
     setLaedt(false);
     if (error || !data) {
-      setHinweis("Anlegen fehlgeschlagen.");
+      setHinweis(txt.fehlerAnlegen);
       return;
     }
     setNeueOrgName("");
     setNeueOrgLandingpage(data.slug ? `${window.location.origin}/?neukunde=${data.slug}` : null);
-    setHinweis("Firma angelegt. Lege als Nächstes einen Org-Admin für sie an.");
+    setHinweis(txt.erfolgAngelegt);
     ladeAlles();
   }
 
@@ -78,17 +82,17 @@ export default function SuperAdminUebersicht({ onFirmaOeffnen }: SuperAdminUeber
       <h2
         className="text-lg font-semibold text-[var(--text-strong)]"
       >
-        Alle Firmen
+        {txt.titel}
       </h2>
 
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-2.5">
-        <h3 className="text-sm font-medium text-[var(--text-strong)]">Neue Firma anlegen</h3>
+        <h3 className="text-sm font-medium text-[var(--text-strong)]">{txt.neueFirmaAnlegen}</h3>
         <div className="flex gap-2">
           <input
             type="text"
             value={neueOrgName}
             onChange={(e) => setNeueOrgName(e.target.value)}
-            placeholder="Name der neuen Firma"
+            placeholder={txt.firmaNamePlatzhalter}
             className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
           />
           <button
@@ -96,7 +100,7 @@ export default function SuperAdminUebersicht({ onFirmaOeffnen }: SuperAdminUeber
             disabled={laedt}
             className="rounded bg-akzent px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
-            Anlegen
+            {txt.anlegen}
           </button>
         </div>
         {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}
@@ -113,13 +117,12 @@ export default function SuperAdminUebersicht({ onFirmaOeffnen }: SuperAdminUeber
               }}
               className="shrink-0 rounded border border-[var(--border-input)] px-2 py-1 text-xs text-[var(--text-faint)] hover:bg-[var(--bg-surface)]"
             >
-              {landingpageKopiert ? "✓" : "Kopieren"}
+              {landingpageKopiert ? txt.kopiert : txt.kopieren}
             </button>
           </div>
         )}
         <p className="text-xs text-[var(--text-faint)]">
-          Nach dem Anlegen: Firma unten öffnen → Verwaltung → "+ Mitarbeiter anlegen" mit Rolle
-          "Org-Admin", um der Firma einen eigenen Admin zu geben.
+          {txt.anleitungAdminAnlegen}
         </p>
       </div>
 
@@ -136,13 +139,13 @@ export default function SuperAdminUebersicht({ onFirmaOeffnen }: SuperAdminUeber
               <div className="mt-1 flex items-center gap-1.5">
                 {(adminsProOrg[org.id] ?? []).length === 0 ? (
                   <span className="text-xs text-amber-600 dark:text-amber-400">
-                    Noch kein Admin zugewiesen
+                    {txt.keinAdminZugewiesen}
                   </span>
                 ) : (
                   (adminsProOrg[org.id] ?? []).map((a) => (
                     <span key={a.id} className="flex items-center gap-1">
                       <Avatar name={a.name} avatarUrl={a.avatar_url} groesse="sm" />
-                      <span className="text-xs text-[var(--text-soft)]">{a.name ?? "Unbenannt"}</span>
+                      <span className="text-xs text-[var(--text-soft)]">{a.name ?? txt.unbenannt}</span>
                     </span>
                   ))
                 )}

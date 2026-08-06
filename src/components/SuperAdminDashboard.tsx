@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
+import type { Sprache } from "../lib/SpracheContext";
 
 interface FirmenStat {
   id: string;
@@ -11,10 +14,17 @@ interface FirmenStat {
   letzteAktivitaet: string | null;
 }
 
-function formatRelativ(iso: string | null): string {
+function formatRelativ(iso: string | null, sprache: Sprache): string {
   if (!iso) return "—";
   const diff = Date.now() - new Date(iso).getTime();
   const min = Math.floor(diff / 60000);
+  if (sprache === "en") {
+    if (min < 1) return "just now";
+    if (min < 60) return `${min} min ago`;
+    const h = Math.floor(min / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)} days ago`;
+  }
   if (min < 1) return "gerade eben";
   if (min < 60) return `vor ${min} Min.`;
   const h = Math.floor(min / 60);
@@ -23,6 +33,8 @@ function formatRelativ(iso: string | null): string {
 }
 
 export default function SuperAdminDashboard({ onFirmaOeffnen }: { onFirmaOeffnen?: (id: string) => void }) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).superAdminDashboard;
   const [firmen, setFirmen] = useState<FirmenStat[]>([]);
   const [laedt, setLaedt] = useState(true);
   const [gesamt, setGesamt] = useState({ tickets: 0, nutzer: 0, firmen: 0 });
@@ -82,14 +94,14 @@ export default function SuperAdminDashboard({ onFirmaOeffnen }: { onFirmaOeffnen
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-[var(--text-strong)]">Super-Admin Dashboard</h2>
+      <h2 className="text-lg font-semibold text-[var(--text-strong)]">{txt.titel}</h2>
 
       {/* Gesamt-KPIs */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Firmen", wert: gesamt.firmen },
-          { label: "Tickets gesamt", wert: gesamt.tickets },
-          { label: "Aktive Nutzer", wert: gesamt.nutzer },
+          { label: txt.firmen, wert: gesamt.firmen },
+          { label: txt.ticketsGesamt, wert: gesamt.tickets },
+          { label: txt.aktiveNutzer, wert: gesamt.nutzer },
         ].map((k) => (
           <div key={k.label} className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 text-center">
             <p className="text-2xl font-bold text-[var(--text-strong)]">{laedt ? "—" : k.wert}</p>
@@ -102,12 +114,12 @@ export default function SuperAdminDashboard({ onFirmaOeffnen }: { onFirmaOeffnen
       <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)]">
         <div className="border-b border-[var(--border)] px-4 py-2.5">
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-            Firmen-Übersicht
+            {txt.firmenUebersicht}
           </p>
         </div>
 
         {laedt ? (
-          <p className="p-4 text-sm text-[var(--text-faint)]">Lädt…</p>
+          <p className="p-4 text-sm text-[var(--text-faint)]">{txt.laedt}</p>
         ) : (
           <div className="divide-y divide-[var(--border)]">
             {firmen.map((f) => (
@@ -128,20 +140,20 @@ export default function SuperAdminDashboard({ onFirmaOeffnen }: { onFirmaOeffnen
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-[var(--text-strong)]">{f.name}</p>
                   <p className="text-xs text-[var(--text-faint)]">
-                    {f.nutzer} Nutzer · letzte Aktivität {formatRelativ(f.letzteAktivitaet)}
+                    {f.nutzer} {txt.nutzer} · {txt.letzteAktivitaet} {formatRelativ(f.letzteAktivitaet, sprache)}
                   </p>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-3 text-right">
                   <div>
                     <p className="text-sm font-medium text-[var(--text-strong)]">{f.tickets_gesamt}</p>
-                    <p className="text-[0.65rem] text-[var(--text-faint)]">Tickets</p>
+                    <p className="text-[0.65rem] text-[var(--text-faint)]">{txt.tickets}</p>
                   </div>
                   <div>
                     <p className={`text-sm font-medium ${f.tickets_offen > 0 ? "text-orange-500" : "text-green-600"}`}>
                       {f.tickets_offen}
                     </p>
-                    <p className="text-[0.65rem] text-[var(--text-faint)]">Offen</p>
+                    <p className="text-[0.65rem] text-[var(--text-faint)]">{txt.offen}</p>
                   </div>
 
                   {/* Auslastungs-Balken */}
@@ -153,7 +165,7 @@ export default function SuperAdminDashboard({ onFirmaOeffnen }: { onFirmaOeffnen
                       />
                     </div>
                     <p className="mt-0.5 text-[0.6rem] text-[var(--text-faint)]">
-                      {f.tickets_gesamt > 0 ? Math.round((f.tickets_offen / f.tickets_gesamt) * 100) : 0}% offen
+                      {f.tickets_gesamt > 0 ? Math.round((f.tickets_offen / f.tickets_gesamt) * 100) : 0}% {txt.offen.toLowerCase()}
                     </p>
                   </div>
                   {onFirmaOeffnen && (
@@ -164,7 +176,7 @@ export default function SuperAdminDashboard({ onFirmaOeffnen }: { onFirmaOeffnen
             ))}
 
             {firmen.length === 0 && (
-              <p className="p-4 text-sm text-[var(--text-faint)]">Noch keine Firmen angelegt.</p>
+              <p className="p-4 text-sm text-[var(--text-faint)]">{txt.keineFirmen}</p>
             )}
           </div>
         )}
