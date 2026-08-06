@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
 
 interface Schritt {
   nr: number;
@@ -15,6 +17,8 @@ interface KonfigurationsHilfeProps {
 }
 
 export default function KonfigurationsHilfe({ titel, schritte, hinweis }: KonfigurationsHilfeProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).konfigurationsHilfe;
   const [offen, setOffen] = useState(false);
 
   return (
@@ -25,9 +29,9 @@ export default function KonfigurationsHilfe({ titel, schritte, hinweis }: Konfig
       >
         <div className="flex items-center gap-2">
           <span className="flex h-5 w-5 items-center justify-center rounded-full border border-[var(--border-input)] text-[0.65rem] font-bold text-[var(--text-faint)]">?</span>
-          <span className="text-xs font-medium text-[var(--text-soft)]">Anleitung: {titel}</span>
+          <span className="text-xs font-medium text-[var(--text-soft)]">{txt.anleitung}: {titel}</span>
         </div>
-        <span className="text-xs text-[var(--text-faint)]">{offen ? "▲ Schließen" : "▼ Anzeigen"}</span>
+        <span className="text-xs text-[var(--text-faint)]">{offen ? txt.schliessen : txt.anzeigen}</span>
       </button>
 
       {offen && (

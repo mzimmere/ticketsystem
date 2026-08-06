@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-06", titel: "Englische Oberfläche: letzte zwei Reste übersetzt (Anleitungs-Akkordeon-Chrome, Avatar-Alt-Text)" },
   { datum: "2026-08-06", titel: "Englische Oberfläche komplett: letzte 3 Bereiche übersetzt (Nachrichten an/von Super-Admin, Kunden-Selbstregistrierung, API- & Webhook-Verwaltung) – damit ist die komplette Oberfläche zweisprachig" },
   { datum: "2026-08-06", titel: "Englische Oberfläche erweitert: Super-Admin-Firmenübersicht, Super-Admin-Dashboard und Produktverwaltung (Rechnungspositionen) übersetzt" },
   { datum: "2026-08-05", titel: "Neu: Login-E-Mail-Adresse eines Kunden kann jetzt in der Kundenverwaltung geändert werden (z.B. bei Tippfehlern) – bisher ging das nur für Mitarbeiter" },

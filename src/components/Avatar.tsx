@@ -1,3 +1,6 @@
+import { useSprache } from "../lib/SpracheContext";
+import { texte } from "../lib/uebersetzungen";
+
 interface AvatarProps {
   name: string | null;
   avatarUrl: string | null;
@@ -11,6 +14,8 @@ const GROESSEN = {
 };
 
 export default function Avatar({ name, avatarUrl, groesse = "sm" }: AvatarProps) {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).avatar;
   const initialen = (name ?? "?")
     .split(" ")
     .map((teil) => teil[0])
@@ -22,7 +27,7 @@ export default function Avatar({ name, avatarUrl, groesse = "sm" }: AvatarProps)
     return (
       <img
         src={avatarUrl}
-        alt={name ?? "Profilbild"}
+        alt={name ?? txt.profilbild}
         className={`${GROESSEN[groesse]} rounded-full object-cover`}
       />
     );

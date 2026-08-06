@@ -1293,6 +1293,14 @@ export interface Uebersetzung {
     loeschenWebhookBestaetigen: string;
     kopiert: string;
   };
+  konfigurationsHilfe: {
+    anleitung: string;
+    schliessen: string;
+    anzeigen: string;
+  };
+  avatar: {
+    profilbild: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -2585,6 +2593,14 @@ const de: Uebersetzung = {
     loeschenWebhookBestaetigen: "Webhook-Endpunkt wirklich löschen?",
     kopiert: "Kopiert ✓",
   },
+  konfigurationsHilfe: {
+    anleitung: "Anleitung",
+    schliessen: "▲ Schließen",
+    anzeigen: "▼ Anzeigen",
+  },
+  avatar: {
+    profilbild: "Profilbild",
+  },
 };
 
 const en: Uebersetzung = {
@@ -3876,6 +3892,14 @@ const en: Uebersetzung = {
     webhookHinzufuegen: "Add webhook",
     loeschenWebhookBestaetigen: "Really delete this webhook endpoint?",
     kopiert: "Copied ✓",
+  },
+  konfigurationsHilfe: {
+    anleitung: "Guide",
+    schliessen: "▲ Hide",
+    anzeigen: "▼ Show",
+  },
+  avatar: {
+    profilbild: "Profile picture",
   },
 };
 
