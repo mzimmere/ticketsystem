@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabaseClient";
+import { useSprache } from "./SpracheContext";
+import { texte } from "./uebersetzungen";
 
 export type Rolle = "super_admin" | "org_admin" | "techniker" | "kunde";
 
@@ -20,6 +22,7 @@ export interface Mitgliedschaft {
 }
 
 export function useProfil() {
+  const { sprache } = useSprache();
   const [profil, setProfil] = useState<Profil | null>(null);
   const [mitgliedschaften, setMitgliedschaften] = useState<Mitgliedschaft[]>([]);
   const [eingeloggt, setEingeloggt] = useState<boolean | null>(null);
@@ -75,7 +78,7 @@ export function useProfil() {
     setProfil((data as Profil) ?? null);
     setMitgliedschaften(
       ((mitgliedDaten ?? []) as unknown as Array<{ organisation_id: string; rolle: "techniker" | "org_admin"; organisation: { name: string } | null }>)
-        .map((m) => ({ organisation_id: m.organisation_id, rolle: m.rolle, organisation_name: m.organisation?.name ?? "Unbenannt" }))
+        .map((m) => ({ organisation_id: m.organisation_id, rolle: m.rolle, organisation_name: m.organisation?.name ?? texte(sprache).allgemein.unbenannt }))
         .sort((a, b) => a.organisation_name.localeCompare(b.organisation_name)),
     );
     setLaedt(false);

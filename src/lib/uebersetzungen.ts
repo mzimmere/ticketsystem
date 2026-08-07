@@ -1301,6 +1301,9 @@ export interface Uebersetzung {
   avatar: {
     profilbild: string;
   };
+  allgemein: {
+    unbenannt: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -2601,6 +2604,9 @@ const de: Uebersetzung = {
   avatar: {
     profilbild: "Profilbild",
   },
+  allgemein: {
+    unbenannt: "Unbenannt",
+  },
 };
 
 const en: Uebersetzung = {
@@ -3900,6 +3906,9 @@ const en: Uebersetzung = {
   },
   avatar: {
     profilbild: "Profile picture",
+  },
+  allgemein: {
+    unbenannt: "Unnamed",
   },
 };
 
