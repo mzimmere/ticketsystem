@@ -33,6 +33,10 @@ export function SpracheProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
+    document.documentElement.lang = sprache;
+  }, [sprache]);
+
+  useEffect(() => {
     let abgebrochen = false;
 
     async function vomProfilLaden() {

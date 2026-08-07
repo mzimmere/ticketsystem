@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-06", titel: "Barrierefreiheit: HTML-Sprachattribut (lang) folgt jetzt der gewählten Oberflächensprache statt fest auf Deutsch zu stehen" },
   { datum: "2026-08-06", titel: "Englische Oberfläche: letzter Rest gefunden und übersetzt (Firmenname-Platzhalter \"Unbenannt\" im Firmen-Umschalter)" },
   { datum: "2026-08-06", titel: "Englische Oberfläche: letzte zwei Reste übersetzt (Anleitungs-Akkordeon-Chrome, Avatar-Alt-Text)" },
   { datum: "2026-08-06", titel: "Englische Oberfläche komplett: letzte 3 Bereiche übersetzt (Nachrichten an/von Super-Admin, Kunden-Selbstregistrierung, API- & Webhook-Verwaltung) – damit ist die komplette Oberfläche zweisprachig" },
