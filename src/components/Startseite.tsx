@@ -96,6 +96,8 @@ function AktionsButton({ icon, label, sub, onClick, hervorgehoben, iconBg }: Akt
 }
 
 function SchnellNutzerAnlegen() {
+  const { sprache } = useSprache();
+  const txt = texte(sprache).startseite;
   const [firmen, setFirmen] = useState<{ id: string; name: string }[]>([]);
   const [firmaId, setFirmaId] = useState("");
   const [vorname, setVorname] = useState("");
@@ -115,7 +117,7 @@ function SchnellNutzerAnlegen() {
 
   async function anlegen() {
     if (!firmaId || !email.trim() || !vorname.trim()) {
-      setHinweis({ typ: "fehler", text: "Firma, Vorname und E-Mail sind Pflichtfelder." });
+      setHinweis({ typ: "fehler", text: txt.fehlerPflichtfelder });
       return;
     }
     setLaedt(true);
@@ -141,8 +143,9 @@ function SchnellNutzerAnlegen() {
         }
       );
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Unbekannter Fehler");
-      setHinweis({ typ: "ok", text: `${vorname} wurde als ${rolle === "kunde" ? "Kunde" : rolle === "techniker" ? "Techniker" : "Admin"} angelegt.` });
+      if (!res.ok) throw new Error(json.error ?? txt.fehlerUnbekannt);
+      const rolleLabel = rolle === "kunde" ? txt.rolleKunde : rolle === "techniker" ? txt.rolleTechniker : txt.rolleAdmin;
+      setHinweis({ typ: "ok", text: `${vorname} ${txt.erfolgAngelegtVor} ${rolleLabel}${txt.erfolgAngelegtNach}` });
       setVorname(""); setNachname(""); setEmail(""); setRolleState("kunde");
     } catch (err) {
       setHinweis({ typ: "fehler", text: String(err) });
@@ -153,26 +156,26 @@ function SchnellNutzerAnlegen() {
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-3">
       <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-        Nutzer schnell anlegen
+        {txt.schnellNutzerAnlegen}
       </p>
 
       <select value={firmaId} onChange={(e) => setFirmaId(e.target.value)}
         className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm text-[var(--text-strong)]">
-        <option value="">Firma wählen…</option>
+        <option value="">{txt.firmaWaehlen}</option>
         {firmen.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
       </select>
 
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-3">
         <input type="text" value={vorname} onChange={(e) => setVorname(e.target.value)}
-          placeholder="Vorname *"
+          placeholder={txt.vornamePflicht}
           className="rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
         <input type="text" value={nachname} onChange={(e) => setNachname(e.target.value)}
-          placeholder="Nachname"
+          placeholder={txt.nachname}
           className="rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
       </div>
 
       <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-        placeholder="E-Mail *"
+        placeholder={txt.emailPflicht}
         className="w-full rounded-lg border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm" />
 
       <div className="flex gap-2">
@@ -183,7 +186,7 @@ function SchnellNutzerAnlegen() {
                 ? "border-[var(--akzent)] bg-akzent/10 text-akzent"
                 : "border-[var(--border)] text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
             }`}>
-            {r === "kunde" ? "Kunde" : r === "techniker" ? "Techniker" : "Admin"}
+            {r === "kunde" ? txt.rolleKunde : r === "techniker" ? txt.rolleTechniker : txt.rolleAdmin}
           </button>
         ))}
       </div>
@@ -196,7 +199,7 @@ function SchnellNutzerAnlegen() {
 
       <button onClick={anlegen} disabled={laedt}
         className="w-full rounded-lg bg-akzent py-2 text-sm font-medium text-white disabled:opacity-50">
-        {laedt ? "Wird angelegt…" : "Nutzer anlegen"}
+        {laedt ? txt.wirdAngelegt : txt.nutzerAnlegen}
       </button>
     </div>
   );

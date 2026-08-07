@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-06", titel: "Englische Oberfläche: zwei tiefer versteckte Reste gefunden und übersetzt – \"Nutzer schnell anlegen\"-Kachel im Super-Admin-Dashboard und der MwSt.-Platzhalter im Kundenanlage-Formular" },
   { datum: "2026-08-06", titel: "Barrierefreiheit: HTML-Sprachattribut (lang) folgt jetzt der gewählten Oberflächensprache statt fest auf Deutsch zu stehen" },
   { datum: "2026-08-06", titel: "Englische Oberfläche: letzter Rest gefunden und übersetzt (Firmenname-Platzhalter \"Unbenannt\" im Firmen-Umschalter)" },
   { datum: "2026-08-06", titel: "Englische Oberfläche: letzte zwei Reste übersetzt (Anleitungs-Akkordeon-Chrome, Avatar-Alt-Text)" },

@@ -1073,7 +1073,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                     step="0.1"
                     value={neuerKundeMwstSatz}
                     onChange={(e) => setNeuerKundeMwstSatz(e.target.value)}
-                    placeholder="MwSt."
+                    placeholder={txt.mwstPlatzhalter}
                     className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-2 text-sm text-[var(--text-strong)]"
                   />
                   <span className="text-xs text-[var(--text-faint)]">%</span>

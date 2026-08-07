@@ -811,7 +811,7 @@ export default function KundenListe({
                         mwst_satz: e.target.value === "" ? null : Number(e.target.value),
                       })
                     }
-                    placeholder="MwSt."
+                    placeholder={txt.mwstPlatzhalter}
                     className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-2 text-sm text-[var(--text-strong)]"
                   />
                   <span className="text-xs text-[var(--text-faint)]">%</span>

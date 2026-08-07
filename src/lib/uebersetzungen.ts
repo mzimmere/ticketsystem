@@ -85,6 +85,20 @@ export interface Uebersetzung {
     ticketsWartenMehrzahl: string;
     aufAntwortVomKunden: string;
     zurTicketuebersicht: string;
+    schnellNutzerAnlegen: string;
+    firmaWaehlen: string;
+    vornamePflicht: string;
+    nachname: string;
+    emailPflicht: string;
+    rolleKunde: string;
+    rolleTechniker: string;
+    rolleAdmin: string;
+    wirdAngelegt: string;
+    nutzerAnlegen: string;
+    fehlerPflichtfelder: string;
+    fehlerUnbekannt: string;
+    erfolgAngelegtVor: string;
+    erfolgAngelegtNach: string;
   };
   neuesTicket: {
     titelUeberschrift: string;
@@ -440,6 +454,7 @@ export interface Uebersetzung {
     nrLabel: string;
     plzLabel: string;
     ortLabel: string;
+    mwstPlatzhalter: string;
     ustIdOptional: string;
     notizenOptional: string;
     kundeMitPasswort: string;
@@ -533,6 +548,7 @@ export interface Uebersetzung {
     nrPlatzhalter: string;
     plzPlatzhalter: string;
     ortPlatzhalter: string;
+    mwstPlatzhalter: string;
     mwstHinweis: string;
     ustIdLabel: string;
     ustIdPlatzhalter: string;
@@ -1388,6 +1404,20 @@ const de: Uebersetzung = {
     ticketsWartenMehrzahl: "Tickets warten",
     aufAntwortVomKunden: "auf eine Antwort vom Kunden",
     zurTicketuebersicht: "Zur Ticketübersicht →",
+    schnellNutzerAnlegen: "Nutzer schnell anlegen",
+    firmaWaehlen: "Firma wählen…",
+    vornamePflicht: "Vorname *",
+    nachname: "Nachname",
+    emailPflicht: "E-Mail *",
+    rolleKunde: "Kunde",
+    rolleTechniker: "Techniker",
+    rolleAdmin: "Admin",
+    wirdAngelegt: "Wird angelegt…",
+    nutzerAnlegen: "Nutzer anlegen",
+    fehlerPflichtfelder: "Firma, Vorname und E-Mail sind Pflichtfelder.",
+    fehlerUnbekannt: "Unbekannter Fehler",
+    erfolgAngelegtVor: "wurde als",
+    erfolgAngelegtNach: " angelegt.",
   },
   neuesTicket: {
     titelUeberschrift: "Neue Anfrage",
@@ -1743,6 +1773,7 @@ const de: Uebersetzung = {
     nrLabel: "Nr.",
     plzLabel: "PLZ",
     ortLabel: "Ort",
+    mwstPlatzhalter: "MwSt.",
     ustIdOptional: "USt-IdNr. (optional, z.B. ATU12345678)",
     notizenOptional: "Notizen / Besonderheiten (optional)",
     kundeMitPasswort: "Kunde mit Passwort anlegen",
@@ -1836,6 +1867,7 @@ const de: Uebersetzung = {
     nrPlatzhalter: "Nr.",
     plzPlatzhalter: "PLZ",
     ortPlatzhalter: "Ort",
+    mwstPlatzhalter: "MwSt.",
     mwstHinweis: "Vorschlagswert nach Land, Steuersatz bleibt frei änderbar (z.B. Kleinunternehmer, Reverse-Charge).",
     ustIdLabel: "USt-IdNr. (für steuerfreie innergemeinschaftliche Lieferung)",
     ustIdPlatzhalter: "z.B. ATU12345678",
@@ -2691,6 +2723,20 @@ const en: Uebersetzung = {
     ticketsWartenMehrzahl: "tickets are",
     aufAntwortVomKunden: "waiting for a reply from the customer",
     zurTicketuebersicht: "Go to ticket overview →",
+    schnellNutzerAnlegen: "Quickly create a user",
+    firmaWaehlen: "Select company…",
+    vornamePflicht: "First name *",
+    nachname: "Last name",
+    emailPflicht: "Email *",
+    rolleKunde: "Customer",
+    rolleTechniker: "Technician",
+    rolleAdmin: "Admin",
+    wirdAngelegt: "Creating…",
+    nutzerAnlegen: "Create user",
+    fehlerPflichtfelder: "Company, first name, and email are required.",
+    fehlerUnbekannt: "Unknown error",
+    erfolgAngelegtVor: "was created as",
+    erfolgAngelegtNach: ".",
   },
   neuesTicket: {
     titelUeberschrift: "New request",
@@ -3046,6 +3092,7 @@ const en: Uebersetzung = {
     nrLabel: "No.",
     plzLabel: "ZIP",
     ortLabel: "City",
+    mwstPlatzhalter: "VAT",
     ustIdOptional: "VAT ID (optional, e.g. ATU12345678)",
     notizenOptional: "Notes / special details (optional)",
     kundeMitPasswort: "Create customer with password",
@@ -3139,6 +3186,7 @@ const en: Uebersetzung = {
     nrPlatzhalter: "No.",
     plzPlatzhalter: "Zip code",
     ortPlatzhalter: "City",
+    mwstPlatzhalter: "VAT",
     mwstHinweis: "Suggested value based on country, tax rate remains freely adjustable (e.g. small business, reverse charge).",
     ustIdLabel: "VAT ID (for tax-exempt intra-Community supply)",
     ustIdPlatzhalter: "e.g. ATU12345678",
