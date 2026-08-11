@@ -688,7 +688,12 @@ export default function App() {
               >
                 ← Zurück zur Übersicht
               </button>
-              <TicketDetail ticketId={ausgewaehltesTicket} technikerId={profil.id} />
+              <TicketDetail
+                ticketId={ausgewaehltesTicket}
+                technikerId={profil.id}
+                rolle={profil.rolle}
+                onGeloescht={() => setAusgewaehltesTicket(null)}
+              />
             </>
           ) : (
             <TicketUebersicht

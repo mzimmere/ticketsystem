@@ -274,6 +274,10 @@ export interface Uebersetzung {
     anhangFehler: string;
     minutenErfasstSuffix: string;
     manuellSuffix: string;
+    loeschen: string;
+    loeschenTitle: string;
+    loeschenBestaetigen: string;
+    loeschenFehlgeschlagen: string;
   };
   abrechnung: {
     titel: string;
@@ -1593,6 +1597,10 @@ const de: Uebersetzung = {
     anhangFehler: "Mindestens ein Anhang konnte nicht gespeichert werden. Details siehe Browser-Konsole (F12).",
     minutenErfasstSuffix: "Min. erfasst",
     manuellSuffix: " (manuell)",
+    loeschen: "Löschen",
+    loeschenTitle: "Ticket löschen",
+    loeschenBestaetigen: "Ticket wirklich unwiderruflich löschen? Alle Nachrichten und Anhänge gehen dabei ebenfalls verloren.",
+    loeschenFehlgeschlagen: "Löschen fehlgeschlagen.",
   },
   abrechnung: {
     titel: "Abrechnung",
@@ -2912,6 +2920,10 @@ const en: Uebersetzung = {
     anhangFehler: "At least one attachment could not be saved. See browser console (F12) for details.",
     minutenErfasstSuffix: "min logged",
     manuellSuffix: " (manual)",
+    loeschen: "Delete",
+    loeschenTitle: "Delete ticket",
+    loeschenBestaetigen: "Really delete this ticket permanently? All messages and attachments will be lost as well.",
+    loeschenFehlgeschlagen: "Deletion failed.",
   },
   abrechnung: {
     titel: "Billing",

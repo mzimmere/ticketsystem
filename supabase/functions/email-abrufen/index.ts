@@ -8,14 +8,19 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 // selbst kein IMAP/SMTP - siehe api/send-mail.ts fuer den Hintergrund).
 //
 // Fuer jede neue Mail: zuerst gegen die Absender-Domain-Sperrliste der
-// Firma pruefen (email_sperrliste, Verwaltung -> Integrationen) - u.a.
+// Firma pruefen (email_sperrliste, Verwaltung -> Integrationen), danach
+// generisch (firmenunabhaengig) pruefen ob es sich um eine automatische
+// Unzustellbarkeits-/Bounce-Mail handelt (istBounceNachricht - Absender
+// postmaster@/mailer-daemon@ oder typischer Bounce-Betreff). Beides
 // wichtig gegen Bounce-Schleifen, wenn eine Kunden-Benachrichtigung an
-// eine ungueltige Adresse bounct und die Rueckmeldung im eigenen
-// Support-Postfach landet. Danach: Kunde per Absenderadresse finden oder
-// anlegen, bestehendes Ticket per "#<Nummer>" im Betreff finden oder
-// neues Ticket anlegen, Nachricht + Anhaenge speichern. Dedupe zusaetzlich
-// ueber den unique index auf ticket_nachrichten.email_message_id (Mails
-// koennten sonst durch Retries/Ueberschneidungen doppelt landen).
+// eine ungueltige Adresse bounct (oder - wie bei novadent.de am
+// 2026-08-11 - eine fremde Mail-Journal-Regel einen Loop ausloest) und
+// die Rueckmeldung im eigenen Support-Postfach landet. Danach: Kunde per
+// Absenderadresse finden oder anlegen, bestehendes Ticket per
+// "#<Nummer>" im Betreff finden oder neues Ticket anlegen, Nachricht +
+// Anhaenge speichern. Dedupe zusaetzlich ueber den unique index auf
+// ticket_nachrichten.email_message_id (Mails koennten sonst durch
+// Retries/Ueberschneidungen doppelt landen).
 //
 // Auth: verify_jwt=false, stattdessen Pruefung gegen dasselbe Shared
 // Secret aus Supabase Vault wie bei den anderen Cron-Functions.
@@ -138,6 +143,25 @@ async function gesperrteDomains(organisationId: string): Promise<Set<string>> {
   return new Set((data ?? []).map((d) => d.domain.toLowerCase()));
 }
 
+// Erkennt automatisch generierte Unzustellbarkeits-/Bounce-Mails (NDRs),
+// unabhaengig von der Absender-Domain - im Unterschied zur manuellen
+// Sperrliste (Abschnitt 67) greift das bei JEDER Firma sofort, ohne dass
+// erst eine konkrete Domain eingetragen werden muss. Faelle wie am
+// 2026-08-11 (novadent.de: eigene Exchange-Journal-Regel loest bei 1&1
+// einen "Mail loop suspected"-Fehler aus, novadents Exchange schickt die
+// NDR an unser Postfach zurueck) sind so schon beim allerersten Auftreten
+// abgedeckt, nicht erst nachdem manuell eine Domain gesperrt wurde.
+const BOUNCE_ABSENDER = /^(postmaster|mailer-daemon|mail-daemon|mailmaster)$/i;
+const BOUNCE_BETREFF =
+  /^(unzustellbar|undeliverable|undelivered|nichtzustellbar|mail delivery (failed|subsystem)|delivery status notification|returned mail|automatisch generierte nachricht)/i;
+
+function istBounceNachricht(fromEmail: string, subject: string): boolean {
+  const lokalerTeil = fromEmail.split("@")[0] ?? "";
+  if (BOUNCE_ABSENDER.test(lokalerTeil)) return true;
+  if (BOUNCE_BETREFF.test(subject.trim())) return true;
+  return false;
+}
+
 async function ticketFindenOderAnlegen(organisationId: string, kundeId: string, betreff: string): Promise<string> {
   const nummerMatch = betreff.match(/#(\d+)/);
   if (nummerMatch) {
@@ -201,6 +225,7 @@ Deno.serve(async (req) => {
       try {
         if (!mail.fromEmail) continue;
         if (sperrliste.has(domainAusAdresse(mail.fromEmail))) continue;
+        if (istBounceNachricht(mail.fromEmail, mail.subject)) continue;
 
         const kundeId = await kundeFindenOderAnlegen(org.id, mail.fromEmail, mail.fromName);
         if (!kundeId) continue;

@@ -2948,3 +2948,27 @@ create policy email_sperrliste_delete on email_sperrliste for delete
     or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
     or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
   );
+
+-- ============================================================
+-- 68. Tickets loeschen (nur org_admin/super_admin). Vorher gab es dafuer
+-- keine Moeglichkeit - Spam-/Bounce-Loop-Tickets (siehe Abschnitt 67)
+-- blieben dauerhaft stehen, wenn sie nicht bereits beim Import erkannt
+-- wurden. FK-Constraints, die "NO ACTION" auf tickets(id) hatten, wurden
+-- auf "SET NULL" umgestellt, damit das Loeschen nicht an vorhandenen
+-- Zeiteintraegen oder einem Ticket-Merge-Verweis scheitert
+-- (ticket_nachrichten und ticket_tags hatten bereits CASCADE).
+-- ============================================================
+alter table zeiteintraege drop constraint zeiteintraege_ticket_id_fkey;
+alter table zeiteintraege add constraint zeiteintraege_ticket_id_fkey
+  foreign key (ticket_id) references tickets(id) on delete set null;
+
+alter table tickets drop constraint tickets_merged_into_fkey;
+alter table tickets add constraint tickets_merged_into_fkey
+  foreign key (merged_into) references tickets(id) on delete set null;
+
+create policy tickets_delete on tickets for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );

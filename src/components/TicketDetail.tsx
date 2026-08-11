@@ -4,7 +4,7 @@ import { benachrichtigeKunde, benachrichtigeMitarbeiter } from "../lib/benachric
 import { sichererDateiname } from "../lib/dateiname";
 import { useUngespeichertWarnung } from "../lib/useUngespeichertWarnung";
 import { useSpracheingabe, spracheingabeUnterstuetzt } from "../lib/useSpracheingabe";
-import { Mic, MicOff, Copy, Check } from "lucide-react";
+import { Mic, MicOff, Copy, Check, Trash2 } from "lucide-react";
 import DateiAuswahl from "./DateiAuswahl";
 import Zeiterfassung from "./Zeiterfassung";
 import Avatar from "./Avatar";
@@ -96,15 +96,31 @@ const STATUS_OPTIONEN: Status[] = [
 interface TicketDetailProps {
   ticketId: string;
   technikerId: string;
+  rolle?: "super_admin" | "org_admin" | "techniker" | "kunde";
+  onGeloescht?: () => void;
 }
 
-export default function TicketDetail({ ticketId, technikerId }: TicketDetailProps) {
+export default function TicketDetail({ ticketId, technikerId, rolle, onGeloescht }: TicketDetailProps) {
   const { sprache } = useSprache();
   const txt = texte(sprache).ticketDetail;
   const statusTxt = texte(sprache).status;
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [kundeEmail, setKundeEmail] = useState<string | null>(null);
   const [kopiertFeld, setKopiertFeld] = useState<"telefon" | "email" | null>(null);
+  const [wirdGeloescht, setWirdGeloescht] = useState(false);
+  const darfLoeschen = rolle === "org_admin" || rolle === "super_admin";
+
+  async function ticketLoeschen() {
+    if (!confirm(txt.loeschenBestaetigen)) return;
+    setWirdGeloescht(true);
+    const { error } = await supabase.from("tickets").delete().eq("id", ticketId);
+    setWirdGeloescht(false);
+    if (error) {
+      alert(txt.loeschenFehlgeschlagen);
+      return;
+    }
+    onGeloescht?.();
+  }
 
   async function kopieren(text: string, feld: "telefon" | "email") {
     try {
@@ -508,6 +524,19 @@ export default function TicketDetail({ ticketId, technikerId }: TicketDetailProp
                 </option>
               ))}
             </select>
+          )}
+
+          {darfLoeschen && (
+            <button
+              type="button"
+              onClick={ticketLoeschen}
+              disabled={wirdGeloescht}
+              title={txt.loeschenTitle}
+              className="ml-auto flex items-center gap-1 rounded border border-red-200 px-2 py-1.5 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900/50 dark:hover:bg-red-900/10"
+            >
+              <Trash2 size={12} />
+              {txt.loeschen}
+            </button>
           )}
         </div>
 

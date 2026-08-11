@@ -8,6 +8,8 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-11", titel: "Neu: Tickets können jetzt von Org-Admins/Super-Admins gelöscht werden (z.B. versehentlich angelegte Spam-/Bounce-Tickets) – dafür gab es bisher keine Möglichkeit" },
+  { datum: "2026-08-11", titel: "Automatische Erkennung von Unzustellbarkeits-/Bounce-Mails (postmaster@/mailer-daemon@ oder typischer Bounce-Betreff) beim E-Mail-Import – verhindert Ticket-Spam-Schleifen firmenunabhängig, ohne dass erst eine Domain manuell gesperrt werden muss" },
   { datum: "2026-08-06", titel: "Englische Oberfläche: zwei tiefer versteckte Reste gefunden und übersetzt – \"Nutzer schnell anlegen\"-Kachel im Super-Admin-Dashboard und der MwSt.-Platzhalter im Kundenanlage-Formular" },
   { datum: "2026-08-06", titel: "Barrierefreiheit: HTML-Sprachattribut (lang) folgt jetzt der gewählten Oberflächensprache statt fest auf Deutsch zu stehen" },
   { datum: "2026-08-06", titel: "Englische Oberfläche: letzter Rest gefunden und übersetzt (Firmenname-Platzhalter \"Unbenannt\" im Firmen-Umschalter)" },
