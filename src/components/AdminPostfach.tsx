@@ -170,7 +170,7 @@ export default function AdminPostfach({ rolle, organisationId }: AdminPostfachPr
               {istSuperAdmin && n.organisation?.name && (
                 <p className="text-xs text-[var(--text-faint)]">{txt.von}: {n.organisation.name}</p>
               )}
-              <p className="text-sm text-[var(--text-soft)]">{n.inhalt}</p>
+              <p className="whitespace-pre-wrap text-sm text-[var(--text-soft)]">{n.inhalt}</p>
               <p className="font-mono text-xs text-[var(--text-faint)]">
                 {formatDatum(n.erstellt_am, sprache)}
               </p>
@@ -180,7 +180,7 @@ export default function AdminPostfach({ rolle, organisationId }: AdminPostfachPr
                   <p className="mb-1 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
                     {txt.antwort}
                   </p>
-                  <p className="text-sm text-[var(--text-strong)]">{n.antwort}</p>
+                  <p className="whitespace-pre-wrap text-sm text-[var(--text-strong)]">{n.antwort}</p>
                   {n.beantwortet_am && (
                     <p className="mt-1 font-mono text-xs text-[var(--text-faint)]">
                       {formatDatum(n.beantwortet_am, sprache)}

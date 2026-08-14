@@ -205,7 +205,7 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
             <p className="mb-1 text-right font-mono text-xs text-[var(--text-faint)]">
               {formatDatum(n.erstellt_am)}
             </p>
-            <p className="text-[var(--text-strong)]">{n.inhalt}</p>
+            <p className="whitespace-pre-wrap text-[var(--text-strong)]">{n.inhalt}</p>
             {n.anhaenge && n.anhaenge.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {n.anhaenge.map((a) => (

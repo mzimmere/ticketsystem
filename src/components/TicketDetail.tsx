@@ -654,7 +654,7 @@ export default function TicketDetail({ ticketId, technikerId, rolle, onGeloescht
                   <span className="uppercase tracking-wide">{n.quelle}</span>
                 </span>
               </div>
-              <p className="text-[var(--text-strong)]">{n.inhalt}</p>
+              <p className="whitespace-pre-wrap text-[var(--text-strong)]">{n.inhalt}</p>
               {n.anhaenge && n.anhaenge.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {n.anhaenge.map((a) => (

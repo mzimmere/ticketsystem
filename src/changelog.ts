@@ -8,6 +8,8 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-14", titel: "Bugfix: Zeilenumbrüche in Ticket-Nachrichten (Antworten, Notizen, Nachrichten ans Postfach) wurden bei der Anzeige zu einer einzigen Zeile zusammengefasst – bleiben jetzt wie eingegeben erhalten" },
+  { datum: "2026-08-14", titel: "Bugfix: Beim direkten Anlegen und Zuweisen eines Tickets (Verwaltung → Neues Ticket) wurde der zugewiesene Mitarbeiter nicht per Mail benachrichtigt – Benachrichtigung fehlte in diesem Ablauf komplett" },
   { datum: "2026-08-11", titel: "Neu: Tickets können jetzt von Org-Admins/Super-Admins gelöscht werden (z.B. versehentlich angelegte Spam-/Bounce-Tickets) – dafür gab es bisher keine Möglichkeit" },
   { datum: "2026-08-11", titel: "Automatische Erkennung von Unzustellbarkeits-/Bounce-Mails (postmaster@/mailer-daemon@ oder typischer Bounce-Betreff) beim E-Mail-Import – verhindert Ticket-Spam-Schleifen firmenunabhängig, ohne dass erst eine Domain manuell gesperrt werden muss" },
   { datum: "2026-08-06", titel: "Englische Oberfläche: zwei tiefer versteckte Reste gefunden und übersetzt – \"Nutzer schnell anlegen\"-Kachel im Super-Admin-Dashboard und der MwSt.-Platzhalter im Kundenanlage-Formular" },

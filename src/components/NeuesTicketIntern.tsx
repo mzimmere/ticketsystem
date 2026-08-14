@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { benachrichtigeMitarbeiter } from "../lib/benachrichtigungen";
 import { useUngespeichertWarnung } from "../lib/useUngespeichertWarnung";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
@@ -111,6 +112,10 @@ export default function NeuesTicketIntern({
           inhalt: beschreibung.trim(),
         });
         if (nachrichtFehler) throw nachrichtFehler;
+      }
+
+      if (zugewiesenAn) {
+        benachrichtigeMitarbeiter({ ticketId: ticket.id, ereignis: "zugewiesen" });
       }
 
       onErstellt(ticket.id);
