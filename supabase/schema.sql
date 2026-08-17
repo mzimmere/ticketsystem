@@ -3037,3 +3037,14 @@ create policy wartungsvertrag_stufen_delete on wartungsvertrag_stufen for delete
   );
 
 alter table profiles add column if not exists wartungsvertrag_stufe_id uuid references wartungsvertrag_stufen(id) on delete set null;
+
+-- ============================================================
+-- 70. Aktuell genutzte/maximal erlaubte Engine-Build-Nummer aus dem
+-- exocad "license_history"-Export (Spalten currUsedEngineBuild/
+-- maxAllowedEngineBuild). Bisher beim Import verworfen, jetzt als
+-- Softwarestand pro Lizenzvertrag gespeichert - Basis fuer Filterung nach
+-- Softwareversion und Update-Einladung (Verwaltung -> Dongles & Lizenzen,
+-- DongleLizenzVerwaltung.tsx: legt pro gefiltertem Kunden ein Ticket an).
+-- ============================================================
+alter table lizenz_vertraege add column if not exists aktuelle_engine_build text;
+alter table lizenz_vertraege add column if not exists max_erlaubte_engine_build text;

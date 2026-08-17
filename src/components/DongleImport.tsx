@@ -48,6 +48,8 @@ function felderLizenz(txt: ReturnType<typeof texte>["dongleImport"]): Feld[] {
     { schluessel: "status", label: txt.feldStatus, pflicht: false },
     { schluessel: "frei_zeitraum_ende", label: txt.feldFreierZeitraumBis, pflicht: false },
     { schluessel: "lizenz_attribut", label: txt.feldLizenzAttribut, pflicht: false },
+    { schluessel: "aktuelle_engine_build", label: txt.feldAktuelleBuild, pflicht: false },
+    { schluessel: "max_erlaubte_engine_build", label: txt.feldMaxErlaubteBuild, pflicht: false },
   ];
 }
 const ALIASE_LIZENZ: Record<string, string[]> = {
@@ -60,6 +62,8 @@ const ALIASE_LIZENZ: Record<string, string[]> = {
   status: ["status"],
   frei_zeitraum_ende: ["freeperiodenddate", "free_period_end_date"],
   lizenz_attribut: ["licenseattribute", "license_attribute"],
+  aktuelle_engine_build: ["currusedenginebuild", "curr_used_engine_build"],
+  max_erlaubte_engine_build: ["maxallowedenginebuild", "max_allowed_engine_build"],
 };
 
 function erkenneZiel(header: string[]): ImportZiel {
@@ -95,6 +99,8 @@ interface VorschauLizenzZeile {
   status: string | null;
   freiZeitraumEnde: string | null;
   lizenzAttribut: string | null;
+  aktuelleBuild: string | null;
+  maxErlaubteBuild: string | null;
 }
 
 interface VorschauLizenz {
@@ -263,6 +269,8 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
     const idxStatus = mapping.status ? spaltenIndex(mapping.status) : -1;
     const idxFreiEnde = mapping.frei_zeitraum_ende ? spaltenIndex(mapping.frei_zeitraum_ende) : -1;
     const idxAttribut = mapping.lizenz_attribut ? spaltenIndex(mapping.lizenz_attribut) : -1;
+    const idxBuild = mapping.aktuelle_engine_build ? spaltenIndex(mapping.aktuelle_engine_build) : -1;
+    const idxMaxBuild = mapping.max_erlaubte_engine_build ? spaltenIndex(mapping.max_erlaubte_engine_build) : -1;
 
     const zeilenKarte = new Map<string, VorschauLizenzZeile>();
     let uebersprungen = 0;
@@ -283,6 +291,8 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
         status: idxStatus >= 0 ? z[idxStatus]?.trim() || null : null,
         freiZeitraumEnde: idxFreiEnde >= 0 ? z[idxFreiEnde]?.trim() || null : null,
         lizenzAttribut: idxAttribut >= 0 ? z[idxAttribut]?.trim() || null : null,
+        aktuelleBuild: idxBuild >= 0 ? z[idxBuild]?.trim() || null : null,
+        maxErlaubteBuild: idxMaxBuild >= 0 ? z[idxMaxBuild]?.trim() || null : null,
       });
     }
 
@@ -409,6 +419,8 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
       status: z.status,
       frei_zeitraum_ende: z.freiZeitraumEnde,
       lizenz_attribut: z.lizenzAttribut,
+      aktuelle_engine_build: z.aktuelleBuild,
+      max_erlaubte_engine_build: z.maxErlaubteBuild,
     }));
 
     // Normaler Upsert (kein ignoreDuplicates): Vertragsdaten (Ablaufdatum,

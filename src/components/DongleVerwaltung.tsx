@@ -32,6 +32,7 @@ interface LizenzVertrag {
   vertrag_ende: string | null;
   status: string | null;
   dongle_id: string | null;
+  aktuelle_engine_build: string | null;
 }
 
 const WARTUNG_FARBE: Record<Wartungsvertrag, string> = {
@@ -109,7 +110,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
   async function ladeVertraege() {
     const { data } = await supabase
       .from("lizenz_vertraege")
-      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende, status, dongle_id")
+      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende, status, dongle_id, aktuelle_engine_build")
       .eq("kunde_id", kundeId)
       .order("vertrag_ende", { ascending: true, nullsFirst: false });
     setVertraege((data as LizenzVertrag[]) ?? []);
@@ -260,6 +261,11 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
           >
             <span className="font-mono text-xs text-[var(--text-strong)]">{d.seriennummer}</span>
             <span className="text-xs text-[var(--text-faint)]">· {d.software}</span>
+            {laufzeit?.aktuelle_engine_build && (
+              <span className="rounded bg-[var(--bg-muted)] px-1.5 py-0.5 font-mono text-[0.65rem] text-[var(--text-soft)]">
+                {txt.buildLabel} {laufzeit.aktuelle_engine_build}
+              </span>
+            )}
             {info && laufzeit?.vertrag_ende && (
               <span className="flex items-center gap-1.5 text-xs" style={{ color: info.farbe }}>
                 <span className="h-1.5 w-10 overflow-hidden rounded-full bg-[var(--bg-muted)]">
@@ -322,6 +328,11 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
                       <span className="text-[var(--text-strong)]">{laufzeit.produkt_name}</span>
                       <span className="font-mono text-xs text-[var(--text-faint)]">{laufzeit.lizenz_seriennummer}</span>
                       {laufzeit.status && <span className="text-xs text-[var(--text-faint)]">· {laufzeit.status}</span>}
+                      {laufzeit.aktuelle_engine_build && (
+                        <span className="rounded bg-[var(--bg-surface)] px-1.5 py-0.5 font-mono text-xs text-[var(--text-faint)]">
+                          {txt.buildLabel} {laufzeit.aktuelle_engine_build}
+                        </span>
+                      )}
                       <button
                         onClick={() => vertragLoesen(laufzeit.id)}
                         className="ml-auto shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"

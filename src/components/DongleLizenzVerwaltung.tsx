@@ -38,7 +38,10 @@ interface AlleVertrag {
   produkt_name: string;
   vertrag_ende: string | null;
   status: string | null;
+  kunde_id: string | null;
   kunde: { name: string | null } | null;
+  aktuelle_engine_build: string | null;
+  max_erlaubte_engine_build: string | null;
 }
 
 const ANZAHL_POOL_SICHTBAR = 5;
@@ -66,6 +69,9 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   const [alleVertraege, setAlleVertraege] = useState<AlleVertrag[]>([]);
   const [vertragUebersichtSuche, setVertragUebersichtSuche] = useState("");
   const [vertragUebersichtAlleAnzeigen, setVertragUebersichtAlleAnzeigen] = useState(false);
+  const [buildFilter, setBuildFilter] = useState("");
+  const [einladungLaedt, setEinladungLaedt] = useState(false);
+  const [einladungHinweis, setEinladungHinweis] = useState<string | null>(null);
 
   useEffect(() => {
     alleNeuLaden();
@@ -149,7 +155,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   async function ladeAlleVertraege() {
     const { data } = await supabase
       .from("lizenz_vertraege")
-      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende, status, kunde:kunde_id(name)")
+      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende, status, kunde_id, kunde:kunde_id(name), aktuelle_engine_build, max_erlaubte_engine_build")
       .eq("organisation_id", organisationId)
       .order("lizenz_seriennummer");
     setAlleVertraege((data as unknown as AlleVertrag[]) ?? []);
@@ -187,7 +193,12 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
       ? dongleUebersichtGefiltert
       : dongleUebersichtGefiltert.slice(0, ANZAHL_UEBERSICHT_SICHTBAR);
 
+  const verfuegbareBuilds = Array.from(
+    new Set(alleVertraege.map((v) => v.aktuelle_engine_build).filter((b): b is string => !!b)),
+  ).sort();
+
   const vertragUebersichtGefiltert = alleVertraege.filter((v) => {
+    if (buildFilter && v.aktuelle_engine_build !== buildFilter) return false;
     const begriff = vertragUebersichtSuche.trim().toLowerCase();
     if (!begriff) return true;
     return (
@@ -201,6 +212,56 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
     vertragUebersichtSuchtAktiv || vertragUebersichtAlleAnzeigen
       ? vertragUebersichtGefiltert
       : vertragUebersichtGefiltert.slice(0, ANZAHL_UEBERSICHT_SICHTBAR);
+
+  const einladbareKunden = Array.from(
+    new Set(vertragUebersichtGefiltert.filter((v) => v.kunde_id).map((v) => v.kunde_id!)),
+  );
+
+  async function updateEinladungenVersenden() {
+    if (einladbareKunden.length === 0) return;
+    if (!confirm(txt.updateEinladenConfirmTemplate.replace("{n}", String(einladbareKunden.length)))) return;
+    setEinladungLaedt(true);
+    setEinladungHinweis(null);
+    const { data: authData } = await supabase.auth.getUser();
+    let angelegt = 0;
+    for (const kundeId of einladbareKunden) {
+      const betroffeneVertraege = vertragUebersichtGefiltert.filter((v) => v.kunde_id === kundeId);
+      const seriennummern = betroffeneVertraege.map((v) => v.lizenz_seriennummer).join(", ");
+      const build = betroffeneVertraege[0]?.aktuelle_engine_build ?? buildFilter;
+      const maxBuild = betroffeneVertraege[0]?.max_erlaubte_engine_build;
+
+      const { data: ticket, error: ticketFehler } = await supabase
+        .from("tickets")
+        .insert({
+          organisation_id: organisationId,
+          kunde_id: kundeId,
+          titel: txt.updateTicketTitelTemplate.replace("{build}", build ?? ""),
+          quelle: "manuell",
+        })
+        .select("id")
+        .single();
+      if (ticketFehler || !ticket) continue;
+
+      const nachrichtText = maxBuild && maxBuild !== build
+        ? txt.updateTicketNachrichtMitMaxTemplate
+            .replace("{seriennummern}", seriennummern)
+            .replace("{build}", build ?? "")
+            .replace("{maxBuild}", maxBuild)
+        : txt.updateTicketNachrichtTemplate
+            .replace("{seriennummern}", seriennummern)
+            .replace("{build}", build ?? "");
+
+      await supabase.from("ticket_nachrichten").insert({
+        ticket_id: ticket.id,
+        autor_id: authData.user?.id,
+        quelle: "portal",
+        inhalt: nachrichtText,
+      });
+      angelegt++;
+    }
+    setEinladungLaedt(false);
+    setEinladungHinweis(txt.updateEinladenErgebnisTemplate.replace("{n}", String(angelegt)));
+  }
 
   return (
     <div className="space-y-4">
@@ -382,6 +443,34 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
           placeholder={txt.sucheSeriennummerProduktKunde}
           className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-1.5 text-sm text-[var(--text-strong)]"
         />
+        {verfuegbareBuilds.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={buildFilter}
+              onChange={(e) => setBuildFilter(e.target.value)}
+              className="rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2 py-1.5 text-xs text-[var(--text-strong)]"
+            >
+              <option value="">{txt.buildFilterAlle}</option>
+              {verfuegbareBuilds.map((b) => (
+                <option key={b} value={b}>
+                  {txt.buildFilterLabelTemplate.replace("{build}", b)}
+                </option>
+              ))}
+            </select>
+            {buildFilter && einladbareKunden.length > 0 && (
+              <button
+                onClick={updateEinladungenVersenden}
+                disabled={einladungLaedt}
+                className="rounded bg-akzent px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+              >
+                {einladungLaedt
+                  ? txt.updateEinladenLaedt
+                  : txt.updateEinladenButtonTemplate.replace("{n}", String(einladbareKunden.length))}
+              </button>
+            )}
+          </div>
+        )}
+        {einladungHinweis && <p className="text-xs text-[var(--text-soft)]">{einladungHinweis}</p>}
         {vertragUebersichtGefiltert.length === 0 ? (
           <p className="text-xs text-[var(--text-faint)]">{txt.keineTreffer}</p>
         ) : (
@@ -394,6 +483,11 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                 <span className="font-mono text-xs text-[var(--text-strong)]">{v.lizenz_seriennummer}</span>
                 <span className="text-xs text-[var(--text-faint)]">· {v.produkt_name}</span>
                 {v.status && <span className="text-xs text-[var(--text-faint)]">({v.status})</span>}
+                {v.aktuelle_engine_build && (
+                  <span className="rounded bg-[var(--bg-surface)] px-1.5 py-0.5 font-mono text-[0.65rem] text-[var(--text-soft)]">
+                    {txt.buildLabel} {v.aktuelle_engine_build}
+                  </span>
+                )}
                 {v.vertrag_ende && (
                   <span className="text-xs text-[var(--text-faint)]">
                     {txt.bisPrefix} {new Date(v.vertrag_ende).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")}

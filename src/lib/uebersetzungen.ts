@@ -866,6 +866,16 @@ export interface Uebersetzung {
     nichtZugeordnet: string;
     alleLizenzvertraegeTemplate: string;
     sucheSeriennummerProduktKunde: string;
+    buildLabel: string;
+    buildFilterAlle: string;
+    buildFilterLabelTemplate: string;
+    updateEinladenButtonTemplate: string;
+    updateEinladenLaedt: string;
+    updateEinladenConfirmTemplate: string;
+    updateEinladenErgebnisTemplate: string;
+    updateTicketTitelTemplate: string;
+    updateTicketNachrichtTemplate: string;
+    updateTicketNachrichtMitMaxTemplate: string;
   };
   dongleVerwaltung: {
     wartungAktiv: string;
@@ -882,6 +892,7 @@ export interface Uebersetzung {
     filterPlatzhalterTemplate: string;
     keineTrefferFilter: string;
     bisPrefix: string;
+    buildLabel: string;
     importHinweis: string;
     wartungsvertragLabel: string;
     freiminutenLabel: string;
@@ -923,6 +934,8 @@ export interface Uebersetzung {
     feldStatus: string;
     feldFreierZeitraumBis: string;
     feldLizenzAttribut: string;
+    feldAktuelleBuild: string;
+    feldMaxErlaubteBuild: string;
     dateiLeerFehler: string;
     spalteZuordnenFehlerTemplate: string;
     importFehlgeschlagen: string;
@@ -2207,6 +2220,16 @@ const de: Uebersetzung = {
     nichtZugeordnet: "Nicht zugeordnet",
     alleLizenzvertraegeTemplate: "Alle Lizenzverträge ({n})",
     sucheSeriennummerProduktKunde: "Suche nach Seriennummer, Produkt oder Kunde…",
+    buildLabel: "Build",
+    buildFilterAlle: "Alle Softwarestände",
+    buildFilterLabelTemplate: "Build {build}",
+    updateEinladenButtonTemplate: "{n} Kunden zum Update einladen",
+    updateEinladenLaedt: "Wird angelegt…",
+    updateEinladenConfirmTemplate: "Für {n} Kunden je ein Ticket mit Update-Einladung anlegen?",
+    updateEinladenErgebnisTemplate: "{n} Tickets angelegt.",
+    updateTicketTitelTemplate: "Software-Update empfohlen (Build {build})",
+    updateTicketNachrichtTemplate: "Eure Lizenz(en) {seriennummern} laufen aktuell auf Build {build}. Wir empfehlen ein Update auf die aktuelle Version – meldet euch gerne, wenn ihr dabei Unterstützung braucht.",
+    updateTicketNachrichtMitMaxTemplate: "Eure Lizenz(en) {seriennummern} laufen aktuell auf Build {build}, erlaubt ist bereits Build {maxBuild}. Wir empfehlen ein Update – meldet euch gerne, wenn ihr dabei Unterstützung braucht.",
   },
   dongleVerwaltung: {
     wartungAktiv: "Wartungsvertrag aktiv",
@@ -2223,6 +2246,7 @@ const de: Uebersetzung = {
     filterPlatzhalterTemplate: "Nach Seriennummer filtern… ({n} Dongles)",
     keineTrefferFilter: "Keine Treffer für diesen Filter.",
     bisPrefix: "bis",
+    buildLabel: "Build",
     importHinweis: "Import-Hinweis:",
     wartungsvertragLabel: "Wartungsvertrag",
     freiminutenLabel: "Ticket-Freiminuten/Monat",
@@ -2264,6 +2288,8 @@ const de: Uebersetzung = {
     feldStatus: "Status",
     feldFreierZeitraumBis: "Freier Zeitraum bis",
     feldLizenzAttribut: "Lizenz-Attribut",
+    feldAktuelleBuild: "Aktuelle Engine-Build",
+    feldMaxErlaubteBuild: "Maximal erlaubte Engine-Build",
     dateiLeerFehler: "Datei konnte nicht gelesen werden oder ist leer.",
     spalteZuordnenFehlerTemplate: 'Bitte Spalte für "{label}" zuordnen.',
     importFehlgeschlagen: "Import fehlgeschlagen (Details in der Browser-Konsole).",
@@ -3548,6 +3574,16 @@ const en: Uebersetzung = {
     nichtZugeordnet: "Not assigned",
     alleLizenzvertraegeTemplate: "All license contracts ({n})",
     sucheSeriennummerProduktKunde: "Search by serial number, product, or customer…",
+    buildLabel: "Build",
+    buildFilterAlle: "All software versions",
+    buildFilterLabelTemplate: "Build {build}",
+    updateEinladenButtonTemplate: "Invite {n} customers to update",
+    updateEinladenLaedt: "Creating…",
+    updateEinladenErgebnisTemplate: "{n} tickets created.",
+    updateEinladenConfirmTemplate: "Create one ticket each for {n} customers with an update invitation?",
+    updateTicketTitelTemplate: "Software update recommended (build {build})",
+    updateTicketNachrichtTemplate: "Your license(s) {seriennummern} are currently on build {build}. We recommend updating to the current version – feel free to reach out if you'd like support with that.",
+    updateTicketNachrichtMitMaxTemplate: "Your license(s) {seriennummern} are currently on build {build}, while build {maxBuild} is already allowed. We recommend updating – feel free to reach out if you'd like support with that.",
   },
   dongleVerwaltung: {
     wartungAktiv: "Maintenance contract active",
@@ -3564,6 +3600,7 @@ const en: Uebersetzung = {
     filterPlatzhalterTemplate: "Filter by serial number… ({n} dongles)",
     keineTrefferFilter: "No matches for this filter.",
     bisPrefix: "until",
+    buildLabel: "Build",
     importHinweis: "Import note:",
     wartungsvertragLabel: "Maintenance contract",
     freiminutenLabel: "Free ticket minutes/month",
@@ -3605,6 +3642,8 @@ const en: Uebersetzung = {
     feldStatus: "Status",
     feldFreierZeitraumBis: "Free period until",
     feldLizenzAttribut: "License attribute",
+    feldAktuelleBuild: "Current engine build",
+    feldMaxErlaubteBuild: "Max allowed engine build",
     dateiLeerFehler: "File could not be read or is empty.",
     spalteZuordnenFehlerTemplate: 'Please map a column for "{label}".',
     importFehlgeschlagen: "Import failed (details in the browser console).",
