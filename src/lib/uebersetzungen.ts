@@ -303,6 +303,8 @@ export interface Uebersetzung {
     kunde: string;
     unbenannt: string;
     ustIdLabel: string;
+    wartungsvertragHinweisVor: string;
+    wartungsvertragHinweisMin: string;
     keineZeit: string;
     spalteDatum: string;
     spalteBeschreibung: string;
@@ -1642,6 +1644,8 @@ const de: Uebersetzung = {
     kunde: "Kunde",
     unbenannt: "Unbenannt",
     ustIdLabel: "USt-IdNr.:",
+    wartungsvertragHinweisVor: "Hinweis: Davon",
+    wartungsvertragHinweisMin: "Minuten unter Wartungsvertrag",
     keineZeit: "Keine erfasste Zeit in diesem Monat.",
     spalteDatum: "Datum",
     spalteBeschreibung: "Beschreibung",
@@ -2981,6 +2985,8 @@ const en: Uebersetzung = {
     kunde: "Customer",
     unbenannt: "Unnamed",
     ustIdLabel: "VAT ID:",
+    wartungsvertragHinweisVor: "Note: Of that,",
+    wartungsvertragHinweisMin: "minutes are covered under a maintenance contract",
     keineZeit: "No time tracked this month.",
     spalteDatum: "Date",
     spalteBeschreibung: "Description",

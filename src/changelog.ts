@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-17", titel: "Wartungsvertrag-Status jetzt auch in der Abrechnung sichtbar: Label in der Monatsübersicht sowie Hinweis auf der Einzelrechnung, wie viele Minuten unter den Vertrag fallen (rein informativ, ändert den Rechnungsbetrag nicht)" },
   { datum: "2026-08-17", titel: "Neu: Wartungsvertrag beim Kunden hinterlegbar – entweder Minutenabrechnung (Standard) oder eine von bis zu 3 selbst definierten Vertragsstufen (Verwaltung → Werkzeuge). Wird direkt im Ticket als Label angezeigt, damit sofort klar ist, wie der Kunde für den Service bezahlt" },
   { datum: "2026-08-14", titel: "Bugfix: Zeilenumbrüche in Ticket-Nachrichten (Antworten, Notizen, Nachrichten ans Postfach) wurden bei der Anzeige zu einer einzigen Zeile zusammengefasst – bleiben jetzt wie eingegeben erhalten" },
   { datum: "2026-08-14", titel: "Bugfix: Beim direkten Anlegen und Zuweisen eines Tickets (Verwaltung → Neues Ticket) wurde der zugewiesene Mitarbeiter nicht per Mail benachrichtigt – Benachrichtigung fehlte in diesem Ablauf komplett" },

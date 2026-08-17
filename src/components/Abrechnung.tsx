@@ -12,6 +12,7 @@ interface AbrechnungsZeile {
   netto_cent: number;
   mwst_cent: number;
   brutto_cent: number;
+  wartungsvertrag_stufe: { name: string; farbe: string } | null;
 }
 
 interface AbrechnungProps {
@@ -60,14 +61,14 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
     const [{ data: zeitDaten }, { data: anpassungDaten }, { data: dongleDaten }] = await Promise.all([
       supabase
         .from("zeiteintraege")
-        .select("kunde_id, minuten, preis_pro_minute_cent_snapshot, kunde:kunde_id(name, mwst_satz), ticket:ticket_id(dongle_id)")
+        .select("kunde_id, minuten, preis_pro_minute_cent_snapshot, kunde:kunde_id(name, mwst_satz, wartungsvertrag_stufe:wartungsvertrag_stufe_id(name, farbe)), ticket:ticket_id(dongle_id)")
         .eq("organisation_id", organisationId)
         .gte("erstellt_am", monatsErster)
         .lt("erstellt_am", naechsterMonatErster)
         .not("minuten", "is", null),
       supabase
         .from("rechnungsanpassungen")
-        .select("kunde_id, betrag_cent, kunde:kunde_id(name, mwst_satz)")
+        .select("kunde_id, betrag_cent, kunde:kunde_id(name, mwst_satz, wartungsvertrag_stufe:wartungsvertrag_stufe_id(name, farbe))")
         .eq("organisation_id", organisationId)
         .eq("monat", monatsErster),
       supabase
@@ -82,19 +83,20 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
       mwst_satz: number;
       gesamt_minuten: number;
       netto_cent: number;
+      wartungsvertrag_stufe: { name: string; farbe: string } | null;
     };
     const karte = new Map<string, Roh>();
 
     const eintraegeJeKunde = new Map<string, ZeitEintragMitDongle[]>();
-    const namenJeKunde = new Map<string, { name: string | null; mwst_satz: number | null }>();
+    const namenJeKunde = new Map<string, { name: string | null; mwst_satz: number | null; wartungsvertrag_stufe: { name: string; farbe: string } | null }>();
     for (const z of (zeitDaten ?? []) as unknown as Array<{
       kunde_id: string;
       minuten: number;
       preis_pro_minute_cent_snapshot: number;
-      kunde: { name: string | null; mwst_satz: number | null } | null;
+      kunde: { name: string | null; mwst_satz: number | null; wartungsvertrag_stufe: { name: string; farbe: string } | null } | null;
       ticket: { dongle_id: string | null } | null;
     }>) {
-      namenJeKunde.set(z.kunde_id, z.kunde ?? { name: null, mwst_satz: null });
+      namenJeKunde.set(z.kunde_id, z.kunde ?? { name: null, mwst_satz: null, wartungsvertrag_stufe: null });
       const liste = eintraegeJeKunde.get(z.kunde_id) ?? [];
       liste.push({
         minuten: z.minuten,
@@ -122,13 +124,14 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
         mwst_satz: kundeInfo?.mwst_satz ?? 0,
         gesamt_minuten: abzug.gesamtMinuten,
         netto_cent: abzug.zwischensummeNachAbzug,
+        wartungsvertrag_stufe: kundeInfo?.wartungsvertrag_stufe ?? null,
       });
     }
 
     for (const a of (anpassungDaten ?? []) as unknown as Array<{
       kunde_id: string;
       betrag_cent: number;
-      kunde: { name: string | null; mwst_satz: number | null } | null;
+      kunde: { name: string | null; mwst_satz: number | null; wartungsvertrag_stufe: { name: string; farbe: string } | null } | null;
     }>) {
       const bestehend = karte.get(a.kunde_id);
       if (bestehend) {
@@ -140,6 +143,7 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
           mwst_satz: a.kunde?.mwst_satz ?? 0,
           gesamt_minuten: 0,
           netto_cent: a.betrag_cent,
+          wartungsvertrag_stufe: a.kunde?.wartungsvertrag_stufe ?? null,
         });
       }
     }
@@ -252,7 +256,17 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
                 onClick={() => onKundeAuswahl(z.kunde_id, jahr, monat)}
                 className="flex w-full items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-surface)] px-4 py-2.5 text-left text-sm last:border-b-0 hover:bg-[var(--bg-muted)]"
               >
-                <span className="flex-1 text-[var(--text-strong)]">{z.kunde_name}</span>
+                <span className="flex flex-1 items-center gap-1.5 text-[var(--text-strong)]">
+                  {z.kunde_name}
+                  {z.wartungsvertrag_stufe && (
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[0.65rem] font-medium text-white"
+                      style={{ background: z.wartungsvertrag_stufe.farbe }}
+                    >
+                      {z.wartungsvertrag_stufe.name}
+                    </span>
+                  )}
+                </span>
                 <span className="w-16 text-right font-mono text-[var(--text-soft)]">
                   {z.gesamt_minuten}
                 </span>

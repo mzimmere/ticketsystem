@@ -40,6 +40,7 @@ interface Kunde {
   mwst_satz: number | null;
   ust_id: string | null;
   telefonnummer: string | null;
+  wartungsvertrag_stufe: { name: string; farbe: string } | null;
 }
 
 interface Organisation {
@@ -117,7 +118,7 @@ export default function RechnungDetail({
       await Promise.all([
         supabase
           .from("profiles")
-          .select("name, strasse, hausnummer, plz, ort, land, mwst_satz, ust_id, telefonnummer")
+          .select("name, strasse, hausnummer, plz, ort, land, mwst_satz, ust_id, telefonnummer, wartungsvertrag_stufe:wartungsvertrag_stufe_id(name, farbe)")
           .eq("id", kundeId)
           .single(),
         supabase
@@ -147,7 +148,7 @@ export default function RechnungDetail({
           .eq("organisation_id", organisationId),
       ]);
 
-    setKunde(kundeDaten);
+    setKunde(kundeDaten as unknown as Kunde | null);
     setOrganisation(orgDaten);
     const zeitRoh = (zeitDaten as unknown as Array<{
       id: string;
@@ -312,7 +313,22 @@ export default function RechnungDetail({
 
         <div className="mb-6">
           <p className="text-xs uppercase tracking-wide text-[var(--text-faint)]">{txt.kunde}</p>
-          <p className="text-sm font-medium text-[var(--text-strong)]">{kunde?.name ?? txt.unbenannt}</p>
+          <p className="flex items-center gap-1.5 text-sm font-medium text-[var(--text-strong)]">
+            {kunde?.name ?? txt.unbenannt}
+            {kunde?.wartungsvertrag_stufe && (
+              <span
+                className="rounded-full px-2 py-0.5 text-[0.65rem] font-medium text-white"
+                style={{ background: kunde.wartungsvertrag_stufe.farbe }}
+              >
+                {kunde.wartungsvertrag_stufe.name}
+              </span>
+            )}
+          </p>
+          {kunde?.wartungsvertrag_stufe && gesamtMinuten > 0 && (
+            <p className="mt-0.5 text-xs text-[var(--text-faint)]">
+              {txt.wartungsvertragHinweisVor} {gesamtMinuten} {txt.wartungsvertragHinweisMin} {kunde.wartungsvertrag_stufe.name}.
+            </p>
+          )}
           {(kunde?.strasse || kunde?.ort) && (
             <p className="text-sm text-[var(--text-soft)]">
               {[kunde?.strasse, kunde?.hausnummer].filter(Boolean).join(" ")}
