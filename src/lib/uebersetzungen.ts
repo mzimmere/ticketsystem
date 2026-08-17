@@ -557,6 +557,8 @@ export interface Uebersetzung {
     ustIdLabel: string;
     ustIdPlatzhalter: string;
     ustIdHinweis: string;
+    wartungsvertragLabel: string;
+    wartungsvertragHinweis: string;
     notizenLabel: string;
     notizenPlatzhalter: string;
     individuellerPreisLabel: string;
@@ -1324,6 +1326,20 @@ export interface Uebersetzung {
   allgemein: {
     unbenannt: string;
   };
+  wartungsvertragStufenVerwaltung: {
+    titel: string;
+    beschreibung: string;
+    nameErforderlich: string;
+    maxErreicht: string;
+    fehler: string;
+    loeschenConfirm: string;
+    nochKeineStufen: string;
+    neueStufePlatzhalter: string;
+  };
+  wartungsvertrag: {
+    minutenpreis: string;
+    label: string;
+  };
 }
 
 const de: Uebersetzung = {
@@ -1880,6 +1896,8 @@ const de: Uebersetzung = {
     ustIdLabel: "USt-IdNr. (für steuerfreie innergemeinschaftliche Lieferung)",
     ustIdPlatzhalter: "z.B. ATU12345678",
     ustIdHinweis: 'Wenn ausgefüllt, weist die Rechnung automatisch 0% MwSt. aus und vermerkt "Steuerfreie innergemeinschaftliche Lieferung / Tax-free intra-Community supply".',
+    wartungsvertragLabel: "Wartungsvertrag",
+    wartungsvertragHinweis: "Legt fest, ob der Kunde den Minutenpreis zahlt oder einen Wartungsvertrag hat – wird direkt im Ticket angezeigt. Stufen werden unter Verwaltung → Werkzeuge festgelegt.",
     notizenLabel: "Notizen / Besonderheiten",
     notizenPlatzhalter: "z.B. bevorzugte Erreichbarkeit, technische Besonderheiten…",
     individuellerPreisLabel: "Individueller Minutenpreis (Verlauf, optional)",
@@ -2647,6 +2665,20 @@ const de: Uebersetzung = {
   allgemein: {
     unbenannt: "Unbenannt",
   },
+  wartungsvertragStufenVerwaltung: {
+    titel: "Wartungsvertrag-Stufen",
+    beschreibung: "Bis zu 3 eigene Vertragsstufen definieren – zusätzlich zur normalen Minutenabrechnung.",
+    nameErforderlich: "Name ist erforderlich.",
+    maxErreicht: "Maximal 3 Stufen möglich.",
+    fehler: "Anlegen fehlgeschlagen.",
+    loeschenConfirm: "Diese Stufe wirklich löschen? Kunden mit dieser Stufe werden auf Minutenabrechnung zurückgesetzt.",
+    nochKeineStufen: "Noch keine Stufen angelegt.",
+    neueStufePlatzhalter: "Neue Stufe (z.B. Premium)",
+  },
+  wartungsvertrag: {
+    minutenpreis: "Minutenabrechnung",
+    label: "Wartungsvertrag",
+  },
 };
 
 const en: Uebersetzung = {
@@ -3203,6 +3235,8 @@ const en: Uebersetzung = {
     ustIdLabel: "VAT ID (for tax-exempt intra-Community supply)",
     ustIdPlatzhalter: "e.g. ATU12345678",
     ustIdHinweis: 'If filled in, the invoice automatically shows 0% VAT and notes "Steuerfreie innergemeinschaftliche Lieferung / Tax-free intra-Community supply".',
+    wartungsvertragLabel: "Maintenance contract",
+    wartungsvertragHinweis: "Defines whether the customer pays per-minute or has a maintenance contract – shown directly in the ticket. Tiers are set under Management → Tools.",
     notizenLabel: "Notes / special notes",
     notizenPlatzhalter: "e.g. preferred availability, technical specifics…",
     individuellerPreisLabel: "Individual per-minute price (history, optional)",
@@ -3969,6 +4003,20 @@ const en: Uebersetzung = {
   },
   allgemein: {
     unbenannt: "Unnamed",
+  },
+  wartungsvertragStufenVerwaltung: {
+    titel: "Maintenance contract tiers",
+    beschreibung: "Define up to 3 of your own contract tiers – in addition to regular per-minute billing.",
+    nameErforderlich: "Name is required.",
+    maxErreicht: "Maximum of 3 tiers reached.",
+    fehler: "Creation failed.",
+    loeschenConfirm: "Really delete this tier? Customers on this tier will be reset to per-minute billing.",
+    nochKeineStufen: "No tiers created yet.",
+    neueStufePlatzhalter: "New tier (e.g. Premium)",
+  },
+  wartungsvertrag: {
+    minutenpreis: "Per-minute billing",
+    label: "Maintenance contract",
   },
 };
 

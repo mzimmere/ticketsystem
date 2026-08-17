@@ -2972,3 +2972,68 @@ create policy tickets_delete on tickets for delete
     or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
     or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
   );
+
+-- ============================================================
+-- 69. Kundenseitiger Wartungsvertrag-Status (nicht zu verwechseln mit dem
+-- bereits bestehenden wartungsvertrag-Feld auf kunden_dongles, das sich
+-- auf einzelne Lizenzen/Dongles bezieht). Zwei Modelle:
+-- 1. Kunde zahlt den Minutenpreis (Standard, bereits im Vorfeld
+--    abgeklaert) -> profiles.wartungsvertrag_stufe_id ist NULL.
+-- 2. Kunde hat einen Wartungsvertrag in einer von der Firma selbst
+--    definierten Ausbaustufe (max. 3 pro Firma, per Trigger erzwungen)
+--    -> FK auf wartungsvertrag_stufen. Wird sofort im Ticket angezeigt,
+--    damit klar ist, ob/wie der Kunde fuer den Service bezahlt.
+-- ============================================================
+create table wartungsvertrag_stufen (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  name text not null,
+  farbe text not null default '#3b82f6',
+  reihenfolge integer not null default 0,
+  erstellt_am timestamptz default now()
+);
+create index idx_wartungsvertrag_stufen_org on wartungsvertrag_stufen(organisation_id);
+alter table wartungsvertrag_stufen enable row level security;
+
+create or replace function wartungsvertrag_stufen_limit() returns trigger as $$
+begin
+  if (select count(*) from wartungsvertrag_stufen where organisation_id = new.organisation_id) >= 3 then
+    raise exception 'Maximal 3 Wartungsvertrag-Stufen pro Firma erlaubt';
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+create trigger wartungsvertrag_stufen_limit_check
+  before insert on wartungsvertrag_stufen
+  for each row execute function wartungsvertrag_stufen_limit();
+
+create policy wartungsvertrag_stufen_select on wartungsvertrag_stufen for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy wartungsvertrag_stufen_insert on wartungsvertrag_stufen for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+create policy wartungsvertrag_stufen_update on wartungsvertrag_stufen for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+create policy wartungsvertrag_stufen_delete on wartungsvertrag_stufen for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+alter table profiles add column if not exists wartungsvertrag_stufe_id uuid references wartungsvertrag_stufen(id) on delete set null;

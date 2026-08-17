@@ -44,7 +44,11 @@ interface Ticket {
   reaktion_faellig_am: string | null;
   loesung_faellig_am: string | null;
   erste_antwort_am: string | null;
-  kunde: { name: string | null; telefonnummer: string | null } | null;
+  kunde: {
+    name: string | null;
+    telefonnummer: string | null;
+    wartungsvertrag_stufe: { name: string; farbe: string } | null;
+  } | null;
 }
 
 interface Anhang {
@@ -275,7 +279,7 @@ export default function TicketDetail({ ticketId, technikerId, rolle, onGeloescht
   async function ladeTicket() {
     const { data } = await supabase
       .from("tickets")
-      .select("*, kunde:kunde_id(name, telefonnummer)")
+      .select("*, kunde:kunde_id(name, telefonnummer, wartungsvertrag_stufe:wartungsvertrag_stufe_id(name, farbe))")
       .eq("id", ticketId)
       .single();
     const t = data as unknown as Ticket | null;
@@ -476,6 +480,18 @@ export default function TicketDetail({ ticketId, technikerId, rolle, onGeloescht
 
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={ticket.status} />
+          {ticket.kunde?.wartungsvertrag_stufe ? (
+            <span
+              className="rounded-full px-2.5 py-1 text-xs font-medium text-white"
+              style={{ background: ticket.kunde.wartungsvertrag_stufe.farbe }}
+            >
+              {ticket.kunde.wartungsvertrag_stufe.name}
+            </span>
+          ) : (
+            <span className="rounded-full border border-[var(--border-input)] px-2.5 py-1 text-xs font-medium text-[var(--text-soft)]">
+              {texte(sprache).wartungsvertrag.minutenpreis}
+            </span>
+          )}
           <select
             value={ticket.status}
             onChange={(e) => statusAendern(e.target.value as Status)}

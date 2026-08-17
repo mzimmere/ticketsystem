@@ -11,6 +11,7 @@ import ZugangsdatenBox from "./ZugangsdatenBox";
 import VorlagenVerwaltung from "./VorlagenVerwaltung";
 import MakroVerwaltung from "./MakroVerwaltung";
 import TagVerwaltung from "./TagVerwaltung";
+import WartungsvertragStufenVerwaltung from "./WartungsvertragStufenVerwaltung";
 import SlaVerwaltung from "./SlaVerwaltung";
 import LizenzVerlaengerungen from "./LizenzVerlaengerungen";
 import HardwareKategorienVerwaltung from "./HardwareKategorienVerwaltung";
@@ -1207,6 +1208,20 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
               { nr: 1, titel: "Kategorien anlegen", beschreibung: "Z.B. Intraoral-Scanner, Desktop-Scanner, Exocad-Datenbank (lokal/SQL-Server), Fräsmaschine, Drucker. Ganz nach eurem Bedarf." },
               { nr: 2, titel: "Beim Kunden oder im Ticket erfassen", beschreibung: "In der Kundenliste und direkt im Ticket lässt sich pro Kategorie ein Wert per Klick aus bereits verwendeten Vorschlägen übernehmen oder frei eintippen." },
               { nr: 3, titel: "Mehrfachwerte möglich", beschreibung: "Ein Kunde kann z.B. zwei Fräsmaschinen unterschiedlicher Hersteller haben – einfach beide als eigene Chips hinzufügen." },
+            ]}
+          />
+        </div>
+      )}
+
+      {aktiveTab === "werkzeuge" && organisationId && (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
+          <WartungsvertragStufenVerwaltung organisationId={organisationId} />
+          <KonfigurationsHilfe
+            titel="Wartungsvertrag-Stufen einrichten"
+            schritte={[
+              { nr: 1, titel: "Stufen anlegen", beschreibung: "Bis zu 3 Ausbaustufen definieren (z.B. 'Basis', 'Premium', 'Enterprise') – ganz nach eurem eigenen Vertragsmodell." },
+              { nr: 2, titel: "Kunden zuordnen", beschreibung: "In der Kundenliste bei jedem Kunden festlegen: zahlt er den Minutenpreis (Standard) oder hat er eine der Vertragsstufen?" },
+              { nr: 3, titel: "Im Ticket sichtbar", beschreibung: "Der Status wird direkt im Ticket als farbiges Label angezeigt, damit sofort klar ist, ob und wie der Kunde für den Service bezahlt." },
             ]}
           />
         </div>

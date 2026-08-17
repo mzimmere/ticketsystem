@@ -28,6 +28,13 @@ interface Kunde {
   notizen: string | null;
   deaktiviert: boolean;
   zusammengefuehrt_in: string | null;
+  wartungsvertrag_stufe_id: string | null;
+}
+
+interface WartungsvertragStufe {
+  id: string;
+  name: string;
+  farbe: string;
 }
 
 interface ZusatzEmail {
@@ -117,6 +124,7 @@ export default function KundenListe({
   const [alleKundenAnzeigen, setAlleKundenAnzeigen] = useState(false);
   const [hardwareKategorien, setHardwareKategorien] = useState<HardwareKategorie[]>([]);
   const [hardwareEintraege, setHardwareEintraege] = useState<HardwareEintrag[]>([]);
+  const [wartungsvertragStufen, setWartungsvertragStufen] = useState<WartungsvertragStufe[]>([]);
   const [filterKategorieId, setFilterKategorieId] = useState("");
   const [filterWert, setFilterWert] = useState("");
   const [hinweis, setHinweis] = useState<string | null>(null);
@@ -147,6 +155,15 @@ export default function KundenListe({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organisationId, refreshKey]);
 
+  useEffect(() => {
+    supabase
+      .from("wartungsvertrag_stufen")
+      .select("id, name, farbe")
+      .eq("organisation_id", organisationId)
+      .order("reihenfolge")
+      .then(({ data }) => setWartungsvertragStufen((data as WartungsvertragStufe[]) ?? []));
+  }, [organisationId]);
+
   async function ladeHardwareFilter() {
     const [{ data: katDaten }, { data: eintragDaten }] = await Promise.all([
       supabase.from("hardware_kategorien").select("id, name").eq("organisation_id", organisationId).order("name"),
@@ -160,7 +177,7 @@ export default function KundenListe({
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "id, name, vorname, nachname, avatar_url, telefonnummer, strasse, hausnummer, plz, ort, land, mwst_satz, ust_id, notizen, deaktiviert, zusammengefuehrt_in",
+        "id, name, vorname, nachname, avatar_url, telefonnummer, strasse, hausnummer, plz, ort, land, mwst_satz, ust_id, notizen, deaktiviert, zusammengefuehrt_in, wartungsvertrag_stufe_id",
       )
       .eq("organisation_id", organisationId)
       .eq("rolle", "kunde")
@@ -382,6 +399,7 @@ export default function KundenListe({
         ust_id: entwurf.ust_id?.trim() || null,
         mwst_satz: entwurf.mwst_satz ?? null,
         notizen: entwurf.notizen?.trim() || null,
+        wartungsvertrag_stufe_id: entwurf.wartungsvertrag_stufe_id || null,
       })
       .eq("id", offenId);
     setLaedt(false);
@@ -834,6 +852,27 @@ export default function KundenListe({
                 />
                 <p className="mt-1 text-xs text-[var(--text-faint)]">
                   {txt.ustIdHinweis}
+                </p>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+                  {txt.wartungsvertragLabel}
+                </label>
+                <select
+                  value={entwurf.wartungsvertrag_stufe_id ?? ""}
+                  onChange={(e) => setEntwurf({ ...entwurf, wartungsvertrag_stufe_id: e.target.value || null })}
+                  className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                >
+                  <option value="">{texte(sprache).wartungsvertrag.minutenpreis}</option>
+                  {wartungsvertragStufen.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-[var(--text-faint)]">
+                  {txt.wartungsvertragHinweis}
                 </p>
               </div>
 
