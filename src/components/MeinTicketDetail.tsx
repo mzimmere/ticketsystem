@@ -171,12 +171,26 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
 
   async function ticketSchliessen() {
     setLaedt(true);
+    const alterStatus = status;
     const { error } = await supabase
       .from("tickets")
       .update({ status: "geschlossen" })
       .eq("id", ticketId);
     setLaedt(false);
-    if (!error) setStatus("geschlossen");
+    if (!error) {
+      setStatus("geschlossen");
+      if (alterStatus) {
+        const { data: authData } = await supabase.auth.getUser();
+        const statusTxt = texte(sprache).status;
+        await supabase.from("ticket_nachrichten").insert({
+          ticket_id: ticketId,
+          autor_id: authData.user?.id,
+          quelle: "status_aenderung",
+          inhalt: `${statusTxt[alterStatus]} → ${statusTxt.geschlossen}`,
+        });
+        ladeNachrichten();
+      }
+    }
   }
 
   return (
@@ -201,6 +215,18 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
 
       <div className="max-h-96 space-y-3 overflow-y-auto">
         {nachrichten.map((n) => (
+          n.quelle === "status_aenderung" ? (
+            <div
+              key={n.id}
+              className="flex items-center gap-2 rounded-md border border-dashed border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-1.5 text-xs"
+            >
+              <span>🔄</span>
+              <span className="text-[var(--text-soft)]">{n.inhalt}</span>
+              <span className="ml-auto font-mono text-[var(--text-faint)]">
+                {formatDatum(n.erstellt_am)}
+              </span>
+            </div>
+          ) : (
           <div key={n.id} className="rounded-md border border-[var(--border)] bg-[var(--bg-muted)] p-3 text-sm">
             <p className="mb-1 text-right font-mono text-xs text-[var(--text-faint)]">
               {formatDatum(n.erstellt_am)}
@@ -220,6 +246,7 @@ export default function MeinTicketDetail({ ticketId }: MeinTicketDetailProps) {
               </div>
             )}
           </div>
+          )
         ))}
       </div>
 

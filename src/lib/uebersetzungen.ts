@@ -258,6 +258,7 @@ export interface Uebersetzung {
     betrachterWarnungSuffix: string;
     verlauf: string;
     technikerFallback: string;
+    statusGeaendertPrefix: string;
     kundeWhatsapp: string;
     kunde: string;
     anhangFallback: string;
@@ -1612,6 +1613,7 @@ const de: Uebersetzung = {
     betrachterWarnungSuffix: "gerade auch auf dieses Ticket.",
     verlauf: "Verlauf",
     technikerFallback: "Techniker",
+    statusGeaendertPrefix: "änderte den Status:",
     kundeWhatsapp: "Kunde (WhatsApp)",
     kunde: "Kunde",
     anhangFallback: "Anhang",
@@ -2966,6 +2968,7 @@ const en: Uebersetzung = {
     betrachterWarnungSuffix: "also currently viewing this ticket.",
     verlauf: "History",
     technikerFallback: "Technician",
+    statusGeaendertPrefix: "changed the status:",
     kundeWhatsapp: "Customer (WhatsApp)",
     kunde: "Customer",
     anhangFallback: "Attachment",

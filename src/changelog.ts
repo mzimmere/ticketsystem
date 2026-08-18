@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-17", titel: "Statuswechsel jetzt im Ticketverlauf sichtbar: eigener Eintrag mit altem/neuem Status, wer ihn geändert hat und wann – gilt für manuelle Änderungen (Mitarbeiter & Kunde) sowie automatisches Schließen nach Inaktivität" },
   { datum: "2026-08-17", titel: "Neu: Software-Version (Engine-Build) pro Lizenz aus dem exocad-Import sichtbar – bei den Dongles des Kunden sowie in Verwaltung → Dongles & Lizenzen. Dort nach Softwarestand filterbar, mit Button um allen gefilterten Kunden per Ticket ein Update-Angebot zu schicken" },
   { datum: "2026-08-17", titel: "Wartungsvertrag-Status jetzt auch in der Abrechnung sichtbar: Label in der Monatsübersicht sowie Hinweis auf der Einzelrechnung, wie viele Minuten unter den Vertrag fallen (rein informativ, ändert den Rechnungsbetrag nicht)" },
   { datum: "2026-08-17", titel: "Neu: Wartungsvertrag beim Kunden hinterlegbar – entweder Minutenabrechnung (Standard) oder eine von bis zu 3 selbst definierten Vertragsstufen (Verwaltung → Werkzeuge). Wird direkt im Ticket als Label angezeigt, damit sofort klar ist, wie der Kunde für den Service bezahlt" },

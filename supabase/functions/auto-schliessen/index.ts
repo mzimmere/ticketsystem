@@ -70,11 +70,13 @@ Deno.serve(async (req) => {
       continue;
     }
 
-    // Automatische System-Nachricht pro Ticket
+    // Automatische Status-Nachricht pro Ticket - quelle "status_aenderung"
+    // statt "intern", damit sie (wie manuelle Statuswechsel) im Verlauf als
+    // eigener Eintrag erscheint und auch fuer den Kunden sichtbar ist.
     const nachrichten = ticketIds.map((id) => ({
       ticket_id: id,
-      quelle: "intern",
-      inhalt: `Ticket automatisch geschlossen – keine Antwort des Kunden seit ${firma.auto_schliessen_tage} Tagen.`,
+      quelle: "status_aenderung",
+      inhalt: `Wartet auf Kunde → Geschlossen (automatisch, keine Antwort seit ${firma.auto_schliessen_tage} Tagen)`,
     }));
 
     await supabase.from("ticket_nachrichten").insert(nachrichten);

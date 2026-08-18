@@ -340,8 +340,18 @@ export default function TicketDetail({ ticketId, technikerId, rolle, onGeloescht
   }
 
   async function statusAendern(status: Status) {
+    const alterStatus = ticket?.status;
     await supabase.from("tickets").update({ status }).eq("id", ticketId);
     setTicket((t) => (t ? { ...t, status } : t));
+    if (alterStatus && alterStatus !== status) {
+      await supabase.from("ticket_nachrichten").insert({
+        ticket_id: ticketId,
+        autor_id: technikerId,
+        quelle: "status_aenderung",
+        inhalt: `${statusTxt[alterStatus]} → ${statusTxt[status]}`,
+      });
+      ladeNachrichten();
+    }
     benachrichtigeKunde({ ticketId, ereignis: "status_geaendert", neuerStatus: status });
     benachrichtigeMitarbeiter({ ticketId, ereignis: "status_geaendert", neuerStatus: status });
   }
@@ -643,6 +653,21 @@ export default function TicketDetail({ ticketId, technikerId, rolle, onGeloescht
                 <span className="font-medium text-amber-800 dark:text-amber-300">
                   {n.autor?.name ?? txt.technikerFallback}
                 </span>
+                <span className="text-[var(--text-soft)]">{n.inhalt}</span>
+                <span className="ml-auto font-mono text-[var(--text-faint)]">
+                  {formatDatum(n.erstellt_am, sprache)}
+                </span>
+              </div>
+            ) : n.quelle === "status_aenderung" ? (
+              <div
+                key={n.id}
+                className="flex items-center gap-2 rounded-md border border-dashed border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-1.5 text-xs"
+              >
+                <span>🔄</span>
+                <span className="font-medium text-[var(--text-soft)]">
+                  {n.autor?.name ?? txt.technikerFallback}
+                </span>
+                <span className="text-[var(--text-faint)]">{txt.statusGeaendertPrefix}</span>
                 <span className="text-[var(--text-soft)]">{n.inhalt}</span>
                 <span className="ml-auto font-mono text-[var(--text-faint)]">
                   {formatDatum(n.erstellt_am, sprache)}
