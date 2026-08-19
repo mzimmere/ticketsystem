@@ -51,6 +51,46 @@ Deno.serve(async (req: Request) => {
     const erlaubteRollen = ["techniker", "org_admin"];
     const gewaehlteRolle = erlaubteRollen.includes(rolle) ? rolle : "techniker";
 
+    // Vorab pruefen statt nur auf den generischen "already registered"-
+    // Fehler von auth.admin.createUser()/generateLink() zu reagieren -
+    // damit koennen wir dem Admin sagen WO die Mail schon existiert (Rolle
+    // + Firma), statt nur "existiert schon" ohne jeden Kontext.
+    const { data: bestehenderUserId } = await supabaseAdmin.rpc("get_user_id_by_email", { p_email: email });
+    if (bestehenderUserId) {
+      const { data: profil } = await supabaseAdmin
+        .from("profiles")
+        .select("rolle, organisation_id, name")
+        .eq("id", bestehenderUserId)
+        .maybeSingle();
+
+      let firmenName: string | null = null;
+      if (profil?.organisation_id) {
+        const { data: org } = await supabaseAdmin
+          .from("organisationen")
+          .select("name")
+          .eq("id", profil.organisation_id)
+          .maybeSingle();
+        firmenName = org?.name ?? null;
+      }
+
+      const rollenLabel: Record<string, string> = {
+        kunde: "Kunde",
+        techniker: "Mitarbeiter",
+        org_admin: "Org-Admin",
+        super_admin: "Super-Admin",
+      };
+      const rolleText = profil ? (rollenLabel[profil.rolle] ?? profil.rolle) : "Account ohne Profil";
+      const wer = profil?.name ? `${profil.name} – ` : "";
+      const firmaText = firmenName ? ` bei "${firmenName}"` : "";
+
+      return new Response(
+        JSON.stringify({
+          error: `Für diese E-Mail existiert bereits ein Account: ${wer}${rolleText}${firmaText}. Nutze stattdessen "Bestehenden Nutzer zuweisen", oder lösche den bestehenden Account zuerst, falls er nicht mehr gebraucht wird.`,
+        }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const metadaten = {
       organisation_id: organisationId,
       rolle: gewaehlteRolle,
