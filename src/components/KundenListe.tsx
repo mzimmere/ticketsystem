@@ -16,6 +16,7 @@ interface Kunde {
   name: string | null;
   vorname: string | null;
   nachname: string | null;
+  firmenname: string | null;
   avatar_url: string | null;
   telefonnummer: string | null;
   strasse: string | null;
@@ -177,7 +178,7 @@ export default function KundenListe({
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "id, name, vorname, nachname, avatar_url, telefonnummer, strasse, hausnummer, plz, ort, land, mwst_satz, ust_id, notizen, deaktiviert, zusammengefuehrt_in, wartungsvertrag_stufe_id",
+        "id, name, vorname, nachname, firmenname, avatar_url, telefonnummer, strasse, hausnummer, plz, ort, land, mwst_satz, ust_id, notizen, deaktiviert, zusammengefuehrt_in, wartungsvertrag_stufe_id",
       )
       .eq("organisation_id", organisationId)
       .eq("rolle", "kunde")
@@ -390,6 +391,7 @@ export default function KundenListe({
       .update({
         vorname: entwurf.vorname?.trim() || null,
         nachname: entwurf.nachname?.trim() || null,
+        firmenname: entwurf.firmenname?.trim() || null,
         telefonnummer: entwurf.telefonnummer?.trim() || null,
         strasse: entwurf.strasse?.trim() || null,
         hausnummer: entwurf.hausnummer?.trim() || null,
@@ -532,7 +534,7 @@ export default function KundenListe({
   const gefilterteKunden = kunden.filter((k) => {
     const begriff = suchbegriff.trim().toLowerCase();
     if (begriff) {
-      const treffer = [k.name, k.telefonnummer, k.strasse, k.hausnummer, k.plz, k.ort]
+      const treffer = [k.name, k.firmenname, k.telefonnummer, k.strasse, k.hausnummer, k.plz, k.ort]
         .filter(Boolean)
         .some((feld) => feld!.toLowerCase().includes(begriff));
       if (!treffer) return false;
@@ -636,7 +638,12 @@ export default function KundenListe({
                 />
               )}
             </span>
-            <span className="text-sm text-[var(--text-strong)]">{k.name ?? txt.unbenannt}</span>
+            <span className="flex min-w-0 flex-col">
+              <span className="text-sm text-[var(--text-strong)]">{k.name ?? txt.unbenannt}</span>
+              {k.firmenname && (
+                <span className="truncate text-xs text-[var(--text-faint)]">{k.firmenname}</span>
+              )}
+            </span>
             <span className="ml-auto truncate text-xs text-[var(--text-faint)]">
               {k.telefonnummer ?? "—"}
             </span>
@@ -680,6 +687,18 @@ export default function KundenListe({
                     className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+                  {txt.firmenname}
+                </label>
+                <input
+                  type="text"
+                  value={entwurf.firmenname ?? ""}
+                  onChange={(e) => setEntwurf({ ...entwurf, firmenname: e.target.value })}
+                  className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                />
               </div>
 
               <div>

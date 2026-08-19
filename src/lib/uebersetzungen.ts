@@ -445,6 +445,7 @@ export interface Uebersetzung {
     emailEinladungPlatzhalter: string;
     vornamePlatzhalter: string;
     nachnamePlatzhalter: string;
+    kundeFirmennamePlatzhalter: string;
     telefonOptionalPlatzhalter: string;
     passwortOptionalPlatzhalter: string;
     generieren: string;
@@ -538,6 +539,7 @@ export interface Uebersetzung {
     profilbildAendern: string;
     vorname: string;
     nachname: string;
+    firmenname: string;
     emailLoginLabel: string;
     neueEmailPlatzhalter: string;
     emailAendern: string;
@@ -1800,6 +1802,7 @@ const de: Uebersetzung = {
     emailEinladungPlatzhalter: "E-Mail (für die Einladung)",
     vornamePlatzhalter: "Vorname",
     nachnamePlatzhalter: "Nachname",
+    kundeFirmennamePlatzhalter: "Firmenname (optional)",
     telefonOptionalPlatzhalter: "Telefon (optional)",
     passwortOptionalPlatzhalter: "Passwort (optional, statt Mail-Einladung)",
     generieren: "Generieren",
@@ -1893,6 +1896,7 @@ const de: Uebersetzung = {
     profilbildAendern: "Profilbild ändern",
     vorname: "Vorname",
     nachname: "Nachname",
+    firmenname: "Firmenname (optional)",
     emailLoginLabel: "E-Mail (Login)",
     neueEmailPlatzhalter: "neue@email.de",
     emailAendern: "Ändern",
@@ -3155,6 +3159,7 @@ const en: Uebersetzung = {
     emailEinladungPlatzhalter: "Email (for the invitation)",
     vornamePlatzhalter: "First name",
     nachnamePlatzhalter: "Last name",
+    kundeFirmennamePlatzhalter: "Company name (optional)",
     telefonOptionalPlatzhalter: "Phone (optional)",
     passwortOptionalPlatzhalter: "Password (optional, instead of email invite)",
     generieren: "Generate",
@@ -3248,6 +3253,7 @@ const en: Uebersetzung = {
     profilbildAendern: "Change profile picture",
     vorname: "First name",
     nachname: "Last name",
+    firmenname: "Company name (optional)",
     emailLoginLabel: "Email (login)",
     neueEmailPlatzhalter: "new@email.com",
     emailAendern: "Change",

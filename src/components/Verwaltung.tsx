@@ -98,6 +98,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
   const [neuerKundeEmail, setNeuerKundeEmail] = useState("");
   const [neuerKundeVorname, setNeuerKundeVorname] = useState("");
   const [neuerKundeNachname, setNeuerKundeNachname] = useState("");
+  const [neuerKundeFirmenname, setNeuerKundeFirmenname] = useState("");
   const [neuerKundeTelefon, setNeuerKundeTelefon] = useState("");
   const [neuerKundeStrasse, setNeuerKundeStrasse] = useState("");
   const [neuerKundeHausnummer, setNeuerKundeHausnummer] = useState("");
@@ -325,11 +326,12 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
 
       if (
         json.userId &&
-        (neuerKundeTelefon || neuerKundeStrasse || neuerKundeHausnummer || neuerKundePlz || neuerKundeOrt || neuerKundeNotizen)
+        (neuerKundeTelefon || neuerKundeStrasse || neuerKundeHausnummer || neuerKundePlz || neuerKundeOrt || neuerKundeNotizen || neuerKundeFirmenname)
       ) {
         await supabase
           .from("profiles")
           .update({
+            firmenname: neuerKundeFirmenname.trim() || null,
             telefonnummer: neuerKundeTelefon.trim() || null,
             strasse: neuerKundeStrasse.trim() || null,
             hausnummer: neuerKundeHausnummer.trim() || null,
@@ -355,6 +357,7 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
       setNeuerKundeEmail("");
       setNeuerKundeVorname("");
       setNeuerKundeNachname("");
+      setNeuerKundeFirmenname("");
       setNeuerKundeTelefon("");
       setNeuerKundeStrasse("");
       setNeuerKundeHausnummer("");
@@ -1011,6 +1014,13 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
                   className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
                 />
               </div>
+              <input
+                type="text"
+                value={neuerKundeFirmenname}
+                onChange={(e) => setNeuerKundeFirmenname(e.target.value)}
+                placeholder={txt.kundeFirmennamePlatzhalter}
+                className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+              />
               <input
                 type="text"
                 value={neuerKundeTelefon}

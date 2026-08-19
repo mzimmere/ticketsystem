@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-19", titel: "Neu: Optionaler Firmenname pro Kunde – zusätzlich zu Vor-/Nachname erfassbar (beim Anlegen und in der Kundenverwaltung), wird in der Kundenliste angezeigt und ist mitsuchbar" },
   { datum: "2026-08-19", titel: "Fehlermeldung beim Anlegen von Kunden/Mitarbeitern erweitert: zeigt jetzt an, wo eine bereits existierende E-Mail-Adresse registriert ist (Name, Rolle, Firma) statt nur \"Account existiert schon\"" },
   { datum: "2026-08-17", titel: "Statuswechsel jetzt im Ticketverlauf sichtbar: eigener Eintrag mit altem/neuem Status, wer ihn geändert hat und wann – gilt für manuelle Änderungen (Mitarbeiter & Kunde) sowie automatisches Schließen nach Inaktivität" },
   { datum: "2026-08-17", titel: "Neu: Software-Version (Engine-Build) pro Lizenz aus dem exocad-Import sichtbar – bei den Dongles des Kunden sowie in Verwaltung → Dongles & Lizenzen. Dort nach Softwarestand filterbar, mit Button um allen gefilterten Kunden per Ticket ein Update-Angebot zu schicken" },

@@ -3047,4 +3047,11 @@ alter table profiles add column if not exists wartungsvertrag_stufe_id uuid refe
 -- DongleLizenzVerwaltung.tsx: legt pro gefiltertem Kunden ein Ticket an).
 -- ============================================================
 alter table lizenz_vertraege add column if not exists aktuelle_engine_build text;
+
+-- ============================================================
+-- 71. Optionaler Firmenname pro Kunde (profiles), zusaetzlich zu
+-- vorname/nachname - fuer Firmenkunden, bei denen der Ansprechpartner
+-- nicht der Firmenname ist. Rein informativ, keine eigene Tabelle noetig.
+-- ============================================================
+alter table profiles add column if not exists firmenname text;
 alter table lizenz_vertraege add column if not exists max_erlaubte_engine_build text;
