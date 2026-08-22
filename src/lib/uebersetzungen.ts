@@ -252,6 +252,9 @@ export interface Uebersetzung {
     reaktionLabel: string;
     ueberfaellig: string;
     loesungLabel: string;
+    mailGesendetPrefix: string;
+    mailGeoeffnetPrefix: string;
+    mailNochNichtGeoeffnet: string;
     tagButton: string;
     betrachterSchautEinzahl: string;
     betrachterSchautMehrzahl: string;
@@ -1611,6 +1614,9 @@ const de: Uebersetzung = {
     reaktionLabel: "Reaktion:",
     ueberfaellig: "ÜBERFÄLLIG",
     loesungLabel: "Lösung:",
+    mailGesendetPrefix: "Mail gesendet",
+    mailGeoeffnetPrefix: "gelesen",
+    mailNochNichtGeoeffnet: "noch nicht geöffnet",
     tagButton: "+ Tag",
     betrachterSchautEinzahl: "schaut",
     betrachterSchautMehrzahl: "schauen",
@@ -2970,6 +2976,9 @@ const en: Uebersetzung = {
     reaktionLabel: "Response:",
     ueberfaellig: "OVERDUE",
     loesungLabel: "Resolution:",
+    mailGesendetPrefix: "Email sent",
+    mailGeoeffnetPrefix: "read",
+    mailNochNichtGeoeffnet: "not opened yet",
     tagButton: "+ Tag",
     betrachterSchautEinzahl: "is",
     betrachterSchautMehrzahl: "are",

@@ -54,7 +54,7 @@ async function smtpKonfigLaden(organisationId: string) {
   return { host, port: Number(Deno.env.get("SMTP_PORT") ?? "587"), user, passwort, absender };
 }
 
-async function mailSenden(organisationId: string, empfaenger: string, betreff: string, text: string, absenderName: string) {
+async function mailSenden(organisationId: string, empfaenger: string, betreff: string, text: string, absenderName: string, html?: string) {
   const konfig = await smtpKonfigLaden(organisationId);
   if (!konfig) return { ok: false, grund: "smtp_nicht_konfiguriert" };
 
@@ -67,7 +67,7 @@ async function mailSenden(organisationId: string, empfaenger: string, betreff: s
     headers: { "Content-Type": "application/json", "X-Relay-Secret": relaySecret },
     body: JSON.stringify({
       host: konfig.host, port: konfig.port, user: konfig.user, password: konfig.passwort,
-      from: `${absenderName} <${konfig.absender}>`, to: empfaenger, subject: betreff, text,
+      from: `${absenderName} <${konfig.absender}>`, to: empfaenger, subject: betreff, text, html,
     }),
   });
   const relayJson = await relayRes.json().catch(() => ({}));
@@ -76,6 +76,25 @@ async function mailSenden(organisationId: string, empfaenger: string, betreff: s
     return { ok: false, grund: "relay_fehler" };
   }
   return { ok: true };
+}
+
+// Erzeugt einen zufaelligen, nicht erratbaren Token pro versendeter Mail -
+// dient als "Zugriffsschluessel" fuer den oeffentlichen Pixel-Endpunkt
+// (mail-pixel), der ohne Login auskommen muss.
+function pixelToken(): string {
+  return crypto.randomUUID().replace(/-/g, "");
+}
+
+// Baut aus dem Klartext eine minimale HTML-Version (Zeilenumbrueche als
+// <br>, HTML-Sonderzeichen escaped) und haengt das unsichtbare Tracking-
+// Pixel an - nur fuer Mails, bei denen eine Lesebestaetigung dokumentiert
+// werden soll (aktuell nur Lizenz-Update-Einladungen).
+function htmlMitPixel(text: string, pixelUrl: string): string {
+  const escaped = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return `<div style="white-space:pre-wrap;font-family:sans-serif;">${escaped.replace(/\n/g, "<br>")}</div><img src="${pixelUrl}" width="1" height="1" style="display:none" alt="">`;
 }
 
 const corsHeaders = {
@@ -184,7 +203,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { ticketId, ereignis, neuerStatus } = await req.json();
+    const { ticketId, ereignis, neuerStatus, betreff: betreffOverride, text: textOverride } = await req.json();
     if (!ticketId) {
       return new Response(JSON.stringify({ error: "ticketId ist erforderlich" }), {
         status: 400,
@@ -223,6 +242,34 @@ Deno.serve(async (req: Request) => {
 
     const seitenUrl = Deno.env.get("PUBLIC_SITE_URL") ?? "";
     const firmenName = organisation?.name ?? "Ticketsystem";
+
+    // Lizenz-Update-Einladung: Betreff/Text kommen bereits fertig befuellt
+    // vom Aufrufer (DongleLizenzVerwaltung.tsx hat die editierbare Vorlage
+    // dort schon aufgeloest, siehe EmailTexteVerwaltung.tsx "Sonstige Texte")
+    // - hier nur noch versenden + per Pixel dokumentieren, WANN die Mail
+    // geoeffnet wurde (siehe mail-pixel Edge Function, schema.sql Abschnitt 72).
+    if (ereignis === "lizenz_update") {
+      const betreff = String(betreffOverride ?? "");
+      const text = String(textOverride ?? "");
+      const token = pixelToken();
+      await supabaseAdmin.from("email_sendungen").insert({
+        organisation_id: ticket.organisation_id,
+        ticket_id: ticketId,
+        kunde_id: ticket.kunde_id,
+        vorlage_key: "lizenz_update_einladung",
+        empfaenger: kundeEmail,
+        betreff,
+        pixel_token: token,
+      });
+      const pixelUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/mail-pixel?t=${token}`;
+      const html = htmlMitPixel(text, pixelUrl);
+
+      const ergebnis = await mailSenden(ticket.organisation_id, kundeEmail, betreff, text, firmenName, html);
+      return new Response(JSON.stringify(ergebnis), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     let vorlageKey: string;
     const werte: Record<string, string> = {

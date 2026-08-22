@@ -51,6 +51,13 @@ interface Ticket {
   } | null;
 }
 
+interface MailSendung {
+  id: string;
+  betreff: string;
+  gesendet_am: string;
+  geoeffnet_am: string | null;
+}
+
 interface Anhang {
   id: string;
   storage_path: string;
@@ -147,6 +154,7 @@ export default function TicketDetail({ ticketId, technikerId, rolle, onGeloescht
   const [fuerKundeSichtbar, setFuerKundeSichtbar] = useState(false);
   const [zeigeTagMenu, setZeigeTagMenu] = useState(false);
   const [andereBetrachter, setAndereBetrachter] = useState<string[]>([]);
+  const [mailSendungen, setMailSendungen] = useState<MailSendung[]>([]);
   useUngespeichertWarnung(neueNotiz.trim().length > 0 || neueDateien.length > 0);
   const spracheingabe = useSpracheingabe((text) =>
     setNeueNotiz((prev) => (prev.trim() ? `${prev.trim()} ${text}` : text)),
@@ -223,8 +231,21 @@ export default function TicketDetail({ ticketId, technikerId, rolle, onGeloescht
       await ladeTicketTags();
       await ladeDongles(ticketDaten.kunde_id);
       await ladeKundeEmail(ticketDaten.kunde_id);
+      await ladeMailSendungen();
     }
     markiereGelesen();
+  }
+
+  // Zeigt, ob/wann eine dokumentierte Mail (aktuell nur die Lizenz-Update-
+  // Einladung, siehe DongleLizenzVerwaltung.tsx) fuer dieses Ticket bereits
+  // geoeffnet wurde - als Beleg gegenueber "davon nichts gewusst".
+  async function ladeMailSendungen() {
+    const { data } = await supabase
+      .from("email_sendungen")
+      .select("id, betreff, gesendet_am, geoeffnet_am")
+      .eq("ticket_id", ticketId)
+      .order("gesendet_am", { ascending: false });
+    setMailSendungen((data as MailSendung[]) ?? []);
   }
 
   async function ladeKundeEmail(kundeId: string) {
@@ -591,6 +612,29 @@ export default function TicketDetail({ ticketId, technikerId, rolle, onGeloescht
                 {new Date(ticket.loesung_faellig_am) < new Date() && ` – ${txt.ueberfaellig}`}
               </span>
             )}
+          </div>
+        )}
+
+        {/* Dokumentierte Mails (z.B. Lizenz-Update-Einladung) mit Lesestatus */}
+        {mailSendungen.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {mailSendungen.map((m) => (
+              <span
+                key={m.id}
+                title={m.betreff}
+                className={`rounded px-2 py-0.5 text-xs font-medium ${
+                  m.geoeffnet_am
+                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                    : "bg-[var(--bg-muted)] text-[var(--text-soft)]"
+                }`}
+              >
+                📧 {txt.mailGesendetPrefix} {formatDatum(m.gesendet_am, sprache)}
+                {" – "}
+                {m.geoeffnet_am
+                  ? `${txt.mailGeoeffnetPrefix} ${formatDatum(m.geoeffnet_am, sprache)}`
+                  : txt.mailNochNichtGeoeffnet}
+              </span>
+            ))}
           </div>
         )}
 

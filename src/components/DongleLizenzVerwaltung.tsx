@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabaseClient";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
 import DongleImport from "./DongleImport";
+import { benachrichtigeKunde } from "../lib/benachrichtigungen";
 
 interface Vorlage {
   betreff: string;
@@ -271,13 +272,15 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
       const hatMax = !!maxBuild && maxBuild !== build;
       const vorlage = hatMax ? vorlageMitMax : vorlageOhneMax;
       const werte = { seriennummern, build, max_build: maxBuild ?? "" };
+      const betreff = fuellePlatzhalter(vorlage.betreff, werte);
+      const text = fuellePlatzhalter(vorlage.text, werte);
 
       const { data: ticket, error: ticketFehler } = await supabase
         .from("tickets")
         .insert({
           organisation_id: organisationId,
           kunde_id: kundeId,
-          titel: fuellePlatzhalter(vorlage.betreff, werte),
+          titel: betreff,
           quelle: "manuell",
         })
         .select("id")
@@ -288,8 +291,15 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
         ticket_id: ticket.id,
         autor_id: authData.user?.id,
         quelle: "portal",
-        inhalt: fuellePlatzhalter(vorlage.text, werte),
+        inhalt: text,
       });
+
+      // Zusaetzlich per Mail verschicken (mit Lesebestaetigungs-Pixel) -
+      // vorher entstand nur der Ticket-Eintrag, ohne dass der Kunde aktiv
+      // benachrichtigt wurde. Dokumentiert jetzt per email_sendungen, wann
+      // (und ob) die Mail beim Kunden geoeffnet wurde.
+      await benachrichtigeKunde({ ticketId: ticket.id, ereignis: "lizenz_update", betreff, text });
+
       angelegt++;
     }
     setEinladungLaedt(false);

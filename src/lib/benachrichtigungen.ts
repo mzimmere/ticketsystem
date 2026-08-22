@@ -7,13 +7,18 @@
 
 import { supabase } from "./supabaseClient";
 
-export type TicketEreignis = "status_geaendert" | "neue_antwort";
+export type TicketEreignis = "status_geaendert" | "neue_antwort" | "lizenz_update";
 export type MitarbeiterEreignis = "zugewiesen" | "status_geaendert" | "neue_kundenantwort";
 
 interface BenachrichtigungsKontext {
   ticketId: string;
   ereignis: TicketEreignis;
   neuerStatus?: string;
+  // Nur fuer ereignis "lizenz_update": Betreff/Text sind dort schon fertig
+  // aus der editierbaren Vorlage befuellt (siehe DongleLizenzVerwaltung.tsx),
+  // die Edge Function loest hier keine eigene Vorlage mehr auf.
+  betreff?: string;
+  text?: string;
 }
 
 interface MitarbeiterBenachrichtigungsKontext {

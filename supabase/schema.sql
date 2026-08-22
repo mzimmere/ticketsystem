@@ -3055,3 +3055,36 @@ alter table lizenz_vertraege add column if not exists aktuelle_engine_build text
 -- ============================================================
 alter table profiles add column if not exists firmenname text;
 alter table lizenz_vertraege add column if not exists max_erlaubte_engine_build text;
+
+-- ============================================================
+-- 72. Lesebestaetigung (Tracking-Pixel) fuer bestimmte Mails - erstmal nur
+-- die Lizenz-Update-Einladung (DongleLizenzVerwaltung.tsx), damit
+-- dokumentiert ist, WANN eine Update-Benachrichtigung tatsaechlich beim
+-- Kunden geoeffnet wurde (Nachweis gegenueber "davon nichts gewusst").
+-- Kein verlaesslicher Nachweis im strengen Sinn (haengt vom Mailclient des
+-- Empfaengers ab, ob Bilder nachgeladen werden), aber besser als der
+-- klassische MDN-Header ("Disposition-Notification-To"), den die meisten
+-- Clients ohnehin ignorieren. Pixel wird ueber die neue Edge Function
+-- mail-pixel ausgeliefert (verify_jwt=false, oeffentlich erreichbar).
+-- ============================================================
+create table if not exists email_sendungen (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  ticket_id uuid references tickets(id) on delete set null,
+  kunde_id uuid references profiles(id) on delete set null,
+  vorlage_key text not null,
+  empfaenger text not null,
+  betreff text not null,
+  pixel_token text not null unique,
+  gesendet_am timestamptz not null default now(),
+  geoeffnet_am timestamptz
+);
+create index if not exists idx_email_sendungen_ticket on email_sendungen(ticket_id);
+alter table email_sendungen enable row level security;
+
+create policy email_sendungen_select on email_sendungen for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );

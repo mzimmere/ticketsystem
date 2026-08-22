@@ -26,6 +26,7 @@ interface MailAnfrage {
   to: string | string[];
   subject: string;
   text: string;
+  html?: string;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -41,7 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const { host, port, user, password, from, to, subject, text } = (req.body ?? {}) as Partial<MailAnfrage>;
+  const { host, port, user, password, from, to, subject, text, html } = (req.body ?? {}) as Partial<MailAnfrage>;
   if (!host || !port || !user || !password || !from || !to || !subject || !text) {
     res.status(400).json({ ok: false, error: "Fehlende Felder" });
     return;
@@ -54,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       secure: port === 465,
       auth: { user, pass: password },
     });
-    await transporter.sendMail({ from, to, subject, text });
+    await transporter.sendMail(html ? { from, to, subject, text, html } : { from, to, subject, text });
     res.status(200).json({ ok: true });
   } catch (err) {
     console.error("SMTP-Relay-Fehler:", err);
