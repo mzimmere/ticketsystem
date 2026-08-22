@@ -14,7 +14,7 @@ interface Vorlage {
 
 interface VorlagenMeta {
   key: string;
-  gruppe: "kunde" | "mitarbeiter";
+  gruppe: "kunde" | "mitarbeiter" | "system";
   platzhalter: string[];
 }
 
@@ -49,6 +49,16 @@ const VORLAGEN_META: VorlagenMeta[] = [
     gruppe: "mitarbeiter",
     platzhalter: ["ticket_titel", "ticket_nr", "aenderer_name", "link"],
   },
+  {
+    key: "lizenz_update_einladung",
+    gruppe: "system",
+    platzhalter: ["seriennummern", "build"],
+  },
+  {
+    key: "lizenz_update_einladung_mit_max",
+    gruppe: "system",
+    platzhalter: ["seriennummern", "build", "max_build"],
+  },
 ];
 
 // Deckt sich mit STANDARD_VORLAGEN in den Edge Functions
@@ -79,6 +89,14 @@ const STANDARD: Record<string, Vorlage> = {
     betreff: `Ticket #{{ticket_nr}}: Neue Kundenantwort`,
     text: `{{aenderer_name}} hat auf dein Ticket "{{ticket_titel}}" (#{{ticket_nr}}) geantwortet.\n\nTicket ansehen: {{link}}`,
   },
+  lizenz_update_einladung: {
+    betreff: `Software-Update empfohlen (Build {{build}})`,
+    text: `Eure Lizenz(en) {{seriennummern}} laufen aktuell auf Build {{build}}. Wir empfehlen ein Update auf die aktuelle Version – meldet euch gerne, wenn ihr dabei Unterstützung braucht.`,
+  },
+  lizenz_update_einladung_mit_max: {
+    betreff: `Software-Update empfohlen (Build {{build}})`,
+    text: `Eure Lizenz(en) {{seriennummern}} laufen aktuell auf Build {{build}}, erlaubt ist bereits Build {{max_build}}. Wir empfehlen ein Update – meldet euch gerne, wenn ihr dabei Unterstützung braucht.`,
+  },
 };
 
 export default function EmailTexteVerwaltung({ organisationId }: EmailTexteVerwaltungProps) {
@@ -91,6 +109,8 @@ export default function EmailTexteVerwaltung({ organisationId }: EmailTexteVerwa
     mitarbeiter_zugewiesen: { label: txt.labelMitarbeiterZugewiesen, beschreibung: txt.beschreibungMitarbeiterZugewiesen },
     mitarbeiter_status_geaendert: { label: txt.labelMitarbeiterStatusGeaendert, beschreibung: txt.beschreibungMitarbeiterStatusGeaendert },
     mitarbeiter_neue_kundenantwort: { label: txt.labelMitarbeiterNeueKundenantwort, beschreibung: txt.beschreibungMitarbeiterNeueKundenantwort },
+    lizenz_update_einladung: { label: txt.labelLizenzUpdateEinladung, beschreibung: txt.beschreibungLizenzUpdateEinladung },
+    lizenz_update_einladung_mit_max: { label: txt.labelLizenzUpdateEinladungMitMax, beschreibung: txt.beschreibungLizenzUpdateEinladungMitMax },
   };
   const [angepasst, setAngepasst] = useState<Record<string, Vorlage>>({});
   const [entwuerfe, setEntwuerfe] = useState<Record<string, Vorlage>>({});
@@ -164,7 +184,7 @@ export default function EmailTexteVerwaltung({ organisationId }: EmailTexteVerwa
     laden();
   }
 
-  function gruppe(g: "kunde" | "mitarbeiter") {
+  function gruppe(g: "kunde" | "mitarbeiter" | "system") {
     return VORLAGEN_META.filter((m) => m.gruppe === g).map((meta) => {
       const istAngepasst = !!angepasst[meta.key];
       const entwurf = entwuerfe[meta.key] ?? angepasst[meta.key] ?? STANDARD[meta.key];
@@ -259,6 +279,10 @@ export default function EmailTexteVerwaltung({ organisationId }: EmailTexteVerwa
       <div>
         <h3 className="mb-2 text-sm font-medium text-[var(--text-strong)]">{txt.emailsAnMitarbeiter}</h3>
         <div className="space-y-2">{gruppe("mitarbeiter")}</div>
+      </div>
+      <div>
+        <h3 className="mb-2 text-sm font-medium text-[var(--text-strong)]">{txt.emailsSonstige}</h3>
+        <div className="space-y-2">{gruppe("system")}</div>
       </div>
       {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}
     </div>

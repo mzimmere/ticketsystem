@@ -851,6 +851,11 @@ export interface Uebersetzung {
     beschreibungMitarbeiterStatusGeaendert: string;
     labelMitarbeiterNeueKundenantwort: string;
     beschreibungMitarbeiterNeueKundenantwort: string;
+    emailsSonstige: string;
+    labelLizenzUpdateEinladung: string;
+    beschreibungLizenzUpdateEinladung: string;
+    labelLizenzUpdateEinladungMitMax: string;
+    beschreibungLizenzUpdateEinladungMitMax: string;
   };
   dongleLizenzVerwaltung: {
     nichtZugeordneteLizenzenTemplate: string;
@@ -876,9 +881,6 @@ export interface Uebersetzung {
     updateEinladenLaedt: string;
     updateEinladenConfirmTemplate: string;
     updateEinladenErgebnisTemplate: string;
-    updateTicketTitelTemplate: string;
-    updateTicketNachrichtTemplate: string;
-    updateTicketNachrichtMitMaxTemplate: string;
   };
   dongleVerwaltung: {
     wartungAktiv: string;
@@ -2208,6 +2210,11 @@ const de: Uebersetzung = {
     beschreibungMitarbeiterStatusGeaendert: "An den zuständigen Mitarbeiter, wenn jemand anderes den Status ändert.",
     labelMitarbeiterNeueKundenantwort: "Neue Kundenantwort",
     beschreibungMitarbeiterNeueKundenantwort: "An den zuständigen Mitarbeiter, wenn der Kunde im Portal antwortet.",
+    emailsSonstige: "Sonstige Texte",
+    labelLizenzUpdateEinladung: "Lizenz-Update-Einladung (Ticket)",
+    beschreibungLizenzUpdateEinladung: "Titel und Nachricht des Tickets, das über Verwaltung → Dongles & Lizenzen beim Einladen zum Software-Update angelegt wird – wenn kein neueres erlaubtes Build bekannt ist.",
+    labelLizenzUpdateEinladungMitMax: "Lizenz-Update-Einladung, neueres Build bekannt (Ticket)",
+    beschreibungLizenzUpdateEinladungMitMax: "Wie oben, aber wenn zusätzlich ein neueres bereits erlaubtes Build bekannt ist.",
   },
   dongleLizenzVerwaltung: {
     nichtZugeordneteLizenzenTemplate: "Nicht zugeordnete Lizenzen ({gefiltert}/{gesamt})",
@@ -2233,9 +2240,6 @@ const de: Uebersetzung = {
     updateEinladenLaedt: "Wird angelegt…",
     updateEinladenConfirmTemplate: "Für {n} Kunden je ein Ticket mit Update-Einladung anlegen?",
     updateEinladenErgebnisTemplate: "{n} Tickets angelegt.",
-    updateTicketTitelTemplate: "Software-Update empfohlen (Build {build})",
-    updateTicketNachrichtTemplate: "Eure Lizenz(en) {seriennummern} laufen aktuell auf Build {build}. Wir empfehlen ein Update auf die aktuelle Version – meldet euch gerne, wenn ihr dabei Unterstützung braucht.",
-    updateTicketNachrichtMitMaxTemplate: "Eure Lizenz(en) {seriennummern} laufen aktuell auf Build {build}, erlaubt ist bereits Build {maxBuild}. Wir empfehlen ein Update – meldet euch gerne, wenn ihr dabei Unterstützung braucht.",
   },
   dongleVerwaltung: {
     wartungAktiv: "Wartungsvertrag aktiv",
@@ -3565,6 +3569,11 @@ const en: Uebersetzung = {
     beschreibungMitarbeiterStatusGeaendert: "To the responsible staff member when someone else changes the status.",
     labelMitarbeiterNeueKundenantwort: "New customer reply",
     beschreibungMitarbeiterNeueKundenantwort: "To the responsible staff member when the customer replies in the portal.",
+    emailsSonstige: "Other texts",
+    labelLizenzUpdateEinladung: "License update invitation (ticket)",
+    beschreibungLizenzUpdateEinladung: "Title and message of the ticket created via Management → Dongles & Licenses when inviting a customer to update – used when no newer allowed build is known.",
+    labelLizenzUpdateEinladungMitMax: "License update invitation, newer build known (ticket)",
+    beschreibungLizenzUpdateEinladungMitMax: "Same as above, but used when a newer already-allowed build is also known.",
   },
   dongleLizenzVerwaltung: {
     nichtZugeordneteLizenzenTemplate: "Unassigned licenses ({gefiltert}/{gesamt})",
@@ -3590,9 +3599,6 @@ const en: Uebersetzung = {
     updateEinladenLaedt: "Creating…",
     updateEinladenErgebnisTemplate: "{n} tickets created.",
     updateEinladenConfirmTemplate: "Create one ticket each for {n} customers with an update invitation?",
-    updateTicketTitelTemplate: "Software update recommended (build {build})",
-    updateTicketNachrichtTemplate: "Your license(s) {seriennummern} are currently on build {build}. We recommend updating to the current version – feel free to reach out if you'd like support with that.",
-    updateTicketNachrichtMitMaxTemplate: "Your license(s) {seriennummern} are currently on build {build}, while build {maxBuild} is already allowed. We recommend updating – feel free to reach out if you'd like support with that.",
   },
   dongleVerwaltung: {
     wartungAktiv: "Maintenance contract active",

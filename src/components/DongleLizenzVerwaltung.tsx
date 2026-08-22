@@ -4,6 +4,30 @@ import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
 import DongleImport from "./DongleImport";
 
+interface Vorlage {
+  betreff: string;
+  text: string;
+}
+
+// Deckt sich mit STANDARD in EmailTexteVerwaltung.tsx - dient hier nur als
+// Fallback, solange die Firma keine eigene Vorlage in Werkzeuge -> E-Mail-Texte
+// hinterlegt hat (Tabelle benachrichtigungs_mails, gleiches Muster wie bei
+// den echten Benachrichtigungs-Mails).
+const STANDARD_LIZENZ_VORLAGEN: Record<string, Vorlage> = {
+  lizenz_update_einladung: {
+    betreff: `Software-Update empfohlen (Build {{build}})`,
+    text: `Eure Lizenz(en) {{seriennummern}} laufen aktuell auf Build {{build}}. Wir empfehlen ein Update auf die aktuelle Version – meldet euch gerne, wenn ihr dabei Unterstützung braucht.`,
+  },
+  lizenz_update_einladung_mit_max: {
+    betreff: `Software-Update empfohlen (Build {{build}})`,
+    text: `Eure Lizenz(en) {{seriennummern}} laufen aktuell auf Build {{build}}, erlaubt ist bereits Build {{max_build}}. Wir empfehlen ein Update – meldet euch gerne, wenn ihr dabei Unterstützung braucht.`,
+  },
+};
+
+function fuellePlatzhalter(vorlage: string, werte: Record<string, string>): string {
+  return vorlage.replace(/\{\{(\w+)\}\}/g, (_, name) => werte[name] ?? "");
+}
+
 interface KundeKurz {
   id: string;
   name: string | null;
@@ -217,45 +241,54 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
     new Set(vertragUebersichtGefiltert.filter((v) => v.kunde_id).map((v) => v.kunde_id!)),
   );
 
+  async function ladeVorlage(key: string): Promise<Vorlage> {
+    const { data } = await supabase
+      .from("benachrichtigungs_mails")
+      .select("betreff, text")
+      .eq("organisation_id", organisationId)
+      .eq("vorlage_key", key)
+      .maybeSingle();
+    return data ?? STANDARD_LIZENZ_VORLAGEN[key];
+  }
+
   async function updateEinladungenVersenden() {
     if (einladbareKunden.length === 0) return;
     if (!confirm(txt.updateEinladenConfirmTemplate.replace("{n}", String(einladbareKunden.length)))) return;
     setEinladungLaedt(true);
     setEinladungHinweis(null);
     const { data: authData } = await supabase.auth.getUser();
+    const [vorlageOhneMax, vorlageMitMax] = await Promise.all([
+      ladeVorlage("lizenz_update_einladung"),
+      ladeVorlage("lizenz_update_einladung_mit_max"),
+    ]);
     let angelegt = 0;
     for (const kundeId of einladbareKunden) {
       const betroffeneVertraege = vertragUebersichtGefiltert.filter((v) => v.kunde_id === kundeId);
       const seriennummern = betroffeneVertraege.map((v) => v.lizenz_seriennummer).join(", ");
-      const build = betroffeneVertraege[0]?.aktuelle_engine_build ?? buildFilter;
+      const build = betroffeneVertraege[0]?.aktuelle_engine_build ?? buildFilter ?? "";
       const maxBuild = betroffeneVertraege[0]?.max_erlaubte_engine_build;
+
+      const hatMax = !!maxBuild && maxBuild !== build;
+      const vorlage = hatMax ? vorlageMitMax : vorlageOhneMax;
+      const werte = { seriennummern, build, max_build: maxBuild ?? "" };
 
       const { data: ticket, error: ticketFehler } = await supabase
         .from("tickets")
         .insert({
           organisation_id: organisationId,
           kunde_id: kundeId,
-          titel: txt.updateTicketTitelTemplate.replace("{build}", build ?? ""),
+          titel: fuellePlatzhalter(vorlage.betreff, werte),
           quelle: "manuell",
         })
         .select("id")
         .single();
       if (ticketFehler || !ticket) continue;
 
-      const nachrichtText = maxBuild && maxBuild !== build
-        ? txt.updateTicketNachrichtMitMaxTemplate
-            .replace("{seriennummern}", seriennummern)
-            .replace("{build}", build ?? "")
-            .replace("{maxBuild}", maxBuild)
-        : txt.updateTicketNachrichtTemplate
-            .replace("{seriennummern}", seriennummern)
-            .replace("{build}", build ?? "");
-
       await supabase.from("ticket_nachrichten").insert({
         ticket_id: ticket.id,
         autor_id: authData.user?.id,
         quelle: "portal",
-        inhalt: nachrichtText,
+        inhalt: fuellePlatzhalter(vorlage.text, werte),
       });
       angelegt++;
     }
