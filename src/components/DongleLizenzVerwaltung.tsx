@@ -69,12 +69,18 @@ interface AlleVertrag {
   max_erlaubte_engine_build: string | null;
 }
 
+interface MailStatus {
+  gesendet_am: string;
+  geoeffnet_am: string | null;
+}
+
 const ANZAHL_POOL_SICHTBAR = 5;
 const ANZAHL_UEBERSICHT_SICHTBAR = 10;
 
 export default function DongleLizenzVerwaltung({ organisationId }: { organisationId: string }) {
   const { sprache } = useSprache();
   const txt = texte(sprache).dongleLizenzVerwaltung;
+  const mailTxt = texte(sprache).ticketDetail;
   const [kunden, setKunden] = useState<KundeKurz[]>([]);
 
   const [nichtZugeordnete, setNichtZugeordnete] = useState<NichtZugeordneterDongle[]>([]);
@@ -97,6 +103,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   const [buildFilter, setBuildFilter] = useState("");
   const [einladungLaedt, setEinladungLaedt] = useState(false);
   const [einladungHinweis, setEinladungHinweis] = useState<string | null>(null);
+  const [mailStatusByKunde, setMailStatusByKunde] = useState<Record<string, MailStatus>>({});
 
   useEffect(() => {
     alleNeuLaden();
@@ -109,6 +116,26 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
     ladeNichtZugeordneteVertraege();
     ladeAlleDongles();
     ladeAlleVertraege();
+    ladeMailStatus();
+  }
+
+  // Letzte Lizenz-Update-Einladung pro Kunde (eine Mail deckt ggf. mehrere
+  // Lizenzen desselben Kunden ab, siehe updateEinladungenVersenden) - fuer
+  // die "gelesen am"-Anzeige direkt in der Lizenzvertrags-Uebersicht, damit
+  // man nicht jedes Ticket einzeln oeffnen muss.
+  async function ladeMailStatus() {
+    const { data } = await supabase
+      .from("email_sendungen")
+      .select("kunde_id, gesendet_am, geoeffnet_am")
+      .eq("organisation_id", organisationId)
+      .eq("vorlage_key", "lizenz_update_einladung")
+      .order("gesendet_am", { ascending: false });
+    const map: Record<string, MailStatus> = {};
+    for (const row of data ?? []) {
+      if (!row.kunde_id || map[row.kunde_id]) continue;
+      map[row.kunde_id] = { gesendet_am: row.gesendet_am, geoeffnet_am: row.geoeffnet_am };
+    }
+    setMailStatusByKunde(map);
   }
 
   async function ladeKunden() {
@@ -304,6 +331,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
     }
     setEinladungLaedt(false);
     setEinladungHinweis(txt.updateEinladenErgebnisTemplate.replace("{n}", String(angelegt)));
+    ladeMailStatus();
   }
 
   return (
@@ -534,6 +562,21 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                 {v.vertrag_ende && (
                   <span className="text-xs text-[var(--text-faint)]">
                     {txt.bisPrefix} {new Date(v.vertrag_ende).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")}
+                  </span>
+                )}
+                {v.kunde_id && mailStatusByKunde[v.kunde_id] && (
+                  <span
+                    title={`${mailTxt.mailGesendetPrefix} ${new Date(mailStatusByKunde[v.kunde_id].gesendet_am).toLocaleString(sprache === "en" ? "en-US" : "de-DE")}`}
+                    className={`rounded px-1.5 py-0.5 text-[0.65rem] font-medium ${
+                      mailStatusByKunde[v.kunde_id].geoeffnet_am
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                        : "bg-[var(--bg-surface)] text-[var(--text-faint)]"
+                    }`}
+                  >
+                    📧{" "}
+                    {mailStatusByKunde[v.kunde_id].geoeffnet_am
+                      ? `${mailTxt.mailGeoeffnetPrefix} ${new Date(mailStatusByKunde[v.kunde_id].geoeffnet_am!).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")}`
+                      : mailTxt.mailNochNichtGeoeffnet}
                   </span>
                 )}
                 <span
