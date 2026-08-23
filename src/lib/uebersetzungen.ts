@@ -1089,6 +1089,7 @@ export interface Uebersetzung {
     stimmungFrustriert: string;
     stimmungDringend: string;
     zusammenfassungTitel: string;
+    zusammenfassungUebernehmen: string;
     stimmungAnalysieren: string;
     zusammenfassen: string;
     antwortVorschlagen: string;
@@ -2451,6 +2452,7 @@ const de: Uebersetzung = {
     stimmungFrustriert: "frustriert",
     stimmungDringend: "dringend",
     zusammenfassungTitel: "📋 Zusammenfassung",
+    zusammenfassungUebernehmen: "Ins Notizfeld übernehmen",
     stimmungAnalysieren: "Stimmung analysieren",
     zusammenfassen: "Zusammenfassen",
     antwortVorschlagen: "Antwort vorschlagen",
@@ -3813,6 +3815,7 @@ const en: Uebersetzung = {
     stimmungFrustriert: "frustrated",
     stimmungDringend: "urgent",
     zusammenfassungTitel: "📋 Summary",
+    zusammenfassungUebernehmen: "Insert into note field",
     stimmungAnalysieren: "Analyze sentiment",
     zusammenfassen: "Summarize",
     antwortVorschlagen: "Suggest reply",

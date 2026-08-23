@@ -124,7 +124,31 @@ Wähle maximal 3 passende Tags aus der Liste. Wenn keiner passt, gib [] zurück.
   });
 
   const data = await response.json();
+
+  // Bisher wurde hier nie geprueft, ob der Anthropic-Call ueberhaupt
+  // erfolgreich war - bei einem Fehler (falscher API-Key, Guthaben
+  // aufgebraucht, ungueltiges Modell etc.) kam trotzdem ein HTTP-200 mit
+  // leerem "antwort"-Feld zurueck. Im Frontend fuehrte das bei "stimmung"/
+  // "tags" zu einem kryptischen JSON.parse-Fehler und bei "antwortvorschlag"/
+  // "zusammenfassung" zu scheinbar gar keiner Reaktion.
+  if (!response.ok) {
+    console.error("Anthropic API Fehler:", response.status, JSON.stringify(data));
+    return new Response(
+      JSON.stringify({
+        error: `KI-Anfrage fehlgeschlagen (${response.status}): ${data.error?.message ?? "Unbekannter Fehler"}`,
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   const antwort = data.content?.[0]?.text ?? "";
+  if (!antwort) {
+    console.error("Leere Antwort von Claude:", JSON.stringify(data));
+    return new Response(
+      JSON.stringify({ error: "Die KI hat keine Antwort geliefert. Bitte erneut versuchen." }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
 
   return new Response(
     JSON.stringify({ antwort }),

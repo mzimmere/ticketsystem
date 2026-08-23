@@ -24,6 +24,23 @@ interface KiAssistentProps {
   onTagsVorgeschlagen: (tags: string[]) => void;
 }
 
+// Claude haelt sich trotz Anweisung ("antworte NUR mit JSON") nicht immer
+// daran und umschliesst die Antwort gelegentlich mit ```json ... ``` oder
+// haengt ein paar erklaerende Worte an - direktes JSON.parse() bricht dann
+// mit "unexpected character at line 1 column 1" ab. Schneidet den Text auf
+// den ersten JSON-Wert (Objekt oder Array) zu, bevor geparst wird.
+function parseJsonAntwort(antwort: string): unknown {
+  const bereinigt = antwort.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+  const start = bereinigt.search(/[[{]/);
+  const endeEckig = bereinigt.lastIndexOf("]");
+  const endeGeschweift = bereinigt.lastIndexOf("}");
+  const ende = Math.max(endeEckig, endeGeschweift);
+  if (start === -1 || ende === -1 || ende < start) {
+    throw new Error("Keine gültige JSON-Antwort erhalten.");
+  }
+  return JSON.parse(bereinigt.slice(start, ende + 1));
+}
+
 async function kiAufruf(aktion: string, ticketId: string) {
   const { data: session } = await supabase.auth.getSession();
   const res = await fetch(
@@ -68,10 +85,10 @@ export default function KiAssistent({ ticketId, onAntwortVorschlag, onTagsVorges
       } else if (typ === "antwortvorschlag") {
         onAntwortVorschlag(antwort);
       } else if (typ === "stimmung") {
-        const parsed = JSON.parse(antwort);
+        const parsed = parseJsonAntwort(antwort) as StimmungsAnalyse;
         setStimmung(parsed);
       } else if (typ === "tags") {
-        const parsed = JSON.parse(antwort);
+        const parsed = parseJsonAntwort(antwort);
         if (Array.isArray(parsed)) onTagsVorgeschlagen(parsed);
       }
     } catch (e) {
@@ -120,6 +137,12 @@ export default function KiAssistent({ ticketId, onAntwortVorschlag, onTagsVorges
             <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:bg-blue-900/20 dark:border-blue-700">
               <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">{txt.zusammenfassungTitel}</p>
               <p className="mt-1 text-xs leading-relaxed text-[var(--text-soft)]">{zusammenfassung}</p>
+              <button
+                onClick={() => onAntwortVorschlag(zusammenfassung)}
+                className="mt-2 rounded border border-blue-300 bg-white px-2 py-1 text-[0.65rem] font-medium text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-transparent dark:text-blue-300 dark:hover:bg-blue-900/40"
+              >
+                {txt.zusammenfassungUebernehmen}
+              </button>
             </div>
           )}
 
