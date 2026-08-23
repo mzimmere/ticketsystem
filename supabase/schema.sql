@@ -3088,3 +3088,19 @@ create policy email_sendungen_select on email_sendungen for select
     or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
     or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
   );
+
+-- ============================================================
+-- 73. Bugfix: die beiden neuen vorlage_key-Werte fuer die Lizenz-Update-
+-- Einladung (lizenz_update_einladung / lizenz_update_einladung_mit_max,
+-- siehe EmailTexteVerwaltung.tsx "Sonstige Texte") fehlten im CHECK-
+-- Constraint von benachrichtigungs_mails (Abschnitt 65) - jeder Versuch,
+-- eine angepasste Vorlage dafuer zu speichern, scheiterte dadurch lautlos
+-- an der DB (Speichern zeigte "Gespeichert", aber es landete nie eine
+-- Zeile in der Tabelle, weshalb der Standardtext weiterverwendet wurde).
+-- ============================================================
+alter table benachrichtigungs_mails drop constraint benachrichtigungs_mails_vorlage_key_check;
+alter table benachrichtigungs_mails add constraint benachrichtigungs_mails_vorlage_key_check check (vorlage_key in (
+  'kunde_status_geaendert', 'kunde_ticket_geschlossen', 'kunde_neue_antwort',
+  'mitarbeiter_zugewiesen', 'mitarbeiter_status_geaendert', 'mitarbeiter_neue_kundenantwort',
+  'lizenz_update_einladung', 'lizenz_update_einladung_mit_max'
+));

@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-22", titel: "Bugfix: Angepasste Lizenz-Update-Einladungstexte (Werkzeuge → E-Mail-Texte) wurden nicht übernommen – Datenbank-Constraint kannte die neuen Vorlagen-Schlüssel noch nicht und verwarf das Speichern lautlos" },
   { datum: "2026-08-22", titel: "Verwaltung → Dongles & Lizenzen: Lesestatus der Update-Einladung ('gelesen am ...' / 'noch nicht geöffnet') jetzt direkt in der Lizenzvertrags-Übersicht sichtbar, ohne jedes Ticket einzeln öffnen zu müssen" },
   { datum: "2026-08-22", titel: "Lizenz-Update-Einladung verschickt jetzt zusätzlich eine echte E-Mail an den Kunden (bisher nur Ticket-Eintrag) – mit Lesebestätigungs-Pixel, damit im Ticket dokumentiert ist, ob/wann die Mail geöffnet wurde" },
   { datum: "2026-08-22", titel: "Text des Tickets bei der Lizenz-Update-Einladung (Verwaltung → Dongles & Lizenzen) ist jetzt unter Werkzeuge → E-Mail-Texte → Sonstige Texte anpassbar, statt fest im Code zu stehen" },
