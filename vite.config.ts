@@ -10,6 +10,16 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Der bisherige Default (injectRegister: 'auto') schreibt nur ein
+      // minimales Script, das den Service Worker registriert, aber NIE
+      // neu laedt, wenn eine neue Version bereitsteht - Nutzer sahen nach
+      // jedem Deploy beim Oeffnen kurz die alte (evtl. kaputte, da
+      // Chunk-Hashes nicht mehr existieren) Version und mussten manuell
+      // Strg+R druecken. Registrierung laeuft jetzt stattdessen explizit
+      // in main.tsx ueber "virtual:pwa-register" (registerSW), das bei
+      // registerType "autoUpdate" automatisch neu laedt, sobald der neue
+      // Service Worker aktiv ist.
+      injectRegister: false,
       // Nur den App-Shell (JS/CSS/Icons) vorcachen - Supabase-Aufrufe
       // (Tickets, Realtime etc.) laufen bewusst NICHT ueber den Service
       // Worker, damit nie veraltete Ticketdaten angezeigt werden.
