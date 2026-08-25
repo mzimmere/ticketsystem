@@ -10,6 +10,7 @@ import Zeiterfassung from "./Zeiterfassung";
 import Avatar from "./Avatar";
 import StatusBadge from "./StatusBadge";
 import TicketMerge from "./TicketMerge";
+import ZusammengefuehrteTickets from "./ZusammengefuehrteTickets";
 import KiAssistent from "./KiAssistent";
 import KundenTodoListe from "./KundenTodoListe";
 import KundenHardware from "./KundenHardware";
@@ -683,6 +684,8 @@ export default function TicketDetail({ ticketId, technikerId, rolle, onGeloescht
           </p>
         )}
       </div>
+
+      <ZusammengefuehrteTickets ticketId={ticketId} />
 
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
         <h3 className="mb-3 text-sm font-medium text-[var(--text-strong)]">{txt.verlauf}</h3>

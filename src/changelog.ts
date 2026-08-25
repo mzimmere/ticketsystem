@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-23", titel: "Neu: Zusammengeführte Tickets sind jetzt direkt im weiterführenden Ticket aufklappbar (kompletter Verlauf inkl. Anhänge), ohne das alte geschlossene Ticket erst separat öffnen zu müssen" },
   { datum: "2026-08-23", titel: "Ticket zusammenführen: Auswahlliste der Ziel-Tickets zeigt jetzt auch den Kundennamen, nicht nur Ticketnummer und Betreff – hilft bei ähnlichen/gleichlautenden Betreffs (z.B. mehrere Update-Einladungen)" },
   { datum: "2026-08-23", titel: "Bugfix: App/Website musste beim Öffnen oft einmal manuell neu geladen werden (Strg+R), bevor sie funktionierte – der Service Worker registrierte sich zwar bei jedem Deploy neu, lud die Seite aber nie automatisch mit der neuen Version nach; passiert jetzt automatisch im Hintergrund" },
   { datum: "2026-08-23", titel: "Neu: Bei der KI-Zusammenfassung im Ticket gibt es jetzt einen Button, um den Text direkt ins Notizfeld zu übernehmen (wie beim Antwortvorschlag)" },

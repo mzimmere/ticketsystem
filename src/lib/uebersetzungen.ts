@@ -1062,6 +1062,13 @@ export interface Uebersetzung {
     zusammenfuehren: string;
     abbrechen: string;
   };
+  zusammengefuehrteTickets: {
+    titel: string;
+    zusammengefuehrtAmPrefix: string;
+    laedt: string;
+    keineNachrichten: string;
+    kunde: string;
+  };
   lizenzVerlaengerungen: {
     titel: string;
     fristLabel: string;
@@ -2425,6 +2432,13 @@ const de: Uebersetzung = {
     zusammenfuehren: "Zusammenführen",
     abbrechen: "Abbrechen",
   },
+  zusammengefuehrteTickets: {
+    titel: "Zusammengeführte Tickets",
+    zusammengefuehrtAmPrefix: "zusammengeführt am",
+    laedt: "Lädt…",
+    keineNachrichten: "Keine Nachrichten.",
+    kunde: "Kunde",
+  },
   lizenzVerlaengerungen: {
     titel: "Lizenz-Ablauf-Erinnerungen",
     fristLabel: "Frist für die Erinnerung",
@@ -3787,6 +3801,13 @@ const en: Uebersetzung = {
     fuehreZusammen: "Merging…",
     zusammenfuehren: "Merge",
     abbrechen: "Cancel",
+  },
+  zusammengefuehrteTickets: {
+    titel: "Merged tickets",
+    zusammengefuehrtAmPrefix: "merged on",
+    laedt: "Loading…",
+    keineNachrichten: "No messages.",
+    kunde: "Customer",
   },
   lizenzVerlaengerungen: {
     titel: "License expiry reminders",
