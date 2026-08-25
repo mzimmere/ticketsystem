@@ -8,6 +8,7 @@ interface Ticket {
   ticket_nr: number;
   titel: string;
   status: string;
+  kunde: { name: string | null } | null;
 }
 
 interface TicketMergeProps {
@@ -29,13 +30,13 @@ export default function TicketMerge({ ticketId, ticketNr, organisationId, onMerg
   useEffect(() => {
     if (!zeigeDialog) return;
     supabase.from("tickets")
-      .select("id, ticket_nr, titel, status")
+      .select("id, ticket_nr, titel, status, kunde:kunde_id(name)")
       .eq("organisation_id", organisationId)
       .neq("id", ticketId)
       .in("status", ["offen", "in_bearbeitung", "wartet_auf_kunde"])
       .order("ticket_nr", { ascending: false })
       .limit(50)
-      .then(({ data }) => setOffeneTickets(data ?? []));
+      .then(({ data }) => setOffeneTickets((data as unknown as Ticket[]) ?? []));
   }, [zeigeDialog, ticketId, organisationId]);
 
   async function zusammenfuehren() {
@@ -94,7 +95,7 @@ export default function TicketMerge({ ticketId, ticketNr, organisationId, onMerg
               <option value="">{txt.zielTicketWaehlen}</option>
               {offeneTickets.map((t) => (
                 <option key={t.id} value={t.id}>
-                  #{t.ticket_nr} – {t.titel}
+                  #{t.ticket_nr} – {t.kunde?.name ? `${t.kunde.name} – ` : ""}{t.titel}
                 </option>
               ))}
             </select>
