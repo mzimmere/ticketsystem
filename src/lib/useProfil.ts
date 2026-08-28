@@ -50,38 +50,46 @@ export function useProfil() {
 
   async function ladeProfil(mitLadezustand = false) {
     if (mitLadezustand) setLaedt(true);
-    const { data: authData } = await supabase.auth.getUser();
+    // Ohne try/finally blieb die App bei einem fehlschlagenden Request
+    // (Netzwerk-Hänger, Timeout etc.) fuer immer bei "Lädt…" haengen, da
+    // setLaedt(false) nie erreicht wurde - ein manueller Reload war der
+    // einzige Ausweg. Jetzt wird der Ladezustand in jedem Fall beendet.
+    try {
+      const { data: authData } = await supabase.auth.getUser();
 
-    if (!authData.user) {
-      aktuelleUserId.current = null;
-      setEingeloggt(false);
-      setProfil(null);
-      setMitgliedschaften([]);
+      if (!authData.user) {
+        aktuelleUserId.current = null;
+        setEingeloggt(false);
+        setProfil(null);
+        setMitgliedschaften([]);
+        return;
+      }
+
+      aktuelleUserId.current = authData.user.id;
+      setEingeloggt(true);
+      const [{ data }, { data: mitgliedDaten }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, organisation_id, rolle, name, deaktiviert, howto_gesehen, standard_ticket_filter")
+          .eq("id", authData.user.id)
+          .single(),
+        supabase
+          .from("firmen_mitgliedschaften")
+          .select("organisation_id, rolle, organisation:organisation_id(name)")
+          .eq("profil_id", authData.user.id)
+          .eq("deaktiviert", false),
+      ]);
+      setProfil((data as Profil) ?? null);
+      setMitgliedschaften(
+        ((mitgliedDaten ?? []) as unknown as Array<{ organisation_id: string; rolle: "techniker" | "org_admin"; organisation: { name: string } | null }>)
+          .map((m) => ({ organisation_id: m.organisation_id, rolle: m.rolle, organisation_name: m.organisation?.name ?? texte(sprache).allgemein.unbenannt }))
+          .sort((a, b) => a.organisation_name.localeCompare(b.organisation_name)),
+      );
+    } catch (err) {
+      console.error("[useProfil] Laden fehlgeschlagen:", err);
+    } finally {
       setLaedt(false);
-      return;
     }
-
-    aktuelleUserId.current = authData.user.id;
-    setEingeloggt(true);
-    const [{ data }, { data: mitgliedDaten }] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("id, organisation_id, rolle, name, deaktiviert, howto_gesehen, standard_ticket_filter")
-        .eq("id", authData.user.id)
-        .single(),
-      supabase
-        .from("firmen_mitgliedschaften")
-        .select("organisation_id, rolle, organisation:organisation_id(name)")
-        .eq("profil_id", authData.user.id)
-        .eq("deaktiviert", false),
-    ]);
-    setProfil((data as Profil) ?? null);
-    setMitgliedschaften(
-      ((mitgliedDaten ?? []) as unknown as Array<{ organisation_id: string; rolle: "techniker" | "org_admin"; organisation: { name: string } | null }>)
-        .map((m) => ({ organisation_id: m.organisation_id, rolle: m.rolle, organisation_name: m.organisation?.name ?? texte(sprache).allgemein.unbenannt }))
-        .sort((a, b) => a.organisation_name.localeCompare(b.organisation_name)),
-    );
-    setLaedt(false);
   }
 
   return { profil, mitgliedschaften, eingeloggt, laedt, neuLaden: () => ladeProfil(false) };
