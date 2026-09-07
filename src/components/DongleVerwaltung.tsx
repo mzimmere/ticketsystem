@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
+import { Trash2 } from "lucide-react";
 
 type Wartungsvertrag = "aktiv" | "inaktiv" | "nicht_gewuenscht";
 
@@ -280,6 +281,18 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
             <span className={`ml-auto rounded-full px-2 py-0.5 text-[0.65rem] font-medium ${WARTUNG_FARBE[d.wartungsvertrag]}`}>
               {WARTUNG_LABEL[d.wartungsvertrag]}
             </span>
+            <span
+              role="button"
+              tabIndex={0}
+              title={txt.dongleLoeschen}
+              onClick={(e) => {
+                e.stopPropagation();
+                dongleLoeschen(d.id, d.seriennummer);
+              }}
+              className="text-[var(--text-faint)] hover:text-red-600"
+            >
+              <Trash2 size={14} />
+            </span>
           </button>
 
           {offenDongleId === d.id && (
@@ -440,13 +453,6 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
                   </button>
                 </div>
               </div>
-
-              <button
-                onClick={() => dongleLoeschen(d.id, d.seriennummer)}
-                className="text-xs text-[var(--text-faint)] hover:text-red-600"
-              >
-                {txt.dongleLoeschen}
-              </button>
             </div>
           )}
         </div>

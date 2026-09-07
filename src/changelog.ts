@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-23", titel: "Dongle löschen jetzt gut sichtbar direkt in der Kopfzeile jedes Dongles (Papierkorb-Symbol) statt versteckt am Ende der aufgeklappten Modul-Liste – z.B. um versehentlich falsch angelegte Dongles wieder zu entfernen" },
   { datum: "2026-08-23", titel: "Bugfix: App blieb beim Öffnen manchmal dauerhaft bei \"Lädt…\" hängen (nur durch manuellen Reload behebbar) – fehlendes Error-Handling beim Laden des Profils führte bei einem fehlgeschlagenen Request dazu, dass der Ladezustand nie beendet wurde" },
   { datum: "2026-08-23", titel: "Neu: Zusammengeführte Tickets sind jetzt direkt im weiterführenden Ticket aufklappbar (kompletter Verlauf inkl. Anhänge), ohne das alte geschlossene Ticket erst separat öffnen zu müssen" },
   { datum: "2026-08-23", titel: "Ticket zusammenführen: Auswahlliste der Ziel-Tickets zeigt jetzt auch den Kundennamen, nicht nur Ticketnummer und Betreff – hilft bei ähnlichen/gleichlautenden Betreffs (z.B. mehrere Update-Einladungen)" },
