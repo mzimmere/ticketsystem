@@ -4,6 +4,7 @@ import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
 import DongleImport from "./DongleImport";
 import { benachrichtigeKunde } from "../lib/benachrichtigungen";
+import { Trash2 } from "lucide-react";
 
 interface Vorlage {
   betreff: string;
@@ -81,6 +82,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   const { sprache } = useSprache();
   const txt = texte(sprache).dongleLizenzVerwaltung;
   const mailTxt = texte(sprache).ticketDetail;
+  const dongleTxt = texte(sprache).dongleVerwaltung;
   const [kunden, setKunden] = useState<KundeKurz[]>([]);
 
   const [nichtZugeordnete, setNichtZugeordnete] = useState<NichtZugeordneterDongle[]>([]);
@@ -202,6 +204,18 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
       .eq("organisation_id", organisationId)
       .order("seriennummer");
     setAlleDongles((data as unknown as AlleDongle[]) ?? []);
+  }
+
+  async function dongleLoeschen(id: string, seriennummer: string) {
+    if (!confirm(dongleTxt.loeschenConfirmTemplate.replace("{seriennummer}", seriennummer))) return;
+    const { error } = await supabase.from("kunden_dongles").delete().eq("id", id);
+    if (error) {
+      console.error(error);
+      alert(dongleTxt.fehlerLoeschen);
+      return;
+    }
+    ladeAlleDongles();
+    ladeNichtZugeordnete();
   }
 
   async function ladeAlleVertraege() {
@@ -382,6 +396,13 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                   >
                     {txt.zuweisen}
                   </button>
+                  <button
+                    onClick={() => dongleLoeschen(d.id, d.seriennummer)}
+                    title={dongleTxt.dongleLoeschen}
+                    className="shrink-0 text-[var(--text-faint)] hover:text-red-600"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
             ))}
@@ -489,6 +510,13 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                 >
                   {d.kunde?.name ?? txt.nichtZugeordnet}
                 </span>
+                <button
+                  onClick={() => dongleLoeschen(d.id, d.seriennummer)}
+                  title={dongleTxt.dongleLoeschen}
+                  className="text-[var(--text-faint)] hover:text-red-600"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
             ))}
           </div>

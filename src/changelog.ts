@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-08-23", titel: "Verwaltung → Dongles & Lizenzen: Dongles können jetzt auch dort gelöscht werden (sowohl in der Gesamtübersicht als auch im Nicht-zugeordnet-Pool), nicht mehr nur in der Kundenverwaltung" },
   { datum: "2026-08-23", titel: "Dongle löschen jetzt gut sichtbar direkt in der Kopfzeile jedes Dongles (Papierkorb-Symbol) statt versteckt am Ende der aufgeklappten Modul-Liste – z.B. um versehentlich falsch angelegte Dongles wieder zu entfernen" },
   { datum: "2026-08-23", titel: "Bugfix: App blieb beim Öffnen manchmal dauerhaft bei \"Lädt…\" hängen (nur durch manuellen Reload behebbar) – fehlendes Error-Handling beim Laden des Profils führte bei einem fehlgeschlagenen Request dazu, dass der Ladezustand nie beendet wurde" },
   { datum: "2026-08-23", titel: "Neu: Zusammengeführte Tickets sind jetzt direkt im weiterführenden Ticket aufklappbar (kompletter Verlauf inkl. Anhänge), ohne das alte geschlossene Ticket erst separat öffnen zu müssen" },
