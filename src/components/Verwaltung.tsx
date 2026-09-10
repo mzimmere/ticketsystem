@@ -15,6 +15,7 @@ import WartungsvertragStufenVerwaltung from "./WartungsvertragStufenVerwaltung";
 import SlaVerwaltung from "./SlaVerwaltung";
 import LizenzVerlaengerungen from "./LizenzVerlaengerungen";
 import HardwareKategorienVerwaltung from "./HardwareKategorienVerwaltung";
+import DokumentKategorienVerwaltung from "./DokumentKategorienVerwaltung";
 import FaqVerwaltung from "./FaqVerwaltung";
 import ReportingExport from "./ReportingExport";
 import IntegrationenVerwaltung from "./IntegrationenVerwaltung";
@@ -1218,6 +1219,20 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
               { nr: 1, titel: "Kategorien anlegen", beschreibung: "Z.B. Intraoral-Scanner, Desktop-Scanner, Exocad-Datenbank (lokal/SQL-Server), Fräsmaschine, Drucker. Ganz nach eurem Bedarf." },
               { nr: 2, titel: "Beim Kunden oder im Ticket erfassen", beschreibung: "In der Kundenliste und direkt im Ticket lässt sich pro Kategorie ein Wert per Klick aus bereits verwendeten Vorschlägen übernehmen oder frei eintippen." },
               { nr: 3, titel: "Mehrfachwerte möglich", beschreibung: "Ein Kunde kann z.B. zwei Fräsmaschinen unterschiedlicher Hersteller haben – einfach beide als eigene Chips hinzufügen." },
+            ]}
+          />
+        </div>
+      )}
+
+      {aktiveTab === "werkzeuge" && organisationId && (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
+          <DokumentKategorienVerwaltung organisationId={organisationId} />
+          <KonfigurationsHilfe
+            titel="Kunden-Dokumente kategorisieren"
+            schritte={[
+              { nr: 1, titel: "Kategorien anlegen", beschreibung: "Z.B. Wartungsvertrag, Rechnung, Datenschutz, Sonstiges. Auf den Namen klicken, um ihn nachträglich umzubenennen." },
+              { nr: 2, titel: "Beim Hochladen zuordnen", beschreibung: "In der Kundenverwaltung wird vor dem Datei-Upload eine Kategorie ausgewählt (optional)." },
+              { nr: 3, titel: "Nachträglich ändern", beschreibung: "Jedes bereits hochgeladene Dokument kann per Dropdown einer anderen Kategorie zugeordnet oder unkategorisiert belassen werden." },
             ]}
           />
         </div>

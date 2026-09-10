@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-09-10", titel: "Neu: Kunden-Dokumente lassen sich jetzt Kategorien zuordnen (z.B. Wartungsvertrag, Rechnung) – frei anlegbar und umbenennbar unter Verwaltung → Werkzeuge, Zuordnung beim Hochladen oder nachträglich per Dropdown änderbar" },
   { datum: "2026-08-23", titel: "Verwaltung → Dongles & Lizenzen: Dongles können jetzt auch dort gelöscht werden (sowohl in der Gesamtübersicht als auch im Nicht-zugeordnet-Pool), nicht mehr nur in der Kundenverwaltung" },
   { datum: "2026-08-23", titel: "Dongle löschen jetzt gut sichtbar direkt in der Kopfzeile jedes Dongles (Papierkorb-Symbol) statt versteckt am Ende der aufgeklappten Modul-Liste – z.B. um versehentlich falsch angelegte Dongles wieder zu entfernen" },
   { datum: "2026-08-23", titel: "Bugfix: App blieb beim Öffnen manchmal dauerhaft bei \"Lädt…\" hängen (nur durch manuellen Reload behebbar) – fehlendes Error-Handling beim Laden des Profils führte bei einem fehlgeschlagenen Request dazu, dass der Ladezustand nie beendet wurde" },

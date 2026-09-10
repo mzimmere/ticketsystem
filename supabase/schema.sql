@@ -3104,3 +3104,51 @@ alter table benachrichtigungs_mails add constraint benachrichtigungs_mails_vorla
   'mitarbeiter_zugewiesen', 'mitarbeiter_status_geaendert', 'mitarbeiter_neue_kundenantwort',
   'lizenz_update_einladung', 'lizenz_update_einladung_mit_max'
 ));
+
+-- ============================================================
+-- 74. Kunden-Dokumente kategorisierbar machen (z.B. "Wartungsvertrag",
+-- "Rechnung", "Sonstiges") - frei konfigurierbare Kategorien pro Firma,
+-- gleiches Muster wie hardware_kategorien (Abschnitt 58). kategorie_id
+-- ist nullable, damit bestehende und neue unkategorisierte Dokumente
+-- weiterhin gueltig bleiben (Kategorisierung ist optional).
+-- ============================================================
+create table dokument_kategorien (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  name text not null,
+  erstellt_am timestamptz default now(),
+  unique (organisation_id, name)
+);
+create index idx_dokument_kategorien_org on dokument_kategorien(organisation_id);
+alter table dokument_kategorien enable row level security;
+
+create policy dokument_kategorien_select on dokument_kategorien for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy dokument_kategorien_insert on dokument_kategorien for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy dokument_kategorien_update on dokument_kategorien for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy dokument_kategorien_delete on dokument_kategorien for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+alter table kunden_dokumente add column if not exists kategorie_id uuid references dokument_kategorien(id) on delete set null;
+create index if not exists idx_kunden_dokumente_kategorie on kunden_dokumente(kategorie_id);

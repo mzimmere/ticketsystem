@@ -639,6 +639,27 @@ export interface Uebersetzung {
     nochKeineKategorien: string;
     neueKategoriePlatzhalter: string;
   };
+  dokumentKategorienVerwaltung: {
+    titel: string;
+    beschreibung: string;
+    nameErforderlich: string;
+    kategorieExistiertBereits: string;
+    fehler: string;
+    loeschenConfirmTemplate: string;
+    nochKeineKategorien: string;
+    neueKategoriePlatzhalter: string;
+    umbenennen: string;
+    speichern: string;
+    abbrechen: string;
+  };
+  kundenDokumente: {
+    ohneKategorie: string;
+    dokumentHochladen: string;
+    wirdHochgeladen: string;
+    loeschen: string;
+    fehlerUpload: string;
+    fehlerOeffnen: string;
+  };
   makroVerwaltung: {
     titelUndInhaltErforderlich: string;
     fehlerSpeichern: string;
@@ -2009,6 +2030,27 @@ const de: Uebersetzung = {
     nochKeineKategorien: "Noch keine Kategorien.",
     neueKategoriePlatzhalter: "Neue Kategorie, z.B. Intraoral-Scanner…",
   },
+  dokumentKategorienVerwaltung: {
+    titel: "Dokument-Kategorien",
+    beschreibung: "Frei definierbare Kategorien für Kunden-Dokumente, z.B. Wartungsvertrag, Rechnung, Datenschutz, Sonstiges. Auf den Namen klicken, um ihn umzubenennen.",
+    nameErforderlich: "Name erforderlich.",
+    kategorieExistiertBereits: "Diese Kategorie existiert bereits.",
+    fehler: "Fehler.",
+    loeschenConfirmTemplate: 'Kategorie "{name}" löschen? Zugeordnete Dokumente bleiben erhalten, gelten danach als unkategorisiert.',
+    nochKeineKategorien: "Noch keine Kategorien.",
+    neueKategoriePlatzhalter: "Neue Kategorie, z.B. Wartungsvertrag…",
+    umbenennen: "Klicken zum Umbenennen",
+    speichern: "Speichern",
+    abbrechen: "Abbrechen",
+  },
+  kundenDokumente: {
+    ohneKategorie: "Ohne Kategorie",
+    dokumentHochladen: "+ Dokument hochladen",
+    wirdHochgeladen: "Wird hochgeladen…",
+    loeschen: "Löschen",
+    fehlerUpload: "Dokument-Upload fehlgeschlagen.",
+    fehlerOeffnen: "Konnte Dokument nicht öffnen.",
+  },
   makroVerwaltung: {
     titelUndInhaltErforderlich: "Titel und Inhalt sind erforderlich.",
     fehlerSpeichern: "Fehler beim Speichern.",
@@ -3378,6 +3420,27 @@ const en: Uebersetzung = {
     loeschenConfirmTemplate: 'Delete category "{name}"? All values recorded for customers will also be deleted.',
     nochKeineKategorien: "No categories yet.",
     neueKategoriePlatzhalter: "New category, e.g. intraoral scanner…",
+  },
+  dokumentKategorienVerwaltung: {
+    titel: "Document categories",
+    beschreibung: "Freely definable categories for customer documents, e.g. maintenance contract, invoice, privacy, other. Click the name to rename it.",
+    nameErforderlich: "Name required.",
+    kategorieExistiertBereits: "This category already exists.",
+    fehler: "Error.",
+    loeschenConfirmTemplate: 'Delete category "{name}"? Assigned documents are kept, but become uncategorized.',
+    nochKeineKategorien: "No categories yet.",
+    neueKategoriePlatzhalter: "New category, e.g. maintenance contract…",
+    umbenennen: "Click to rename",
+    speichern: "Save",
+    abbrechen: "Cancel",
+  },
+  kundenDokumente: {
+    ohneKategorie: "Uncategorized",
+    dokumentHochladen: "+ Upload document",
+    wirdHochgeladen: "Uploading…",
+    loeschen: "Delete",
+    fehlerUpload: "Document upload failed.",
+    fehlerOeffnen: "Could not open document.",
   },
   makroVerwaltung: {
     titelUndInhaltErforderlich: "Title and content are required.",

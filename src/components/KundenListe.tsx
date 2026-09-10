@@ -9,6 +9,7 @@ import ZugangsdatenBox from "./ZugangsdatenBox";
 import DongleVerwaltung from "./DongleVerwaltung";
 import KundenTodoListe from "./KundenTodoListe";
 import KundenHardware from "./KundenHardware";
+import KundenDokumente from "./KundenDokumente";
 import KundenAuswahl from "./KundenAuswahl";
 
 interface Kunde {
@@ -47,13 +48,6 @@ interface KundenPreis {
   id: string;
   preis_pro_minute_cent: number;
   gueltig_ab: string;
-}
-
-interface Dokument {
-  id: string;
-  storage_path: string;
-  dateiname: string;
-  erstellt_am: string;
 }
 
 interface LizenzVertrag {
@@ -120,7 +114,6 @@ export default function KundenListe({
   const [preise, setPreise] = useState<KundenPreis[]>([]);
   const [neuesPreisDatum, setNeuesPreisDatum] = useState("");
   const [neuerPreisEuro, setNeuerPreisEuro] = useState("");
-  const [dokumente, setDokumente] = useState<Dokument[]>([]);
   const [vertraege, setVertraege] = useState<LizenzVertrag[]>([]);
   const [alleKundenAnzeigen, setAlleKundenAnzeigen] = useState(false);
   const [hardwareKategorien, setHardwareKategorien] = useState<HardwareKategorie[]>([]);
@@ -220,15 +213,6 @@ export default function KundenListe({
     ladeKunden();
   }
 
-  async function ladeDokumente(kundeId: string) {
-    const { data } = await supabase
-      .from("kunden_dokumente")
-      .select("id, storage_path, dateiname, erstellt_am")
-      .eq("kunde_id", kundeId)
-      .order("erstellt_am", { ascending: false });
-    setDokumente((data as Dokument[]) ?? []);
-  }
-
   async function ladePreise(kundeId: string) {
     const { data } = await supabase
       .from("kunden_preise")
@@ -258,7 +242,6 @@ export default function KundenListe({
     setNeueZusatzEmail("");
     setZeigeZusammenfuehren(false);
     setZusammenfuehrenQuelleId("");
-    ladeDokumente(k.id);
     ladePreise(k.id);
     ladeVertraege(k.id);
     ladeKundeEmail(k.id);
@@ -350,7 +333,6 @@ export default function KundenListe({
     setHinweis(txt.erfolgZusammengefuehrt);
     setMergeVersion((v) => v + 1);
     ladeZusatzEmails(zielId);
-    ladeDokumente(zielId);
     ladePreise(zielId);
     ladeVertraege(zielId);
     ladeKunden();
@@ -439,53 +421,6 @@ export default function KundenListe({
     } finally {
       setLaedt(false);
     }
-  }
-
-  async function dokumentHochladen(kundeId: string, datei: File) {
-    setLaedt(true);
-    setHinweis(null);
-    try {
-      const pfad = `${kundeId}/${Date.now()}-${sichererDateiname(datei.name)}`;
-      const { error: uploadFehler } = await supabase.storage
-        .from("kundendokumente")
-        .upload(pfad, datei);
-      if (uploadFehler) throw uploadFehler;
-
-      const { data: authData } = await supabase.auth.getUser();
-      const { error: insertFehler } = await supabase.from("kunden_dokumente").insert({
-        organisation_id: organisationId,
-        kunde_id: kundeId,
-        storage_path: pfad,
-        dateiname: datei.name,
-        dateityp: datei.type,
-        hochgeladen_von: authData.user?.id,
-      });
-      if (insertFehler) throw insertFehler;
-
-      ladeDokumente(kundeId);
-    } catch (err) {
-      console.error(err);
-      setHinweis(txt.fehlerDokumentUpload);
-    } finally {
-      setLaedt(false);
-    }
-  }
-
-  async function dokumentOeffnen(pfad: string) {
-    const { data, error } = await supabase.storage
-      .from("kundendokumente")
-      .createSignedUrl(pfad, 60);
-    if (error || !data) {
-      setHinweis(txt.fehlerDokumentOeffnen);
-      return;
-    }
-    window.open(data.signedUrl, "_blank");
-  }
-
-  async function dokumentLoeschen(dokId: string, pfad: string, kundeId: string) {
-    await supabase.storage.from("kundendokumente").remove([pfad]);
-    await supabase.from("kunden_dokumente").delete().eq("id", dokId);
-    ladeDokumente(kundeId);
   }
 
   async function neuenLinkAnfordern(kundeId: string, telefon: string | null) {
@@ -995,41 +930,11 @@ export default function KundenListe({
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
                   {txt.dokumenteLabel}
                 </p>
-
-                {dokumente.length > 0 && (
-                  <div className="mb-2 space-y-1.5">
-                    {dokumente.map((d) => (
-                      <div
-                        key={d.id}
-                        className="flex items-center justify-between gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5"
-                      >
-                        <button
-                          onClick={() => dokumentOeffnen(d.storage_path)}
-                          className="truncate text-left text-sm text-[var(--text-strong)] hover:underline"
-                        >
-                          {d.dateiname}
-                        </button>
-                        <button
-                          onClick={() => dokumentLoeschen(d.id, d.storage_path, k.id)}
-                          className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
-                        >
-                          {txt.loeschen}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <label className="block cursor-pointer rounded border border-dashed border-[var(--border-input)] px-3 py-2 text-center text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
-                  {txt.dokumentHochladen}
-                  <input
-                    type="file"
-                    className="hidden"
-                    onChange={(e) =>
-                      e.target.files?.[0] && dokumentHochladen(k.id, e.target.files[0])
-                    }
-                  />
-                </label>
+                <KundenDokumente
+                  key={`dokumente-${k.id}-${mergeVersion}`}
+                  kundeId={k.id}
+                  organisationId={organisationId}
+                />
               </div>
 
               <div className="border-t border-[var(--border)] pt-3">
