@@ -93,6 +93,7 @@ export default function HowTo({ istIntern, autoOeffnen, onGesehen }: HowToProps)
     { titel: txt.internTitel3, text: txt.internText3 },
     { titel: txt.internTitel4, text: txt.internText4 },
     { titel: txt.internTitel5, text: txt.internText5 },
+    { titel: txt.internTitel6, text: txt.internText6 },
   ];
   const kundeSchritte: HowToSchritt[] = [
     { titel: txt.kundeTitel1, text: txt.kundeText1 },

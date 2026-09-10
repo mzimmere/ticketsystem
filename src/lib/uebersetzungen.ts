@@ -1207,6 +1207,8 @@ export interface Uebersetzung {
     internText4: string;
     internTitel5: string;
     internText5: string;
+    internTitel6: string;
+    internText6: string;
     kundeTitel1: string;
     kundeText1: string;
     kundeTitel2: string;
@@ -2598,6 +2600,8 @@ const de: Uebersetzung = {
     internText4: "Ist für die Firma eine SLA-Frist hinterlegt, zeigt das Ticket eine Reaktions- und Lösungsfrist. Wird eine Frist gerissen, erscheint automatisch eine Warnung im Ticket und eine E-Mail geht an den zuständigen Techniker bzw. die Admins.",
     internTitel5: "Dashboard",
     internText5: "Kennzahlen zu Ticketaufkommen, Reaktionszeiten und SLA-Einhaltung – zu finden über das Balken-Symbol in der linken Leiste.",
+    internTitel6: "Kunden-Dokumente",
+    internText6: "In der Kundenverwaltung lassen sich pro Kunde Dokumente hochladen (unabhängig von Tickets), z.B. Wartungsverträge oder Rechnungen. Kategorien dafür legt man unter Verwaltung → Werkzeuge frei an und kann sie jederzeit umbenennen.",
     kundeTitel1: "Neue Anfrage stellen",
     kundeText1: 'Über "+ Neue Anfrage" ein Anliegen kurz beschreiben. Das Team meldet sich direkt im Ticket zurück.',
     kundeTitel2: "Status verfolgen",
@@ -3989,6 +3993,8 @@ const en: Uebersetzung = {
     internText4: "If an SLA deadline is configured for the company, the ticket shows a response and resolution deadline. If a deadline is missed, a warning automatically appears on the ticket and an email goes to the responsible technician or the admins.",
     internTitel5: "Dashboard",
     internText5: "Metrics on ticket volume, response times, and SLA compliance – found via the bar-chart icon in the left sidebar.",
+    internTitel6: "Customer documents",
+    internText6: "Customer management lets you upload documents per customer (independent of tickets), e.g. maintenance contracts or invoices. Categories for these are freely defined under Management → Tools and can be renamed anytime.",
     kundeTitel1: "Submit a new request",
     kundeText1: 'Use "+ New request" to briefly describe an issue. The team will reply directly within the ticket.',
     kundeTitel2: "Track status",

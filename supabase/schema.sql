@@ -3152,3 +3152,15 @@ create policy dokument_kategorien_delete on dokument_kategorien for delete
 
 alter table kunden_dokumente add column if not exists kategorie_id uuid references dokument_kategorien(id) on delete set null;
 create index if not exists idx_kunden_dokumente_kategorie on kunden_dokumente(kategorie_id);
+
+-- ============================================================
+-- 75. Bugfix: Storage-Bucket "kundendokumente" fehlte tatsaechlich in
+-- Supabase - die Voraussetzung war in Abschnitt 15 zwar dokumentiert und
+-- die RLS-Policies fuer storage.objects existierten bereits, der Bucket
+-- selbst wurde aber nie angelegt. Dadurch schlug JEDER Dokument-Upload
+-- seit Einfuehrung des Features mit einem stillen "bucket not found"-
+-- Fehler fehl (kunden_dokumente blieb dauerhaft komplett leer, 0 Zeilen
+-- seit Erstellung der Tabelle).
+-- ============================================================
+insert into storage.buckets (id, name, public) values ('kundendokumente', 'kundendokumente', false)
+  on conflict (id) do nothing;

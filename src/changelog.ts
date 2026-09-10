@@ -8,6 +8,8 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-09-10", titel: "Anleitung (\"?\"-Symbol) erwähnt jetzt auch Kunden-Dokumente inkl. Kategorien" },
+  { datum: "2026-09-10", titel: "Schwerwiegender Bugfix: Kunden-Dokumente ließen sich nie tatsächlich hochladen – der dafür nötige Storage-Bucket wurde nie angelegt, obwohl als Voraussetzung dokumentiert. Jeder Upload scheiterte seit Einführung des Features lautlos, die Tabelle war seit jeher komplett leer. Bucket jetzt nachträglich angelegt" },
   { datum: "2026-09-10", titel: "Neu: Kunden-Dokumente lassen sich jetzt Kategorien zuordnen (z.B. Wartungsvertrag, Rechnung) – frei anlegbar und umbenennbar unter Verwaltung → Werkzeuge, Zuordnung beim Hochladen oder nachträglich per Dropdown änderbar" },
   { datum: "2026-08-23", titel: "Verwaltung → Dongles & Lizenzen: Dongles können jetzt auch dort gelöscht werden (sowohl in der Gesamtübersicht als auch im Nicht-zugeordnet-Pool), nicht mehr nur in der Kundenverwaltung" },
   { datum: "2026-08-23", titel: "Dongle löschen jetzt gut sichtbar direkt in der Kopfzeile jedes Dongles (Papierkorb-Symbol) statt versteckt am Ende der aufgeklappten Modul-Liste – z.B. um versehentlich falsch angelegte Dongles wieder zu entfernen" },
