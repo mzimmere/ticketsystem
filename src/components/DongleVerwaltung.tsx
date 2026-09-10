@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
-import { Trash2 } from "lucide-react";
+import { Trash2, Copy, Check } from "lucide-react";
 
 type Wartungsvertrag = "aktiv" | "inaktiv" | "nicht_gewuenscht";
 
@@ -75,6 +75,17 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
   };
   const [dongles, setDongles] = useState<Dongle[]>([]);
   const [offenDongleId, setOffenDongleId] = useState<string | null>(null);
+  const [kopiertId, setKopiertId] = useState<string | null>(null);
+
+  async function seriennummerKopieren(id: string, seriennummer: string) {
+    try {
+      await navigator.clipboard.writeText(seriennummer);
+      setKopiertId(id);
+      setTimeout(() => setKopiertId((k) => (k === id ? null : k)), 1500);
+    } catch {
+      // Zwischenablage nicht verfügbar (z.B. kein HTTPS) - einfach ignorieren
+    }
+  }
   const [module, setModule] = useState<Record<string, Modul[]>>({});
   const [neuesModul, setNeuesModul] = useState<Record<string, string>>({});
   const [zeigeNeuerDongle, setZeigeNeuerDongle] = useState(false);
@@ -261,6 +272,18 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
             className="flex w-full flex-wrap items-center gap-2 px-3 py-2 text-left hover:bg-[var(--bg-muted)]"
           >
             <span className="font-mono text-xs text-[var(--text-strong)]">{d.seriennummer}</span>
+            <span
+              role="button"
+              tabIndex={0}
+              title={txt.seriennummerKopieren}
+              onClick={(e) => {
+                e.stopPropagation();
+                seriennummerKopieren(d.id, d.seriennummer);
+              }}
+              className="text-[var(--text-faint)] hover:text-akzent"
+            >
+              {kopiertId === d.id ? <Check size={12} /> : <Copy size={12} />}
+            </span>
             <span className="text-xs text-[var(--text-faint)]">· {d.software}</span>
             {laufzeit?.aktuelle_engine_build && (
               <span className="rounded bg-[var(--bg-muted)] px-1.5 py-0.5 font-mono text-[0.65rem] text-[var(--text-soft)]">

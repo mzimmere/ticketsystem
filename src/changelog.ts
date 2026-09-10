@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-09-10", titel: "Dongle-Seriennummer per Klick auf das Kopieren-Symbol in die Zwischenablage kopierbar – sowohl in der Kundenverwaltung als auch in Verwaltung → Dongles & Lizenzen (Gesamtübersicht und Nicht-zugeordnet-Pool)" },
   { datum: "2026-09-10", titel: "Anleitung (\"?\"-Symbol) erwähnt jetzt auch Kunden-Dokumente inkl. Kategorien" },
   { datum: "2026-09-10", titel: "Schwerwiegender Bugfix: Kunden-Dokumente ließen sich nie tatsächlich hochladen – der dafür nötige Storage-Bucket wurde nie angelegt, obwohl als Voraussetzung dokumentiert. Jeder Upload scheiterte seit Einführung des Features lautlos, die Tabelle war seit jeher komplett leer. Bucket jetzt nachträglich angelegt" },
   { datum: "2026-09-10", titel: "Neu: Kunden-Dokumente lassen sich jetzt Kategorien zuordnen (z.B. Wartungsvertrag, Rechnung) – frei anlegbar und umbenennbar unter Verwaltung → Werkzeuge, Zuordnung beim Hochladen oder nachträglich per Dropdown änderbar" },

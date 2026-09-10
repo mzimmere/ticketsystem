@@ -4,7 +4,7 @@ import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
 import DongleImport from "./DongleImport";
 import { benachrichtigeKunde } from "../lib/benachrichtigungen";
-import { Trash2 } from "lucide-react";
+import { Trash2, Copy, Check } from "lucide-react";
 
 interface Vorlage {
   betreff: string;
@@ -106,6 +106,17 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   const [einladungLaedt, setEinladungLaedt] = useState(false);
   const [einladungHinweis, setEinladungHinweis] = useState<string | null>(null);
   const [mailStatusByKunde, setMailStatusByKunde] = useState<Record<string, MailStatus>>({});
+  const [kopiertId, setKopiertId] = useState<string | null>(null);
+
+  async function seriennummerKopieren(id: string, seriennummer: string) {
+    try {
+      await navigator.clipboard.writeText(seriennummer);
+      setKopiertId(id);
+      setTimeout(() => setKopiertId((k) => (k === id ? null : k)), 1500);
+    } catch {
+      // Zwischenablage nicht verfügbar (z.B. kein HTTPS) - einfach ignorieren
+    }
+  }
 
   useEffect(() => {
     alleNeuLaden();
@@ -374,6 +385,13 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                 className="flex flex-wrap items-center gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5"
               >
                 <span className="font-mono text-xs text-[var(--text-strong)]">{d.seriennummer}</span>
+                <button
+                  onClick={() => seriennummerKopieren(d.id, d.seriennummer)}
+                  title={dongleTxt.seriennummerKopieren}
+                  className="text-[var(--text-faint)] hover:text-akzent"
+                >
+                  {kopiertId === d.id ? <Check size={12} /> : <Copy size={12} />}
+                </button>
                 <span className="text-xs text-[var(--text-faint)]">· {d.software}</span>
                 {d.gruppe && <span className="text-xs text-[var(--text-faint)]">({d.gruppe})</span>}
                 <div className="ml-auto flex items-center gap-1.5">
@@ -502,6 +520,13 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                 className="flex flex-wrap items-center gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5 text-sm"
               >
                 <span className="font-mono text-xs text-[var(--text-strong)]">{d.seriennummer}</span>
+                <button
+                  onClick={() => seriennummerKopieren(d.id, d.seriennummer)}
+                  title={dongleTxt.seriennummerKopieren}
+                  className="text-[var(--text-faint)] hover:text-akzent"
+                >
+                  {kopiertId === d.id ? <Check size={12} /> : <Copy size={12} />}
+                </button>
                 <span className="text-xs text-[var(--text-faint)]">· {d.software}</span>
                 <span
                   className={`ml-auto text-xs ${

@@ -910,6 +910,7 @@ export interface Uebersetzung {
     wartungAktiv: string;
     wartungInaktiv: string;
     wartungNichtGewuenscht: string;
+    seriennummerKopieren: string;
     fehlerLaden: string;
     seriennummerVergeben: string;
     fehlerAnlegen: string;
@@ -2303,6 +2304,7 @@ const de: Uebersetzung = {
     wartungAktiv: "Wartungsvertrag aktiv",
     wartungInaktiv: "Wartungsvertrag inaktiv",
     wartungNichtGewuenscht: "Nicht gewünscht",
+    seriennummerKopieren: "Seriennummer kopieren",
     fehlerLaden: "Dongles konnten nicht geladen werden.",
     seriennummerVergeben: "Diese Seriennummer ist in dieser Firma bereits vergeben.",
     fehlerAnlegen: "Dongle konnte nicht angelegt werden.",
@@ -3696,6 +3698,7 @@ const en: Uebersetzung = {
     wartungAktiv: "Maintenance contract active",
     wartungInaktiv: "Maintenance contract inactive",
     wartungNichtGewuenscht: "Not desired",
+    seriennummerKopieren: "Copy serial number",
     fehlerLaden: "Dongles could not be loaded.",
     seriennummerVergeben: "This serial number is already in use at this company.",
     fehlerAnlegen: "Could not create dongle.",
