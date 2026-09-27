@@ -153,7 +153,7 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
   async function ladeLizenzZeilen(): Promise<(string | number | null)[][] | null> {
     const { data } = await supabase
       .from("lizenz_vertraege")
-      .select("lizenz_seriennummer, produkt_name, lizenz_typ, vertrag_ende, status, kunde:kunde_id(name), dongle:dongle_id(seriennummer)")
+      .select("lizenz_seriennummer, produkt_name, lizenz_typ, vertrag_ende, status, kunde:kunde_id(name, firmenname), dongle:dongle_id(seriennummer)")
       .eq("organisation_id", organisationId)
       .not("vertrag_ende", "is", null)
       .gte("vertrag_ende", von)
@@ -164,6 +164,7 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
 
     return data.map((v) => [
       (v.kunde as unknown as { name: string | null } | null)?.name ?? null,
+      (v.kunde as unknown as { firmenname: string | null } | null)?.firmenname ?? null,
       (v.dongle as unknown as { seriennummer: string | null } | null)?.seriennummer ?? txt.keinDongle,
       v.lizenz_seriennummer,
       v.produkt_name,

@@ -9,7 +9,7 @@ interface FaelligeLizenz {
   produkt_name: string;
   vertrag_ende: string;
   status: string | null;
-  kunde: { name: string | null } | null;
+  kunde: { name: string | null; firmenname: string | null } | null;
 }
 
 export default function LizenzVerlaengerungen({ organisationId }: { organisationId: string }) {
@@ -44,7 +44,7 @@ export default function LizenzVerlaengerungen({ organisationId }: { organisation
     const grenze = new Date(Date.now() + tage * 86400000).toISOString().slice(0, 10);
     const { data } = await supabase
       .from("lizenz_vertraege")
-      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende, status, kunde:kunde_id(name)")
+      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende, status, kunde:kunde_id(name, firmenname)")
       .eq("organisation_id", organisationId)
       .not("kunde_id", "is", null)
       .not("vertrag_ende", "is", null)
@@ -146,6 +146,9 @@ export default function LizenzVerlaengerungen({ organisationId }: { organisation
                 >
                   <span className="text-sm text-[var(--text-strong)]">
                     {v.kunde?.name ?? txt.unbenannt}
+                    {v.kunde?.firmenname && (
+                      <span className="font-normal text-[var(--text-faint)]"> ({v.kunde.firmenname})</span>
+                    )}
                   </span>
                   <span className="text-xs text-[var(--text-faint)]">· {v.produkt_name}</span>
                   <span className="font-mono text-xs text-[var(--text-faint)]">
