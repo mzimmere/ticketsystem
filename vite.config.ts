@@ -24,6 +24,15 @@ export default defineConfig({
       // (Tickets, Realtime etc.) laufen bewusst NICHT ueber den Service
       // Worker, damit nie veraltete Ticketdaten angezeigt werden.
       includeAssets: ['favicon.svg', 'icons.svg', 'apple-touch-icon.png'],
+      workbox: {
+        // exceljs/jspdf (Lizenz-Export als XLSX/PDF) werden per dynamic
+        // import() nur bei Klick nachgeladen und sind zusammen >1.5MB -
+        // ohne diesen Ausschluss wuerde der Service Worker sie bei JEDER
+        // Installation fuer JEDEN Nutzer im Hintergrund vorladen, obwohl
+        // die meisten sie nie anfassen. Normaler Netzwerk-Fetch bei Bedarf
+        // reicht hier voellig aus (kein Offline-Anspruch fuer Exporte).
+        globIgnores: ['**/exceljs*.js', '**/jspdf*.js', '**/html2canvas*.js', '**/purify.es*.js'],
+      },
       manifest: {
         name: 'Ticketsystem',
         short_name: 'Ticketsystem',

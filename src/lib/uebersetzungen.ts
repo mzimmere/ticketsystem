@@ -724,6 +724,7 @@ export interface Uebersetzung {
     csatSub: string;
     lizenzLabel: string;
     lizenzSub: string;
+    lizenzPdfTitelTemplate: string;
     csvTicketsKopf: string[];
     csvZeitKopf: string[];
     csvCsatKopf: string[];
@@ -2123,7 +2124,8 @@ const de: Uebersetzung = {
     csatLabel: "⭐ CSAT-Bewertungen exportieren",
     csatSub: "Nur Tickets mit Kundenbewertung",
     lizenzLabel: "🔑 Lizenz-Verlängerungen exportieren",
-    lizenzSub: "Alle Lizenzverträge mit Vertragsende im gewählten Zeitraum",
+    lizenzSub: "Alle Lizenzverträge mit Vertragsende im gewählten Zeitraum – als CSV, XLSX oder PDF",
+    lizenzPdfTitelTemplate: "Lizenz-Verlängerungen {von} – {bis}",
     csvTicketsKopf: ["Ticket-Nr", "Titel", "Status", "Priorität", "Erstellt", "Erste Antwort", "Reaktion fällig", "Lösung fällig", "CSAT", "Kunde", "Zugewiesen"],
     csvZeitKopf: ["Datum", "Minuten", "Stunden", "Beschreibung", "Art", "Ticket-Nr", "Ticket", "Techniker", "Kunde"],
     csvCsatKopf: ["Ticket-Nr", "Titel", "Bewertung", "Bewertet am", "Kunde", "Techniker"],
@@ -3523,7 +3525,8 @@ const en: Uebersetzung = {
     csatLabel: "⭐ Export CSAT ratings",
     csatSub: "Only tickets with customer rating",
     lizenzLabel: "🔑 Export license renewals",
-    lizenzSub: "All license contracts with a contract end date in the selected period",
+    lizenzSub: "All license contracts with a contract end date in the selected period – as CSV, XLSX, or PDF",
+    lizenzPdfTitelTemplate: "License renewals {von} – {bis}",
     csvTicketsKopf: ["Ticket no.", "Title", "Status", "Priority", "Created", "First response", "Response due", "Resolution due", "CSAT", "Customer", "Assigned"],
     csvZeitKopf: ["Date", "Minutes", "Hours", "Description", "Type", "Ticket no.", "Ticket", "Technician", "Customer"],
     csvCsatKopf: ["Ticket no.", "Title", "Rating", "Rated on", "Customer", "Technician"],

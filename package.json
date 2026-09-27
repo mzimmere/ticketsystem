@@ -11,7 +11,10 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2",
+    "exceljs": "^4.4.0",
     "imapflow": "^1.6.5",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.21.0",
     "mailparser": "^3.9.14",
     "nodemailer": "^9.0.3",

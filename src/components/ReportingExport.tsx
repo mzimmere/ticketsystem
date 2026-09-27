@@ -22,6 +22,45 @@ function download(inhalt: string, dateiname: string, typ = "text/csv;charset=utf
   URL.revokeObjectURL(url);
 }
 
+function downloadBlob(inhalt: BlobPart, dateiname: string, typ: string) {
+  const blob = new Blob([inhalt], { type: typ });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = dateiname; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// exceljs/jspdf werden erst bei Bedarf nachgeladen (dynamic import), damit
+// sie nicht das Haupt-Bundle aufblaehen - die meisten Exporte laufen
+// weiterhin als reines CSV ohne diese Abhaengigkeiten.
+async function downloadXlsx(kopf: string[], zeilen: (string | number | null)[][], dateiname: string, blattname: string) {
+  const { Workbook } = await import("exceljs");
+  const wb = new Workbook();
+  const ws = wb.addWorksheet(blattname);
+  ws.addRow(kopf);
+  ws.getRow(1).font = { bold: true };
+  zeilen.forEach((z) => ws.addRow(z));
+  ws.columns.forEach((col) => { col.width = 20; });
+  const buffer = await wb.xlsx.writeBuffer();
+  downloadBlob(buffer, dateiname, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+}
+
+async function downloadPdf(titel: string, kopf: string[], zeilen: (string | number | null)[][], dateiname: string) {
+  const { jsPDF } = await import("jspdf");
+  const { default: autoTable } = await import("jspdf-autotable");
+  const doc = new jsPDF({ orientation: "landscape" });
+  doc.setFontSize(13);
+  doc.text(titel, 14, 15);
+  autoTable(doc, {
+    head: [kopf],
+    body: zeilen.map((z) => z.map((f) => (f === null ? "" : String(f)))),
+    startY: 20,
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [37, 99, 235] },
+  });
+  doc.save(dateiname);
+}
+
 export default function ReportingExport({ organisationId }: ReportingExportProps) {
   const { sprache } = useSprache();
   const txt = texte(sprache).reportingExport;
@@ -111,8 +150,7 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
     setLaedt(null);
   }
 
-  async function exportLizenzVerlaengerungen() {
-    setLaedt("lizenz");
+  async function ladeLizenzZeilen(): Promise<(string | number | null)[][] | null> {
     const { data } = await supabase
       .from("lizenz_vertraege")
       .select("lizenz_seriennummer, produkt_name, lizenz_typ, vertrag_ende, status, kunde:kunde_id(name), dongle:dongle_id(seriennummer)")
@@ -122,10 +160,9 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
       .lte("vertrag_ende", bis)
       .order("vertrag_ende");
 
-    if (!data) { setLaedt(null); return; }
+    if (!data) return null;
 
-    const kopf = csvZeile(txt.csvLizenzKopf);
-    const zeilen = data.map((v) => csvZeile([
+    return data.map((v) => [
       (v.kunde as unknown as { name: string | null } | null)?.name ?? null,
       (v.dongle as unknown as { seriennummer: string | null } | null)?.seriennummer ?? txt.keinDongle,
       v.lizenz_seriennummer,
@@ -133,9 +170,26 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
       v.lizenz_typ,
       v.vertrag_ende,
       v.status,
-    ]));
-    download([kopf, ...zeilen].join("\n"), `lizenz-verlaengerungen-${von}-${bis}.csv`);
-    setLaedt(null);
+    ]);
+  }
+
+  async function exportLizenzVerlaengerungen(format: "csv" | "xlsx" | "pdf") {
+    setLaedt(`lizenz-${format}`);
+    try {
+      const zeilen = await ladeLizenzZeilen();
+      if (!zeilen) return;
+
+      if (format === "csv") {
+        const kopf = csvZeile(txt.csvLizenzKopf);
+        download([kopf, ...zeilen.map((z) => csvZeile(z))].join("\n"), `lizenz-verlaengerungen-${von}-${bis}.csv`);
+      } else if (format === "xlsx") {
+        await downloadXlsx(txt.csvLizenzKopf, zeilen, `lizenz-verlaengerungen-${von}-${bis}.xlsx`, txt.lizenzLabel.replace(/^\S+\s/, ""));
+      } else {
+        await downloadPdf(txt.lizenzPdfTitelTemplate.replace("{von}", von).replace("{bis}", bis), txt.csvLizenzKopf, zeilen, `lizenz-verlaengerungen-${von}-${bis}.pdf`);
+      }
+    } finally {
+      setLaedt(null);
+    }
   }
 
   return (
@@ -163,7 +217,6 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
           { id: "tickets", label: txt.ticketsLabel, sub: txt.ticketsSub, fn: exportTickets },
           { id: "zeit", label: txt.zeitLabel, sub: txt.zeitSub, fn: exportZeit },
           { id: "csat", label: txt.csatLabel, sub: txt.csatSub, fn: exportCsat },
-          { id: "lizenz", label: txt.lizenzLabel, sub: txt.lizenzSub, fn: exportLizenzVerlaengerungen },
         ].map((exp) => (
           <button key={exp.id} onClick={exp.fn} disabled={laedt !== null}
             className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-3 text-left hover:bg-[var(--bg-muted)] disabled:opacity-50 transition-colors">
@@ -176,6 +229,23 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
             </span>
           </button>
         ))}
+
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-3">
+          <p className="text-sm font-medium text-[var(--text-strong)]">{txt.lizenzLabel}</p>
+          <p className="mb-2 text-xs text-[var(--text-faint)]">{txt.lizenzSub}</p>
+          <div className="flex gap-2">
+            {(["csv", "xlsx", "pdf"] as const).map((format) => (
+              <button
+                key={format}
+                onClick={() => exportLizenzVerlaengerungen(format)}
+                disabled={laedt !== null}
+                className="flex-1 rounded-lg border border-[var(--border-input)] px-3 py-1.5 text-xs font-medium text-[var(--text-soft)] hover:bg-[var(--bg-muted)] disabled:opacity-50 transition-colors"
+              >
+                {laedt === `lizenz-${format}` ? "⏳" : format.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
