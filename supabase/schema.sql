@@ -3164,3 +3164,31 @@ create index if not exists idx_kunden_dokumente_kategorie on kunden_dokumente(ka
 -- ============================================================
 insert into storage.buckets (id, name, public) values ('kundendokumente', 'kundendokumente', false)
   on conflict (id) do nothing;
+
+-- ============================================================
+-- 76. Monatlicher Sammelbericht fuer Lizenz-Verlaengerungen (neue
+-- Edge Function lizenz-monatsbericht) - im Unterschied zur taeglichen
+-- Einzel-Erinnerung pro Lizenz (lizenz-erinnerung-pruefen, Abschnitt 46)
+-- fasst dies ALLE Vertragsenden des laufenden Kalendermonats in EINER
+-- Mail pro Firma zusammen. Bewusst opt-in ueber monatsbericht_aktiv,
+-- da nicht jede Firma zusaetzlich zu den Einzel-Erinnerungen auch noch
+-- einen Sammelbericht will. Einstellbar in LizenzVerlaengerungen.tsx
+-- (Verwaltung -> Werkzeuge), gleiche Empfaenger-Logik wie die Einzel-
+-- Erinnerung (erinnerung_email falls gesetzt, sonst alle Org-Admins).
+-- ============================================================
+alter table lizenz_konfiguration add column if not exists monatsbericht_aktiv boolean not null default false;
+
+-- select cron.schedule(
+--   'lizenz-monatsbericht-monatlich',
+--   '0 6 1 * *',
+--   $cron$
+--   select net.http_post(
+--     url := 'https://wfntgmavwzuldwjjhhlp.supabase.co/functions/v1/lizenz-monatsbericht',
+--     headers := jsonb_build_object(
+--       'Content-Type', 'application/json',
+--       'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'cron_shared_secret')
+--     ),
+--     body := '{}'::jsonb
+--   );
+--   $cron$
+-- );

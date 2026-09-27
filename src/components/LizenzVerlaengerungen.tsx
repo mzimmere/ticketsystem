@@ -17,6 +17,7 @@ export default function LizenzVerlaengerungen({ organisationId }: { organisation
   const txt = texte(sprache).lizenzVerlaengerungen;
   const [tageVorher, setTageVorher] = useState("30");
   const [erinnerungEmail, setErinnerungEmail] = useState("");
+  const [monatsberichtAktiv, setMonatsberichtAktiv] = useState(false);
   const [lizenzen, setLizenzen] = useState<FaelligeLizenz[]>([]);
   const [laedt, setLaedt] = useState(false);
   const [hinweis, setHinweis] = useState<string | null>(null);
@@ -29,12 +30,13 @@ export default function LizenzVerlaengerungen({ organisationId }: { organisation
   async function laden() {
     const { data: konfig } = await supabase
       .from("lizenz_konfiguration")
-      .select("erinnerung_tage_vorher, erinnerung_email")
+      .select("erinnerung_tage_vorher, erinnerung_email, monatsbericht_aktiv")
       .eq("organisation_id", organisationId)
       .maybeSingle();
     const tage = konfig?.erinnerung_tage_vorher ?? 30;
     setTageVorher(String(tage));
     setErinnerungEmail(konfig?.erinnerung_email ?? "");
+    setMonatsberichtAktiv(konfig?.monatsbericht_aktiv ?? false);
     await ladeLizenzen(tage);
   }
 
@@ -59,6 +61,7 @@ export default function LizenzVerlaengerungen({ organisationId }: { organisation
       organisation_id: organisationId,
       erinnerung_tage_vorher: tage,
       erinnerung_email: erinnerungEmail.trim() || null,
+      monatsbericht_aktiv: monatsberichtAktiv,
     });
     if (!error) await ladeLizenzen(tage);
     setLaedt(false);
@@ -96,6 +99,18 @@ export default function LizenzVerlaengerungen({ organisationId }: { organisation
         />
         <p className="mt-1 text-xs text-[var(--text-faint)]">
           {txt.erinnerungHinweis}
+        </p>
+
+        <label className="mt-3 flex items-center gap-2 text-sm text-[var(--text-strong)]">
+          <input
+            type="checkbox"
+            checked={monatsberichtAktiv}
+            onChange={(e) => setMonatsberichtAktiv(e.target.checked)}
+          />
+          {txt.monatsberichtLabel}
+        </label>
+        <p className="mt-1 text-xs text-[var(--text-faint)]">
+          {txt.monatsberichtHinweis}
         </p>
         <button
           onClick={speichern}

@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-09-27", titel: "Neu: Optionaler monatlicher Sammelbericht für Lizenz-Verlängerungen per Mail an die Org-Admins (Verwaltung → Werkzeuge → Lizenz-Ablauf-Erinnerungen, Checkbox) – fasst alle Vertragsenden des Monats in einer Mail zusammen, geht am 1. jeden Monats automatisch raus" },
   { datum: "2026-09-27", titel: "Neu: Lizenz-Verlängerungen als CSV exportierbar (Verwaltung → Werkzeuge → Daten exportieren) – alle Lizenzverträge mit Vertragsende im gewählten Zeitraum, inkl. Kunde, Dongle- und Lizenz-Seriennummer, für die monatliche Übersicht der exocad-Renewals" },
   { datum: "2026-09-10", titel: "Dongle-Seriennummer per Klick auf das Kopieren-Symbol in die Zwischenablage kopierbar – sowohl in der Kundenverwaltung als auch in Verwaltung → Dongles & Lizenzen (Gesamtübersicht und Nicht-zugeordnet-Pool)" },
   { datum: "2026-09-10", titel: "Anleitung (\"?\"-Symbol) erwähnt jetzt auch Kunden-Dokumente inkl. Kategorien" },

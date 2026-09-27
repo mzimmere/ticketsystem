@@ -1102,6 +1102,8 @@ export interface Uebersetzung {
     erinnerungSendenAn: string;
     erinnerungEmailPlatzhalter: string;
     erinnerungHinweis: string;
+    monatsberichtLabel: string;
+    monatsberichtHinweis: string;
     speichert: string;
     speichern: string;
     fehlerSpeichern: string;
@@ -2500,6 +2502,8 @@ const de: Uebersetzung = {
     erinnerungSendenAn: "Erinnerung senden an",
     erinnerungEmailPlatzhalter: "leer = alle Org-Admins dieser Firma",
     erinnerungHinweis: "Aktive Lizenzverträge, deren Vertragsende innerhalb der Frist liegt, erscheinen unten und werden per E-Mail-Erinnerung gemeldet (kein automatischer Rechnungsversand, Kunden werden nie kontaktiert). Leer lassen = an alle Org-Admins; sonst nur an diese eine Adresse (z.B. Support-Postfach oder eine bestimmte Person).",
+    monatsberichtLabel: "Zusätzlich monatlichen Sammelbericht senden",
+    monatsberichtHinweis: "Am 1. jeden Monats geht eine Mail mit allen Lizenz-Verlängerungen des laufenden Monats raus (an dieselbe Adresse wie oben, sonst alle Org-Admins) – zusätzlich zu den einzelnen Ablauf-Erinnerungen oben.",
     speichert: "Speichert…",
     speichern: "Speichern",
     fehlerSpeichern: "Fehler beim Speichern.",
@@ -3898,6 +3902,8 @@ const en: Uebersetzung = {
     erinnerungSendenAn: "Send reminder to",
     erinnerungEmailPlatzhalter: "empty = all org admins of this company",
     erinnerungHinweis: "Active license contracts whose end date falls within the threshold appear below and are reported via email reminder (no automatic invoicing, customers are never contacted). Leave empty to notify all org admins; otherwise only this one address (e.g. a support mailbox or a specific person).",
+    monatsberichtLabel: "Also send a monthly summary report",
+    monatsberichtHinweis: "On the 1st of each month, an email goes out listing all license renewals for the current month (to the same address as above, otherwise all org admins) – in addition to the individual expiry reminders above.",
     speichert: "Saving…",
     speichern: "Save",
     fehlerSpeichern: "Error saving.",
