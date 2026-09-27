@@ -111,6 +111,33 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
     setLaedt(null);
   }
 
+  async function exportLizenzVerlaengerungen() {
+    setLaedt("lizenz");
+    const { data } = await supabase
+      .from("lizenz_vertraege")
+      .select("lizenz_seriennummer, produkt_name, lizenz_typ, vertrag_ende, status, kunde:kunde_id(name), dongle:dongle_id(seriennummer)")
+      .eq("organisation_id", organisationId)
+      .not("vertrag_ende", "is", null)
+      .gte("vertrag_ende", von)
+      .lte("vertrag_ende", bis)
+      .order("vertrag_ende");
+
+    if (!data) { setLaedt(null); return; }
+
+    const kopf = csvZeile(txt.csvLizenzKopf);
+    const zeilen = data.map((v) => csvZeile([
+      (v.kunde as unknown as { name: string | null } | null)?.name ?? null,
+      (v.dongle as unknown as { seriennummer: string | null } | null)?.seriennummer ?? txt.keinDongle,
+      v.lizenz_seriennummer,
+      v.produkt_name,
+      v.lizenz_typ,
+      v.vertrag_ende,
+      v.status,
+    ]));
+    download([kopf, ...zeilen].join("\n"), `lizenz-verlaengerungen-${von}-${bis}.csv`);
+    setLaedt(null);
+  }
+
   return (
     <div className="space-y-4">
       <h3 className="text-sm font-medium text-[var(--text-strong)]">{txt.titel}</h3>
@@ -136,6 +163,7 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
           { id: "tickets", label: txt.ticketsLabel, sub: txt.ticketsSub, fn: exportTickets },
           { id: "zeit", label: txt.zeitLabel, sub: txt.zeitSub, fn: exportZeit },
           { id: "csat", label: txt.csatLabel, sub: txt.csatSub, fn: exportCsat },
+          { id: "lizenz", label: txt.lizenzLabel, sub: txt.lizenzSub, fn: exportLizenzVerlaengerungen },
         ].map((exp) => (
           <button key={exp.id} onClick={exp.fn} disabled={laedt !== null}
             className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-3 text-left hover:bg-[var(--bg-muted)] disabled:opacity-50 transition-colors">

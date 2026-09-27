@@ -722,13 +722,17 @@ export interface Uebersetzung {
     zeitSub: string;
     csatLabel: string;
     csatSub: string;
+    lizenzLabel: string;
+    lizenzSub: string;
     csvTicketsKopf: string[];
     csvZeitKopf: string[];
     csvCsatKopf: string[];
+    csvLizenzKopf: string[];
     positiv: string;
     negativ: string;
     positivMitEmoji: string;
     negativMitEmoji: string;
+    keinDongle: string;
   };
   tarifVerwaltung: {
     laedt: string;
@@ -2116,13 +2120,17 @@ const de: Uebersetzung = {
     zeitSub: "Alle Zeiteinträge mit Minuten und Beschreibung",
     csatLabel: "⭐ CSAT-Bewertungen exportieren",
     csatSub: "Nur Tickets mit Kundenbewertung",
+    lizenzLabel: "🔑 Lizenz-Verlängerungen exportieren",
+    lizenzSub: "Alle Lizenzverträge mit Vertragsende im gewählten Zeitraum",
     csvTicketsKopf: ["Ticket-Nr", "Titel", "Status", "Priorität", "Erstellt", "Erste Antwort", "Reaktion fällig", "Lösung fällig", "CSAT", "Kunde", "Zugewiesen"],
     csvZeitKopf: ["Datum", "Minuten", "Stunden", "Beschreibung", "Art", "Ticket-Nr", "Ticket", "Techniker", "Kunde"],
     csvCsatKopf: ["Ticket-Nr", "Titel", "Bewertung", "Bewertet am", "Kunde", "Techniker"],
+    csvLizenzKopf: ["Kunde", "Dongle-Seriennummer", "Lizenz-Seriennummer", "Produkt", "Lizenztyp", "Vertragsende", "Status"],
     positiv: "Positiv",
     negativ: "Negativ",
     positivMitEmoji: "Positiv 👍",
     negativMitEmoji: "Negativ 👎",
+    keinDongle: "Nicht verknüpft",
   },
   tarifVerwaltung: {
     laedt: "Lädt…",
@@ -3510,13 +3518,17 @@ const en: Uebersetzung = {
     zeitSub: "All time entries with minutes and description",
     csatLabel: "⭐ Export CSAT ratings",
     csatSub: "Only tickets with customer rating",
+    lizenzLabel: "🔑 Export license renewals",
+    lizenzSub: "All license contracts with a contract end date in the selected period",
     csvTicketsKopf: ["Ticket no.", "Title", "Status", "Priority", "Created", "First response", "Response due", "Resolution due", "CSAT", "Customer", "Assigned"],
     csvZeitKopf: ["Date", "Minutes", "Hours", "Description", "Type", "Ticket no.", "Ticket", "Technician", "Customer"],
     csvCsatKopf: ["Ticket no.", "Title", "Rating", "Rated on", "Customer", "Technician"],
+    csvLizenzKopf: ["Customer", "Dongle serial number", "License serial number", "Product", "License type", "Contract end", "Status"],
     positiv: "Positive",
     negativ: "Negative",
     positivMitEmoji: "Positive 👍",
     negativMitEmoji: "Negative 👎",
+    keinDongle: "Not linked",
   },
   tarifVerwaltung: {
     laedt: "Loading…",
