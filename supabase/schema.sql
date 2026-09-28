@@ -3220,3 +3220,54 @@ drop trigger if exists lizenz_vertraege_reset_renewal_bezahlt_trigger on lizenz_
 create trigger lizenz_vertraege_reset_renewal_bezahlt_trigger
   before update on lizenz_vertraege
   for each row execute function lizenz_vertraege_reset_renewal_bezahlt();
+
+-- ============================================================
+-- 78. Renewal-Historie: nachvollziehbar machen, wie oft/wann ein Dongle
+-- bereits ein exocad-Renewal hatte und ob es jeweils bezahlt war. Eine
+-- Zeile pro archivierter (= abgeloester) Renewal-Periode. Wird NICHT
+-- manuell gepflegt, sondern automatisch vom (erweiterten) Trigger aus
+-- Abschnitt 77 befuellt: bevor vertrag_ende ueberschrieben wird, wird die
+-- BISHERIGE Periode (Ablaufdatum + renewal_bezahlt-Wert zu diesem
+-- Zeitpunkt) hier archiviert. Anzeige als aufklappbare Liste pro
+-- Lizenzvertrag in DongleVerwaltung.tsx ("Historie anzeigen").
+-- ============================================================
+create table lizenz_renewal_historie (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  lizenz_vertrag_id uuid not null references lizenz_vertraege(id) on delete cascade,
+  vertrag_ende date not null,
+  bezahlt boolean not null,
+  archiviert_am timestamptz not null default now()
+);
+create index idx_lizenz_renewal_historie_vertrag on lizenz_renewal_historie(lizenz_vertrag_id);
+create index idx_lizenz_renewal_historie_org on lizenz_renewal_historie(organisation_id);
+alter table lizenz_renewal_historie enable row level security;
+
+create policy lizenz_renewal_historie_select on lizenz_renewal_historie for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy lizenz_renewal_historie_insert on lizenz_renewal_historie for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+-- Ersetzt die Trigger-Funktion aus Abschnitt 77: archiviert zusaetzlich
+-- die bisherige Periode, bevor sie ueberschrieben wird.
+create or replace function lizenz_vertraege_reset_renewal_bezahlt() returns trigger as $$
+begin
+  if new.vertrag_ende is distinct from old.vertrag_ende then
+    if old.vertrag_ende is not null then
+      insert into lizenz_renewal_historie (organisation_id, lizenz_vertrag_id, vertrag_ende, bezahlt)
+      values (old.organisation_id, old.id, old.vertrag_ende, old.renewal_bezahlt);
+    end if;
+    new.renewal_bezahlt := false;
+  end if;
+  return new;
+end;
+$$ language plpgsql;

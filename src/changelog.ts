@@ -8,6 +8,7 @@ export interface ChangelogEintrag {
  * anhand der Listenlänge hoch – kein manuelles Nummerieren nötig.
  */
 export const changelog: ChangelogEintrag[] = [
+  { datum: "2026-09-28", titel: "Neu: Renewal-Historie beim Dongle (Kundenverwaltung) – zeigt aufklappbar alle bisherigen Renewal-Perioden eines Lizenzvertrags mit jeweiligem Bezahlstatus, damit nachvollziehbar ist, wie oft und wann schon ein exocad-Renewal fällig war. Wird automatisch archiviert, sobald ein Import ein neues Vertragsende einträgt" },
   { datum: "2026-09-28", titel: "Neu: Renewal-Bezahlstatus pro Lizenzvertrag (\"✓ Renewal bezahlt\" / \"✗ Renewal offen\") – per Klick umschaltbar beim Dongle (Kundenverwaltung) und in Verwaltung → Dongles & Lizenzen. Zeigt sichtbar, ob der Kunde für die laufende exocad-Lizenzperiode bezahlt hat und damit Support bekommen darf; wird automatisch zurückgesetzt, sobald ein Import ein neues Vertragsende einträgt" },
   { datum: "2026-09-27", titel: "Firmenname jetzt auch bei den Lizenz-Ablauf-Erinnerungen sichtbar (falls beim Kunden hinterlegt) sowie als eigene Spalte im Lizenz-Verlängerungen-Export (CSV/XLSX/PDF)" },
   { datum: "2026-09-27", titel: "Lizenz-Verlängerungen-Export: Format wählbar (CSV, XLSX oder PDF) statt nur CSV – Verwaltung → Werkzeuge → Daten exportieren" },

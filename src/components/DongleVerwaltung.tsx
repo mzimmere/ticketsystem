@@ -37,6 +37,12 @@ interface LizenzVertrag {
   renewal_bezahlt: boolean;
 }
 
+interface RenewalHistorieEintrag {
+  id: string;
+  vertrag_ende: string;
+  bezahlt: boolean;
+}
+
 const WARTUNG_FARBE: Record<Wartungsvertrag, string> = {
   aktiv: "bg-[var(--status-geloest-bg)] text-[var(--status-geloest-text)]",
   inaktiv: "bg-[var(--badge-kritisch-bg)] text-[var(--badge-kritisch-text)]",
@@ -97,6 +103,8 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
   const [vertraege, setVertraege] = useState<LizenzVertrag[]>([]);
   const [verknuepfenAuswahl, setVerknuepfenAuswahl] = useState<Record<string, string>>({});
   const [hinweis, setHinweis] = useState<string | null>(null);
+  const [historieOffenVertragId, setHistorieOffenVertragId] = useState<string | null>(null);
+  const [historieProVertrag, setHistorieProVertrag] = useState<Record<string, RenewalHistorieEintrag[]>>({});
 
   useEffect(() => {
     ladeDongles();
@@ -104,6 +112,8 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
     setOffenDongleId(null);
     setFilterNummer("");
     setAlleAnzeigen(false);
+    setHistorieOffenVertragId(null);
+    setHistorieProVertrag({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kundeId]);
 
@@ -242,6 +252,23 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
   async function renewalBezahltUmschalten(vertragId: string, aktuellerWert: boolean) {
     await supabase.from("lizenz_vertraege").update({ renewal_bezahlt: !aktuellerWert }).eq("id", vertragId);
     ladeVertraege();
+  }
+
+  // Historie wird per DB-Trigger (Abschnitt 77) automatisch befuellt, sobald
+  // sich vertrag_ende aendert - hier nur Anzeige, kein manuelles Anlegen.
+  async function historieUmschalten(vertragId: string) {
+    if (historieOffenVertragId === vertragId) {
+      setHistorieOffenVertragId(null);
+      return;
+    }
+    setHistorieOffenVertragId(vertragId);
+    if (historieProVertrag[vertragId]) return;
+    const { data } = await supabase
+      .from("lizenz_renewal_historie")
+      .select("id, vertrag_ende, bezahlt")
+      .eq("lizenz_vertrag_id", vertragId)
+      .order("vertrag_ende", { ascending: false });
+    setHistorieProVertrag((h) => ({ ...h, [vertragId]: (data as RenewalHistorieEintrag[]) ?? [] }));
   }
 
   const gefiltert = dongles.filter((d) =>
@@ -392,12 +419,38 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
                         {laufzeit.renewal_bezahlt ? txt.renewalBezahlt : txt.renewalOffen}
                       </button>
                       <button
+                        onClick={() => historieUmschalten(laufzeit.id)}
+                        className="shrink-0 text-xs text-[var(--text-faint)] hover:text-[var(--akzent)]"
+                      >
+                        {historieOffenVertragId === laufzeit.id ? txt.historieAusblenden : txt.historieAnzeigen}
+                      </button>
+                      <button
                         onClick={() => vertragLoesen(laufzeit.id)}
                         className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
                       >
                         {txt.verknuepfungLoesen}
                       </button>
                     </div>
+                    {historieOffenVertragId === laufzeit.id && (
+                      <div className="space-y-1 rounded bg-[var(--bg-surface)] px-2.5 py-2">
+                        {historieProVertrag[laufzeit.id] === undefined ? (
+                          <p className="text-xs text-[var(--text-faint)]">{txt.historieLaedt}</p>
+                        ) : historieProVertrag[laufzeit.id].length === 0 ? (
+                          <p className="text-xs text-[var(--text-faint)]">{txt.historieLeer}</p>
+                        ) : (
+                          historieProVertrag[laufzeit.id].map((h) => (
+                            <div key={h.id} className="flex items-center justify-between gap-2 text-xs">
+                              <span className="text-[var(--text-soft)]">
+                                {txt.bisPrefix} {new Date(h.vertrag_ende).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")}
+                              </span>
+                              <span className={h.bezahlt ? "text-[var(--status-geloest-text)]" : "text-[var(--badge-kritisch-text)]"}>
+                                {h.bezahlt ? txt.renewalBezahlt : txt.renewalOffen}
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
                     {laufzeit.vertrag_ende &&
                       (() => {
                         const info = laufzeitInfo(laufzeit.vertrag_ende);

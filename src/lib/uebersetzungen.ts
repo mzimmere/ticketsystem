@@ -936,6 +936,10 @@ export interface Uebersetzung {
     renewalBezahlt: string;
     renewalOffen: string;
     renewalBezahltHinweis: string;
+    historieAnzeigen: string;
+    historieAusblenden: string;
+    historieLaedt: string;
+    historieLeer: string;
     laufzeit: string;
     tageSuffix: string;
     abgelaufen: string;
@@ -2340,6 +2344,10 @@ const de: Uebersetzung = {
     renewalBezahlt: "✓ Renewal bezahlt",
     renewalOffen: "✗ Renewal offen",
     renewalBezahltHinweis: "Klicken zum Umschalten – ob das exocad-Renewal für die aktuelle Laufzeit bezahlt wurde (Voraussetzung für Support). Wird automatisch zurückgesetzt, sobald ein Import ein neues Vertragsende einträgt.",
+    historieAnzeigen: "Historie anzeigen",
+    historieAusblenden: "Historie ausblenden",
+    historieLaedt: "Lädt…",
+    historieLeer: "Noch keine früheren Renewal-Perioden erfasst.",
     laufzeit: "Laufzeit",
     tageSuffix: "Tage",
     abgelaufen: "(abgelaufen)",
@@ -3744,6 +3752,10 @@ const en: Uebersetzung = {
     renewalBezahlt: "✓ Renewal paid",
     renewalOffen: "✗ Renewal unpaid",
     renewalBezahltHinweis: "Click to toggle – whether the exocad renewal for the current term has been paid (required for support). Automatically resets once an import records a new contract end date.",
+    historieAnzeigen: "Show history",
+    historieAusblenden: "Hide history",
+    historieLaedt: "Loading…",
+    historieLeer: "No earlier renewal periods recorded yet.",
     laufzeit: "Term",
     tageSuffix: "days",
     abgelaufen: "(expired)",
