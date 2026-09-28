@@ -3192,3 +3192,31 @@ alter table lizenz_konfiguration add column if not exists monatsbericht_aktiv bo
 --   );
 --   $cron$
 -- );
+
+-- ============================================================
+-- 77. Renewal-Bezahlstatus pro Lizenzvertrag: exocad-Renewals muessen
+-- bezahlt werden, bevor der Kunde wieder Support bekommen darf. Rein
+-- manuell gepflegtes Sichtbarkeits-Flag (kein automatischer Abgleich mit
+-- exocad) - beim Dongle (DongleVerwaltung.tsx) bzw. in der zentralen
+-- Lizenzvertrags-Uebersicht (DongleLizenzVerwaltung.tsx) per Klick
+-- umschaltbar. Wird automatisch auf false zurueckgesetzt, sobald sich
+-- vertrag_ende aendert (naechster exocad-Import mit neuem Ablaufdatum =
+-- neue, noch nicht bestaetigte Zahlungsperiode) - ueber einen Trigger,
+-- damit das unabhaengig vom Update-Pfad (Import, manuelle Aenderung, ...)
+-- zuverlaessig greift.
+-- ============================================================
+alter table lizenz_vertraege add column if not exists renewal_bezahlt boolean not null default false;
+
+create or replace function lizenz_vertraege_reset_renewal_bezahlt() returns trigger as $$
+begin
+  if new.vertrag_ende is distinct from old.vertrag_ende then
+    new.renewal_bezahlt := false;
+  end if;
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists lizenz_vertraege_reset_renewal_bezahlt_trigger on lizenz_vertraege;
+create trigger lizenz_vertraege_reset_renewal_bezahlt_trigger
+  before update on lizenz_vertraege
+  for each row execute function lizenz_vertraege_reset_renewal_bezahlt();

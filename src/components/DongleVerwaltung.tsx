@@ -34,6 +34,7 @@ interface LizenzVertrag {
   status: string | null;
   dongle_id: string | null;
   aktuelle_engine_build: string | null;
+  renewal_bezahlt: boolean;
 }
 
 const WARTUNG_FARBE: Record<Wartungsvertrag, string> = {
@@ -122,7 +123,7 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
   async function ladeVertraege() {
     const { data } = await supabase
       .from("lizenz_vertraege")
-      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende, status, dongle_id, aktuelle_engine_build")
+      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende, status, dongle_id, aktuelle_engine_build, renewal_bezahlt")
       .eq("kunde_id", kundeId)
       .order("vertrag_ende", { ascending: true, nullsFirst: false });
     setVertraege((data as LizenzVertrag[]) ?? []);
@@ -230,6 +231,16 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
 
   async function vertragLoesen(vertragId: string) {
     await supabase.from("lizenz_vertraege").update({ dongle_id: null }).eq("id", vertragId);
+    ladeVertraege();
+  }
+
+  // Ob das exocad-Renewal fuer die aktuelle Laufzeit bezahlt wurde (und der
+  // Kunde damit Anspruch auf Support hat) - rein informativ, hier manuell
+  // gepflegt. Wird automatisch per DB-Trigger zurueckgesetzt, sobald sich
+  // vertrag_ende aendert (naechster Import mit neuem Ablaufdatum = neue,
+  // noch nicht bestaetigte Zahlungsperiode).
+  async function renewalBezahltUmschalten(vertragId: string, aktuellerWert: boolean) {
+    await supabase.from("lizenz_vertraege").update({ renewal_bezahlt: !aktuellerWert }).eq("id", vertragId);
     ladeVertraege();
   }
 
@@ -370,8 +381,19 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
                         </span>
                       )}
                       <button
+                        onClick={() => renewalBezahltUmschalten(laufzeit.id, laufzeit.renewal_bezahlt)}
+                        title={txt.renewalBezahltHinweis}
+                        className={`ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                          laufzeit.renewal_bezahlt
+                            ? "bg-[var(--status-geloest-bg)] text-[var(--status-geloest-text)]"
+                            : "bg-[var(--badge-kritisch-bg)] text-[var(--badge-kritisch-text)]"
+                        }`}
+                      >
+                        {laufzeit.renewal_bezahlt ? txt.renewalBezahlt : txt.renewalOffen}
+                      </button>
+                      <button
                         onClick={() => vertragLoesen(laufzeit.id)}
-                        className="ml-auto shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
+                        className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
                       >
                         {txt.verknuepfungLoesen}
                       </button>

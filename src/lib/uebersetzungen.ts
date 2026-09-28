@@ -933,6 +933,9 @@ export interface Uebersetzung {
     freiminutenLabel: string;
     lizenzvertragLabel: string;
     verknuepfungLoesen: string;
+    renewalBezahlt: string;
+    renewalOffen: string;
+    renewalBezahltHinweis: string;
     laufzeit: string;
     tageSuffix: string;
     abgelaufen: string;
@@ -2334,6 +2337,9 @@ const de: Uebersetzung = {
     freiminutenLabel: "Ticket-Freiminuten/Monat",
     lizenzvertragLabel: "Lizenzvertrag (Laufzeit)",
     verknuepfungLoesen: "Verknüpfung lösen",
+    renewalBezahlt: "✓ Renewal bezahlt",
+    renewalOffen: "✗ Renewal offen",
+    renewalBezahltHinweis: "Klicken zum Umschalten – ob das exocad-Renewal für die aktuelle Laufzeit bezahlt wurde (Voraussetzung für Support). Wird automatisch zurückgesetzt, sobald ein Import ein neues Vertragsende einträgt.",
     laufzeit: "Laufzeit",
     tageSuffix: "Tage",
     abgelaufen: "(abgelaufen)",
@@ -3735,6 +3741,9 @@ const en: Uebersetzung = {
     freiminutenLabel: "Free ticket minutes/month",
     lizenzvertragLabel: "License contract (term)",
     verknuepfungLoesen: "Unlink",
+    renewalBezahlt: "✓ Renewal paid",
+    renewalOffen: "✗ Renewal unpaid",
+    renewalBezahltHinweis: "Click to toggle – whether the exocad renewal for the current term has been paid (required for support). Automatically resets once an import records a new contract end date.",
     laufzeit: "Term",
     tageSuffix: "days",
     abgelaufen: "(expired)",

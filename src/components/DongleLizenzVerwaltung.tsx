@@ -68,6 +68,7 @@ interface AlleVertrag {
   kunde: { name: string | null } | null;
   aktuelle_engine_build: string | null;
   max_erlaubte_engine_build: string | null;
+  renewal_bezahlt: boolean;
 }
 
 interface MailStatus {
@@ -232,10 +233,15 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   async function ladeAlleVertraege() {
     const { data } = await supabase
       .from("lizenz_vertraege")
-      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende, status, kunde_id, kunde:kunde_id(name), aktuelle_engine_build, max_erlaubte_engine_build")
+      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende, status, kunde_id, kunde:kunde_id(name), aktuelle_engine_build, max_erlaubte_engine_build, renewal_bezahlt")
       .eq("organisation_id", organisationId)
       .order("lizenz_seriennummer");
     setAlleVertraege((data as unknown as AlleVertrag[]) ?? []);
+  }
+
+  async function renewalBezahltUmschalten(vertragId: string, aktuellerWert: boolean) {
+    await supabase.from("lizenz_vertraege").update({ renewal_bezahlt: !aktuellerWert }).eq("id", vertragId);
+    ladeAlleVertraege();
   }
 
   const gefilterteNichtZugeordnete = nichtZugeordnete.filter((d) =>
@@ -617,6 +623,17 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                     {txt.bisPrefix} {new Date(v.vertrag_ende).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")}
                   </span>
                 )}
+                <button
+                  onClick={() => renewalBezahltUmschalten(v.id, v.renewal_bezahlt)}
+                  title={dongleTxt.renewalBezahltHinweis}
+                  className={`rounded-full px-1.5 py-0.5 text-[0.65rem] font-medium ${
+                    v.renewal_bezahlt
+                      ? "bg-[var(--status-geloest-bg)] text-[var(--status-geloest-text)]"
+                      : "bg-[var(--badge-kritisch-bg)] text-[var(--badge-kritisch-text)]"
+                  }`}
+                >
+                  {v.renewal_bezahlt ? dongleTxt.renewalBezahlt : dongleTxt.renewalOffen}
+                </button>
                 {v.kunde_id && mailStatusByKunde[v.kunde_id] && (
                   <span
                     title={`${mailTxt.mailGesendetPrefix} ${new Date(mailStatusByKunde[v.kunde_id].gesendet_am).toLocaleString(sprache === "en" ? "en-US" : "de-DE")}`}
