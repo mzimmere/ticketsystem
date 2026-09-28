@@ -1164,6 +1164,7 @@ export interface Uebersetzung {
     wirdAngelegt: string;
     ticketAnlegen: string;
     abbrechen: string;
+    renewalOffenWarnung: string;
   };
   dateiAuswahl: {
     dateiAnhaengen: string;
@@ -2572,6 +2573,7 @@ const de: Uebersetzung = {
     wirdAngelegt: "Wird angelegt…",
     ticketAnlegen: "Ticket anlegen",
     abbrechen: "Abbrechen",
+    renewalOffenWarnung: "⚠ Renewal offen – Kunde hat für die aktuelle Lizenzperiode dieses Dongles noch nicht bezahlt.",
   },
   dateiAuswahl: {
     dateiAnhaengen: "Datei anhängen",
@@ -3980,6 +3982,7 @@ const en: Uebersetzung = {
     wirdAngelegt: "Creating…",
     ticketAnlegen: "Create ticket",
     abbrechen: "Cancel",
+    renewalOffenWarnung: "⚠ Renewal unpaid – the customer has not yet paid for this dongle's current license period.",
   },
   dateiAuswahl: {
     dateiAnhaengen: "Attach file",

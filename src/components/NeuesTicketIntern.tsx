@@ -20,6 +20,11 @@ interface Dongle {
   software: string;
 }
 
+interface DongleRenewalStatus {
+  dongle_id: string;
+  renewal_bezahlt: boolean;
+}
+
 interface NeuesTicketInternProps {
   organisationId: string;
   technikerId: string;
@@ -40,6 +45,7 @@ export default function NeuesTicketIntern({
   const [kundeId, setKundeId] = useState("");
   const [dongles, setDongles] = useState<Dongle[]>([]);
   const [dongleId, setDongleId] = useState("");
+  const [dongleIdsRenewalOffen, setDongleIdsRenewalOffen] = useState<Set<string>>(new Set());
   const [zugewiesenAn, setZugewiesenAn] = useState(technikerId);
   const [titel, setTitel] = useState("");
   const [beschreibung, setBeschreibung] = useState("");
@@ -71,6 +77,7 @@ export default function NeuesTicketIntern({
     setDongleId("");
     if (!kundeId) {
       setDongles([]);
+      setDongleIdsRenewalOffen(new Set());
       return;
     }
     supabase
@@ -79,6 +86,16 @@ export default function NeuesTicketIntern({
       .eq("kunde_id", kundeId)
       .order("seriennummer")
       .then(({ data }) => setDongles((data as Dongle[]) ?? []));
+
+    supabase
+      .from("lizenz_vertraege")
+      .select("dongle_id, renewal_bezahlt")
+      .eq("kunde_id", kundeId)
+      .eq("renewal_bezahlt", false)
+      .not("dongle_id", "is", null)
+      .then(({ data }) =>
+        setDongleIdsRenewalOffen(new Set((data as DongleRenewalStatus[] ?? []).map((v) => v.dongle_id)))
+      );
   }, [kundeId]);
 
   async function absenden() {
@@ -154,12 +171,18 @@ export default function NeuesTicketIntern({
             {dongles.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.seriennummer} ({d.software})
+                {dongleIdsRenewalOffen.has(d.id) ? " ⚠" : ""}
               </option>
             ))}
           </select>
           <p className="mt-1 text-xs text-[var(--text-faint)]">
             {txt.dongleHinweis}
           </p>
+          {dongleId && dongleIdsRenewalOffen.has(dongleId) && (
+            <p className="mt-1 text-xs font-medium text-red-600">
+              {txt.renewalOffenWarnung}
+            </p>
+          )}
         </div>
       )}
 
