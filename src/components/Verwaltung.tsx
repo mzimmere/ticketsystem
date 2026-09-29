@@ -12,6 +12,7 @@ import VorlagenVerwaltung from "./VorlagenVerwaltung";
 import MakroVerwaltung from "./MakroVerwaltung";
 import TagVerwaltung from "./TagVerwaltung";
 import WartungsvertragStufenVerwaltung from "./WartungsvertragStufenVerwaltung";
+import SubresellerVerwaltung from "./SubresellerVerwaltung";
 import SlaVerwaltung from "./SlaVerwaltung";
 import LizenzVerlaengerungen from "./LizenzVerlaengerungen";
 import HardwareKategorienVerwaltung from "./HardwareKategorienVerwaltung";
@@ -1247,6 +1248,20 @@ export default function Verwaltung({ rolle, organisationId, onlineIds, initialTa
               { nr: 1, titel: "Stufen anlegen", beschreibung: "Bis zu 3 Ausbaustufen definieren (z.B. 'Basis', 'Premium', 'Enterprise') – ganz nach eurem eigenen Vertragsmodell." },
               { nr: 2, titel: "Kunden zuordnen", beschreibung: "In der Kundenliste bei jedem Kunden festlegen: zahlt er den Minutenpreis (Standard) oder hat er eine der Vertragsstufen?" },
               { nr: 3, titel: "Im Ticket sichtbar", beschreibung: "Der Status wird direkt im Ticket als farbiges Label angezeigt, damit sofort klar ist, ob und wie der Kunde für den Service bezahlt." },
+            ]}
+          />
+        </div>
+      )}
+
+      {aktiveTab === "werkzeuge" && organisationId && (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
+          <SubresellerVerwaltung organisationId={organisationId} />
+          <KonfigurationsHilfe
+            titel="Subreseller einrichten"
+            schritte={[
+              { nr: 1, titel: "Subreseller anlegen", beschreibung: "Name und E-Mail-Adresse der Firma, die eure Dongles weiterverkauft und deren Endkunden betreut." },
+              { nr: 2, titel: "Kunden zuordnen", beschreibung: "In der Kundenverwaltung bei jedem betroffenen Kunden den Subreseller auswählen (optional, Standard: direkt)." },
+              { nr: 3, titel: "Automatische Mails", beschreibung: "Ticket-Status/-Antwort- und Lizenz-Update-Mails gehen dann nur noch an den Subreseller, der Endkunde erhält nichts mehr direkt von euch." },
             ]}
           />
         </div>

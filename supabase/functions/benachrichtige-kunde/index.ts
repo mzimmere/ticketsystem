@@ -3,6 +3,10 @@
 // Postfach (nicht den Supabase-Auth-Mailer), weil das hier App-eigene
 // Benachrichtigungen sind, keine Auth-Mails.
 //
+// Subreseller (profiles.subreseller_id, schema.sql Abschnitt 79): ist beim
+// Kunden ein Subreseller hinterlegt, geht JEDE hier verschickte Mail nur an
+// dessen E-Mail-Adresse statt an den Endkunden - unabhaengig vom Ereignis.
+//
 // Nutzt zuerst die pro Firma hinterlegte SMTP-Konfiguration
 // (organisation_smtp_konfiguration, Abschnitt 60 - jede Firma kann eine
 // eigene Absenderadresse haben), sonst Fallback auf die globalen
@@ -221,13 +225,28 @@ Deno.serve(async (req: Request) => {
 
     const { data: kunde } = await supabaseAdmin
       .from("profiles")
-      .select("name")
+      .select("name, subreseller_id")
       .eq("id", ticket.kunde_id)
       .single();
 
-    const { data: kundeAuth } = await supabaseAdmin.auth.admin.getUserById(ticket.kunde_id);
-    const kundeEmail = kundeAuth.user?.email;
-    if (!kundeEmail) {
+    // Wird der Kunde ueber einen Subreseller betreut (profiles.subreseller_id,
+    // Abschnitt 79), geht die Mail NUR an ihn - der Endkunde bekommt dann
+    // nichts mehr direkt von uns, unabhaengig vom Ereignis (Status/Antwort/
+    // Lizenz-Update).
+    let empfaengerEmail: string | undefined;
+    if (kunde?.subreseller_id) {
+      const { data: subreseller } = await supabaseAdmin
+        .from("subreseller")
+        .select("email")
+        .eq("id", kunde.subreseller_id)
+        .single();
+      empfaengerEmail = subreseller?.email;
+    }
+    if (!empfaengerEmail) {
+      const { data: kundeAuth } = await supabaseAdmin.auth.admin.getUserById(ticket.kunde_id);
+      empfaengerEmail = kundeAuth.user?.email;
+    }
+    if (!empfaengerEmail) {
       return new Response(JSON.stringify({ ok: false, grund: "keine_email" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -257,14 +276,14 @@ Deno.serve(async (req: Request) => {
         ticket_id: ticketId,
         kunde_id: ticket.kunde_id,
         vorlage_key: "lizenz_update_einladung",
-        empfaenger: kundeEmail,
+        empfaenger: empfaengerEmail,
         betreff,
         pixel_token: token,
       });
       const pixelUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/mail-pixel?t=${token}`;
       const html = htmlMitPixel(text, pixelUrl);
 
-      const ergebnis = await mailSenden(ticket.organisation_id, kundeEmail, betreff, text, firmenName, html);
+      const ergebnis = await mailSenden(ticket.organisation_id, empfaengerEmail, betreff, text, firmenName, html);
       return new Response(JSON.stringify(ergebnis), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -297,7 +316,7 @@ Deno.serve(async (req: Request) => {
     const betreff = fuellePlatzhalter(vorlage.betreff, werte);
     const text = fuellePlatzhalter(vorlage.text, werte);
 
-    const ergebnis = await mailSenden(ticket.organisation_id, kundeEmail, betreff, text, firmenName);
+    const ergebnis = await mailSenden(ticket.organisation_id, empfaengerEmail, betreff, text, firmenName);
     if (!ergebnis.ok) {
       // SMTP noch nicht eingerichtet - kein Fehler, einfach nichts senden
       return new Response(JSON.stringify(ergebnis), {

@@ -31,12 +31,18 @@ interface Kunde {
   deaktiviert: boolean;
   zusammengefuehrt_in: string | null;
   wartungsvertrag_stufe_id: string | null;
+  subreseller_id: string | null;
 }
 
 interface WartungsvertragStufe {
   id: string;
   name: string;
   farbe: string;
+}
+
+interface Subreseller {
+  id: string;
+  name: string;
 }
 
 interface ZusatzEmail {
@@ -119,6 +125,7 @@ export default function KundenListe({
   const [hardwareKategorien, setHardwareKategorien] = useState<HardwareKategorie[]>([]);
   const [hardwareEintraege, setHardwareEintraege] = useState<HardwareEintrag[]>([]);
   const [wartungsvertragStufen, setWartungsvertragStufen] = useState<WartungsvertragStufe[]>([]);
+  const [subresellerListe, setSubresellerListe] = useState<Subreseller[]>([]);
   const [filterKategorieId, setFilterKategorieId] = useState("");
   const [filterWert, setFilterWert] = useState("");
   const [hinweis, setHinweis] = useState<string | null>(null);
@@ -156,6 +163,13 @@ export default function KundenListe({
       .eq("organisation_id", organisationId)
       .order("reihenfolge")
       .then(({ data }) => setWartungsvertragStufen((data as WartungsvertragStufe[]) ?? []));
+
+    supabase
+      .from("subreseller")
+      .select("id, name")
+      .eq("organisation_id", organisationId)
+      .order("name")
+      .then(({ data }) => setSubresellerListe((data as Subreseller[]) ?? []));
   }, [organisationId]);
 
   async function ladeHardwareFilter() {
@@ -171,7 +185,7 @@ export default function KundenListe({
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "id, name, vorname, nachname, firmenname, avatar_url, telefonnummer, strasse, hausnummer, plz, ort, land, mwst_satz, ust_id, notizen, deaktiviert, zusammengefuehrt_in, wartungsvertrag_stufe_id",
+        "id, name, vorname, nachname, firmenname, avatar_url, telefonnummer, strasse, hausnummer, plz, ort, land, mwst_satz, ust_id, notizen, deaktiviert, zusammengefuehrt_in, wartungsvertrag_stufe_id, subreseller_id",
       )
       .eq("organisation_id", organisationId)
       .eq("rolle", "kunde")
@@ -384,6 +398,7 @@ export default function KundenListe({
         mwst_satz: entwurf.mwst_satz ?? null,
         notizen: entwurf.notizen?.trim() || null,
         wartungsvertrag_stufe_id: entwurf.wartungsvertrag_stufe_id || null,
+        subreseller_id: entwurf.subreseller_id || null,
       })
       .eq("id", offenId);
     setLaedt(false);
@@ -827,6 +842,27 @@ export default function KundenListe({
                 </select>
                 <p className="mt-1 text-xs text-[var(--text-faint)]">
                   {txt.wartungsvertragHinweis}
+                </p>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+                  {txt.subresellerLabel}
+                </label>
+                <select
+                  value={entwurf.subreseller_id ?? ""}
+                  onChange={(e) => setEntwurf({ ...entwurf, subreseller_id: e.target.value || null })}
+                  className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                >
+                  <option value="">{txt.keinSubreseller}</option>
+                  {subresellerListe.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-[var(--text-faint)]">
+                  {txt.subresellerHinweis}
                 </p>
               </div>
 

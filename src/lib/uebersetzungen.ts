@@ -567,6 +567,9 @@ export interface Uebersetzung {
     ustIdHinweis: string;
     wartungsvertragLabel: string;
     wartungsvertragHinweis: string;
+    subresellerLabel: string;
+    subresellerHinweis: string;
+    keinSubreseller: string;
     notizenLabel: string;
     notizenPlatzhalter: string;
     individuellerPreisLabel: string;
@@ -1406,6 +1409,17 @@ export interface Uebersetzung {
     nochKeineStufen: string;
     neueStufePlatzhalter: string;
   };
+  subresellerVerwaltung: {
+    titel: string;
+    beschreibung: string;
+    nameErforderlich: string;
+    emailErforderlich: string;
+    fehler: string;
+    loeschenConfirm: string;
+    nochKeineSubreseller: string;
+    neuerNamePlatzhalter: string;
+    neueEmailPlatzhalter: string;
+  };
   wartungsvertrag: {
     minutenpreis: string;
     label: string;
@@ -1976,6 +1990,9 @@ const de: Uebersetzung = {
     ustIdHinweis: 'Wenn ausgefüllt, weist die Rechnung automatisch 0% MwSt. aus und vermerkt "Steuerfreie innergemeinschaftliche Lieferung / Tax-free intra-Community supply".',
     wartungsvertragLabel: "Wartungsvertrag",
     wartungsvertragHinweis: "Legt fest, ob der Kunde den Minutenpreis zahlt oder einen Wartungsvertrag hat – wird direkt im Ticket angezeigt. Stufen werden unter Verwaltung → Werkzeuge festgelegt.",
+    subresellerLabel: "Subreseller",
+    subresellerHinweis: "Wird der Kunde über einen Subreseller betreut, gehen automatische Mails (Ticket-Status/-Antwort, Lizenz-Update-Einladung) nur noch an ihn – der Endkunde erhält dann nichts mehr direkt. Subreseller werden unter Verwaltung → Werkzeuge angelegt.",
+    keinSubreseller: "Direkt (kein Subreseller)",
     notizenLabel: "Notizen / Besonderheiten",
     notizenPlatzhalter: "z.B. bevorzugte Erreichbarkeit, technische Besonderheiten…",
     individuellerPreisLabel: "Individueller Minutenpreis (Verlauf, optional)",
@@ -2815,6 +2832,17 @@ const de: Uebersetzung = {
     nochKeineStufen: "Noch keine Stufen angelegt.",
     neueStufePlatzhalter: "Neue Stufe (z.B. Premium)",
   },
+  subresellerVerwaltung: {
+    titel: "Subreseller",
+    beschreibung: "Firmen, die Dongles von euch weiterverkaufen und deren Endkunden ihr betreut. Einem Kunden zuordenbar (Kundenverwaltung) – automatische Mails an diesen Kunden gehen dann an den Subreseller statt an den Endkunden direkt.",
+    nameErforderlich: "Name ist erforderlich.",
+    emailErforderlich: "E-Mail-Adresse ist erforderlich.",
+    fehler: "Anlegen fehlgeschlagen.",
+    loeschenConfirm: "Diesen Subreseller wirklich löschen? Kunden mit diesem Subreseller werden wieder direkt benachrichtigt.",
+    nochKeineSubreseller: "Noch keine Subreseller angelegt.",
+    neuerNamePlatzhalter: "Name (z.B. Firma des Subresellers)",
+    neueEmailPlatzhalter: "E-Mail-Adresse",
+  },
   wartungsvertrag: {
     minutenpreis: "Minutenabrechnung",
     label: "Wartungsvertrag",
@@ -3385,6 +3413,9 @@ const en: Uebersetzung = {
     ustIdHinweis: 'If filled in, the invoice automatically shows 0% VAT and notes "Steuerfreie innergemeinschaftliche Lieferung / Tax-free intra-Community supply".',
     wartungsvertragLabel: "Maintenance contract",
     wartungsvertragHinweis: "Defines whether the customer pays per-minute or has a maintenance contract – shown directly in the ticket. Tiers are set under Management → Tools.",
+    subresellerLabel: "Subreseller",
+    subresellerHinweis: "If the customer is managed through a subreseller, automatic emails (ticket status/reply, license update invitation) go only to them – the end customer no longer receives anything directly. Subresellers are created under Management → Tools.",
+    keinSubreseller: "Direct (no subreseller)",
     notizenLabel: "Notes / special notes",
     notizenPlatzhalter: "e.g. preferred availability, technical specifics…",
     individuellerPreisLabel: "Individual per-minute price (history, optional)",
@@ -4223,6 +4254,17 @@ const en: Uebersetzung = {
     loeschenConfirm: "Really delete this tier? Customers on this tier will be reset to per-minute billing.",
     nochKeineStufen: "No tiers created yet.",
     neueStufePlatzhalter: "New tier (e.g. Premium)",
+  },
+  subresellerVerwaltung: {
+    titel: "Subresellers",
+    beschreibung: "Companies that resell your dongles and manage their own end customers. Assignable to a customer (customer management) – automatic emails to that customer then go to the subreseller instead of directly to the end customer.",
+    nameErforderlich: "Name is required.",
+    emailErforderlich: "Email address is required.",
+    fehler: "Creation failed.",
+    loeschenConfirm: "Really delete this subreseller? Customers assigned to it will be notified directly again.",
+    nochKeineSubreseller: "No subresellers created yet.",
+    neuerNamePlatzhalter: "Name (e.g. subreseller's company)",
+    neueEmailPlatzhalter: "Email address",
   },
   wartungsvertrag: {
     minutenpreis: "Per-minute billing",

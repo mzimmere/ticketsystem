@@ -3271,3 +3271,56 @@ begin
   return new;
 end;
 $$ language plpgsql;
+
+-- ============================================================
+-- 79. Subreseller: fuer Kunden, die nicht direkt von uns, sondern ueber
+-- einen Zwischenhaendler (Subreseller) betreut werden - wir verkaufen den
+-- Dongle an den Subreseller, dieser verkauft ihn an seinen Endkunden
+-- weiter. Pro Firma eine wiederverwendbare Liste (Name + E-Mail), einem
+-- Kunden optional zuordenbar (profiles.subreseller_id, siehe KundenListe.tsx).
+-- Ist ein Subreseller gesetzt, gehen automatische Kunden-Mails
+-- (Ticket-Status/-Antwort, Lizenz-Update-Einladung - siehe Edge Function
+-- benachrichtige-kunde) NUR an ihn, der Endkunde bekommt dann nichts mehr
+-- direkt von uns. Die internen Lizenz-Erinnerungen (lizenz-erinnerung-
+-- pruefen, lizenz-monatsbericht) sind davon nicht betroffen, die gehen
+-- ohnehin nie an Kunden, sondern immer an die eigenen Org-Admins.
+-- ============================================================
+create table subreseller (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  name text not null,
+  email text not null,
+  erstellt_am timestamptz default now()
+);
+create index idx_subreseller_org on subreseller(organisation_id);
+alter table subreseller enable row level security;
+
+create policy subreseller_select on subreseller for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy subreseller_insert on subreseller for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+create policy subreseller_update on subreseller for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+create policy subreseller_delete on subreseller for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(organisation_id, array['org_admin']::user_rolle[])
+  );
+
+alter table profiles add column if not exists subreseller_id uuid references subreseller(id) on delete set null;
