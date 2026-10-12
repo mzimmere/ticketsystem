@@ -16,6 +16,7 @@ import KundenTodoListe from "./KundenTodoListe";
 import KundenHardware from "./KundenHardware";
 import { useSprache, type Sprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
+import type { TicketArt } from "../lib/ticketArt";
 
 type Status = "offen" | "in_bearbeitung" | "wartet_auf_kunde" | "geloest" | "geschlossen";
 type Prioritaet = "niedrig" | "mittel" | "hoch" | "kritisch";
@@ -42,6 +43,7 @@ interface Ticket {
   kunde_id: string;
   zugewiesen_an: string | null;
   dongle_id: string | null;
+  ticket_art: TicketArt | null;
   reaktion_faellig_am: string | null;
   loesung_faellig_am: string | null;
   erste_antwort_am: string | null;
@@ -115,6 +117,7 @@ interface TicketDetailProps {
 export default function TicketDetail({ ticketId, technikerId, rolle, onGeloescht }: TicketDetailProps) {
   const { sprache } = useSprache();
   const txt = texte(sprache).ticketDetail;
+  const artTxt = texte(sprache).ticketArt;
   const statusTxt = texte(sprache).status;
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [kundeEmail, setKundeEmail] = useState<string | null>(null);
@@ -397,6 +400,12 @@ export default function TicketDetail({ ticketId, technikerId, rolle, onGeloescht
     setTicket((t) => (t ? { ...t, dongle_id: dongleId || null } : t));
   }
 
+  async function ticketArtSetzen(art: string) {
+    const neu = (art || null) as TicketArt | null;
+    await supabase.from("tickets").update({ ticket_art: neu }).eq("id", ticketId);
+    setTicket((t) => (t ? { ...t, ticket_art: neu } : t));
+  }
+
   async function notizSenden() {
     if (!neueNotiz.trim() && neueDateien.length === 0) return;
     setSendeLaedt(true);
@@ -574,6 +583,19 @@ export default function TicketDetail({ ticketId, technikerId, rolle, onGeloescht
             </select>
           )}
 
+          <select
+            value={ticket.ticket_art ?? ""}
+            onChange={(e) => ticketArtSetzen(e.target.value)}
+            title={artTxt.titel}
+            className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] text-[var(--text-strong)] px-2 py-1.5 text-sm"
+          >
+            <option value="">{artTxt.keine}</option>
+            <option value="service_support">{artTxt.servicesupport}</option>
+            <option value="software_fehler">{artTxt.softwareFehler}</option>
+            <option value="software_frage">{artTxt.softwareFrage}</option>
+            <option value="schulung">{artTxt.schulung}</option>
+          </select>
+
           {darfLoeschen && (
             <button
               type="button"
@@ -587,6 +609,12 @@ export default function TicketDetail({ ticketId, technikerId, rolle, onGeloescht
             </button>
           )}
         </div>
+
+        {ticket.ticket_art === "service_support" && (
+          <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 dark:border-red-900/50 dark:bg-red-900/10 dark:text-red-400">
+            {artTxt.serviceSupportWarnung}
+          </p>
+        )}
 
         {/* Zusammenführen */}
         {ticket.status !== "geschlossen" && (

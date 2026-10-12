@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { istAbrechenbar } from "../lib/ticketArt";
 import { berechneFreiminutenAbzug, type DongleFreiminuten } from "../lib/freiminuten";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
@@ -80,6 +81,7 @@ export default function RechnungDetail({
   const [kunde, setKunde] = useState<Kunde | null>(null);
   const [organisation, setOrganisation] = useState<Organisation | null>(null);
   const [eintraege, setEintraege] = useState<ZeitEintrag[]>([]);
+  const [nichtAbrechenbarMinuten, setNichtAbrechenbarMinuten] = useState(0);
   const [dongles, setDongles] = useState<DongleFreiminuten[]>([]);
   const [anpassungen, setAnpassungen] = useState<Anpassung[]>([]);
   const [neueBeschreibung, setNeueBeschreibung] = useState("");
@@ -128,7 +130,7 @@ export default function RechnungDetail({
           .single(),
         supabase
           .from("zeiteintraege")
-          .select("id, erstellt_am, minuten, preis_pro_minute_cent_snapshot, beschreibung, ticket:ticket_id(dongle_id)")
+          .select("id, erstellt_am, minuten, preis_pro_minute_cent_snapshot, beschreibung, ticket:ticket_id(dongle_id, ticket_art)")
           .eq("kunde_id", kundeId)
           .eq("organisation_id", organisationId)
           .gte("erstellt_am", monatsErster)
@@ -156,10 +158,13 @@ export default function RechnungDetail({
       minuten: number;
       preis_pro_minute_cent_snapshot: number;
       beschreibung: string | null;
-      ticket: { dongle_id: string | null } | null;
+      ticket: { dongle_id: string | null; ticket_art: string | null } | null;
     }>) ?? [];
+    setNichtAbrechenbarMinuten(
+      zeitRoh.filter((e) => !istAbrechenbar(e.ticket?.ticket_art)).reduce((sum, e) => sum + e.minuten, 0),
+    );
     setEintraege(
-      zeitRoh.map((e) => ({
+      zeitRoh.filter((e) => istAbrechenbar(e.ticket?.ticket_art)).map((e) => ({
         id: e.id,
         erstellt_am: e.erstellt_am,
         minuten: e.minuten,
@@ -275,6 +280,12 @@ export default function RechnungDetail({
           {txt.druckenSpeichern}
         </button>
       </div>
+
+      {nichtAbrechenbarMinuten > 0 && (
+        <p className="keine-druckansicht text-xs text-[var(--text-faint)]">
+          {texte(sprache).ticketArt.nichtAbrechenbarHinweisTemplate.replace("{min}", String(nichtAbrechenbarMinuten))}
+        </p>
+      )}
 
       <div className="druckbereich rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-6 print:border-0 print:p-0">
         <div className="mb-6 flex items-start justify-between">

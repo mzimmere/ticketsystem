@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { istAbrechenbar } from "../lib/ticketArt";
 import { berechneFreiminutenAbzug, type DongleFreiminuten, type ZeitEintragMitDongle } from "../lib/freiminuten";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
@@ -61,7 +62,7 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
     const [{ data: zeitDaten }, { data: anpassungDaten }, { data: dongleDaten }] = await Promise.all([
       supabase
         .from("zeiteintraege")
-        .select("kunde_id, minuten, preis_pro_minute_cent_snapshot, kunde:kunde_id(name, mwst_satz, wartungsvertrag_stufe:wartungsvertrag_stufe_id(name, farbe)), ticket:ticket_id(dongle_id)")
+        .select("kunde_id, minuten, preis_pro_minute_cent_snapshot, kunde:kunde_id(name, mwst_satz, wartungsvertrag_stufe:wartungsvertrag_stufe_id(name, farbe)), ticket:ticket_id(dongle_id, ticket_art)")
         .eq("organisation_id", organisationId)
         .gte("erstellt_am", monatsErster)
         .lt("erstellt_am", naechsterMonatErster)
@@ -94,8 +95,9 @@ export default function Abrechnung({ organisationId, onKundeAuswahl }: Abrechnun
       minuten: number;
       preis_pro_minute_cent_snapshot: number;
       kunde: { name: string | null; mwst_satz: number | null; wartungsvertrag_stufe: { name: string; farbe: string } | null } | null;
-      ticket: { dongle_id: string | null } | null;
+      ticket: { dongle_id: string | null; ticket_art: string | null } | null;
     }>) {
+      if (!istAbrechenbar(z.ticket?.ticket_art)) continue;
       namenJeKunde.set(z.kunde_id, z.kunde ?? { name: null, mwst_satz: null, wartungsvertrag_stufe: null });
       const liste = eintraegeJeKunde.get(z.kunde_id) ?? [];
       liste.push({

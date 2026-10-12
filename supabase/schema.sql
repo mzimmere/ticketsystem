@@ -3324,3 +3324,23 @@ create policy subreseller_delete on subreseller for delete
   );
 
 alter table profiles add column if not exists subreseller_id uuid references subreseller(id) on delete set null;
+
+-- ============================================================
+-- 80. Ticketart: ordnet ein Ticket ein, WORUM es ging - fuer die
+-- Abgrenzung, wer die Leistung erbringt bzw. ob sie abrechenbar ist.
+--   service_support  = Service-Support, muss immer vom Reseller erbracht
+--                      werden (im Ticket wird ein Warnhinweis gezeigt)
+--   software_fehler  = Fehler der Software / im Zuge des Reseller-Auftrags
+--                      notwendig (nicht abrechenbar)
+--   software_frage   = Frage zur Software (Freiminuten pro Dongle, danach
+--                      kostenpflichtig)
+--   schulung         = Schulung fuer den Kunden (wie software_frage)
+-- NULL = nicht eingeordnet (verhaelt sich wie bisher, abrechenbar).
+-- Zeiten werden fuer ALLE Arten weiter erfasst; nur die Abrechnung
+-- (Abrechnung.tsx / RechnungDetail.tsx, src/lib/ticketArt.ts) schliesst
+-- service_support und software_fehler aus.
+-- ============================================================
+alter table tickets add column if not exists ticket_art text;
+alter table tickets drop constraint if exists tickets_ticket_art_check;
+alter table tickets add constraint tickets_ticket_art_check
+  check (ticket_art is null or ticket_art in ('service_support', 'software_fehler', 'software_frage', 'schulung'));

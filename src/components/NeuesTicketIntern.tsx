@@ -46,6 +46,8 @@ export default function NeuesTicketIntern({
   const [dongles, setDongles] = useState<Dongle[]>([]);
   const [dongleId, setDongleId] = useState("");
   const [dongleIdsRenewalOffen, setDongleIdsRenewalOffen] = useState<Set<string>>(new Set());
+  const [ticketArt, setTicketArt] = useState("");
+  const artTxt = texte(sprache).ticketArt;
   const [zugewiesenAn, setZugewiesenAn] = useState(technikerId);
   const [titel, setTitel] = useState("");
   const [beschreibung, setBeschreibung] = useState("");
@@ -116,6 +118,7 @@ export default function NeuesTicketIntern({
           quelle: "manuell",
           zugewiesen_an: zugewiesenAn || null,
           dongle_id: dongleId || null,
+          ticket_art: ticketArt || null,
         })
         .select("id")
         .single();
@@ -185,6 +188,27 @@ export default function NeuesTicketIntern({
           )}
         </div>
       )}
+
+      <div>
+        <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
+          {artTxt.label} <span className="font-normal text-[var(--text-faint)]">{txt.optional}</span>
+        </label>
+        <select
+          value={ticketArt}
+          onChange={(e) => setTicketArt(e.target.value)}
+          className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+        >
+          <option value="">{artTxt.keine}</option>
+          <option value="service_support">{artTxt.servicesupport}</option>
+          <option value="software_fehler">{artTxt.softwareFehler}</option>
+          <option value="software_frage">{artTxt.softwareFrage}</option>
+          <option value="schulung">{artTxt.schulung}</option>
+        </select>
+        <p className="mt-1 text-xs text-[var(--text-faint)]">{artTxt.titel}</p>
+        {ticketArt === "service_support" && (
+          <p className="mt-1 text-xs font-medium text-red-600">{artTxt.serviceSupportWarnung}</p>
+        )}
+      </div>
 
       {vorlagen.length > 0 && (
         <div>

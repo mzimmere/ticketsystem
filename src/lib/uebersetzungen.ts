@@ -1420,6 +1420,17 @@ export interface Uebersetzung {
     neuerNamePlatzhalter: string;
     neueEmailPlatzhalter: string;
   };
+  ticketArt: {
+    label: string;
+    keine: string;
+    servicesupport: string;
+    softwareFehler: string;
+    softwareFrage: string;
+    schulung: string;
+    titel: string;
+    serviceSupportWarnung: string;
+    nichtAbrechenbarHinweisTemplate: string;
+  };
   wartungsvertrag: {
     minutenpreis: string;
     label: string;
@@ -2843,6 +2854,17 @@ const de: Uebersetzung = {
     neuerNamePlatzhalter: "Name (z.B. Firma des Subresellers)",
     neueEmailPlatzhalter: "E-Mail-Adresse",
   },
+  ticketArt: {
+    label: "Ticketart",
+    keine: "Ticketart: nicht eingeordnet",
+    servicesupport: "Service-Support (Reseller)",
+    softwareFehler: "Software-Fehler / Reseller-Auftrag",
+    softwareFrage: "Software-Frage",
+    schulung: "Schulung",
+    titel: "Worum ging es? Service-Support und Software-Fehler werden nicht abgerechnet, Software-Fragen und Schulungen über Freiminuten pro Dongle bzw. kostenpflichtig.",
+    serviceSupportWarnung: "⚠ Service-Support muss immer vom Reseller erbracht werden – nicht von uns.",
+    nichtAbrechenbarHinweisTemplate: "{min} Min. aus Tickets der Art Service-Support / Software-Fehler sind erfasst, werden aber nicht abgerechnet.",
+  },
   wartungsvertrag: {
     minutenpreis: "Minutenabrechnung",
     label: "Wartungsvertrag",
@@ -4265,6 +4287,17 @@ const en: Uebersetzung = {
     nochKeineSubreseller: "No subresellers created yet.",
     neuerNamePlatzhalter: "Name (e.g. subreseller's company)",
     neueEmailPlatzhalter: "Email address",
+  },
+  ticketArt: {
+    label: "Ticket type",
+    keine: "Ticket type: not classified",
+    servicesupport: "Service support (reseller)",
+    softwareFehler: "Software error / reseller order",
+    softwareFrage: "Software question",
+    schulung: "Training",
+    titel: "What was it about? Service support and software errors are not billed; software questions and training use free minutes per dongle, otherwise billable.",
+    serviceSupportWarnung: "⚠ Service support must always be provided by the reseller – not by us.",
+    nichtAbrechenbarHinweisTemplate: "{min} min from service support / software error tickets are recorded but not billed.",
   },
   wartungsvertrag: {
     minutenpreis: "Per-minute billing",
