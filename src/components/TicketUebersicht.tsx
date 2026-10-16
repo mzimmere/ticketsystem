@@ -25,13 +25,14 @@ interface TicketZeile {
   loesung_faellig_am: string | null;
   erste_antwort_am: string | null;
   tags: string[];
-  kunde: { id: string; name: string | null } | null;
+  kunde: { id: string; name: string | null; firmenname: string | null } | null;
   zugewiesen: { name: string | null; avatar_url: string | null } | null;
 }
 
 interface KundeOption {
   id: string;
   name: string | null;
+  firmenname: string | null;
 }
 
 const PRIORITAET_AKZENT: Record<Prioritaet, string> = {
@@ -130,7 +131,7 @@ function KundenFilter({
   const gefiltert = useMemo(() => {
     const begriff = suche.trim().toLowerCase();
     if (!begriff) return kundenOptionen;
-    return kundenOptionen.filter((k) => (k.name ?? "").toLowerCase().includes(begriff));
+    return kundenOptionen.filter((k) => `${k.name ?? ""} ${k.firmenname ?? ""}`.toLowerCase().includes(begriff));
   }, [kundenOptionen, suche]);
 
   function auswaehlen(id: string) {
@@ -177,6 +178,7 @@ function KundenFilter({
                 }`}
               >
                 {k.name ?? txt.unbenannt}
+                {k.firmenname && <span className="text-[var(--text-faint)]"> ({k.firmenname})</span>}
               </button>
             ))}
             {gefiltert.length === 0 && (
@@ -271,7 +273,7 @@ export default function TicketUebersicht({
     if (!organisationId) return;
     supabase
       .from("profiles")
-      .select("id, name")
+      .select("id, name, firmenname")
       .eq("organisation_id", organisationId)
       .eq("rolle", "kunde")
       .order("name")
@@ -307,7 +309,7 @@ export default function TicketUebersicht({
     let query = supabase
       .from("tickets")
       .select(
-        "id, ticket_nr, titel, status, prioritaet, erstellt_am, zuletzt_kunden_nachricht_am, zuletzt_gelesen_am, reaktion_faellig_am, loesung_faellig_am, erste_antwort_am, tags, kunde:kunde_id(id, name), zugewiesen:zugewiesen_an(name, avatar_url)",
+        "id, ticket_nr, titel, status, prioritaet, erstellt_am, zuletzt_kunden_nachricht_am, zuletzt_gelesen_am, reaktion_faellig_am, loesung_faellig_am, erste_antwort_am, tags, kunde:kunde_id(id, name, firmenname), zugewiesen:zugewiesen_an(name, avatar_url)",
       )
       .eq("organisation_id", organisationId)
       .order("erstellt_am", { ascending: false });
@@ -342,6 +344,7 @@ export default function TicketUebersicht({
       return (
         t.titel.toLowerCase().includes(begriff) ||
         t.kunde?.name?.toLowerCase().includes(begriff) ||
+        t.kunde?.firmenname?.toLowerCase().includes(begriff) ||
         t.zugewiesen?.name?.toLowerCase().includes(begriff) ||
         ticketNrText.includes(begriff) ||
         nachrichtTrefferIds.has(t.id)
@@ -566,7 +569,7 @@ export default function TicketUebersicht({
                   >
                     {ungelesen
                       ? txt.neueNachrichtVomKunden
-                      : ticket.kunde?.name ?? txt.unbekannterKunde}
+                      : `${ticket.kunde?.name ?? txt.unbekannterKunde}${ticket.kunde?.firmenname ? ` (${ticket.kunde.firmenname})` : ""}`}
                   </p>
                   {ticket.zugewiesen?.name && (
                     <>

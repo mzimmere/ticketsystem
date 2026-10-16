@@ -8,6 +8,7 @@ import ZugangsdatenBox from "./ZugangsdatenBox";
 interface Kunde {
   id: string;
   name: string | null;
+  firmenname: string | null;
 }
 
 interface KundenAuswahlProps {
@@ -51,7 +52,7 @@ export default function KundenAuswahl({ organisationId, value, onChange }: Kunde
   async function ladeKunden() {
     const { data } = await supabase
       .from("profiles")
-      .select("id, name")
+      .select("id, name, firmenname")
       .eq("organisation_id", organisationId)
       .eq("rolle", "kunde")
       .eq("deaktiviert", false)
@@ -64,7 +65,7 @@ export default function KundenAuswahl({ organisationId, value, onChange }: Kunde
   const gefiltert = useMemo(() => {
     const begriff = suche.trim().toLowerCase();
     if (!begriff) return kunden;
-    return kunden.filter((k) => (k.name ?? "").toLowerCase().includes(begriff));
+    return kunden.filter((k) => `${k.name ?? ""} ${k.firmenname ?? ""}`.toLowerCase().includes(begriff));
   }, [kunden, suche]);
 
   function auswaehlen(id: string) {
@@ -155,6 +156,7 @@ export default function KundenAuswahl({ organisationId, value, onChange }: Kunde
                       }`}
                     >
                       {k.name ?? txt.unbenannt}
+                      {k.firmenname && <span className="text-[var(--text-faint)]"> ({k.firmenname})</span>}
                     </button>
                   ))}
                   {gefiltert.length === 0 && (
