@@ -239,6 +239,24 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
     setAlleVertraege((data as unknown as AlleVertrag[]) ?? []);
   }
 
+  async function vertragKundeAendern(v: AlleVertrag, neuerKundeId: string) {
+    const neu = neuerKundeId || null;
+    if (neu === v.kunde_id) return;
+    const neuerName = kunden.find((k) => k.id === neu)?.name ?? txt.unbenannt;
+    const meldung = neu
+      ? txt.zuordnungAendernConfirmTemplate
+          .replace("{seriennummer}", v.lizenz_seriennummer)
+          .replace("{alt}", v.kunde?.name ?? txt.nichtZugeordnet)
+          .replace("{neu}", neuerName)
+      : txt.zuordnungAufhebenConfirmTemplate
+          .replace("{seriennummer}", v.lizenz_seriennummer)
+          .replace("{kunde}", v.kunde?.name ?? txt.unbenannt);
+    if (!confirm(meldung)) return;
+    await supabase.from("lizenz_vertraege").update({ kunde_id: neu, dongle_id: null }).eq("id", v.id);
+    ladeAlleVertraege();
+    ladeNichtZugeordneteVertraege();
+  }
+
   async function renewalBezahltUmschalten(vertragId: string, aktuellerWert: boolean) {
     await supabase.from("lizenz_vertraege").update({ renewal_bezahlt: !aktuellerWert }).eq("id", vertragId);
     ladeAlleVertraege();
@@ -649,13 +667,21 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                       : mailTxt.mailNochNichtGeoeffnet}
                   </span>
                 )}
-                <span
-                  className={`ml-auto text-xs ${
-                    v.kunde?.name ? "text-[var(--text-soft)]" : "italic text-[var(--text-faint)]"
+                <select
+                  value={v.kunde_id ?? ""}
+                  onChange={(e) => vertragKundeAendern(v, e.target.value)}
+                  title={txt.zuordnungAendernTitle}
+                  className={`ml-auto max-w-[14rem] rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1 text-xs ${
+                    v.kunde_id ? "text-[var(--text-soft)]" : "italic text-[var(--text-faint)]"
                   }`}
                 >
-                  {v.kunde?.name ?? txt.nichtZugeordnet}
-                </span>
+                  <option value="">{v.kunde_id ? txt.zuordnungAufheben : txt.nichtZugeordnet}</option>
+                  {kunden.map((k) => (
+                    <option key={k.id} value={k.id}>
+                      {k.name ?? txt.unbenannt}
+                    </option>
+                  ))}
+                </select>
               </div>
             ))}
           </div>

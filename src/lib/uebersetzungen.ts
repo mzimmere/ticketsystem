@@ -904,6 +904,10 @@ export interface Uebersetzung {
     sucheSeriennummerOderKunde: string;
     keineTreffer: string;
     nichtZugeordnet: string;
+    zuordnungAufheben: string;
+    zuordnungAendernTitle: string;
+    zuordnungAufhebenConfirmTemplate: string;
+    zuordnungAendernConfirmTemplate: string;
     alleLizenzvertraegeTemplate: string;
     sucheSeriennummerProduktKunde: string;
     buildLabel: string;
@@ -2338,6 +2342,10 @@ const de: Uebersetzung = {
     sucheSeriennummerOderKunde: "Suche nach Seriennummer oder Kunde…",
     keineTreffer: "Keine Treffer.",
     nichtZugeordnet: "Nicht zugeordnet",
+    zuordnungAufheben: "Zuordnung aufheben",
+    zuordnungAendernTitle: "Kunden dieses Lizenzvertrags ändern oder Zuordnung aufheben (die Verknüpfung zum bisherigen Dongle wird dabei gelöst)",
+    zuordnungAufhebenConfirmTemplate: "Zuordnung von Lizenz {seriennummer} zu {kunde} wirklich aufheben? Der Vertrag landet wieder im Pool \"Nicht zugeordnet\".",
+    zuordnungAendernConfirmTemplate: "Lizenz {seriennummer} von {alt} zu {neu} umhängen?",
     alleLizenzvertraegeTemplate: "Alle Lizenzverträge ({n})",
     sucheSeriennummerProduktKunde: "Suche nach Seriennummer, Produkt oder Kunde…",
     buildLabel: "Build",
@@ -3772,6 +3780,10 @@ const en: Uebersetzung = {
     sucheSeriennummerOderKunde: "Search by serial number or customer…",
     keineTreffer: "No matches.",
     nichtZugeordnet: "Not assigned",
+    zuordnungAufheben: "Remove assignment",
+    zuordnungAendernTitle: "Change this license contract's customer or remove the assignment (the link to the previous dongle is cleared)",
+    zuordnungAufhebenConfirmTemplate: "Really remove license {seriennummer} from {kunde}? The contract returns to the \"Not assigned\" pool.",
+    zuordnungAendernConfirmTemplate: "Move license {seriennummer} from {alt} to {neu}?",
     alleLizenzvertraegeTemplate: "All license contracts ({n})",
     sucheSeriennummerProduktKunde: "Search by serial number, product, or customer…",
     buildLabel: "Build",
