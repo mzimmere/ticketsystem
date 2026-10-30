@@ -1441,6 +1441,27 @@ export interface Uebersetzung {
     neuerNamePlatzhalter: string;
     neueEmailPlatzhalter: string;
   };
+  mitarbeiterAuswertung: {
+    titel: string;
+    hinweis: string;
+    mitarbeiter: string;
+    tickets: string;
+    geloest: string;
+    offen: string;
+    zeit: string;
+    abrechenbar: string;
+    antworten: string;
+    erstantwort: string;
+    zufriedenheit: string;
+    summe: string;
+    keineDaten: string;
+    unbenannt: string;
+    laedt: string;
+    stundenKurz: string;
+    minKurz: string;
+    tageKurz: string;
+    spaltenHinweis: string;
+  };
   werkzeugeNav: {
     gruppen: { ticketsSupport: string; kundenVertraege: string; auswertung: string };
     items: {
@@ -2949,6 +2970,27 @@ const de: Uebersetzung = {
     nochKeineSubreseller: "Noch keine Subreseller angelegt.",
     neuerNamePlatzhalter: "Name (z.B. Firma des Subresellers)",
     neueEmailPlatzhalter: "E-Mail-Adresse",
+  },
+  mitarbeiterAuswertung: {
+    titel: "Mitarbeiter-Auswertung",
+    hinweis: "Nur für Admins sichtbar. Zeitraum wie oben gewählt; Spaltenköpfe anklicken zum Sortieren.",
+    mitarbeiter: "Mitarbeiter",
+    tickets: "Tickets",
+    geloest: "Gelöst",
+    offen: "Offen jetzt",
+    zeit: "Zeit erfasst",
+    abrechenbar: "davon abrechenbar",
+    antworten: "Antworten",
+    erstantwort: "Ø Erstantwort",
+    zufriedenheit: "Zufrieden",
+    summe: "Gesamt",
+    keineDaten: "Im gewählten Zeitraum gibt es noch keine Auswertungsdaten.",
+    unbenannt: "Unbenannt",
+    laedt: "Lädt…",
+    stundenKurz: "Std.",
+    minKurz: "Min.",
+    tageKurz: "Tage",
+    spaltenHinweis: "Tickets = dem Mitarbeiter zugewiesen und im Zeitraum angelegt · Antworten = an Kunden sichtbare Nachrichten · Zufrieden = positive Bewertungen",
   },
   werkzeugeNav: {
     gruppen: { ticketsSupport: "Tickets & Support", kundenVertraege: "Kunden & Verträge", auswertung: "Auswertung" },
@@ -4459,6 +4501,27 @@ const en: Uebersetzung = {
     nochKeineSubreseller: "No subresellers created yet.",
     neuerNamePlatzhalter: "Name (e.g. subreseller's company)",
     neueEmailPlatzhalter: "Email address",
+  },
+  mitarbeiterAuswertung: {
+    titel: "Staff overview",
+    hinweis: "Visible to admins only. Period as selected above; click column headers to sort.",
+    mitarbeiter: "Employee",
+    tickets: "Tickets",
+    geloest: "Resolved",
+    offen: "Open now",
+    zeit: "Time logged",
+    abrechenbar: "of which billable",
+    antworten: "Replies",
+    erstantwort: "Avg. first reply",
+    zufriedenheit: "Satisfied",
+    summe: "Total",
+    keineDaten: "No data for the selected period yet.",
+    unbenannt: "Unnamed",
+    laedt: "Loading…",
+    stundenKurz: "h",
+    minKurz: "min",
+    tageKurz: "d",
+    spaltenHinweis: "Tickets = assigned to the employee and created in the period · Replies = customer-visible messages · Satisfied = positive ratings",
   },
   werkzeugeNav: {
     gruppen: { ticketsSupport: "Tickets & support", kundenVertraege: "Customers & contracts", auswertung: "Reporting" },

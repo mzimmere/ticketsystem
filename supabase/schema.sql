@@ -3452,3 +3452,77 @@ create policy kunden_nachricht_empfaenger_insert on kunden_nachricht_empfaenger 
     or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
     or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
   );
+
+-- ============================================================
+-- 83. Mitarbeiter-Auswertung (Dashboard, MitarbeiterAuswertung.tsx):
+-- eine Zeile pro Mitarbeiter mit Kennzahlen fuer einen Zeitraum (ab
+-- p_von) - Tickets, Zeiterfassung (gesamt/abrechenbar), Antworten an
+-- Kunden, Erstantwortzeit, Bewertungen. "Abrechenbar" schliesst die
+-- Ticketarten service_support und software_fehler aus (Abschnitt 80).
+-- SECURITY INVOKER: es gelten die normalen RLS-Regeln des Aufrufers,
+-- sichtbar ist das Dashboard ohnehin nur fuer Admins.
+-- ============================================================
+create or replace function mitarbeiter_auswertung(p_organisation_id uuid, p_von timestamptz)
+returns table (
+  techniker_id uuid,
+  tickets_zugewiesen bigint,
+  tickets_geloest bigint,
+  tickets_offen bigint,
+  minuten_gesamt bigint,
+  minuten_abrechenbar bigint,
+  antworten bigint,
+  erstantwort_minuten numeric,
+  csat_positiv bigint,
+  csat_negativ bigint
+)
+language sql
+stable
+security invoker
+set search_path = public
+as $$
+  with personen as (
+    select t.zugewiesen_an as id from tickets t
+      where t.organisation_id = p_organisation_id and t.zugewiesen_an is not null
+    union
+    select z.techniker_id from zeiteintraege z
+      where z.organisation_id = p_organisation_id and z.erstellt_am >= p_von
+    union
+    select n.autor_id from ticket_nachrichten n
+      join tickets t on t.id = n.ticket_id
+      where t.organisation_id = p_organisation_id and n.quelle = 'portal'
+        and n.erstellt_am >= p_von and n.autor_id is not null
+  )
+  select
+    p.id,
+    (select count(*) from tickets t
+       where t.organisation_id = p_organisation_id and t.zugewiesen_an = p.id and t.erstellt_am >= p_von),
+    (select count(*) from tickets t
+       where t.organisation_id = p_organisation_id and t.zugewiesen_an = p.id and t.erstellt_am >= p_von
+         and t.status in ('geloest', 'geschlossen')),
+    (select count(*) from tickets t
+       where t.organisation_id = p_organisation_id and t.zugewiesen_an = p.id
+         and t.status in ('offen', 'in_bearbeitung', 'wartet_auf_kunde')),
+    coalesce((select sum(z.minuten) from zeiteintraege z
+       where z.organisation_id = p_organisation_id and z.techniker_id = p.id and z.erstellt_am >= p_von), 0),
+    coalesce((select sum(z.minuten) from zeiteintraege z
+       left join tickets t on t.id = z.ticket_id
+       where z.organisation_id = p_organisation_id and z.techniker_id = p.id and z.erstellt_am >= p_von
+         and (t.ticket_art is null or t.ticket_art not in ('service_support', 'software_fehler'))), 0),
+    (select count(*) from ticket_nachrichten n
+       join tickets t on t.id = n.ticket_id
+       where t.organisation_id = p_organisation_id and n.autor_id = p.id
+         and n.quelle = 'portal' and n.erstellt_am >= p_von),
+    (select avg(extract(epoch from (t.erste_antwort_am - t.erstellt_am)) / 60) from tickets t
+       where t.organisation_id = p_organisation_id and t.zugewiesen_an = p.id
+         and t.erste_antwort_am is not null and t.erstellt_am >= p_von),
+    (select count(*) from tickets t
+       where t.organisation_id = p_organisation_id and t.zugewiesen_an = p.id
+         and t.csat_bewertung = 1 and t.csat_am >= p_von),
+    (select count(*) from tickets t
+       where t.organisation_id = p_organisation_id and t.zugewiesen_an = p.id
+         and t.csat_bewertung = 2 and t.csat_am >= p_von)
+  from personen p;
+$$;
+
+revoke execute on function mitarbeiter_auswertung(uuid, timestamptz) from public, anon;
+grant execute on function mitarbeiter_auswertung(uuid, timestamptz) to authenticated;

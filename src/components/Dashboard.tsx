@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { supabase } from "../lib/supabaseClient";
 import { KpiSkeleton } from "./Skeleton";
+import MitarbeiterAuswertung from "./MitarbeiterAuswertung";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
 
@@ -79,17 +80,6 @@ function MiniBalken({ wert, max, farbe }: { wert: number; max: number; farbe: st
   );
 }
 
-function formatMinuten(min: number | null, sprache: "de" | "en"): string {
-  if (min === null) return "—";
-  if (sprache === "en") {
-    if (min < 60) return `${Math.round(min)} min`;
-    if (min < 1440) return `${(min / 60).toFixed(1)} h`;
-    return `${(min / 1440).toFixed(1)} d`;
-  }
-  if (min < 60) return `${Math.round(min)} Min.`;
-  if (min < 1440) return `${(min / 60).toFixed(1)} Std.`;
-  return `${(min / 1440).toFixed(1)} Tage`;
-}
 
 export default function Dashboard({ organisationId }: DashboardProps) {
   const { sprache } = useSprache();
@@ -390,32 +380,8 @@ export default function Dashboard({ organisationId }: DashboardProps) {
             </div>
           )}
 
-          {/* Techniker-Tabelle */}
-          {techniker.length > 0 && (
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4">
-              <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{txt.teamAuslastung}</p>
-              <div className="space-y-0">
-                <div className="grid grid-cols-4 border-b border-[var(--border)] pb-1.5 text-[0.65rem] font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                  <span>{txt.techniker}</span>
-                  <span className="text-center">{statusTxt.offen}</span>
-                  <span className="text-center">{txt.geloestZeitraum} ({zeitraum}d)</span>
-                  <span className="text-right">{txt.oReaktion}</span>
-                </div>
-                {techniker.map((t, i) => (
-                  <div key={i} className="grid grid-cols-4 items-center border-b border-[var(--border)] py-2 text-sm last:border-b-0">
-                    <span className="text-[var(--text-strong)]">{t.name ?? txt.unbenannt}</span>
-                    <span className={`text-center font-mono font-medium ${t.offen > 10 ? "text-orange-600" : "text-[var(--text-soft)]"}`}>
-                      {t.offen}
-                    </span>
-                    <span className="text-center font-mono text-green-600 font-medium">{t.geloest_30d}</span>
-                    <span className="text-right font-mono text-xs text-[var(--text-faint)]">
-                      {formatMinuten(t.durchschnitt_minuten, sprache)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Mitarbeiter-Auswertung (nur Admins sehen das Dashboard) */}
+          <MitarbeiterAuswertung organisationId={organisationId} zeitraum={zeitraum} />
 
           {/* CSAT Details */}
           {csatGesamt > 0 && (
