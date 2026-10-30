@@ -4,6 +4,7 @@ import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
 import DongleImport from "./DongleImport";
 import ProduktNachricht from "./ProduktNachricht";
+import GesendeteNachrichten from "./GesendeteNachrichten";
 import { benachrichtigeKunde } from "../lib/benachrichtigungen";
 import { Trash2, Copy, Check } from "lucide-react";
 
@@ -102,6 +103,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   const [dongleUebersichtSuche, setDongleUebersichtSuche] = useState("");
   const [dongleUebersichtAlleAnzeigen, setDongleUebersichtAlleAnzeigen] = useState(false);
   const [softwareFilter, setSoftwareFilter] = useState("");
+  const [nachrichtenRefresh, setNachrichtenRefresh] = useState(0);
 
   const [alleVertraege, setAlleVertraege] = useState<AlleVertrag[]>([]);
   const [vertragUebersichtSuche, setVertragUebersichtSuche] = useState("");
@@ -574,6 +576,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
             organisationId={organisationId}
             software={softwareFilter}
             empfaenger={nachrichtEmpfaenger}
+            onVersendet={() => setNachrichtenRefresh((n) => n + 1)}
           />
         )}
         {dongleUebersichtGefiltert.length === 0 ? (
@@ -632,6 +635,8 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
           </button>
         )}
       </div>
+
+      <GesendeteNachrichten organisationId={organisationId} refreshKey={nachrichtenRefresh} />
 
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-2">
         <h3 className="text-sm font-medium text-[var(--text-strong)]">

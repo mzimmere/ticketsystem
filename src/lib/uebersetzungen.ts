@@ -1449,6 +1449,28 @@ export interface Uebersetzung {
     keineEmpfaenger: string;
     sendenConfirmTemplate: string;
     ergebnisTemplate: string;
+    alsHtml: string;
+    htmlPlatzhalter: string;
+    htmlHinweis: string;
+    vorschau: string;
+    dateiAnhaengen: string;
+    anhangHinweis: string;
+    anhangZuGross: string;
+    sendenFehler: string;
+  };
+  gesendeteNachrichten: {
+    titel: string;
+    keine: string;
+    empfaengerTemplate: string;
+    gelesenTemplate: string;
+    anhaengeLabel: string;
+    gesendetAn: string;
+    gelesenAm: string;
+    nochNichtGeoeffnet: string;
+    keinVersandProtokolliert: string;
+    lesestatusHinweis: string;
+    unbenannt: string;
+    laedt: string;
   };
   ticketArt: {
     label: string;
@@ -2913,6 +2935,28 @@ const de: Uebersetzung = {
     keineEmpfaenger: "Bitte mindestens einen Empfänger auswählen.",
     sendenConfirmTemplate: "Nachricht an {n} Kunden senden? Pro Kunde wird ein Ticket angelegt und eine Mail verschickt.",
     ergebnisTemplate: "{n} Nachrichten versendet.",
+    alsHtml: "Als HTML senden (für Links, Bilder, Formatierung)",
+    htmlPlatzhalter: '<p>Hallo {{kunde_name}},</p>\n<p>mehr dazu <a href="https://...">hier</a>.</p>',
+    htmlHinweis: "HTML-Code eingeben. Bilder nur per Web-Adresse (<img src=\"https://…\">). Platzhalter {{kunde_name}} und {{software}}. Skripte werden entfernt; im Ticket erscheint eine Textfassung.",
+    vorschau: "Vorschau (erster Empfänger)",
+    dateiAnhaengen: "📎 Datei anhängen (PDF, Bild, Office)",
+    anhangHinweis: "Anhänge gehen als Dateianhang per Mail raus und hängen am Ticket. Insgesamt maximal 3 MB.",
+    anhangZuGross: "Die Anhänge sind zusammen größer als 3 MB.",
+    sendenFehler: "Nachricht konnte nicht angelegt werden.",
+  },
+  gesendeteNachrichten: {
+    titel: "Gesendete Nachrichten",
+    keine: "Noch keine Nachrichten gesendet.",
+    empfaengerTemplate: "{n} Empfänger",
+    gelesenTemplate: "{gelesen} von {gesamt} gelesen",
+    anhaengeLabel: "Anhänge:",
+    gesendetAn: "gesendet an",
+    gelesenAm: "gelesen am",
+    nochNichtGeoeffnet: "noch nicht geöffnet",
+    keinVersandProtokolliert: "kein Mailversand protokolliert",
+    lesestatusHinweis: "Der Lesestatus beruht auf einem unsichtbaren Bild in der Mail – manche Mailprogramme laden es nicht, „noch nicht geöffnet“ heißt also nicht zwingend ungelesen.",
+    unbenannt: "Unbenannt",
+    laedt: "Lädt…",
   },
   ticketArt: {
     label: "Ticketart",
@@ -4377,6 +4421,28 @@ const en: Uebersetzung = {
     keineEmpfaenger: "Please select at least one recipient.",
     sendenConfirmTemplate: "Send message to {n} customers? One ticket is created and one email sent per customer.",
     ergebnisTemplate: "{n} messages sent.",
+    alsHtml: "Send as HTML (for links, images, formatting)",
+    htmlPlatzhalter: '<p>Hello {{kunde_name}},</p>\n<p>more details <a href="https://...">here</a>.</p>',
+    htmlHinweis: "Enter HTML code. Images by web address only (<img src=\"https://…\">). Placeholders {{kunde_name}} and {{software}}. Scripts are removed; the ticket shows a plain-text version.",
+    vorschau: "Preview (first recipient)",
+    dateiAnhaengen: "📎 Attach file (PDF, image, Office)",
+    anhangHinweis: "Attachments are sent as email attachments and attached to the ticket. 3 MB in total at most.",
+    anhangZuGross: "The attachments together exceed 3 MB.",
+    sendenFehler: "Message could not be created.",
+  },
+  gesendeteNachrichten: {
+    titel: "Sent messages",
+    keine: "No messages sent yet.",
+    empfaengerTemplate: "{n} recipients",
+    gelesenTemplate: "{gelesen} of {gesamt} read",
+    anhaengeLabel: "Attachments:",
+    gesendetAn: "sent to",
+    gelesenAm: "read on",
+    nochNichtGeoeffnet: "not opened yet",
+    keinVersandProtokolliert: "no email delivery logged",
+    lesestatusHinweis: "The read status relies on an invisible image in the email – some mail clients don't load it, so \"not opened yet\" doesn't necessarily mean unread.",
+    unbenannt: "Unnamed",
+    laedt: "Loading…",
   },
   ticketArt: {
     label: "Ticket type",

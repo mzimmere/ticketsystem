@@ -19,6 +19,13 @@ interface BenachrichtigungsKontext {
   // die Edge Function loest hier keine eigene Vorlage mehr auf.
   betreff?: string;
   text?: string;
+  // Optional (Nachrichten an Kunden eines Softwaretyps, ProduktNachricht.tsx):
+  // fertiges HTML statt des maskierten Klartexts, Dateianhaenge (Storage-Pfade
+  // im Bucket "anhaenge", muessen im Ordner des Tickets liegen) und ein
+  // eigener Protokoll-Schluessel fuer email_sendungen.
+  html?: string;
+  anhaenge?: { pfad: string; dateiname: string; dateityp: string }[];
+  vorlageKey?: "produkt_nachricht";
 }
 
 interface MitarbeiterBenachrichtigungsKontext {

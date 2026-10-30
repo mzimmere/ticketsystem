@@ -58,7 +58,13 @@ async function smtpKonfigLaden(organisationId: string) {
   return { host, port: Number(Deno.env.get("SMTP_PORT") ?? "587"), user, passwort, absender };
 }
 
-async function mailSenden(organisationId: string, empfaenger: string, betreff: string, text: string, absenderName: string, html?: string) {
+interface MailAnhang {
+  filename: string;
+  content: string; // base64
+  contentType: string;
+}
+
+async function mailSenden(organisationId: string, empfaenger: string, betreff: string, text: string, absenderName: string, html?: string, anhaenge?: MailAnhang[]) {
   const konfig = await smtpKonfigLaden(organisationId);
   if (!konfig) return { ok: false, grund: "smtp_nicht_konfiguriert" };
 
@@ -72,6 +78,7 @@ async function mailSenden(organisationId: string, empfaenger: string, betreff: s
     body: JSON.stringify({
       host: konfig.host, port: konfig.port, user: konfig.user, password: konfig.passwort,
       from: `${absenderName} <${konfig.absender}>`, to: empfaenger, subject: betreff, text, html,
+      attachments: anhaenge && anhaenge.length > 0 ? anhaenge : undefined,
     }),
   });
   const relayJson = await relayRes.json().catch(() => ({}));
@@ -99,6 +106,49 @@ function htmlMitPixel(text: string, pixelUrl: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
   return `<div style="white-space:pre-wrap;font-family:sans-serif;">${escaped.replace(/\n/g, "<br>")}</div><img src="${pixelUrl}" width="1" height="1" style="display:none" alt="">`;
+}
+
+// Selbst geschriebenes HTML (Nachrichten an Kunden eines Softwaretyps,
+// ProduktNachricht.tsx): kommt bereits bereinigt vom Aufrufer, hier wird
+// nur noch das Lesebestaetigungs-Pixel angehaengt.
+function htmlAutorMitPixel(html: string, pixelUrl: string): string {
+  return `${html}<img src="${pixelUrl}" width="1" height="1" style="display:none" alt="">`;
+}
+
+const ANHANG_LIMIT_BYTES = 3 * 1024 * 1024;
+
+function zuBase64(bytes: Uint8Array): string {
+  let binaer = "";
+  const block = 0x8000;
+  for (let i = 0; i < bytes.length; i += block) {
+    binaer += String.fromCharCode(...bytes.subarray(i, i + block));
+  }
+  return btoa(binaer);
+}
+
+// Laedt die Anhaenge aus dem Bucket "anhaenge". Es werden nur Dateien aus dem
+// Ordner des betroffenen Tickets akzeptiert - der Service-Role-Key darf hier
+// nie beliebige Pfade herausgeben.
+async function anhaengeLaden(
+  ticketId: string,
+  angefordert: { pfad: string; dateiname: string; dateityp: string }[],
+): Promise<MailAnhang[]> {
+  const ergebnis: MailAnhang[] = [];
+  let gesamt = 0;
+  for (const a of angefordert) {
+    if (typeof a.pfad !== "string" || !a.pfad.startsWith(`${ticketId}/`) || a.pfad.includes("..")) continue;
+    const { data, error } = await supabaseAdmin.storage.from("anhaenge").download(a.pfad);
+    if (error || !data) continue;
+    const bytes = new Uint8Array(await data.arrayBuffer());
+    gesamt += bytes.length;
+    if (gesamt > ANHANG_LIMIT_BYTES) break;
+    ergebnis.push({
+      filename: String(a.dateiname || "anhang"),
+      content: zuBase64(bytes),
+      contentType: String(a.dateityp || "application/octet-stream"),
+    });
+  }
+  return ergebnis;
 }
 
 const corsHeaders = {
@@ -207,7 +257,16 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { ticketId, ereignis, neuerStatus, betreff: betreffOverride, text: textOverride } = await req.json();
+    const {
+      ticketId,
+      ereignis,
+      neuerStatus,
+      betreff: betreffOverride,
+      text: textOverride,
+      html: htmlOverride,
+      anhaenge: anhaengeAngefordert,
+      vorlageKey: vorlageKeyAngefordert,
+    } = await req.json();
     if (!ticketId) {
       return new Response(JSON.stringify({ error: "ticketId ist erforderlich" }), {
         status: 400,
@@ -275,15 +334,16 @@ Deno.serve(async (req: Request) => {
         organisation_id: ticket.organisation_id,
         ticket_id: ticketId,
         kunde_id: ticket.kunde_id,
-        vorlage_key: "lizenz_update_einladung",
+        vorlage_key: vorlageKeyAngefordert === "produkt_nachricht" ? "produkt_nachricht" : "lizenz_update_einladung",
         empfaenger: empfaengerEmail,
         betreff,
         pixel_token: token,
       });
       const pixelUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/mail-pixel?t=${token}`;
-      const html = htmlMitPixel(text, pixelUrl);
+      const html = htmlOverride ? htmlAutorMitPixel(String(htmlOverride), pixelUrl) : htmlMitPixel(text, pixelUrl);
+      const anhaenge = Array.isArray(anhaengeAngefordert) ? await anhaengeLaden(ticketId, anhaengeAngefordert) : [];
 
-      const ergebnis = await mailSenden(ticket.organisation_id, empfaengerEmail, betreff, text, firmenName, html);
+      const ergebnis = await mailSenden(ticket.organisation_id, empfaengerEmail, betreff, text, firmenName, html, anhaenge);
       return new Response(JSON.stringify(ergebnis), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

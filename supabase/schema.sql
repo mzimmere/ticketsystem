@@ -3389,3 +3389,66 @@ create policy kunden_nachricht_vorlagen_delete on kunden_nachricht_vorlagen for 
     or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
     or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
   );
+
+-- ============================================================
+-- 82. Protokoll der Nachrichten an Kunden eines Softwaretyps
+-- (ProduktNachricht.tsx / GesendeteNachrichten.tsx): eine Zeile pro
+-- Versand (kunden_nachrichten) und pro Empfaenger (kunden_nachricht_empfaenger,
+-- verweist aufs jeweilige Ticket). Gelesen-Status kommt aus email_sendungen
+-- (vorlage_key = produkt_nachricht, Lookup ueber ticket_id). Vorlagen
+-- koennen als HTML gekennzeichnet sein (ist_html).
+-- ============================================================
+alter table kunden_nachricht_vorlagen add column if not exists ist_html boolean not null default false;
+
+create table kunden_nachrichten (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  software text not null,
+  betreff text not null,
+  inhalt text not null,
+  ist_html boolean not null default false,
+  anhang_namen text[] not null default '{}',
+  erstellt_von uuid references profiles(id) on delete set null,
+  erstellt_am timestamptz not null default now()
+);
+create index idx_kunden_nachrichten_org on kunden_nachrichten(organisation_id, erstellt_am desc);
+alter table kunden_nachrichten enable row level security;
+
+create policy kunden_nachrichten_select on kunden_nachrichten for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy kunden_nachrichten_insert on kunden_nachrichten for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create table kunden_nachricht_empfaenger (
+  id uuid primary key default gen_random_uuid(),
+  nachricht_id uuid not null references kunden_nachrichten(id) on delete cascade,
+  organisation_id uuid not null references organisationen(id),
+  kunde_id uuid references profiles(id) on delete set null,
+  ticket_id uuid references tickets(id) on delete set null,
+  erstellt_am timestamptz not null default now()
+);
+create index idx_kunden_nachricht_empfaenger_nachricht on kunden_nachricht_empfaenger(nachricht_id);
+alter table kunden_nachricht_empfaenger enable row level security;
+
+create policy kunden_nachricht_empfaenger_select on kunden_nachricht_empfaenger for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy kunden_nachricht_empfaenger_insert on kunden_nachricht_empfaenger for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
