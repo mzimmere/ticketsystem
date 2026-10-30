@@ -104,6 +104,8 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   const [dongleUebersichtAlleAnzeigen, setDongleUebersichtAlleAnzeigen] = useState(false);
   const [softwareFilter, setSoftwareFilter] = useState("");
   const [nachrichtenRefresh, setNachrichtenRefresh] = useState(0);
+  const [unterTab, setUnterTab] = useState<"uebersicht" | "mitteilungen" | "zuordnung">("uebersicht");
+  const [nachrichtSoftware, setNachrichtSoftware] = useState("");
 
   const [alleVertraege, setAlleVertraege] = useState<AlleVertrag[]>([]);
   const [vertragUebersichtSuche, setVertragUebersichtSuche] = useState("");
@@ -287,11 +289,11 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
 
   const verfuegbareSoftware = Array.from(new Set(["exocad", "exoplan", ...alleDongles.map((d) => d.software)])).sort();
 
-  const nachrichtEmpfaenger = softwareFilter
+  const nachrichtEmpfaenger = nachrichtSoftware
     ? Array.from(
         new Map(
           alleDongles
-            .filter((d) => d.software === softwareFilter && d.kunde_id)
+            .filter((d) => d.software === nachrichtSoftware && d.kunde_id)
             .map((d) => [d.kunde_id!, { id: d.kunde_id!, name: d.kunde?.name ?? null }]),
         ).values(),
       )
@@ -409,6 +411,35 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
 
   return (
     <div className="space-y-4">
+      <div className="flex gap-1 rounded-xl border border-[var(--border)] bg-[var(--bg-muted)] p-1">
+        {(
+          [
+            { id: "uebersicht", label: txt.untertabUebersicht, badge: 0 },
+            { id: "mitteilungen", label: txt.untertabMitteilungen, badge: 0 },
+            { id: "zuordnung", label: txt.untertabZuordnung, badge: nichtZugeordnete.length + nichtZugeordneteVertraege.length },
+          ] as { id: typeof unterTab; label: string; badge: number }[]
+        ).map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setUnterTab(t.id)}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition-all ${
+              unterTab === t.id
+                ? "bg-[var(--bg-surface)] text-[var(--text-strong)] shadow-sm"
+                : "text-[var(--text-faint)] hover:text-[var(--text-soft)]"
+            }`}
+          >
+            {t.label}
+            {t.badge > 0 && (
+              <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[0.65rem] font-semibold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+                {t.badge}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {unterTab === "zuordnung" && (
+        <>
       <DongleImport organisationId={organisationId} onImportiert={alleNeuLaden} />
 
       {nichtZugeordnete.length > 0 && (
@@ -546,7 +577,10 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
           )}
         </div>
       )}
+        </>
+      )}
 
+      {unterTab === "uebersicht" && (
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-2">
         <h3 className="text-sm font-medium text-[var(--text-strong)]">
           {txt.alleDonglesTemplate.replace("{n}", String(alleDongles.length))}
@@ -570,15 +604,6 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
             </option>
           ))}
         </select>
-        {softwareFilter && nachrichtEmpfaenger.length > 0 && (
-          <ProduktNachricht
-            key={softwareFilter}
-            organisationId={organisationId}
-            software={softwareFilter}
-            empfaenger={nachrichtEmpfaenger}
-            onVersendet={() => setNachrichtenRefresh((n) => n + 1)}
-          />
-        )}
         {dongleUebersichtGefiltert.length === 0 ? (
           <p className="text-xs text-[var(--text-faint)]">{txt.keineTreffer}</p>
         ) : (
@@ -636,8 +661,42 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
         )}
       </div>
 
-      <GesendeteNachrichten organisationId={organisationId} refreshKey={nachrichtenRefresh} />
+      )}
 
+      {unterTab === "mitteilungen" && (
+        <div className="space-y-4">
+          <div className="space-y-2 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4">
+            <select
+              value={nachrichtSoftware}
+              onChange={(e) => setNachrichtSoftware(e.target.value)}
+              className="rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2 py-1.5 text-sm text-[var(--text-strong)]"
+            >
+              <option value="">{txt.mitteilungSoftwareWaehlen}</option>
+              {verfuegbareSoftware.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            {!nachrichtSoftware && <p className="text-xs text-[var(--text-faint)]">{txt.mitteilungHinweis}</p>}
+            {nachrichtSoftware && nachrichtEmpfaenger.length === 0 && (
+              <p className="text-xs text-[var(--text-faint)]">{txt.mitteilungKeineEmpfaenger}</p>
+            )}
+            {nachrichtSoftware && nachrichtEmpfaenger.length > 0 && (
+              <ProduktNachricht
+                key={nachrichtSoftware}
+                organisationId={organisationId}
+                software={nachrichtSoftware}
+                empfaenger={nachrichtEmpfaenger}
+                onVersendet={() => setNachrichtenRefresh((n) => n + 1)}
+              />
+            )}
+          </div>
+          <GesendeteNachrichten organisationId={organisationId} refreshKey={nachrichtenRefresh} />
+        </div>
+      )}
+
+      {unterTab === "uebersicht" && (
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-2">
         <h3 className="text-sm font-medium text-[var(--text-strong)]">
           {txt.alleLizenzvertraegeTemplate.replace("{n}", String(alleVertraege.length))}
@@ -753,6 +812,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
           </button>
         )}
       </div>
+      )}
     </div>
   );
 }

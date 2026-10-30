@@ -905,6 +905,12 @@ export interface Uebersetzung {
     keineTreffer: string;
     nichtZugeordnet: string;
     softwareFilterAlle: string;
+    untertabUebersicht: string;
+    untertabMitteilungen: string;
+    untertabZuordnung: string;
+    mitteilungSoftwareWaehlen: string;
+    mitteilungHinweis: string;
+    mitteilungKeineEmpfaenger: string;
     softwareAendernTitle: string;
     zuordnungAufheben: string;
     zuordnungAendernTitle: string;
@@ -1425,6 +1431,14 @@ export interface Uebersetzung {
     nochKeineSubreseller: string;
     neuerNamePlatzhalter: string;
     neueEmailPlatzhalter: string;
+  };
+  werkzeugeNav: {
+    gruppen: { ticketsSupport: string; kundenVertraege: string; auswertung: string };
+    items: {
+      vorlagen: string; makros: string; tags: string; sla: string; emailtexte: string; faq: string;
+      hardware: string; dokumente: string; wartung: string; subreseller: string; lizenzerinnerung: string;
+      export: string;
+    };
   };
   produktNachricht: {
     oeffnenButtonTemplate: string;
@@ -2391,6 +2405,12 @@ const de: Uebersetzung = {
     keineTreffer: "Keine Treffer.",
     nichtZugeordnet: "Nicht zugeordnet",
     softwareFilterAlle: "Alle Softwaretypen",
+    untertabUebersicht: "Übersicht",
+    untertabMitteilungen: "Mitteilungen",
+    untertabZuordnung: "Import & Zuordnung",
+    mitteilungSoftwareWaehlen: "Softwaretyp wählen…",
+    mitteilungHinweis: "Wähle einen Softwaretyp (z.B. exoplan), um alle Kunden mit einem passenden Dongle anzuschreiben.",
+    mitteilungKeineEmpfaenger: "Für diesen Softwaretyp sind keinem Kunden Dongles zugeordnet.",
     softwareAendernTitle: "Softwaretyp dieses Dongles ändern (z.B. exocad ↔ exoplan) – ein erneuter Import überschreibt das nicht",
     zuordnungAufheben: "Zuordnung aufheben",
     zuordnungAendernTitle: "Kunden dieses Lizenzvertrags ändern oder Zuordnung aufheben (die Verknüpfung zum bisherigen Dongle wird dabei gelöst)",
@@ -2911,6 +2931,15 @@ const de: Uebersetzung = {
     nochKeineSubreseller: "Noch keine Subreseller angelegt.",
     neuerNamePlatzhalter: "Name (z.B. Firma des Subresellers)",
     neueEmailPlatzhalter: "E-Mail-Adresse",
+  },
+  werkzeugeNav: {
+    gruppen: { ticketsSupport: "Tickets & Support", kundenVertraege: "Kunden & Verträge", auswertung: "Auswertung" },
+    items: {
+      vorlagen: "Ticket-Vorlagen", makros: "Antwort-Makros", tags: "Tags", sla: "SLA & Automatik",
+      emailtexte: "E-Mail-Texte", faq: "FAQ", hardware: "Kunden-Hardware", dokumente: "Dokument-Kategorien",
+      wartung: "Wartungsverträge", subreseller: "Subreseller", lizenzerinnerung: "Lizenz-Erinnerungen",
+      export: "Daten exportieren",
+    },
   },
   produktNachricht: {
     oeffnenButtonTemplate: "Nachricht an {n} Kunden mit {software}-Dongle senden…",
@@ -3877,6 +3906,12 @@ const en: Uebersetzung = {
     keineTreffer: "No matches.",
     nichtZugeordnet: "Not assigned",
     softwareFilterAlle: "All software types",
+    untertabUebersicht: "Overview",
+    untertabMitteilungen: "Messages",
+    untertabZuordnung: "Import & assignment",
+    mitteilungSoftwareWaehlen: "Select software type…",
+    mitteilungHinweis: "Select a software type (e.g. exoplan) to write to all customers with a matching dongle.",
+    mitteilungKeineEmpfaenger: "No dongles of this software type are assigned to any customer.",
     softwareAendernTitle: "Change this dongle's software type (e.g. exocad ↔ exoplan) – a re-import does not overwrite it",
     zuordnungAufheben: "Remove assignment",
     zuordnungAendernTitle: "Change this license contract's customer or remove the assignment (the link to the previous dongle is cleared)",
@@ -4397,6 +4432,15 @@ const en: Uebersetzung = {
     nochKeineSubreseller: "No subresellers created yet.",
     neuerNamePlatzhalter: "Name (e.g. subreseller's company)",
     neueEmailPlatzhalter: "Email address",
+  },
+  werkzeugeNav: {
+    gruppen: { ticketsSupport: "Tickets & support", kundenVertraege: "Customers & contracts", auswertung: "Reporting" },
+    items: {
+      vorlagen: "Ticket templates", makros: "Reply macros", tags: "Tags", sla: "SLA & automation",
+      emailtexte: "Email texts", faq: "FAQ", hardware: "Customer hardware", dokumente: "Document categories",
+      wartung: "Maintenance contracts", subreseller: "Subresellers", lizenzerinnerung: "License reminders",
+      export: "Export data",
+    },
   },
   produktNachricht: {
     oeffnenButtonTemplate: "Send message to {n} customers with a {software} dongle…",
