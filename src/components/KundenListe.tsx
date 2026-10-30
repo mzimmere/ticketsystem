@@ -11,6 +11,8 @@ import KundenTodoListe from "./KundenTodoListe";
 import KundenHardware from "./KundenHardware";
 import KundenDokumente from "./KundenDokumente";
 import KundenAuswahl from "./KundenAuswahl";
+import LeerZustand from "./LeerZustand";
+import { Camera, ChevronLeft, Handshake, KeyRound, X } from "lucide-react";
 
 interface Kunde {
   id: string;
@@ -84,7 +86,28 @@ interface KundenListeProps {
   onlineIds?: Set<string>;
 }
 
-const KUNDEN_STANDARD_SICHTBAR = 10;
+const KUNDEN_STANDARD_SICHTBAR = 15;
+
+type DetailTab = "stammdaten" | "vertrag" | "dongles" | "hardware" | "dokumente" | "konto";
+
+interface KundenKennzahl {
+  dongles: number;
+  renewalOffen: number;
+}
+
+// PostgREST liefert pro Anfrage maximal 1000 Zeilen - bei grossen Beständen
+// seitenweise nachladen, sonst stimmen die Zähler pro Kunde nicht.
+async function ladeSeiten<T>(
+  bauen: (von: number, bis: number) => PromiseLike<{ data: T[] | null }>,
+): Promise<T[]> {
+  const alle: T[] = [];
+  for (let von = 0; ; von += 1000) {
+    const { data } = await bauen(von, von + 999);
+    alle.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
+  }
+  return alle;
+}
 
 // exocad-Lizenzen laufen ueblicherweise ein Jahr - ohne Vertragsbeginn im
 // Datenmodell dient ein 365-Tage-Referenzfenster als Naeherung fuer den
@@ -116,6 +139,8 @@ export default function KundenListe({
   const [suchbegriff, setSuchbegriff] = useState("");
   const [zeigeArchivierte, setZeigeArchivierte] = useState(false);
   const [offenId, setOffenId] = useState<string | null>(null);
+  const [tab, setTab] = useState<DetailTab>("stammdaten");
+  const [kennzahlen, setKennzahlen] = useState<Record<string, KundenKennzahl>>({});
   const [entwurf, setEntwurf] = useState<Partial<Kunde>>({});
   const [preise, setPreise] = useState<KundenPreis[]>([]);
   const [neuesPreisDatum, setNeuesPreisDatum] = useState("");
@@ -171,6 +196,45 @@ export default function KundenListe({
       .order("name")
       .then(({ data }) => setSubresellerListe((data as Subreseller[]) ?? []));
   }, [organisationId]);
+
+  useEffect(() => {
+    ladeKennzahlen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organisationId, refreshKey, mergeVersion]);
+
+  // Zähler für die Badges in der Liste: Dongles je Kunde und aktive
+  // Lizenzverträge, die in <= 30 Tagen ablaufen und noch nicht bezahlt sind.
+  async function ladeKennzahlen() {
+    const [dongles, vertraegeAlle] = await Promise.all([
+      ladeSeiten<{ kunde_id: string }>((von, bis) =>
+        supabase
+          .from("kunden_dongles")
+          .select("kunde_id")
+          .eq("organisation_id", organisationId)
+          .not("kunde_id", "is", null)
+          .range(von, bis),
+      ),
+      ladeSeiten<{ kunde_id: string; vertrag_ende: string | null; renewal_bezahlt: boolean; status: string | null }>(
+        (von, bis) =>
+          supabase
+            .from("lizenz_vertraege")
+            .select("kunde_id, vertrag_ende, renewal_bezahlt, status")
+            .eq("organisation_id", organisationId)
+            .not("kunde_id", "is", null)
+            .range(von, bis),
+      ),
+    ]);
+    const karte: Record<string, KundenKennzahl> = {};
+    const eintrag = (id: string) => (karte[id] ??= { dongles: 0, renewalOffen: 0 });
+    for (const d of dongles) eintrag(d.kunde_id).dongles++;
+    const grenze = Date.now() + 30 * 86400000;
+    for (const v of vertraegeAlle) {
+      if (!v.vertrag_ende || v.renewal_bezahlt) continue;
+      if (v.status && v.status.toLowerCase() !== "active") continue;
+      if (new Date(v.vertrag_ende).getTime() <= grenze) eintrag(v.kunde_id).renewalOffen++;
+    }
+    setKennzahlen(karte);
+  }
 
   async function ladeHardwareFilter() {
     const [{ data: katDaten }, { data: eintragDaten }] = await Promise.all([
@@ -247,6 +311,7 @@ export default function KundenListe({
 
   function bearbeitenOeffnen(k: Kunde) {
     setOffenId(k.id);
+    setTab("stammdaten");
     setEntwurf(k);
     setNeuesPreisDatum(new Date().toISOString().slice(0, 10));
     setNeuerPreisEuro("");
@@ -407,7 +472,7 @@ export default function KundenListe({
       setHinweis(txt.fehlerSpeichern);
       return;
     }
-    setOffenId(null);
+    setHinweis(txt.erfolgGespeichert);
     ladeKunden();
   }
 
@@ -498,8 +563,68 @@ export default function KundenListe({
     : gefilterteKunden.slice(0, KUNDEN_STANDARD_SICHTBAR);
 
 
+  const feld =
+    "w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]";
+  const lbl = "mb-1 block text-xs font-medium text-[var(--text-soft)]";
+  const abschnitt = "text-[0.7rem] font-semibold uppercase tracking-wide text-[var(--text-faint)]";
+  const hinweisKlasse = "mt-1 text-xs text-[var(--text-faint)]";
+  const aktuellerKunde = kunden.find((k) => k.id === offenId) ?? null;
+  const datumsFormat = sprache === "en" ? "en-US" : "de-DE";
+
+  function badges(k: Kunde) {
+    const stufe = wartungsvertragStufen.find((s) => s.id === k.wartungsvertrag_stufe_id);
+    const sub = subresellerListe.find((s) => s.id === k.subreseller_id);
+    const z = kennzahlen[k.id];
+    if (!stufe && !sub && !z?.dongles && !z?.renewalOffen) return null;
+    return (
+      <span className="flex flex-wrap items-center gap-1">
+        {stufe && (
+          <span className="rounded-full px-2 py-0.5 text-[0.65rem] font-medium text-white" style={{ background: stufe.farbe }}>
+            {stufe.name}
+          </span>
+        )}
+        {sub && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full bg-[var(--bg-muted)] px-2 py-0.5 text-[0.65rem] text-[var(--text-soft)]"
+            title={txt.subresellerLabel}
+          >
+            <Handshake size={10} />
+            {sub.name}
+          </span>
+        )}
+        {!!z?.dongles && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full bg-[var(--badge-mittel-bg)] px-2 py-0.5 text-[0.65rem] font-medium text-[var(--badge-mittel-text)]"
+            title={txt.badgeDonglesTitel}
+          >
+            <KeyRound size={10} />
+            {z.dongles}
+          </span>
+        )}
+        {!!z?.renewalOffen && (
+          <span
+            className="rounded-full bg-[var(--badge-kritisch-bg)] px-2 py-0.5 text-[0.65rem] font-medium text-[var(--badge-kritisch-text)]"
+            title={txt.badgeRenewalTitel}
+          >
+            {txt.badgeRenewalOffen}
+            {z.renewalOffen > 1 ? ` · ${z.renewalOffen}` : ""}
+          </span>
+        )}
+      </span>
+    );
+  }
+
+  const tabs: { id: DetailTab; label: string }[] = [
+    { id: "stammdaten", label: txt.tabStammdaten },
+    { id: "vertrag", label: txt.tabVertragPreise },
+    { id: "dongles", label: txt.tabDongles },
+    { id: "hardware", label: txt.tabHardware },
+    { id: "dokumente", label: txt.tabDokumenteTodos },
+    { id: "konto", label: txt.tabKonto },
+  ];
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <input
           type="text"
@@ -561,606 +686,661 @@ export default function KundenListe({
         </div>
       )}
 
-      {gefilterteKunden.length === 0 ? (
-        <p className="text-sm text-[var(--text-faint)]">
-          {kunden.length === 0
-            ? zeigeArchivierte
-              ? txt.keineDeaktiviertenKunden
-              : txt.nochKeineKunden
-            : txt.keineTreffer}
-        </p>
-      ) : (
-        sichtbareKunden.map((k) => (
-        <div
-          key={k.id}
-          className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-surface)]"
-        >
-          <button
-            onClick={() => (offenId === k.id ? setOffenId(null) : bearbeitenOeffnen(k))}
-            className="flex w-full items-center gap-2.5 px-4 py-3 text-left"
-          >
-            <span className="relative shrink-0">
-              <Avatar name={k.name} avatarUrl={k.avatar_url} groesse="sm" />
-              {onlineIds?.has(k.id) && (
-                <span
-                  className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border-2 border-[var(--bg-surface)] bg-emerald-500"
-                  title={txt.online}
-                />
-              )}
-            </span>
-            <span className="flex min-w-0 flex-col">
-              <span className="text-sm text-[var(--text-strong)]">{k.name ?? txt.unbenannt}</span>
-              {k.firmenname && (
-                <span className="truncate text-xs text-[var(--text-faint)]">{k.firmenname}</span>
-              )}
-            </span>
-            <span className="ml-auto truncate text-xs text-[var(--text-faint)]">
-              {k.telefonnummer ?? "—"}
-            </span>
-          </button>
-
-          {offenId === k.id && (
-            <div className="space-y-3 border-t border-[var(--border)] px-4 py-3">
-              <div className="flex items-center gap-3">
-                <Avatar name={entwurf.name ?? k.name} avatarUrl={entwurf.avatar_url ?? null} groesse="lg" />
-                <label className="cursor-pointer rounded border border-[var(--border-input)] px-3 py-1.5 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]">
-                  {txt.profilbildAendern}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => e.target.files?.[0] && avatarHochladen(k.id, e.target.files[0])}
-                  />
-                </label>
-              </div>
-
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                    {txt.vorname}
-                  </label>
-                  <input
-                    type="text"
-                    value={entwurf.vorname ?? ""}
-                    onChange={(e) => setEntwurf({ ...entwurf, vorname: e.target.value })}
-                    className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                    {txt.nachname}
-                  </label>
-                  <input
-                    type="text"
-                    value={entwurf.nachname ?? ""}
-                    onChange={(e) => setEntwurf({ ...entwurf, nachname: e.target.value })}
-                    className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  {txt.firmenname}
-                </label>
-                <input
-                  type="text"
-                  value={entwurf.firmenname ?? ""}
-                  onChange={(e) => setEntwurf({ ...entwurf, firmenname: e.target.value })}
-                  className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  {txt.emailLoginLabel}
-                </label>
-                <p className="mb-1.5 rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm text-[var(--text-strong)]">
-                  {kundeEmail ?? "—"}
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    type="email"
-                    value={emailEntwurf}
-                    onChange={(e) => setEmailEntwurf(e.target.value)}
-                    placeholder={txt.neueEmailPlatzhalter}
-                    className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                  />
-                  <button
-                    onClick={() => kundeEmailAendern(k.id)}
-                    disabled={emailLaedt || !emailEntwurf.includes("@") || emailEntwurf === kundeEmail}
-                    className="shrink-0 rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-                  >
-                    {emailLaedt ? "…" : txt.emailAendern}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  {txt.weitereEmailsLabel}{" "}
-                  <span className="font-normal text-[var(--text-faint)]">
-                    {txt.weitereEmailsHinweis}
-                  </span>
-                </label>
-                {zusatzEmails.length > 0 && (
-                  <div className="mb-2 space-y-1">
-                    {zusatzEmails.map((e) => (
-                      <div
-                        key={e.id}
-                        className="flex items-center justify-between gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5 text-sm"
-                      >
-                        <span className="truncate text-[var(--text-strong)]">{e.email}</span>
-                        <button
-                          onClick={() => zusatzEmailLoeschen(e.id, k.id)}
-                          className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
-                        >
-                          {txt.entfernen}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <input
-                    type="email"
-                    value={neueZusatzEmail}
-                    onChange={(e) => setNeueZusatzEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && zusatzEmailHinzufuegen(k.id)}
-                    placeholder={txt.weitereEmailPlatzhalter}
-                    className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                  />
-                  <button
-                    onClick={() => zusatzEmailHinzufuegen(k.id)}
-                    className="rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white"
-                  >
-                    +
-                  </button>
-                </div>
-                <p className="mt-1 text-xs text-[var(--text-faint)]">
-                  {txt.zusatzEmailHinweis}
-                </p>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  {txt.telefonWhatsapp}
-                </label>
-                <input
-                  type="text"
-                  value={entwurf.telefonnummer ?? ""}
-                  onChange={(e) => setEntwurf({ ...entwurf, telefonnummer: e.target.value })}
-                  placeholder={txt.telefonPlatzhalter}
-                  className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={entwurf.strasse ?? ""}
-                  onChange={(e) => setEntwurf({ ...entwurf, strasse: e.target.value })}
-                  placeholder={txt.strassePlatzhalter}
-                  className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                />
-                <input
-                  type="text"
-                  value={entwurf.hausnummer ?? ""}
-                  onChange={(e) => setEntwurf({ ...entwurf, hausnummer: e.target.value })}
-                  placeholder={txt.nrPlatzhalter}
-                  className="w-16 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                />
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={entwurf.plz ?? ""}
-                  onChange={(e) => setEntwurf({ ...entwurf, plz: e.target.value })}
-                  placeholder={txt.plzPlatzhalter}
-                  className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                />
-                <input
-                  type="text"
-                  value={entwurf.ort ?? ""}
-                  onChange={(e) => setEntwurf({ ...entwurf, ort: e.target.value })}
-                  placeholder={txt.ortPlatzhalter}
-                  className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <select
-                  value={entwurf.land ?? "Deutschland"}
-                  onChange={(e) => {
-                    const land = e.target.value;
-                    setEntwurf({
-                      ...entwurf,
-                      land,
-                      mwst_satz: LAENDER_MWST[land] ?? entwurf.mwst_satz,
-                    });
-                  }}
-                  className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                >
-                  {LAENDER_LISTE.map((land) => (
-                    <option key={land} value={land}>
-                      {land}
-                    </option>
-                  ))}
-                </select>
-                <div className="flex w-28 items-center gap-1">
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={entwurf.mwst_satz ?? ""}
-                    onChange={(e) =>
-                      setEntwurf({
-                        ...entwurf,
-                        mwst_satz: e.target.value === "" ? null : Number(e.target.value),
-                      })
-                    }
-                    placeholder={txt.mwstPlatzhalter}
-                    className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-2 text-sm text-[var(--text-strong)]"
-                  />
-                  <span className="text-xs text-[var(--text-faint)]">%</span>
-                </div>
-              </div>
-              <p className="-mt-1 text-xs text-[var(--text-faint)]">
-                {txt.mwstHinweis}
-              </p>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  {txt.ustIdLabel}
-                </label>
-                <input
-                  type="text"
-                  value={entwurf.ust_id ?? ""}
-                  onChange={(e) => setEntwurf({ ...entwurf, ust_id: e.target.value })}
-                  placeholder={txt.ustIdPlatzhalter}
-                  className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                />
-                <p className="mt-1 text-xs text-[var(--text-faint)]">
-                  {txt.ustIdHinweis}
-                </p>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  {txt.wartungsvertragLabel}
-                </label>
-                <select
-                  value={entwurf.wartungsvertrag_stufe_id ?? ""}
-                  onChange={(e) => setEntwurf({ ...entwurf, wartungsvertrag_stufe_id: e.target.value || null })}
-                  className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                >
-                  <option value="">{texte(sprache).wartungsvertrag.minutenpreis}</option>
-                  {wartungsvertragStufen.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-1 text-xs text-[var(--text-faint)]">
-                  {txt.wartungsvertragHinweis}
-                </p>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  {txt.subresellerLabel}
-                </label>
-                <select
-                  value={entwurf.subreseller_id ?? ""}
-                  onChange={(e) => setEntwurf({ ...entwurf, subreseller_id: e.target.value || null })}
-                  className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                >
-                  <option value="">{txt.keinSubreseller}</option>
-                  {subresellerListe.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-                <p className="mt-1 text-xs text-[var(--text-faint)]">
-                  {txt.subresellerHinweis}
-                </p>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  {txt.notizenLabel}
-                </label>
-                <textarea
-                  value={entwurf.notizen ?? ""}
-                  onChange={(e) => setEntwurf({ ...entwurf, notizen: e.target.value })}
-                  rows={3}
-                  placeholder={txt.notizenPlatzhalter}
-                  className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[var(--text-soft)]">
-                  {txt.individuellerPreisLabel}
-                </label>
-
-                {preise.length === 0 ? (
-                  <p className="mb-2 text-xs text-[var(--text-faint)]">
-                    {txt.keinPreisGesetzt}
-                  </p>
-                ) : (
-                  <div className="mb-2 space-y-1">
-                    {(() => {
-                      const heute = new Date().toISOString().slice(0, 10);
-                      const aktiveId = preise.find((p) => p.gueltig_ab <= heute)?.id;
-                      return preise.map((p) => (
-                        <div
-                          key={p.id}
-                          className="flex items-center justify-between gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5 text-sm"
-                        >
-                          <span className="text-[var(--text-strong)]">
-                            {txt.abPrefix} {new Date(p.gueltig_ab).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")}:{" "}
-                            {(p.preis_pro_minute_cent / 100).toLocaleString(sprache === "en" ? "en-US" : "de-DE", {
-                              style: "currency",
-                              currency: "EUR",
-                            })}
-                            {p.id === aktiveId && (
-                              <span className="ml-2 rounded bg-akzent px-1.5 py-0.5 text-[0.65rem] font-medium text-white">
-                                {txt.aktuell}
-                              </span>
-                            )}
-                            {p.gueltig_ab > heute && (
-                              <span className="ml-2 rounded bg-[var(--border)] px-1.5 py-0.5 text-[0.65rem] font-medium text-[var(--text-soft)]">
-                                {txt.geplant}
-                              </span>
-                            )}
-                          </span>
-                          <button
-                            onClick={() => preisLoeschen(p.id, k.id)}
-                            className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
-                          >
-                            {txt.entfernen}
-                          </button>
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  <input
-                    type="date"
-                    value={neuesPreisDatum}
-                    onChange={(e) => setNeuesPreisDatum(e.target.value)}
-                    className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                  />
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={neuerPreisEuro}
-                    onChange={(e) => setNeuerPreisEuro(e.target.value)}
-                    placeholder={txt.preisPlatzhalter}
-                    className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
-                  />
-                  <button
-                    onClick={() => preisHinzufuegen(k.id)}
-                    className="rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white"
-                  >
-                    +
-                  </button>
-                </div>
-                <p className="mt-1 text-xs text-[var(--text-faint)]">
-                  {txt.preisHinweis}
-                </p>
-              </div>
-
+      <div className="grid gap-4 lg:grid-cols-[22rem_minmax(0,1fr)] lg:items-start">
+        {/* Liste */}
+        <div className={`space-y-2 ${offenId ? "hidden lg:block" : ""}`}>
+          {gefilterteKunden.length === 0 ? (
+            <p className="text-sm text-[var(--text-faint)]">
+              {kunden.length === 0
+                ? zeigeArchivierte
+                  ? txt.keineDeaktiviertenKunden
+                  : txt.nochKeineKunden
+                : txt.keineTreffer}
+            </p>
+          ) : (
+            sichtbareKunden.map((k) => (
               <button
-                onClick={speichern}
-                disabled={laedt}
-                className="w-full rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                key={k.id}
+                onClick={() => (offenId === k.id ? setOffenId(null) : bearbeitenOeffnen(k))}
+                className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors ${
+                  offenId === k.id
+                    ? "border-akzent bg-[var(--bg-muted)]"
+                    : "border-[var(--border)] bg-[var(--bg-surface)] hover:border-[var(--border-input)]"
+                }`}
               >
-                {txt.speichern}
-              </button>
-
-              <div className="border-t border-[var(--border)] pt-3">
-                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                  {txt.dokumenteLabel}
-                </p>
-                <KundenDokumente
-                  key={`dokumente-${k.id}-${mergeVersion}`}
-                  kundeId={k.id}
-                  organisationId={organisationId}
-                />
-              </div>
-
-              <div className="border-t border-[var(--border)] pt-3">
-                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                  {txt.todoListe}
-                </p>
-                <KundenTodoListe
-                  key={`todos-${k.id}-${mergeVersion}`}
-                  kundeId={k.id}
-                  organisationId={organisationId}
-                  modus="voll"
-                />
-              </div>
-
-              <div className="border-t border-[var(--border)] pt-3">
-                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                  {txt.hardware}
-                </p>
-                <KundenHardware
-                  key={`hardware-${k.id}-${mergeVersion}`}
-                  kundeId={k.id}
-                  organisationId={organisationId}
-                />
-              </div>
-
-              <div className="border-t border-[var(--border)] pt-3">
-                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                  {txt.donglesLizenzen}
-                </p>
-                <DongleVerwaltung
-                  key={`dongle-${k.id}-${mergeVersion}`}
-                  kundeId={k.id}
-                  organisationId={organisationId}
-                />
-              </div>
-
-              {vertraege.length > 0 && (
-                <div className="border-t border-[var(--border)] pt-3">
-                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                    {txt.lizenzvertraegeLabel}
-                  </p>
-                  <div className="space-y-2">
-                    {vertraege.map((v) => {
-                      const info = laufzeitInfo(v.vertrag_ende);
-                      return (
-                        <div key={v.id} className="rounded bg-[var(--bg-muted)] px-3 py-2">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm text-[var(--text-strong)]">{v.produkt_name}</span>
-                            <span className="font-mono text-xs text-[var(--text-faint)]">
-                              {v.lizenz_seriennummer}
-                            </span>
-                            {v.status && <span className="text-xs text-[var(--text-faint)]">· {v.status}</span>}
-                          </div>
-                          {v.vertrag_ende && info && (
-                            <div className="mt-1.5">
-                              <div className="mb-1 flex justify-between text-xs text-[var(--text-faint)]">
-                                <span>{txt.laufzeit}</span>
-                                <span style={{ color: info.farbe }} className="font-medium">
-                                  {txt.bisPrefix} {new Date(v.vertrag_ende).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")}
-                                  {info.tage >= 0 ? ` (${info.tage} ${txt.tageSuffix})` : ` ${txt.abgelaufen}`}
-                                </span>
-                              </div>
-                              <div className="h-1.5 overflow-hidden rounded-full bg-[var(--bg-surface)]">
-                                <div
-                                  className="h-full rounded-full"
-                                  style={{ width: `${info.prozent}%`, background: info.farbe }}
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {!zeigeArchivierte && (
-                <div className="border-t border-[var(--border)] pt-3">
-                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                    {txt.kontenZusammenfuehrenLabel}
-                  </p>
-                  {!zeigeZusammenfuehren ? (
-                    <button
-                      onClick={() => setZeigeZusammenfuehren(true)}
-                      className="w-full rounded border border-[var(--border-input)] px-3 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
-                    >
-                      {txt.mitAnderemKontoZusammenfuehren}
-                    </button>
-                  ) : (
-                    <div className="space-y-2 rounded border border-[var(--border-input)] p-3">
-                      <p className="text-xs text-[var(--text-faint)]">
-                        {txt.zusammenfuehrenBeschreibungVor}{" "}
-                        <strong>{k.name ?? txt.diesemKunden}</strong>
-                        {txt.zusammenfuehrenBeschreibungNach}
-                      </p>
-                      <KundenAuswahl
-                        organisationId={organisationId}
-                        value={zusammenfuehrenQuelleId}
-                        onChange={setZusammenfuehrenQuelleId}
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => kontenZusammenfuehren(k.id)}
-                          disabled={
-                            zusammenfuehrenLaedt || !zusammenfuehrenQuelleId || zusammenfuehrenQuelleId === k.id
-                          }
-                          className="flex-1 rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-                        >
-                          {zusammenfuehrenLaedt ? txt.wirdZusammengefuehrt : txt.zusammenfuehren}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setZeigeZusammenfuehren(false);
-                            setZusammenfuehrenQuelleId("");
-                          }}
-                          className="rounded border border-[var(--border-input)] px-3 py-2 text-sm text-[var(--text-soft)]"
-                        >
-                          {txt.abbrechen}
-                        </button>
-                      </div>
-                      {zusammenfuehrenQuelleId === k.id && (
-                        <p className="text-xs text-red-600">{txt.bitteAnderesKontoWaehlen}</p>
-                      )}
-                    </div>
+                <span className="relative shrink-0">
+                  <Avatar name={k.name} avatarUrl={k.avatar_url} groesse="md" />
+                  {onlineIds?.has(k.id) && (
+                    <span
+                      className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[var(--bg-surface)] bg-emerald-500"
+                      title={txt.online}
+                    />
                   )}
-                </div>
-              )}
-
-              {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}
-
-              <button
-                onClick={() => neuenLinkAnfordern(k.id, entwurf.telefonnummer ?? null)}
-                disabled={laedt}
-                className="w-full rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)] disabled:opacity-50"
-              >
-                {txt.neuenZugangslinkErzeugen}
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="truncate text-sm font-medium text-[var(--text-strong)]">{k.name ?? txt.unbenannt}</span>
+                  {(k.firmenname || k.telefonnummer) && (
+                    <span className="truncate text-xs text-[var(--text-faint)]">
+                      {[k.firmenname, k.telefonnummer].filter(Boolean).join(" · ")}
+                    </span>
+                  )}
+                  {badges(k)}
+                </span>
               </button>
+            ))
+          )}
 
-              {neuerZugang && (
-                <ZugangsdatenBox
-                  email={neuerZugang.email}
-                  link={neuerZugang.link}
-                  telefon={neuerZugang.telefon}
-                  firmenName={organisationName}
-                  firmenAdresse={organisationAdresse}
-                  logoUrl={organisationLogoUrl}
-                  onSchliessen={() => setNeuerZugang(null)}
-                />
-              )}
-
-              <div className="border-t border-[var(--border)] pt-3">
-                {zeigeArchivierte ? (
-                  k.zusammengefuehrt_in ? (
-                    <p className="text-xs text-[var(--text-faint)]">
-                      {txt.kontoZusammengefuehrtInVor}{" "}
-                      <strong>{zielNamen[k.zusammengefuehrt_in] ?? txt.einAnderesKonto}</strong>
-                      {txt.kontoZusammengefuehrtInNach}
-                    </p>
-                  ) : (
-                    <button
-                      onClick={() => statusUmschalten(k.id, false)}
-                      className="w-full rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
-                    >
-                      {txt.wiederAktivieren}
-                    </button>
-                  )
-                ) : (
-                  <button
-                    onClick={() => statusUmschalten(k.id, true)}
-                    className="w-full rounded border border-red-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30"
-                  >
-                    {txt.kundeDeaktivieren}
-                  </button>
-                )}
-              </div>
-            </div>
+          {!kundenSuchtAktiv && gefilterteKunden.length > KUNDEN_STANDARD_SICHTBAR && (
+            <button
+              onClick={() => setAlleKundenAnzeigen((v) => !v)}
+              className="w-full rounded border border-[var(--border-input)] px-3 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+            >
+              {alleKundenAnzeigen ? txt.wenigerAnzeigen : txt.alleAnzeigenTemplate.replace("{n}", String(gefilterteKunden.length))}
+            </button>
           )}
         </div>
-        ))
-      )}
 
-      {!kundenSuchtAktiv && gefilterteKunden.length > KUNDEN_STANDARD_SICHTBAR && (
-        <button
-          onClick={() => setAlleKundenAnzeigen((v) => !v)}
-          className="w-full rounded border border-[var(--border-input)] px-3 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
-        >
-          {alleKundenAnzeigen ? txt.wenigerAnzeigen : txt.alleAnzeigenTemplate.replace("{n}", String(gefilterteKunden.length))}
-        </button>
-      )}
+        {/* Detail */}
+        <div className={offenId ? "" : "hidden lg:block"}>
+          {!aktuellerKunde ? (
+            <LeerZustand icon="👤" titel={txt.waehleKundeTitel} beschreibung={txt.waehleKundeHinweis} />
+          ) : (
+            (() => {
+              const k = aktuellerKunde;
+              return (
+                <div className="overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)]">
+                  <div className="space-y-3 p-4 pb-2">
+                    <button
+                      onClick={() => setOffenId(null)}
+                      className="inline-flex items-center gap-1 text-xs text-[var(--text-soft)] hover:text-[var(--text-strong)] lg:hidden"
+                    >
+                      <ChevronLeft size={14} />
+                      {txt.zurueckZurListe}
+                    </button>
+                    <div className="flex items-start gap-4">
+                      <div className="relative shrink-0">
+                        <Avatar name={entwurf.name ?? k.name} avatarUrl={entwurf.avatar_url ?? null} groesse="lg" />
+                        <label
+                          title={txt.profilbildAendern}
+                          className="absolute -bottom-1 -right-1 cursor-pointer rounded-full border border-[var(--border-input)] bg-[var(--bg-surface)] p-1.5 text-[var(--text-soft)] hover:text-[var(--text-strong)]"
+                        >
+                          <Camera size={12} />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => e.target.files?.[0] && avatarHochladen(k.id, e.target.files[0])}
+                          />
+                        </label>
+                      </div>
+                      <div className="flex min-w-0 flex-1 flex-col gap-1">
+                        <h3 className="truncate text-base font-semibold text-[var(--text-strong)]">{k.name ?? txt.unbenannt}</h3>
+                        {k.firmenname && <p className="truncate text-sm text-[var(--text-soft)]">{k.firmenname}</p>}
+                        <p className="truncate text-xs text-[var(--text-faint)]">
+                          {[kundeEmail, k.telefonnummer].filter(Boolean).join(" · ") || "—"}
+                        </p>
+                        {badges(k)}
+                      </div>
+                      <button
+                        onClick={() => setOffenId(null)}
+                        title={txt.abbrechen}
+                        className="hidden shrink-0 text-[var(--text-faint)] hover:text-[var(--text-strong)] lg:block"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="sticky top-0 z-10 bg-[var(--bg-surface)] px-4 py-2">
+                    <div className="flex gap-1 overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--bg-muted)] p-1">
+                      {tabs.map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => setTab(t.id)}
+                          className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                            tab === t.id
+                              ? "bg-[var(--bg-surface)] text-[var(--text-strong)] shadow-sm"
+                              : "text-[var(--text-faint)] hover:text-[var(--text-soft)]"
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-5 p-4">
+                    {tab === "stammdaten" && (
+                      <>
+                        <section className="space-y-2">
+                          <h4 className={abschnitt}>{txt.gruppeName}</h4>
+                          <div className="grid gap-2 sm:grid-cols-3">
+                            <div>
+                              <label className={lbl}>{txt.vorname}</label>
+                              <input
+                                type="text"
+                                value={entwurf.vorname ?? ""}
+                                onChange={(e) => setEntwurf({ ...entwurf, vorname: e.target.value })}
+                                className={feld}
+                              />
+                            </div>
+                            <div>
+                              <label className={lbl}>{txt.nachname}</label>
+                              <input
+                                type="text"
+                                value={entwurf.nachname ?? ""}
+                                onChange={(e) => setEntwurf({ ...entwurf, nachname: e.target.value })}
+                                className={feld}
+                              />
+                            </div>
+                            <div>
+                              <label className={lbl}>{txt.firmenname}</label>
+                              <input
+                                type="text"
+                                value={entwurf.firmenname ?? ""}
+                                onChange={(e) => setEntwurf({ ...entwurf, firmenname: e.target.value })}
+                                className={feld}
+                              />
+                            </div>
+                          </div>
+                        </section>
+
+                        <section className="space-y-3 border-t border-[var(--border)] pt-4">
+                          <h4 className={abschnitt}>{txt.gruppeKontakt}</h4>
+                          <div>
+                            <label className={lbl}>{txt.emailLoginLabel}</label>
+                            <p className="mb-1.5 rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-2 text-sm text-[var(--text-strong)]">
+                              {kundeEmail ?? "—"}
+                            </p>
+                            <div className="flex gap-2">
+                              <input
+                                type="email"
+                                value={emailEntwurf}
+                                onChange={(e) => setEmailEntwurf(e.target.value)}
+                                placeholder={txt.neueEmailPlatzhalter}
+                                className={`flex-1 ${feld}`}
+                              />
+                              <button
+                                onClick={() => kundeEmailAendern(k.id)}
+                                disabled={emailLaedt || !emailEntwurf.includes("@") || emailEntwurf === kundeEmail}
+                                className="shrink-0 rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+                              >
+                                {emailLaedt ? "…" : txt.emailAendern}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className={lbl}>
+                              {txt.weitereEmailsLabel}{" "}
+                              <span className="font-normal text-[var(--text-faint)]">{txt.weitereEmailsHinweis}</span>
+                            </label>
+                            {zusatzEmails.length > 0 && (
+                              <div className="mb-2 space-y-1">
+                                {zusatzEmails.map((e) => (
+                                  <div
+                                    key={e.id}
+                                    className="flex items-center justify-between gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5 text-sm"
+                                  >
+                                    <span className="truncate text-[var(--text-strong)]">{e.email}</span>
+                                    <button
+                                      onClick={() => zusatzEmailLoeschen(e.id, k.id)}
+                                      className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
+                                    >
+                                      {txt.entfernen}
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex gap-2">
+                              <input
+                                type="email"
+                                value={neueZusatzEmail}
+                                onChange={(e) => setNeueZusatzEmail(e.target.value)}
+                                onKeyDown={(e) => e.key === "Enter" && zusatzEmailHinzufuegen(k.id)}
+                                placeholder={txt.weitereEmailPlatzhalter}
+                                className={`flex-1 ${feld}`}
+                              />
+                              <button
+                                onClick={() => zusatzEmailHinzufuegen(k.id)}
+                                className="rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white"
+                              >
+                                +
+                              </button>
+                            </div>
+                            <p className={hinweisKlasse}>{txt.zusatzEmailHinweis}</p>
+                          </div>
+
+                          <div>
+                            <label className={lbl}>{txt.telefonWhatsapp}</label>
+                            <input
+                              type="text"
+                              value={entwurf.telefonnummer ?? ""}
+                              onChange={(e) => setEntwurf({ ...entwurf, telefonnummer: e.target.value })}
+                              placeholder={txt.telefonPlatzhalter}
+                              className={feld}
+                            />
+                          </div>
+                        </section>
+
+                        <section className="space-y-2 border-t border-[var(--border)] pt-4">
+                          <h4 className={abschnitt}>{txt.gruppeAdresse}</h4>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={entwurf.strasse ?? ""}
+                              onChange={(e) => setEntwurf({ ...entwurf, strasse: e.target.value })}
+                              placeholder={txt.strassePlatzhalter}
+                              className={`flex-1 ${feld}`}
+                            />
+                            <input
+                              type="text"
+                              value={entwurf.hausnummer ?? ""}
+                              onChange={(e) => setEntwurf({ ...entwurf, hausnummer: e.target.value })}
+                              placeholder={txt.nrPlatzhalter}
+                              className="w-20 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={entwurf.plz ?? ""}
+                              onChange={(e) => setEntwurf({ ...entwurf, plz: e.target.value })}
+                              placeholder={txt.plzPlatzhalter}
+                              className="w-24 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                            />
+                            <input
+                              type="text"
+                              value={entwurf.ort ?? ""}
+                              onChange={(e) => setEntwurf({ ...entwurf, ort: e.target.value })}
+                              placeholder={txt.ortPlatzhalter}
+                              className={`flex-1 ${feld}`}
+                            />
+                          </div>
+                          <select
+                            value={entwurf.land ?? "Deutschland"}
+                            onChange={(e) => {
+                              const land = e.target.value;
+                              setEntwurf({
+                                ...entwurf,
+                                land,
+                                mwst_satz: LAENDER_MWST[land] ?? entwurf.mwst_satz,
+                              });
+                            }}
+                            className={feld}
+                          >
+                            {LAENDER_LISTE.map((land) => (
+                              <option key={land} value={land}>
+                                {land}
+                              </option>
+                            ))}
+                          </select>
+                        </section>
+
+                        <section className="space-y-2 border-t border-[var(--border)] pt-4">
+                          <h4 className={abschnitt}>{txt.gruppeSteuer}</h4>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div>
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  value={entwurf.mwst_satz ?? ""}
+                                  onChange={(e) =>
+                                    setEntwurf({
+                                      ...entwurf,
+                                      mwst_satz: e.target.value === "" ? null : Number(e.target.value),
+                                    })
+                                  }
+                                  placeholder={txt.mwstPlatzhalter}
+                                  className={feld}
+                                />
+                                <span className="text-xs text-[var(--text-faint)]">%</span>
+                              </div>
+                              <p className={hinweisKlasse}>{txt.mwstHinweis}</p>
+                            </div>
+                            <div>
+                              <label className={lbl}>{txt.ustIdLabel}</label>
+                              <input
+                                type="text"
+                                value={entwurf.ust_id ?? ""}
+                                onChange={(e) => setEntwurf({ ...entwurf, ust_id: e.target.value })}
+                                placeholder={txt.ustIdPlatzhalter}
+                                className={feld}
+                              />
+                              <p className={hinweisKlasse}>{txt.ustIdHinweis}</p>
+                            </div>
+                          </div>
+                        </section>
+
+                        <section className="space-y-2 border-t border-[var(--border)] pt-4">
+                          <h4 className={abschnitt}>{txt.notizenLabel}</h4>
+                          <textarea
+                            value={entwurf.notizen ?? ""}
+                            onChange={(e) => setEntwurf({ ...entwurf, notizen: e.target.value })}
+                            rows={3}
+                            placeholder={txt.notizenPlatzhalter}
+                            className={feld}
+                          />
+                        </section>
+                      </>
+                    )}
+
+                    {tab === "vertrag" && (
+                      <>
+                        <section className="space-y-3">
+                          <h4 className={abschnitt}>{txt.gruppeBetreuung}</h4>
+                          <div>
+                            <label className={lbl}>{txt.wartungsvertragLabel}</label>
+                            <select
+                              value={entwurf.wartungsvertrag_stufe_id ?? ""}
+                              onChange={(e) => setEntwurf({ ...entwurf, wartungsvertrag_stufe_id: e.target.value || null })}
+                              className={feld}
+                            >
+                              <option value="">{texte(sprache).wartungsvertrag.minutenpreis}</option>
+                              {wartungsvertragStufen.map((s) => (
+                                <option key={s.id} value={s.id}>
+                                  {s.name}
+                                </option>
+                              ))}
+                            </select>
+                            <p className={hinweisKlasse}>{txt.wartungsvertragHinweis}</p>
+                          </div>
+                          <div>
+                            <label className={lbl}>{txt.subresellerLabel}</label>
+                            <select
+                              value={entwurf.subreseller_id ?? ""}
+                              onChange={(e) => setEntwurf({ ...entwurf, subreseller_id: e.target.value || null })}
+                              className={feld}
+                            >
+                              <option value="">{txt.keinSubreseller}</option>
+                              {subresellerListe.map((s) => (
+                                <option key={s.id} value={s.id}>
+                                  {s.name}
+                                </option>
+                              ))}
+                            </select>
+                            <p className={hinweisKlasse}>{txt.subresellerHinweis}</p>
+                          </div>
+                        </section>
+
+                        <section className="space-y-2 border-t border-[var(--border)] pt-4">
+                          <h4 className={abschnitt}>{txt.individuellerPreisLabel}</h4>
+                          {preise.length === 0 ? (
+                            <p className="text-xs text-[var(--text-faint)]">{txt.keinPreisGesetzt}</p>
+                          ) : (
+                            <div className="space-y-1">
+                              {(() => {
+                                const heute = new Date().toISOString().slice(0, 10);
+                                const aktiveId = preise.find((p) => p.gueltig_ab <= heute)?.id;
+                                return preise.map((p) => (
+                                  <div
+                                    key={p.id}
+                                    className="flex items-center justify-between gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5 text-sm"
+                                  >
+                                    <span className="text-[var(--text-strong)]">
+                                      {txt.abPrefix} {new Date(p.gueltig_ab).toLocaleDateString(datumsFormat)}:{" "}
+                                      {(p.preis_pro_minute_cent / 100).toLocaleString(datumsFormat, {
+                                        style: "currency",
+                                        currency: "EUR",
+                                      })}
+                                      {p.id === aktiveId && (
+                                        <span className="ml-2 rounded bg-akzent px-1.5 py-0.5 text-[0.65rem] font-medium text-white">
+                                          {txt.aktuell}
+                                        </span>
+                                      )}
+                                      {p.gueltig_ab > heute && (
+                                        <span className="ml-2 rounded bg-[var(--border)] px-1.5 py-0.5 text-[0.65rem] font-medium text-[var(--text-soft)]">
+                                          {txt.geplant}
+                                        </span>
+                                      )}
+                                    </span>
+                                    <button
+                                      onClick={() => preisLoeschen(p.id, k.id)}
+                                      className="shrink-0 text-xs text-[var(--text-faint)] hover:text-red-600"
+                                    >
+                                      {txt.entfernen}
+                                    </button>
+                                  </div>
+                                ));
+                              })()}
+                            </div>
+                          )}
+                          <div className="flex gap-2">
+                            <input
+                              type="date"
+                              value={neuesPreisDatum}
+                              onChange={(e) => setNeuesPreisDatum(e.target.value)}
+                              className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
+                            />
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={neuerPreisEuro}
+                              onChange={(e) => setNeuerPreisEuro(e.target.value)}
+                              placeholder={txt.preisPlatzhalter}
+                              className={`flex-1 ${feld}`}
+                            />
+                            <button
+                              onClick={() => preisHinzufuegen(k.id)}
+                              className="rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white"
+                            >
+                              +
+                            </button>
+                          </div>
+                          <p className={hinweisKlasse}>{txt.preisHinweis}</p>
+                        </section>
+                      </>
+                    )}
+
+                    {tab === "dongles" && (
+                      <>
+                        <section className="space-y-2">
+                          <h4 className={abschnitt}>{txt.donglesLizenzen}</h4>
+                          <DongleVerwaltung
+                            key={`dongle-${k.id}-${mergeVersion}`}
+                            kundeId={k.id}
+                            organisationId={organisationId}
+                          />
+                        </section>
+
+                        {vertraege.length > 0 && (
+                          <section className="space-y-2 border-t border-[var(--border)] pt-4">
+                            <h4 className={abschnitt}>{txt.lizenzvertraegeLabel}</h4>
+                            <div className="space-y-2">
+                              {vertraege.map((v) => {
+                                const info = laufzeitInfo(v.vertrag_ende);
+                                return (
+                                  <div key={v.id} className="rounded bg-[var(--bg-muted)] px-3 py-2">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span className="text-sm text-[var(--text-strong)]">{v.produkt_name}</span>
+                                      <span className="font-mono text-xs text-[var(--text-faint)]">{v.lizenz_seriennummer}</span>
+                                      {v.status && <span className="text-xs text-[var(--text-faint)]">· {v.status}</span>}
+                                    </div>
+                                    {v.vertrag_ende && info && (
+                                      <div className="mt-1.5">
+                                        <div className="mb-1 flex justify-between text-xs text-[var(--text-faint)]">
+                                          <span>{txt.laufzeit}</span>
+                                          <span style={{ color: info.farbe }} className="font-medium">
+                                            {txt.bisPrefix} {new Date(v.vertrag_ende).toLocaleDateString(datumsFormat)}
+                                            {info.tage >= 0 ? ` (${info.tage} ${txt.tageSuffix})` : ` ${txt.abgelaufen}`}
+                                          </span>
+                                        </div>
+                                        <div className="h-1.5 overflow-hidden rounded-full bg-[var(--bg-surface)]">
+                                          <div
+                                            className="h-full rounded-full"
+                                            style={{ width: `${info.prozent}%`, background: info.farbe }}
+                                          />
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </section>
+                        )}
+                      </>
+                    )}
+
+                    {tab === "hardware" && (
+                      <section className="space-y-2">
+                        <h4 className={abschnitt}>{txt.hardware}</h4>
+                        <KundenHardware
+                          key={`hardware-${k.id}-${mergeVersion}`}
+                          kundeId={k.id}
+                          organisationId={organisationId}
+                        />
+                      </section>
+                    )}
+
+                    {tab === "dokumente" && (
+                      <>
+                        <section className="space-y-2">
+                          <h4 className={abschnitt}>{txt.dokumenteLabel}</h4>
+                          <KundenDokumente
+                            key={`dokumente-${k.id}-${mergeVersion}`}
+                            kundeId={k.id}
+                            organisationId={organisationId}
+                          />
+                        </section>
+                        <section className="space-y-2 border-t border-[var(--border)] pt-4">
+                          <h4 className={abschnitt}>{txt.todoListe}</h4>
+                          <KundenTodoListe
+                            key={`todos-${k.id}-${mergeVersion}`}
+                            kundeId={k.id}
+                            organisationId={organisationId}
+                            modus="voll"
+                          />
+                        </section>
+                      </>
+                    )}
+
+                    {tab === "konto" && (
+                      <>
+                        <section className="space-y-2">
+                          <h4 className={abschnitt}>{txt.gruppeZugang}</h4>
+                          <button
+                            onClick={() => neuenLinkAnfordern(k.id, entwurf.telefonnummer ?? null)}
+                            disabled={laedt}
+                            className="w-full rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)] disabled:opacity-50"
+                          >
+                            {txt.neuenZugangslinkErzeugen}
+                          </button>
+                          {neuerZugang && (
+                            <ZugangsdatenBox
+                              email={neuerZugang.email}
+                              link={neuerZugang.link}
+                              telefon={neuerZugang.telefon}
+                              firmenName={organisationName}
+                              firmenAdresse={organisationAdresse}
+                              logoUrl={organisationLogoUrl}
+                              onSchliessen={() => setNeuerZugang(null)}
+                            />
+                          )}
+                        </section>
+
+                        {!zeigeArchivierte && (
+                          <section className="space-y-2 border-t border-[var(--border)] pt-4">
+                            <h4 className={abschnitt}>{txt.kontenZusammenfuehrenLabel}</h4>
+                            {!zeigeZusammenfuehren ? (
+                              <button
+                                onClick={() => setZeigeZusammenfuehren(true)}
+                                className="w-full rounded border border-[var(--border-input)] px-3 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+                              >
+                                {txt.mitAnderemKontoZusammenfuehren}
+                              </button>
+                            ) : (
+                              <div className="space-y-2 rounded border border-[var(--border-input)] p-3">
+                                <p className="text-xs text-[var(--text-faint)]">
+                                  {txt.zusammenfuehrenBeschreibungVor} <strong>{k.name ?? txt.diesemKunden}</strong>
+                                  {txt.zusammenfuehrenBeschreibungNach}
+                                </p>
+                                <KundenAuswahl
+                                  organisationId={organisationId}
+                                  value={zusammenfuehrenQuelleId}
+                                  onChange={setZusammenfuehrenQuelleId}
+                                />
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => kontenZusammenfuehren(k.id)}
+                                    disabled={
+                                      zusammenfuehrenLaedt || !zusammenfuehrenQuelleId || zusammenfuehrenQuelleId === k.id
+                                    }
+                                    className="flex-1 rounded bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+                                  >
+                                    {zusammenfuehrenLaedt ? txt.wirdZusammengefuehrt : txt.zusammenfuehren}
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setZeigeZusammenfuehren(false);
+                                      setZusammenfuehrenQuelleId("");
+                                    }}
+                                    className="rounded border border-[var(--border-input)] px-3 py-2 text-sm text-[var(--text-soft)]"
+                                  >
+                                    {txt.abbrechen}
+                                  </button>
+                                </div>
+                                {zusammenfuehrenQuelleId === k.id && (
+                                  <p className="text-xs text-red-600">{txt.bitteAnderesKontoWaehlen}</p>
+                                )}
+                              </div>
+                            )}
+                          </section>
+                        )}
+
+                        <section className="space-y-2 border-t border-[var(--border)] pt-4">
+                          <h4 className={abschnitt}>{txt.gruppeStatus}</h4>
+                          {zeigeArchivierte ? (
+                            k.zusammengefuehrt_in ? (
+                              <p className="text-xs text-[var(--text-faint)]">
+                                {txt.kontoZusammengefuehrtInVor}{" "}
+                                <strong>{zielNamen[k.zusammengefuehrt_in] ?? txt.einAnderesKonto}</strong>
+                                {txt.kontoZusammengefuehrtInNach}
+                              </p>
+                            ) : (
+                              <button
+                                onClick={() => statusUmschalten(k.id, false)}
+                                className="w-full rounded border border-[var(--border-input)] px-4 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+                              >
+                                {txt.wiederAktivieren}
+                              </button>
+                            )
+                          ) : (
+                            <button
+                              onClick={() => statusUmschalten(k.id, true)}
+                              className="w-full rounded border border-red-200 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30"
+                            >
+                              {txt.kundeDeaktivieren}
+                            </button>
+                          )}
+                        </section>
+                      </>
+                    )}
+                  </div>
+
+                  {(tab === "stammdaten" || tab === "vertrag") && (
+                    <div className="sticky bottom-0 flex items-center gap-3 border-t border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3">
+                      <button
+                        onClick={speichern}
+                        disabled={laedt}
+                        className="shrink-0 rounded bg-slate-900 px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
+                      >
+                        {txt.speichern}
+                      </button>
+                      {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}
+                    </div>
+                  )}
+                  {hinweis && tab !== "stammdaten" && tab !== "vertrag" && (
+                    <p className="px-4 pb-4 text-xs text-[var(--text-soft)]">{hinweis}</p>
+                  )}
+                </div>
+              );
+            })()
+          )}
+        </div>
+      </div>
     </div>
   );
 }

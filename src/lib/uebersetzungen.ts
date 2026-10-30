@@ -570,6 +570,26 @@ export interface Uebersetzung {
     subresellerLabel: string;
     subresellerHinweis: string;
     keinSubreseller: string;
+    tabStammdaten: string;
+    tabVertragPreise: string;
+    tabDongles: string;
+    tabHardware: string;
+    tabDokumenteTodos: string;
+    tabKonto: string;
+    gruppeName: string;
+    gruppeKontakt: string;
+    gruppeAdresse: string;
+    gruppeSteuer: string;
+    gruppeBetreuung: string;
+    gruppeZugang: string;
+    gruppeStatus: string;
+    zurueckZurListe: string;
+    waehleKundeTitel: string;
+    waehleKundeHinweis: string;
+    erfolgGespeichert: string;
+    badgeDonglesTitel: string;
+    badgeRenewalTitel: string;
+    badgeRenewalOffen: string;
     notizenLabel: string;
     notizenPlatzhalter: string;
     individuellerPreisLabel: string;
@@ -2100,6 +2120,26 @@ const de: Uebersetzung = {
     subresellerLabel: "Subreseller",
     subresellerHinweis: "Wird der Kunde über einen Subreseller betreut, gehen automatische Mails (Ticket-Status/-Antwort, Lizenz-Update-Einladung) nur noch an ihn – der Endkunde erhält dann nichts mehr direkt. Subreseller werden unter Verwaltung → Werkzeuge angelegt.",
     keinSubreseller: "Direkt (kein Subreseller)",
+    tabStammdaten: "Stammdaten",
+    tabVertragPreise: "Vertrag & Preise",
+    tabDongles: "Dongles & Lizenzen",
+    tabHardware: "Hardware",
+    tabDokumenteTodos: "Dokumente & To-dos",
+    tabKonto: "Konto",
+    gruppeName: "Name",
+    gruppeKontakt: "Kontakt",
+    gruppeAdresse: "Adresse",
+    gruppeSteuer: "Steuer",
+    gruppeBetreuung: "Betreuung",
+    gruppeZugang: "Zugang",
+    gruppeStatus: "Status",
+    zurueckZurListe: "Zurück zur Liste",
+    waehleKundeTitel: "Kunde auswählen",
+    waehleKundeHinweis: "Wähle links einen Kunden, um Stammdaten, Verträge, Dongles, Hardware und Dokumente zu sehen und zu bearbeiten.",
+    erfolgGespeichert: "Gespeichert.",
+    badgeDonglesTitel: "Anzahl Dongles",
+    badgeRenewalTitel: "Lizenzvertrag läuft in ≤ 30 Tagen ab und das Renewal ist noch nicht bezahlt",
+    badgeRenewalOffen: "Renewal offen",
     notizenLabel: "Notizen / Besonderheiten",
     notizenPlatzhalter: "z.B. bevorzugte Erreichbarkeit, technische Besonderheiten…",
     individuellerPreisLabel: "Individueller Minutenpreis (Verlauf, optional)",
@@ -3631,6 +3671,26 @@ const en: Uebersetzung = {
     subresellerLabel: "Subreseller",
     subresellerHinweis: "If the customer is managed through a subreseller, automatic emails (ticket status/reply, license update invitation) go only to them – the end customer no longer receives anything directly. Subresellers are created under Management → Tools.",
     keinSubreseller: "Direct (no subreseller)",
+    tabStammdaten: "Details",
+    tabVertragPreise: "Contract & prices",
+    tabDongles: "Dongles & licenses",
+    tabHardware: "Hardware",
+    tabDokumenteTodos: "Documents & to-dos",
+    tabKonto: "Account",
+    gruppeName: "Name",
+    gruppeKontakt: "Contact",
+    gruppeAdresse: "Address",
+    gruppeSteuer: "Tax",
+    gruppeBetreuung: "Support",
+    gruppeZugang: "Access",
+    gruppeStatus: "Status",
+    zurueckZurListe: "Back to list",
+    waehleKundeTitel: "Select a customer",
+    waehleKundeHinweis: "Select a customer on the left to view and edit details, contracts, dongles, hardware and documents.",
+    erfolgGespeichert: "Saved.",
+    badgeDonglesTitel: "Number of dongles",
+    badgeRenewalTitel: "License contract expires in ≤ 30 days and the renewal is not paid yet",
+    badgeRenewalOffen: "Renewal unpaid",
     notizenLabel: "Notes / special notes",
     notizenPlatzhalter: "e.g. preferred availability, technical specifics…",
     individuellerPreisLabel: "Individual per-minute price (history, optional)",
