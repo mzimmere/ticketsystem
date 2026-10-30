@@ -904,6 +904,8 @@ export interface Uebersetzung {
     sucheSeriennummerOderKunde: string;
     keineTreffer: string;
     nichtZugeordnet: string;
+    softwareFilterAlle: string;
+    softwareAendernTitle: string;
     zuordnungAufheben: string;
     zuordnungAendernTitle: string;
     zuordnungAufhebenConfirmTemplate: string;
@@ -1423,6 +1425,30 @@ export interface Uebersetzung {
     nochKeineSubreseller: string;
     neuerNamePlatzhalter: string;
     neueEmailPlatzhalter: string;
+  };
+  produktNachricht: {
+    oeffnenButtonTemplate: string;
+    titelTemplate: string;
+    schliessen: string;
+    keineVorlage: string;
+    betreffPlatzhalter: string;
+    textPlatzhalter: string;
+    platzhalterHinweis: string;
+    vorlageNamePlatzhalter: string;
+    vorlageSpeichern: string;
+    vorlageLoeschen: string;
+    vorlageLoeschenConfirm: string;
+    vorlageNameErforderlich: string;
+    vorlageFehler: string;
+    vorlagenLadenFehler: string;
+    empfaengerLabelTemplate: string;
+    unbenannt: string;
+    senden: string;
+    sendenLaedt: string;
+    pflichtFehler: string;
+    keineEmpfaenger: string;
+    sendenConfirmTemplate: string;
+    ergebnisTemplate: string;
   };
   ticketArt: {
     label: string;
@@ -2342,6 +2368,8 @@ const de: Uebersetzung = {
     sucheSeriennummerOderKunde: "Suche nach Seriennummer oder Kunde…",
     keineTreffer: "Keine Treffer.",
     nichtZugeordnet: "Nicht zugeordnet",
+    softwareFilterAlle: "Alle Softwaretypen",
+    softwareAendernTitle: "Softwaretyp dieses Dongles ändern (z.B. exocad ↔ exoplan) – ein erneuter Import überschreibt das nicht",
     zuordnungAufheben: "Zuordnung aufheben",
     zuordnungAendernTitle: "Kunden dieses Lizenzvertrags ändern oder Zuordnung aufheben (die Verknüpfung zum bisherigen Dongle wird dabei gelöst)",
     zuordnungAufhebenConfirmTemplate: "Zuordnung von Lizenz {seriennummer} zu {kunde} wirklich aufheben? Der Vertrag landet wieder im Pool \"Nicht zugeordnet\".",
@@ -2861,6 +2889,30 @@ const de: Uebersetzung = {
     nochKeineSubreseller: "Noch keine Subreseller angelegt.",
     neuerNamePlatzhalter: "Name (z.B. Firma des Subresellers)",
     neueEmailPlatzhalter: "E-Mail-Adresse",
+  },
+  produktNachricht: {
+    oeffnenButtonTemplate: "Nachricht an {n} Kunden mit {software}-Dongle senden…",
+    titelTemplate: "Nachricht an {n} Kunden mit {software}-Dongle",
+    schliessen: "Schließen",
+    keineVorlage: "– Neue Nachricht (ohne Vorlage) –",
+    betreffPlatzhalter: "Betreff",
+    textPlatzhalter: "Nachrichtentext",
+    platzhalterHinweis: "Platzhalter: {{kunde_name}} und {{software}}. Pro Kunde wird ein Ticket angelegt und eine Mail verschickt (bei Kunden mit Subreseller geht die Mail an diesen).",
+    vorlageNamePlatzhalter: "Name der Vorlage",
+    vorlageSpeichern: "Als Vorlage speichern",
+    vorlageLoeschen: "Vorlage löschen",
+    vorlageLoeschenConfirm: "Diese Vorlage wirklich löschen?",
+    vorlageNameErforderlich: "Bitte einen Namen für die Vorlage angeben.",
+    vorlageFehler: "Vorlage konnte nicht gespeichert werden.",
+    vorlagenLadenFehler: "Vorlagen konnten nicht geladen werden.",
+    empfaengerLabelTemplate: "Empfänger ({n} von {gesamt})",
+    unbenannt: "Unbenannt",
+    senden: "Senden",
+    sendenLaedt: "Wird gesendet…",
+    pflichtFehler: "Betreff und Text sind erforderlich.",
+    keineEmpfaenger: "Bitte mindestens einen Empfänger auswählen.",
+    sendenConfirmTemplate: "Nachricht an {n} Kunden senden? Pro Kunde wird ein Ticket angelegt und eine Mail verschickt.",
+    ergebnisTemplate: "{n} Nachrichten versendet.",
   },
   ticketArt: {
     label: "Ticketart",
@@ -3780,6 +3832,8 @@ const en: Uebersetzung = {
     sucheSeriennummerOderKunde: "Search by serial number or customer…",
     keineTreffer: "No matches.",
     nichtZugeordnet: "Not assigned",
+    softwareFilterAlle: "All software types",
+    softwareAendernTitle: "Change this dongle's software type (e.g. exocad ↔ exoplan) – a re-import does not overwrite it",
     zuordnungAufheben: "Remove assignment",
     zuordnungAendernTitle: "Change this license contract's customer or remove the assignment (the link to the previous dongle is cleared)",
     zuordnungAufhebenConfirmTemplate: "Really remove license {seriennummer} from {kunde}? The contract returns to the \"Not assigned\" pool.",
@@ -4299,6 +4353,30 @@ const en: Uebersetzung = {
     nochKeineSubreseller: "No subresellers created yet.",
     neuerNamePlatzhalter: "Name (e.g. subreseller's company)",
     neueEmailPlatzhalter: "Email address",
+  },
+  produktNachricht: {
+    oeffnenButtonTemplate: "Send message to {n} customers with a {software} dongle…",
+    titelTemplate: "Message to {n} customers with a {software} dongle",
+    schliessen: "Close",
+    keineVorlage: "– New message (no template) –",
+    betreffPlatzhalter: "Subject",
+    textPlatzhalter: "Message text",
+    platzhalterHinweis: "Placeholders: {{kunde_name}} and {{software}}. One ticket is created and one email sent per customer (for customers with a subreseller the email goes to the subreseller).",
+    vorlageNamePlatzhalter: "Template name",
+    vorlageSpeichern: "Save as template",
+    vorlageLoeschen: "Delete template",
+    vorlageLoeschenConfirm: "Really delete this template?",
+    vorlageNameErforderlich: "Please enter a name for the template.",
+    vorlageFehler: "Template could not be saved.",
+    vorlagenLadenFehler: "Templates could not be loaded.",
+    empfaengerLabelTemplate: "Recipients ({n} of {gesamt})",
+    unbenannt: "Unnamed",
+    senden: "Send",
+    sendenLaedt: "Sending…",
+    pflichtFehler: "Subject and text are required.",
+    keineEmpfaenger: "Please select at least one recipient.",
+    sendenConfirmTemplate: "Send message to {n} customers? One ticket is created and one email sent per customer.",
+    ergebnisTemplate: "{n} messages sent.",
   },
   ticketArt: {
     label: "Ticket type",

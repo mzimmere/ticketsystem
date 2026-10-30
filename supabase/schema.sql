@@ -3344,3 +3344,48 @@ alter table tickets add column if not exists ticket_art text;
 alter table tickets drop constraint if exists tickets_ticket_art_check;
 alter table tickets add constraint tickets_ticket_art_check
   check (ticket_art is null or ticket_art in ('service_support', 'software_fehler', 'software_frage', 'schulung'));
+
+-- ============================================================
+-- 81. Vorlagen fuer Nachrichten an Kunden mit einem bestimmten Softwaretyp
+-- (Verwaltung -> Dongles & Lizenzen, ProduktNachricht.tsx): Betreff + Text
+-- werden pro Firma gespeichert und koennen vor dem Versand angepasst
+-- werden. Platzhalter {{kunde_name}} und {{software}}.
+-- ============================================================
+create table kunden_nachricht_vorlagen (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  name text not null,
+  betreff text not null,
+  text text not null,
+  erstellt_am timestamptz default now()
+);
+create index idx_kunden_nachricht_vorlagen_org on kunden_nachricht_vorlagen(organisation_id);
+alter table kunden_nachricht_vorlagen enable row level security;
+
+create policy kunden_nachricht_vorlagen_select on kunden_nachricht_vorlagen for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy kunden_nachricht_vorlagen_insert on kunden_nachricht_vorlagen for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy kunden_nachricht_vorlagen_update on kunden_nachricht_vorlagen for update
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy kunden_nachricht_vorlagen_delete on kunden_nachricht_vorlagen for delete
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );

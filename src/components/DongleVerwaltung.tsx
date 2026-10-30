@@ -75,6 +75,7 @@ interface DongleVerwaltungProps {
 export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerwaltungProps) {
   const { sprache } = useSprache();
   const txt = texte(sprache).dongleVerwaltung;
+  const lizenzTxt = texte(sprache).dongleLizenzVerwaltung;
   const WARTUNG_LABEL: Record<Wartungsvertrag, string> = {
     aktiv: txt.wartungAktiv,
     inaktiv: txt.wartungInaktiv,
@@ -254,6 +255,11 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
     ladeVertraege();
   }
 
+  async function softwareAendern(dongleId: string, software: string) {
+    await supabase.from("kunden_dongles").update({ software }).eq("id", dongleId);
+    ladeDongles();
+  }
+
   // Historie wird per DB-Trigger (Abschnitt 77) automatisch befuellt, sobald
   // sich vertrag_ende aendert - hier nur Anzeige, kein manuelles Anlegen.
   async function historieUmschalten(vertragId: string) {
@@ -322,7 +328,19 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
             >
               {kopiertId === d.id ? <Check size={12} /> : <Copy size={12} />}
             </span>
-            <span className="text-xs text-[var(--text-faint)]">· {d.software}</span>
+            <select
+              value={d.software}
+              onChange={(e) => softwareAendern(d.id, e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              title={lizenzTxt.softwareAendernTitle}
+              className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-1.5 py-0.5 text-xs text-[var(--text-soft)]"
+            >
+              {Array.from(new Set(["exocad", "exoplan", d.software])).map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
             {laufzeit?.aktuelle_engine_build && (
               <span className="rounded bg-[var(--bg-muted)] px-1.5 py-0.5 font-mono text-[0.65rem] text-[var(--text-soft)]">
                 {txt.buildLabel} {laufzeit.aktuelle_engine_build}

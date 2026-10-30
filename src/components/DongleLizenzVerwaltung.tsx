@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabaseClient";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
 import DongleImport from "./DongleImport";
+import ProduktNachricht from "./ProduktNachricht";
 import { benachrichtigeKunde } from "../lib/benachrichtigungen";
 import { Trash2, Copy, Check } from "lucide-react";
 
@@ -55,6 +56,7 @@ interface AlleDongle {
   software: string;
   wartungsvertrag: string;
   freiminuten_pro_monat: number;
+  kunde_id: string | null;
   kunde: { name: string | null } | null;
 }
 
@@ -99,6 +101,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   const [alleDongles, setAlleDongles] = useState<AlleDongle[]>([]);
   const [dongleUebersichtSuche, setDongleUebersichtSuche] = useState("");
   const [dongleUebersichtAlleAnzeigen, setDongleUebersichtAlleAnzeigen] = useState(false);
+  const [softwareFilter, setSoftwareFilter] = useState("");
 
   const [alleVertraege, setAlleVertraege] = useState<AlleVertrag[]>([]);
   const [vertragUebersichtSuche, setVertragUebersichtSuche] = useState("");
@@ -212,7 +215,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   async function ladeAlleDongles() {
     const { data } = await supabase
       .from("kunden_dongles")
-      .select("id, seriennummer, software, wartungsvertrag, freiminuten_pro_monat, kunde:kunde_id(name)")
+      .select("id, seriennummer, software, wartungsvertrag, freiminuten_pro_monat, kunde_id, kunde:kunde_id(name)")
       .eq("organisation_id", organisationId)
       .order("seriennummer");
     setAlleDongles((data as unknown as AlleDongle[]) ?? []);
@@ -280,7 +283,26 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
       ? gefilterteNichtZugeordneteVertraege
       : gefilterteNichtZugeordneteVertraege.slice(0, ANZAHL_POOL_SICHTBAR);
 
+  const verfuegbareSoftware = Array.from(new Set(["exocad", "exoplan", ...alleDongles.map((d) => d.software)])).sort();
+
+  const nachrichtEmpfaenger = softwareFilter
+    ? Array.from(
+        new Map(
+          alleDongles
+            .filter((d) => d.software === softwareFilter && d.kunde_id)
+            .map((d) => [d.kunde_id!, { id: d.kunde_id!, name: d.kunde?.name ?? null }]),
+        ).values(),
+      )
+    : [];
+
+  async function softwareAendern(dongleId: string, software: string) {
+    await supabase.from("kunden_dongles").update({ software }).eq("id", dongleId);
+    ladeAlleDongles();
+    ladeNichtZugeordnete();
+  }
+
   const dongleUebersichtGefiltert = alleDongles.filter((d) => {
+    if (softwareFilter && d.software !== softwareFilter) return false;
     const begriff = dongleUebersichtSuche.trim().toLowerCase();
     if (!begriff) return true;
     return (
@@ -534,6 +556,26 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
           placeholder={txt.sucheSeriennummerOderKunde}
           className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-3 py-1.5 text-sm text-[var(--text-strong)]"
         />
+        <select
+          value={softwareFilter}
+          onChange={(e) => setSoftwareFilter(e.target.value)}
+          className="rounded border border-[var(--border-input)] bg-[var(--bg-muted)] px-2 py-1.5 text-xs text-[var(--text-strong)]"
+        >
+          <option value="">{txt.softwareFilterAlle}</option>
+          {verfuegbareSoftware.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+        {softwareFilter && nachrichtEmpfaenger.length > 0 && (
+          <ProduktNachricht
+            key={softwareFilter}
+            organisationId={organisationId}
+            software={softwareFilter}
+            empfaenger={nachrichtEmpfaenger}
+          />
+        )}
         {dongleUebersichtGefiltert.length === 0 ? (
           <p className="text-xs text-[var(--text-faint)]">{txt.keineTreffer}</p>
         ) : (
@@ -551,7 +593,18 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                 >
                   {kopiertId === d.id ? <Check size={12} /> : <Copy size={12} />}
                 </button>
-                <span className="text-xs text-[var(--text-faint)]">· {d.software}</span>
+                <select
+                  value={d.software}
+                  onChange={(e) => softwareAendern(d.id, e.target.value)}
+                  title={txt.softwareAendernTitle}
+                  className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-1.5 py-0.5 text-xs text-[var(--text-soft)]"
+                >
+                  {verfuegbareSoftware.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
                 <span
                   className={`ml-auto text-xs ${
                     d.kunde?.name ? "text-[var(--text-soft)]" : "italic text-[var(--text-faint)]"
