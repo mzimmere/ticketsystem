@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { FileText, Zap, Tag, Timer, Mail, CircleHelp, Cpu, FolderOpen, ShieldCheck, Handshake, CalendarClock, Download } from "lucide-react";
 import VorlagenVerwaltung from "../VorlagenVerwaltung";
 import MakroVerwaltung from "../MakroVerwaltung";
 import TagVerwaltung from "../TagVerwaltung";
@@ -19,6 +20,21 @@ type WerkzeugId =
   | "vorlagen" | "makros" | "tags" | "sla" | "emailtexte" | "faq"
   | "hardware" | "dokumente" | "wartung" | "subreseller" | "lizenzerinnerung"
   | "export";
+
+const ICONS: Record<WerkzeugId, ReactNode> = {
+  vorlagen: <FileText size={14} />,
+  makros: <Zap size={14} />,
+  tags: <Tag size={14} />,
+  sla: <Timer size={14} />,
+  emailtexte: <Mail size={14} />,
+  faq: <CircleHelp size={14} />,
+  hardware: <Cpu size={14} />,
+  dokumente: <FolderOpen size={14} />,
+  wartung: <ShieldCheck size={14} />,
+  subreseller: <Handshake size={14} />,
+  lizenzerinnerung: <CalendarClock size={14} />,
+  export: <Download size={14} />,
+};
 
 const GRUPPEN: { gruppe: "ticketsSupport" | "kundenVertraege" | "auswertung"; items: WerkzeugId[] }[] = [
   { gruppe: "ticketsSupport", items: ["vorlagen", "makros", "tags", "sla", "emailtexte", "faq"] },
@@ -49,12 +65,13 @@ export default function WerkzeugeTab({
               <button
                 key={id}
                 onClick={() => setAktiv(id)}
-                className={`block w-full rounded-lg border-l-2 px-3 py-1.5 text-left text-sm transition-colors ${
+                className={`flex w-full items-center gap-2 rounded-lg border-l-2 px-3 py-1.5 text-left text-sm transition-colors ${
                   aktiv === id
                     ? "border-akzent bg-[var(--bg-muted)] font-medium text-[var(--text-strong)]"
                     : "border-transparent text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
                 }`}
               >
+                <span className={aktiv === id ? "text-akzent" : "text-[var(--text-faint)]"}>{ICONS[id]}</span>
                 {txt.items[id]}
               </button>
             ))}

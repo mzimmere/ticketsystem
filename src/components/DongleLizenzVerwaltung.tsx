@@ -6,7 +6,17 @@ import DongleImport from "./DongleImport";
 import ProduktNachricht from "./ProduktNachricht";
 import GesendeteNachrichten from "./GesendeteNachrichten";
 import { benachrichtigeKunde } from "../lib/benachrichtigungen";
-import { Trash2, Copy, Check } from "lucide-react";
+import { Trash2, Copy, Check, KeyRound, Link2Off, CalendarClock, Wallet, LayoutList, Send, Upload } from "lucide-react";
+import KennzahlKarte from "./KennzahlKarte";
+import LeerHinweis from "./LeerHinweis";
+import { softwareStil } from "../lib/softwareStil";
+
+function ablaufInfo(ende: string): { tage: number; farbe: "rot" | "amber" | "neutral" } {
+  const heute = new Date();
+  heute.setHours(0, 0, 0, 0);
+  const tage = Math.round((new Date(ende).getTime() - heute.getTime()) / 86400000);
+  return { tage, farbe: tage < 0 ? "rot" : tage <= 30 ? "amber" : "neutral" };
+}
 
 interface Vorlage {
   betreff: string;
@@ -287,6 +297,18 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
       ? gefilterteNichtZugeordneteVertraege
       : gefilterteNichtZugeordneteVertraege.slice(0, ANZAHL_POOL_SICHTBAR);
 
+  const bald = alleVertraege.filter((v) => {
+    if (!v.vertrag_ende || (v.status && v.status.toLowerCase() !== "active")) return false;
+    const a = ablaufInfo(v.vertrag_ende);
+    return a.tage >= 0 && a.tage <= 30;
+  });
+  const baldOffen = bald.filter((v) => !v.renewal_bezahlt);
+  const donglesProSoftware = Object.entries(
+    alleDongles.reduce<Record<string, number>>((acc, d) => ({ ...acc, [d.software]: (acc[d.software] ?? 0) + 1 }), {}),
+  )
+    .map(([s, n]) => `${s} ${n}`)
+    .join(" · ");
+
   const verfuegbareSoftware = Array.from(new Set(["exocad", "exoplan", ...alleDongles.map((d) => d.software)])).sort();
 
   const nachrichtEmpfaenger = nachrichtSoftware
@@ -414,10 +436,10 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
       <div className="flex gap-1 rounded-xl border border-[var(--border)] bg-[var(--bg-muted)] p-1">
         {(
           [
-            { id: "uebersicht", label: txt.untertabUebersicht, badge: 0 },
-            { id: "mitteilungen", label: txt.untertabMitteilungen, badge: 0 },
-            { id: "zuordnung", label: txt.untertabZuordnung, badge: nichtZugeordnete.length + nichtZugeordneteVertraege.length },
-          ] as { id: typeof unterTab; label: string; badge: number }[]
+            { id: "uebersicht", label: txt.untertabUebersicht, badge: 0, icon: <LayoutList size={14} /> },
+            { id: "mitteilungen", label: txt.untertabMitteilungen, badge: 0, icon: <Send size={14} /> },
+            { id: "zuordnung", label: txt.untertabZuordnung, badge: nichtZugeordnete.length + nichtZugeordneteVertraege.length, icon: <Upload size={14} /> },
+          ] as { id: typeof unterTab; label: string; badge: number; icon: React.ReactNode }[]
         ).map((t) => (
           <button
             key={t.id}
@@ -428,6 +450,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                 : "text-[var(--text-faint)] hover:text-[var(--text-soft)]"
             }`}
           >
+            {t.icon}
             {t.label}
             {t.badge > 0 && (
               <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[0.65rem] font-semibold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
@@ -581,6 +604,42 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
       )}
 
       {unterTab === "uebersicht" && (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <KennzahlKarte
+            label={txt.kennzahlDongles}
+            wert={alleDongles.length}
+            hinweis={donglesProSoftware}
+            farbe="blau"
+            icon={<KeyRound size={18} />}
+          />
+          <KennzahlKarte
+            label={txt.kennzahlNichtZugeordnet}
+            wert={nichtZugeordnete.length + nichtZugeordneteVertraege.length}
+            hinweis={txt.kennzahlNichtZugeordnetHinweisTemplate
+              .replace("{d}", String(nichtZugeordnete.length))
+              .replace("{v}", String(nichtZugeordneteVertraege.length))}
+            farbe={nichtZugeordnete.length + nichtZugeordneteVertraege.length > 0 ? "amber" : "gruen"}
+            icon={<Link2Off size={18} />}
+            onClick={() => setUnterTab("zuordnung")}
+          />
+          <KennzahlKarte
+            label={txt.kennzahlLaeuftAb}
+            wert={bald.length}
+            hinweis={txt.kennzahlLaeuftAbHinweis}
+            farbe={bald.length > 0 ? "amber" : "neutral"}
+            icon={<CalendarClock size={18} />}
+          />
+          <KennzahlKarte
+            label={txt.kennzahlRenewalOffen}
+            wert={baldOffen.length}
+            hinweis={txt.kennzahlRenewalOffenHinweis}
+            farbe={baldOffen.length > 0 ? "rot" : "gruen"}
+            icon={<Wallet size={18} />}
+          />
+        </div>
+      )}
+
+      {unterTab === "uebersicht" && (
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-2">
         <h3 className="text-sm font-medium text-[var(--text-strong)]">
           {txt.alleDonglesTemplate.replace("{n}", String(alleDongles.length))}
@@ -625,7 +684,8 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                   value={d.software}
                   onChange={(e) => softwareAendern(d.id, e.target.value)}
                   title={txt.softwareAendernTitle}
-                  className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-1.5 py-0.5 text-xs text-[var(--text-soft)]"
+                  style={softwareStil(d.software)}
+                  className="rounded-full border border-transparent px-2 py-0.5 text-xs font-medium"
                 >
                   {verfuegbareSoftware.map((s) => (
                     <option key={s} value={s}>
@@ -678,7 +738,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                 </option>
               ))}
             </select>
-            {!nachrichtSoftware && <p className="text-xs text-[var(--text-faint)]">{txt.mitteilungHinweis}</p>}
+            {!nachrichtSoftware && <LeerHinweis icon={<Send size={18} />} titel={txt.mitteilungHinweis} />}
             {nachrichtSoftware && nachrichtEmpfaenger.length === 0 && (
               <p className="text-xs text-[var(--text-faint)]">{txt.mitteilungKeineEmpfaenger}</p>
             )}
@@ -753,11 +813,26 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                     {txt.buildLabel} {v.aktuelle_engine_build}
                   </span>
                 )}
-                {v.vertrag_ende && (
-                  <span className="text-xs text-[var(--text-faint)]">
-                    {txt.bisPrefix} {new Date(v.vertrag_ende).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")}
-                  </span>
-                )}
+                {v.vertrag_ende && (() => {
+                  const a = ablaufInfo(v.vertrag_ende);
+                  const datum = new Date(v.vertrag_ende).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE");
+                  const stil =
+                    a.farbe === "rot"
+                      ? { background: "var(--badge-kritisch-bg)", color: "var(--badge-kritisch-text)" }
+                      : a.farbe === "amber"
+                        ? { background: "var(--badge-hoch-bg)", color: "var(--badge-hoch-text)" }
+                        : undefined;
+                  return (
+                    <span
+                      style={stil}
+                      className={`rounded-full px-1.5 py-0.5 text-[0.65rem] ${stil ? "font-medium" : "text-[var(--text-faint)]"}`}
+                    >
+                      {txt.bisPrefix} {datum}
+                      {a.farbe === "rot" && ` · ${txt.ablaufAbgelaufen}`}
+                      {a.farbe === "amber" && ` · ${txt.ablaufInTagenTemplate.replace("{n}", String(a.tage))}`}
+                    </span>
+                  );
+                })()}
                 <button
                   onClick={() => renewalBezahltUmschalten(v.id, v.renewal_bezahlt)}
                   title={dongleTxt.renewalBezahltHinweis}

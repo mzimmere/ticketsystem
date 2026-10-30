@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabaseClient";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
 import { Trash2, Copy, Check } from "lucide-react";
+import { softwareStil } from "../lib/softwareStil";
 
 type Wartungsvertrag = "aktiv" | "inaktiv" | "nicht_gewuenscht";
 
@@ -333,7 +334,8 @@ export default function DongleVerwaltung({ kundeId, organisationId }: DongleVerw
               onChange={(e) => softwareAendern(d.id, e.target.value)}
               onClick={(e) => e.stopPropagation()}
               title={lizenzTxt.softwareAendernTitle}
-              className="rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-1.5 py-0.5 text-xs text-[var(--text-soft)]"
+              style={softwareStil(d.software)}
+              className="rounded-full border border-transparent px-2 py-0.5 text-xs font-medium"
             >
               {Array.from(new Set(["exocad", "exoplan", d.software])).map((s) => (
                 <option key={s} value={s}>

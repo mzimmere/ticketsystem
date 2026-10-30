@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
+import { Send } from "lucide-react";
+import LeerHinweis from "./LeerHinweis";
 
 interface Empfaenger {
   id: string;
@@ -91,7 +93,7 @@ export default function GesendeteNachrichten({
       {laedt ? (
         <p className="text-xs text-[var(--text-faint)]">{txt.laedt}</p>
       ) : nachrichten.length === 0 ? (
-        <p className="text-xs text-[var(--text-faint)]">{txt.keine}</p>
+        <LeerHinweis icon={<Send size={18} />} titel={txt.keine} />
       ) : (
         <div className="space-y-1">
           {sichtbar.map((n) => {

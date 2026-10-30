@@ -905,6 +905,15 @@ export interface Uebersetzung {
     keineTreffer: string;
     nichtZugeordnet: string;
     softwareFilterAlle: string;
+    kennzahlDongles: string;
+    kennzahlNichtZugeordnet: string;
+    kennzahlNichtZugeordnetHinweisTemplate: string;
+    kennzahlLaeuftAb: string;
+    kennzahlLaeuftAbHinweis: string;
+    kennzahlRenewalOffen: string;
+    kennzahlRenewalOffenHinweis: string;
+    ablaufAbgelaufen: string;
+    ablaufInTagenTemplate: string;
     untertabUebersicht: string;
     untertabMitteilungen: string;
     untertabZuordnung: string;
@@ -2405,6 +2414,15 @@ const de: Uebersetzung = {
     keineTreffer: "Keine Treffer.",
     nichtZugeordnet: "Nicht zugeordnet",
     softwareFilterAlle: "Alle Softwaretypen",
+    kennzahlDongles: "Dongles",
+    kennzahlNichtZugeordnet: "Nicht zugeordnet",
+    kennzahlNichtZugeordnetHinweisTemplate: "{d} Dongles · {v} Verträge",
+    kennzahlLaeuftAb: "Läuft in 30 Tagen ab",
+    kennzahlLaeuftAbHinweis: "aktive Lizenzverträge",
+    kennzahlRenewalOffen: "Renewal offen",
+    kennzahlRenewalOffenHinweis: "davon noch nicht bezahlt",
+    ablaufAbgelaufen: "abgelaufen",
+    ablaufInTagenTemplate: "in {n} Tagen",
     untertabUebersicht: "Übersicht",
     untertabMitteilungen: "Mitteilungen",
     untertabZuordnung: "Import & Zuordnung",
@@ -3906,6 +3924,15 @@ const en: Uebersetzung = {
     keineTreffer: "No matches.",
     nichtZugeordnet: "Not assigned",
     softwareFilterAlle: "All software types",
+    kennzahlDongles: "Dongles",
+    kennzahlNichtZugeordnet: "Not assigned",
+    kennzahlNichtZugeordnetHinweisTemplate: "{d} dongles · {v} contracts",
+    kennzahlLaeuftAb: "Expiring in 30 days",
+    kennzahlLaeuftAbHinweis: "active license contracts",
+    kennzahlRenewalOffen: "Renewal unpaid",
+    kennzahlRenewalOffenHinweis: "of those, not yet paid",
+    ablaufAbgelaufen: "expired",
+    ablaufInTagenTemplate: "in {n} days",
     untertabUebersicht: "Overview",
     untertabMitteilungen: "Messages",
     untertabZuordnung: "Import & assignment",
