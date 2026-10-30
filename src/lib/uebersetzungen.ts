@@ -592,6 +592,8 @@ export interface Uebersetzung {
     badgeRenewalOffen: string;
     direkteKunden: string;
     kundenAnzahlTemplate: string;
+    portalZuletzt: string;
+    besucheTemplate: string;
     notizenLabel: string;
     notizenPlatzhalter: string;
     individuellerPreisLabel: string;
@@ -1483,6 +1485,27 @@ export interface Uebersetzung {
     minKurz: string;
     tageKurz: string;
     spaltenHinweis: string;
+    aktiveTage: string;
+    zuletztAktiv: string;
+    sitzungenTitelTemplate: string;
+  };
+  kundenAktivitaet: {
+    titel: string;
+    hinweis: string;
+    aktiveKunden: string;
+    besuche: string;
+    nochNieErfasst: string;
+    kunde: string;
+    aktiveTage: string;
+    besucheSpalte: string;
+    zuletzt: string;
+    inaktivTemplate: string;
+    zeigen: string;
+    verbergen: string;
+    keineDaten: string;
+    laedt: string;
+    unbenannt: string;
+    erfassungsHinweis: string;
   };
   werkzeugeNav: {
     gruppen: { ticketsSupport: string; kundenVertraege: string; auswertung: string };
@@ -2144,6 +2167,8 @@ const de: Uebersetzung = {
     badgeRenewalOffen: "Renewal offen",
     direkteKunden: "Direkte Kunden",
     kundenAnzahlTemplate: "Kunden: {n}",
+    portalZuletzt: "Zuletzt im Portal",
+    besucheTemplate: "{n} Besuche (90 Tage)",
     notizenLabel: "Notizen / Besonderheiten",
     notizenPlatzhalter: "z.B. bevorzugte Erreichbarkeit, technische Besonderheiten…",
     individuellerPreisLabel: "Individueller Minutenpreis (Verlauf, optional)",
@@ -3034,7 +3059,28 @@ const de: Uebersetzung = {
     stundenKurz: "Std.",
     minKurz: "Min.",
     tageKurz: "Tage",
-    spaltenHinweis: "Tickets = dem Mitarbeiter zugewiesen und im Zeitraum angelegt · Antworten = an Kunden sichtbare Nachrichten · Zufrieden = positive Bewertungen",
+    spaltenHinweis: "Tickets = dem Mitarbeiter zugewiesen und im Zeitraum angelegt · Antworten = an Kunden sichtbare Nachrichten · Zufrieden = positive Bewertungen · Aktive Tage = Tage mit mindestens einem Besuch (erst ab Einführung der Besuchserfassung)",
+    aktiveTage: "Aktive Tage",
+    zuletztAktiv: "Zuletzt aktiv",
+    sitzungenTitelTemplate: "{n} Besuche im Zeitraum",
+  },
+  kundenAktivitaet: {
+    titel: "Kunden-Aktivität im Portal",
+    hinweis: "Wer schaut wie oft vorbei – Zeitraum wie oben gewählt.",
+    aktiveKunden: "Aktive Kunden",
+    besuche: "Besuche gesamt",
+    nochNieErfasst: "Noch kein Besuch erfasst",
+    kunde: "Kunde",
+    aktiveTage: "Aktive Tage",
+    besucheSpalte: "Besuche",
+    zuletzt: "Zuletzt",
+    inaktivTemplate: "Nicht aktiv im Zeitraum ({n})",
+    zeigen: "anzeigen",
+    verbergen: "ausblenden",
+    keineDaten: "Im gewählten Zeitraum hat noch kein Kunde das Portal besucht.",
+    laedt: "Lädt…",
+    unbenannt: "Unbenannt",
+    erfassungsHinweis: "Ein Besuch = neue Browser-Sitzung oder neuer Tag. Gezählt wird erst seit Einführung der Besuchserfassung – ältere Zugriffe sind nicht enthalten.",
   },
   werkzeugeNav: {
     gruppen: { ticketsSupport: "Tickets & Support", kundenVertraege: "Kunden & Verträge", auswertung: "Auswertung" },
@@ -3697,6 +3743,8 @@ const en: Uebersetzung = {
     badgeRenewalOffen: "Renewal unpaid",
     direkteKunden: "Direct customers",
     kundenAnzahlTemplate: "Customers: {n}",
+    portalZuletzt: "Last in portal",
+    besucheTemplate: "{n} visits (90 days)",
     notizenLabel: "Notes / special notes",
     notizenPlatzhalter: "e.g. preferred availability, technical specifics…",
     individuellerPreisLabel: "Individual per-minute price (history, optional)",
@@ -4587,7 +4635,28 @@ const en: Uebersetzung = {
     stundenKurz: "h",
     minKurz: "min",
     tageKurz: "d",
-    spaltenHinweis: "Tickets = assigned to the employee and created in the period · Replies = customer-visible messages · Satisfied = positive ratings",
+    spaltenHinweis: "Tickets = assigned to the employee and created in the period · Replies = customer-visible messages · Satisfied = positive ratings · Active days = days with at least one visit (only since visit tracking was introduced)",
+    aktiveTage: "Active days",
+    zuletztAktiv: "Last active",
+    sitzungenTitelTemplate: "{n} visits in the period",
+  },
+  kundenAktivitaet: {
+    titel: "Customer activity in the portal",
+    hinweis: "Who visits how often – period as selected above.",
+    aktiveKunden: "Active customers",
+    besuche: "Total visits",
+    nochNieErfasst: "No visit recorded yet",
+    kunde: "Customer",
+    aktiveTage: "Active days",
+    besucheSpalte: "Visits",
+    zuletzt: "Last",
+    inaktivTemplate: "Not active in the period ({n})",
+    zeigen: "show",
+    verbergen: "hide",
+    keineDaten: "No customer has visited the portal in the selected period yet.",
+    laedt: "Loading…",
+    unbenannt: "Unnamed",
+    erfassungsHinweis: "One visit = new browser session or new day. Counting only started when visit tracking was introduced – earlier visits are not included.",
   },
   werkzeugeNav: {
     gruppen: { ticketsSupport: "Tickets & support", kundenVertraege: "Customers & contracts", auswertung: "Reporting" },

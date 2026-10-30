@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Sun, Moon, User, Settings, Building2, Receipt, Mail, Ticket as TicketIcon, BarChart2, Landmark } from "lucide-react";
 import { useProfil } from "./lib/useProfil";
+import { useBesuchErfassung } from "./lib/useBesuchErfassung";
 import { useTheme } from "./lib/useTheme";
 import { useSprache } from "./lib/SpracheContext";
 import { useOnlinePraesenz } from "./lib/praesenz";
@@ -78,6 +79,7 @@ function authLinkFehler(): string | null {
 
 export default function App() {
   const { profil, mitgliedschaften, eingeloggt, laedt, neuLaden } = useProfil();
+  useBesuchErfassung(profil?.id);
   const { dunkel, umschalten } = useTheme();
   const { sprache, setSprache } = useSprache();
   const [organisation, setOrganisation] = useState<Organisation | null>(null);

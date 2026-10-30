@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabaseClient";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
 import Avatar from "./Avatar";
+import { zuletztText, vonDatum, alsBesuchsZeilen, type BesuchsZeile } from "../lib/zeitText";
 
 interface Zeile {
   techniker_id: string;
@@ -23,7 +24,8 @@ interface Person {
   avatar_url: string | null;
 }
 
-type SortKey = "name" | "tickets" | "geloest" | "offen" | "zeit" | "antworten" | "erstantwort" | "zufrieden";
+type SortKey =
+  | "name" | "tickets" | "geloest" | "offen" | "zeit" | "antworten" | "erstantwort" | "zufrieden" | "aktiv" | "zuletzt";
 
 const LEER: Omit<Zeile, "techniker_id"> = {
   tickets_zugewiesen: 0,
@@ -57,6 +59,7 @@ export default function MitarbeiterAuswertung({
   const txt = texte(sprache).mitarbeiterAuswertung;
   const [personen, setPersonen] = useState<Person[]>([]);
   const [zeilen, setZeilen] = useState<Record<string, Zeile>>({});
+  const [besuche, setBesuche] = useState<Record<string, BesuchsZeile>>({});
   const [laedt, setLaedt] = useState(true);
   const [sortKey, setSortKey] = useState<SortKey>("geloest");
   const [absteigend, setAbsteigend] = useState(true);
@@ -70,11 +73,14 @@ export default function MitarbeiterAuswertung({
     setLaedt(true);
     const von = new Date();
     von.setDate(von.getDate() - zeitraum);
-    const [team, auswertung] = await Promise.all([
+    const [team, auswertung, besuchDaten] = await Promise.all([
       supabase.rpc("get_team_mit_email", { p_organisation_id: organisationId }).eq("deaktiviert", false),
       supabase.rpc("mitarbeiter_auswertung", { p_organisation_id: organisationId, p_von: von.toISOString() }),
+      supabase.rpc("besuche_auswertung", { p_organisation_id: organisationId, p_von: vonDatum(zeitraum) }),
     ]);
     if (auswertung.error) console.error(auswertung.error);
+    if (besuchDaten.error) console.error(besuchDaten.error);
+    setBesuche(Object.fromEntries(alsBesuchsZeilen(besuchDaten.data).map((b) => [b.nutzer_id, b])));
     setPersonen((team.data as Person[]) ?? []);
     const karte: Record<string, Zeile> = {};
     for (const z of (auswertung.data as Zeile[]) ?? []) {
@@ -124,6 +130,8 @@ export default function MitarbeiterAuswertung({
         case "antworten": return e.z.antworten;
         case "erstantwort": return e.z.erstantwort_minuten ?? Number.POSITIVE_INFINITY;
         case "zufrieden": return zufrieden(e.z);
+        case "aktiv": return besuche[e.p.id]?.tage_aktiv ?? 0;
+        case "zuletzt": return besuche[e.p.id]?.letzter_besuch ? new Date(besuche[e.p.id].letzter_besuch!).getTime() : 0;
       }
     };
     return liste.sort((a, b) => {
@@ -132,7 +140,7 @@ export default function MitarbeiterAuswertung({
       const vergleich = typeof x === "string" ? x.localeCompare(String(y)) : (x as number) - (y as number);
       return absteigend ? -vergleich : vergleich;
     });
-  }, [personen, zeilen, sortKey, absteigend]);
+  }, [personen, zeilen, besuche, sortKey, absteigend]);
 
   const max = (f: (z: Zeile) => number) => Math.max(0, ...daten.map((d) => f(d.z)));
   const maxGeloest = max((z) => z.tickets_geloest);
@@ -182,7 +190,7 @@ export default function MitarbeiterAuswertung({
         <p className="text-sm text-[var(--text-faint)]">{txt.keineDaten}</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[44rem] border-collapse text-sm">
+          <table className="w-full min-w-[54rem] border-collapse text-sm">
             <thead>
               <tr className="border-b border-[var(--border)] text-[0.65rem] text-[var(--text-faint)]">
                 <Kopf k="name" label={txt.mitarbeiter} />
@@ -193,6 +201,8 @@ export default function MitarbeiterAuswertung({
                 <Kopf k="antworten" label={txt.antworten} rechts />
                 <Kopf k="erstantwort" label={txt.erstantwort} rechts />
                 <Kopf k="zufrieden" label={txt.zufriedenheit} rechts />
+                <Kopf k="aktiv" label={txt.aktiveTage} rechts />
+                <Kopf k="zuletzt" label={txt.zuletztAktiv} rechts />
               </tr>
             </thead>
             <tbody>
@@ -231,6 +241,15 @@ export default function MitarbeiterAuswertung({
                     <td className="px-2 py-2 text-right font-mono text-xs text-[var(--text-soft)]">
                       {csatGesamt > 0 ? `${Math.round((z.csat_positiv / csatGesamt) * 100)}% (${csatGesamt})` : "—"}
                     </td>
+                    <td
+                      className="px-2 py-2 text-right font-mono text-xs text-[var(--text-soft)]"
+                      title={txt.sitzungenTitelTemplate.replace("{n}", String(besuche[p.id]?.sitzungen ?? 0))}
+                    >
+                      {besuche[p.id] ? `${besuche[p.id].tage_aktiv} / ${zeitraum}` : "—"}
+                    </td>
+                    <td className="px-2 py-2 text-right font-mono text-xs text-[var(--text-faint)]">
+                      {zuletztText(besuche[p.id]?.letzter_besuch ?? null, sprache)}
+                    </td>
                   </tr>
                 );
               })}
@@ -248,6 +267,8 @@ export default function MitarbeiterAuswertung({
                   </span>
                 </td>
                 <td className="px-2 py-2 text-right font-mono">{summe.antworten}</td>
+                <td className="px-2 py-2" />
+                <td className="px-2 py-2" />
                 <td className="px-2 py-2" />
                 <td className="px-2 py-2" />
               </tr>

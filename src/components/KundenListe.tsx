@@ -12,6 +12,7 @@ import KundenHardware from "./KundenHardware";
 import KundenDokumente from "./KundenDokumente";
 import KundenAuswahl from "./KundenAuswahl";
 import LeerZustand from "./LeerZustand";
+import { zuletztText, vonDatum, alsBesuchsZeilen, type BesuchsZeile } from "../lib/zeitText";
 import { Camera, ChevronDown, ChevronLeft, Handshake, KeyRound, X } from "lucide-react";
 
 interface Kunde {
@@ -141,6 +142,7 @@ export default function KundenListe({
   const [offenId, setOffenId] = useState<string | null>(null);
   const [tab, setTab] = useState<DetailTab>("stammdaten");
   const [kennzahlen, setKennzahlen] = useState<Record<string, KundenKennzahl>>({});
+  const [besuche, setBesuche] = useState<Record<string, BesuchsZeile>>({});
   const [entwurf, setEntwurf] = useState<Partial<Kunde>>({});
   const [preise, setPreise] = useState<KundenPreis[]>([]);
   const [neuesPreisDatum, setNeuesPreisDatum] = useState("");
@@ -235,6 +237,16 @@ export default function KundenListe({
       if (new Date(v.vertrag_ende).getTime() <= grenze) eintrag(v.kunde_id).renewalOffen++;
     }
     setKennzahlen(karte);
+
+    // Letzter Portal-Besuch je Kunde (Besuchserfassung, Abschnitt 84) - bei
+    // fehlender Berechtigung oder Fehler einfach ohne diese Zeile.
+    const { data: besuchDaten, error: besuchFehler } = await supabase.rpc("besuche_auswertung", {
+      p_organisation_id: organisationId,
+      p_von: vonDatum(90),
+    });
+    if (!besuchFehler) {
+      setBesuche(Object.fromEntries(alsBesuchsZeilen(besuchDaten).map((b) => [b.nutzer_id, b])));
+    }
   }
 
   async function ladeHardwareFilter() {
@@ -862,6 +874,12 @@ export default function KundenListe({
                         {k.firmenname && <p className="truncate text-sm text-[var(--text-soft)]">{k.firmenname}</p>}
                         <p className="truncate text-xs text-[var(--text-faint)]">
                           {[kundeEmail, k.telefonnummer].filter(Boolean).join(" · ") || "—"}
+                        </p>
+                        <p className="truncate text-[0.7rem] text-[var(--text-faint)]">
+                          {txt.portalZuletzt}: {zuletztText(besuche[k.id]?.letzter_besuch ?? null, sprache)}
+                          {besuche[k.id]?.sitzungen
+                            ? ` · ${txt.besucheTemplate.replace("{n}", String(besuche[k.id].sitzungen))}`
+                            : ""}
                         </p>
                         {badges(k)}
                       </div>

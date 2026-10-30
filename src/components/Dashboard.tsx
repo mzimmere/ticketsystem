@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { supabase } from "../lib/supabaseClient";
 import { KpiSkeleton } from "./Skeleton";
 import MitarbeiterAuswertung from "./MitarbeiterAuswertung";
+import KundenAktivitaet from "./KundenAktivitaet";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
 
@@ -382,6 +383,9 @@ export default function Dashboard({ organisationId }: DashboardProps) {
 
           {/* Mitarbeiter-Auswertung (nur Admins sehen das Dashboard) */}
           <MitarbeiterAuswertung organisationId={organisationId} zeitraum={zeitraum} />
+
+          {/* Kunden-Aktivität im Portal */}
+          <KundenAktivitaet organisationId={organisationId} zeitraum={zeitraum} />
 
           {/* CSAT Details */}
           {csatGesamt > 0 && (

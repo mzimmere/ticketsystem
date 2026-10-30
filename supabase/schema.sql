@@ -3526,3 +3526,95 @@ $$;
 
 revoke execute on function mitarbeiter_auswertung(uuid, timestamptz) from public, anon;
 grant execute on function mitarbeiter_auswertung(uuid, timestamptz) to authenticated;
+
+-- ============================================================
+-- 84. Besuchserfassung (useBesuchErfassung.ts): pro Nutzer und Tag eine
+-- Zeile mit Anzahl Sitzungen (= Browser-Sitzung/neuer Tag) und letztem
+-- Besuch. Jeder Nutzer sieht/schreibt nur seine eigenen Zeilen; die
+-- Auswertung laeuft ueber besuche_auswertung() (SECURITY DEFINER mit
+-- eigener Pruefung): Kunden-Zeilen sehen Techniker und Admins der Firma,
+-- Mitarbeiter-Zeilen nur Admins. Gezaehlt wird erst ab dem Einbau.
+-- ============================================================
+create table nutzer_besuche (
+  nutzer_id uuid not null references profiles(id) on delete cascade,
+  tag date not null,
+  sitzungen integer not null default 1,
+  erster_besuch timestamptz not null default now(),
+  letzter_besuch timestamptz not null default now(),
+  primary key (nutzer_id, tag)
+);
+create index idx_nutzer_besuche_tag on nutzer_besuche(tag);
+alter table nutzer_besuche enable row level security;
+
+create policy nutzer_besuche_eigene_select on nutzer_besuche for select
+  using (nutzer_id = auth.uid());
+create policy nutzer_besuche_eigene_insert on nutzer_besuche for insert
+  with check (nutzer_id = auth.uid());
+create policy nutzer_besuche_eigene_update on nutzer_besuche for update
+  using (nutzer_id = auth.uid());
+
+create or replace function besuch_erfassen() returns void
+language sql
+security invoker
+set search_path = public
+as $$
+  insert into nutzer_besuche (nutzer_id, tag)
+  values (auth.uid(), (now() at time zone 'Europe/Berlin')::date)
+  on conflict (nutzer_id, tag)
+  do update set sitzungen = nutzer_besuche.sitzungen + 1, letzter_besuch = now();
+$$;
+
+revoke execute on function besuch_erfassen() from public, anon;
+grant execute on function besuch_erfassen() to authenticated;
+
+create or replace function besuche_auswertung(p_organisation_id uuid, p_von date)
+returns table (
+  nutzer_id uuid,
+  ist_mitarbeiter boolean,
+  tage_aktiv bigint,
+  sitzungen bigint,
+  letzter_besuch timestamptz
+)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+#variable_conflict use_column
+declare
+  v_admin boolean;
+  v_team boolean;
+begin
+  v_admin := current_user_rolle() = 'super_admin'
+    or (current_user_org() = p_organisation_id and current_user_rolle() = 'org_admin')
+    or hat_firmenzugriff(p_organisation_id, array['org_admin']::user_rolle[]);
+  v_team := v_admin
+    or (current_user_org() = p_organisation_id and current_user_rolle() = 'techniker')
+    or hat_firmenzugriff(p_organisation_id, array['techniker']::user_rolle[]);
+  if not coalesce(v_team, false) then
+    raise exception 'keine Berechtigung';
+  end if;
+
+  return query
+  with personen as (
+    select p.id as pid, (p.rolle <> 'kunde') as ist_ma
+      from profiles p
+      where p.organisation_id = p_organisation_id and coalesce(p.deaktiviert, false) = false
+    union
+    select m.profil_id, true
+      from firmen_mitgliedschaften m
+      where m.organisation_id = p_organisation_id and m.deaktiviert = false
+  )
+  select
+    pe.pid,
+    pe.ist_ma,
+    coalesce((select count(*) from nutzer_besuche b where b.nutzer_id = pe.pid and b.tag >= p_von), 0),
+    coalesce((select sum(b.sitzungen) from nutzer_besuche b where b.nutzer_id = pe.pid and b.tag >= p_von), 0),
+    (select max(b.letzter_besuch) from nutzer_besuche b where b.nutzer_id = pe.pid)
+  from personen pe
+  where v_admin or not pe.ist_ma;
+end;
+$$;
+
+revoke execute on function besuche_auswertung(uuid, date) from public, anon;
+grant execute on function besuche_auswertung(uuid, date) to authenticated;
