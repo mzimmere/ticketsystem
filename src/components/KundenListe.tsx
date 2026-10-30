@@ -12,7 +12,7 @@ import KundenHardware from "./KundenHardware";
 import KundenDokumente from "./KundenDokumente";
 import KundenAuswahl from "./KundenAuswahl";
 import LeerZustand from "./LeerZustand";
-import { Camera, ChevronLeft, Handshake, KeyRound, X } from "lucide-react";
+import { Camera, ChevronDown, ChevronLeft, Handshake, KeyRound, X } from "lucide-react";
 
 interface Kunde {
   id: string;
@@ -147,6 +147,7 @@ export default function KundenListe({
   const [neuerPreisEuro, setNeuerPreisEuro] = useState("");
   const [vertraege, setVertraege] = useState<LizenzVertrag[]>([]);
   const [alleKundenAnzeigen, setAlleKundenAnzeigen] = useState(false);
+  const [offeneGruppen, setOffeneGruppen] = useState<Set<string>>(new Set());
   const [hardwareKategorien, setHardwareKategorien] = useState<HardwareKategorie[]>([]);
   const [hardwareEintraege, setHardwareEintraege] = useState<HardwareEintrag[]>([]);
   const [wartungsvertragStufen, setWartungsvertragStufen] = useState<WartungsvertragStufe[]>([]);
@@ -549,7 +550,8 @@ export default function KundenListe({
   const gefilterteKunden = kunden.filter((k) => {
     const begriff = suchbegriff.trim().toLowerCase();
     if (begriff) {
-      const treffer = [k.name, k.firmenname, k.telefonnummer, k.strasse, k.hausnummer, k.plz, k.ort]
+      const subresellerName = subresellerListe.find((s) => s.id === k.subreseller_id)?.name;
+      const treffer = [k.name, k.firmenname, k.telefonnummer, k.strasse, k.hausnummer, k.plz, k.ort, subresellerName]
         .filter(Boolean)
         .some((feld) => feld!.toLowerCase().includes(begriff));
       if (!treffer) return false;
@@ -558,9 +560,17 @@ export default function KundenListe({
     return true;
   });
   const kundenSuchtAktiv = suchbegriff.trim() !== "" || (filterKategorieId !== "" && filterWert !== "");
+
+  // Kunden eines Subresellers erscheinen eingerueckt unter dessen Gruppen-
+  // Karte; alle anderen ("direkte Kunden") darunter wie bisher.
+  const subresellerIds = new Set(subresellerListe.map((s) => s.id));
+  const direkteKunden = gefilterteKunden.filter((k) => !k.subreseller_id || !subresellerIds.has(k.subreseller_id));
+  const gruppen = subresellerListe
+    .map((s) => ({ sub: s, kunden: gefilterteKunden.filter((k) => k.subreseller_id === s.id) }))
+    .filter((g) => g.kunden.length > 0);
   const sichtbareKunden = kundenSuchtAktiv || alleKundenAnzeigen
-    ? gefilterteKunden
-    : gefilterteKunden.slice(0, KUNDEN_STANDARD_SICHTBAR);
+    ? direkteKunden
+    : direkteKunden.slice(0, KUNDEN_STANDARD_SICHTBAR);
 
 
   const feld =
@@ -571,9 +581,20 @@ export default function KundenListe({
   const aktuellerKunde = kunden.find((k) => k.id === offenId) ?? null;
   const datumsFormat = sprache === "en" ? "en-US" : "de-DE";
 
-  function badges(k: Kunde) {
+  const gruppeOffen = (id: string) => kundenSuchtAktiv || offeneGruppen.has(id) || aktuellerKunde?.subreseller_id === id;
+
+  function gruppeUmschalten(id: string) {
+    setOffeneGruppen((g) => {
+      const kopie = new Set(g);
+      if (kopie.has(id)) kopie.delete(id);
+      else kopie.add(id);
+      return kopie;
+    });
+  }
+
+  function badges(k: Kunde, ohneSubreseller = false) {
     const stufe = wartungsvertragStufen.find((s) => s.id === k.wartungsvertrag_stufe_id);
-    const sub = subresellerListe.find((s) => s.id === k.subreseller_id);
+    const sub = ohneSubreseller ? undefined : subresellerListe.find((s) => s.id === k.subreseller_id);
     const z = kennzahlen[k.id];
     if (!stufe && !sub && !z?.dongles && !z?.renewalOffen) return null;
     return (
@@ -611,6 +632,39 @@ export default function KundenListe({
           </span>
         )}
       </span>
+    );
+  }
+
+  function kundenKarte(k: Kunde, inGruppe: boolean) {
+    return (
+      <button
+        key={k.id}
+        onClick={() => (offenId === k.id ? setOffenId(null) : bearbeitenOeffnen(k))}
+        className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors ${
+          offenId === k.id
+            ? "border-akzent bg-[var(--bg-muted)]"
+            : "border-[var(--border)] bg-[var(--bg-surface)] hover:border-[var(--border-input)]"
+        }`}
+      >
+        <span className="relative shrink-0">
+          <Avatar name={k.name} avatarUrl={k.avatar_url} groesse="md" />
+          {onlineIds?.has(k.id) && (
+            <span
+              className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[var(--bg-surface)] bg-emerald-500"
+              title={txt.online}
+            />
+          )}
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="truncate text-sm font-medium text-[var(--text-strong)]">{k.name ?? txt.unbenannt}</span>
+          {(k.firmenname || k.telefonnummer) && (
+            <span className="truncate text-xs text-[var(--text-faint)]">
+              {[k.firmenname, k.telefonnummer].filter(Boolean).join(" · ")}
+            </span>
+          )}
+          {badges(k, inGruppe)}
+        </span>
+      </button>
     );
   }
 
@@ -698,44 +752,74 @@ export default function KundenListe({
                 : txt.keineTreffer}
             </p>
           ) : (
-            sichtbareKunden.map((k) => (
-              <button
-                key={k.id}
-                onClick={() => (offenId === k.id ? setOffenId(null) : bearbeitenOeffnen(k))}
-                className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors ${
-                  offenId === k.id
-                    ? "border-akzent bg-[var(--bg-muted)]"
-                    : "border-[var(--border)] bg-[var(--bg-surface)] hover:border-[var(--border-input)]"
-                }`}
-              >
-                <span className="relative shrink-0">
-                  <Avatar name={k.name} avatarUrl={k.avatar_url} groesse="md" />
-                  {onlineIds?.has(k.id) && (
-                    <span
-                      className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[var(--bg-surface)] bg-emerald-500"
-                      title={txt.online}
-                    />
-                  )}
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-1">
-                  <span className="truncate text-sm font-medium text-[var(--text-strong)]">{k.name ?? txt.unbenannt}</span>
-                  {(k.firmenname || k.telefonnummer) && (
-                    <span className="truncate text-xs text-[var(--text-faint)]">
-                      {[k.firmenname, k.telefonnummer].filter(Boolean).join(" · ")}
-                    </span>
-                  )}
-                  {badges(k)}
-                </span>
-              </button>
-            ))
+            <>
+              {gruppen.map((g) => {
+                const offen = gruppeOffen(g.sub.id);
+                const summe = g.kunden.reduce(
+                  (s, k) => ({
+                    dongles: s.dongles + (kennzahlen[k.id]?.dongles ?? 0),
+                    renewal: s.renewal + (kennzahlen[k.id]?.renewalOffen ?? 0),
+                  }),
+                  { dongles: 0, renewal: 0 },
+                );
+                return (
+                  <div key={g.sub.id} className="space-y-2">
+                    <button
+                      onClick={() => gruppeUmschalten(g.sub.id)}
+                      className="flex w-full items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-muted)] p-3 text-left transition-colors hover:border-[var(--border-input)]"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--badge-mittel-bg)] text-[var(--badge-mittel-text)]">
+                        <Handshake size={18} />
+                      </span>
+                      <span className="flex min-w-0 flex-1 flex-col gap-1">
+                        <span className="truncate text-sm font-semibold text-[var(--text-strong)]">{g.sub.name}</span>
+                        <span className="flex flex-wrap items-center gap-1 text-xs text-[var(--text-faint)]">
+                          {txt.kundenAnzahlTemplate.replace("{n}", String(g.kunden.length))}
+                          {summe.dongles > 0 && (
+                            <span
+                              className="inline-flex items-center gap-1 rounded-full bg-[var(--badge-mittel-bg)] px-2 py-0.5 text-[0.65rem] font-medium text-[var(--badge-mittel-text)]"
+                              title={txt.badgeDonglesTitel}
+                            >
+                              <KeyRound size={10} />
+                              {summe.dongles}
+                            </span>
+                          )}
+                          {summe.renewal > 0 && (
+                            <span
+                              className="rounded-full bg-[var(--badge-kritisch-bg)] px-2 py-0.5 text-[0.65rem] font-medium text-[var(--badge-kritisch-text)]"
+                              title={txt.badgeRenewalTitel}
+                            >
+                              {txt.badgeRenewalOffen} · {summe.renewal}
+                            </span>
+                          )}
+                        </span>
+                      </span>
+                      <ChevronDown
+                        size={16}
+                        className={`shrink-0 text-[var(--text-faint)] transition-transform ${offen ? "rotate-180" : ""}`}
+                      />
+                    </button>
+                    {offen && (
+                      <div className="ml-5 space-y-2 border-l-2 border-[var(--border)] pl-3">
+                        {g.kunden.map((k) => kundenKarte(k, true))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {gruppen.length > 0 && sichtbareKunden.length > 0 && (
+                <p className={`${abschnitt} pt-2`}>{txt.direkteKunden}</p>
+              )}
+              {sichtbareKunden.map((k) => kundenKarte(k, false))}
+            </>
           )}
 
-          {!kundenSuchtAktiv && gefilterteKunden.length > KUNDEN_STANDARD_SICHTBAR && (
+          {!kundenSuchtAktiv && direkteKunden.length > KUNDEN_STANDARD_SICHTBAR && (
             <button
               onClick={() => setAlleKundenAnzeigen((v) => !v)}
               className="w-full rounded border border-[var(--border-input)] px-3 py-2 text-sm text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
             >
-              {alleKundenAnzeigen ? txt.wenigerAnzeigen : txt.alleAnzeigenTemplate.replace("{n}", String(gefilterteKunden.length))}
+              {alleKundenAnzeigen ? txt.wenigerAnzeigen : txt.alleAnzeigenTemplate.replace("{n}", String(direkteKunden.length))}
             </button>
           )}
         </div>

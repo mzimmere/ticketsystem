@@ -590,6 +590,8 @@ export interface Uebersetzung {
     badgeDonglesTitel: string;
     badgeRenewalTitel: string;
     badgeRenewalOffen: string;
+    direkteKunden: string;
+    kundenAnzahlTemplate: string;
     notizenLabel: string;
     notizenPlatzhalter: string;
     individuellerPreisLabel: string;
@@ -2140,6 +2142,8 @@ const de: Uebersetzung = {
     badgeDonglesTitel: "Anzahl Dongles",
     badgeRenewalTitel: "Lizenzvertrag läuft in ≤ 30 Tagen ab und das Renewal ist noch nicht bezahlt",
     badgeRenewalOffen: "Renewal offen",
+    direkteKunden: "Direkte Kunden",
+    kundenAnzahlTemplate: "Kunden: {n}",
     notizenLabel: "Notizen / Besonderheiten",
     notizenPlatzhalter: "z.B. bevorzugte Erreichbarkeit, technische Besonderheiten…",
     individuellerPreisLabel: "Individueller Minutenpreis (Verlauf, optional)",
@@ -3691,6 +3695,8 @@ const en: Uebersetzung = {
     badgeDonglesTitel: "Number of dongles",
     badgeRenewalTitel: "License contract expires in ≤ 30 days and the renewal is not paid yet",
     badgeRenewalOffen: "Renewal unpaid",
+    direkteKunden: "Direct customers",
+    kundenAnzahlTemplate: "Customers: {n}",
     notizenLabel: "Notes / special notes",
     notizenPlatzhalter: "e.g. preferred availability, technical specifics…",
     individuellerPreisLabel: "Individual per-minute price (history, optional)",
