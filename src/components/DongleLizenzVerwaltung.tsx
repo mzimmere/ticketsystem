@@ -6,8 +6,11 @@ import DongleImport from "./DongleImport";
 import ProduktNachricht from "./ProduktNachricht";
 import GesendeteNachrichten from "./GesendeteNachrichten";
 import { benachrichtigeKunde } from "../lib/benachrichtigungen";
-import { Trash2, Copy, Check, KeyRound, Link2Off, CalendarClock, Wallet, LayoutList, Send, Upload } from "lucide-react";
+import { Trash2, Copy, Check, KeyRound, Link2Off, CalendarClock, Wallet, LayoutList, Send, Upload, RefreshCw } from "lucide-react";
 import KennzahlKarte from "./KennzahlKarte";
+import ImportStandKarte from "./ImportStandKarte";
+import { importFarbe, type ImportStand } from "../lib/importAlter";
+import { zuletztText } from "../lib/zeitText";
 import LeerHinweis from "./LeerHinweis";
 import { softwareStil } from "../lib/softwareStil";
 
@@ -115,6 +118,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   const [softwareFilter, setSoftwareFilter] = useState("");
   const [nachrichtenRefresh, setNachrichtenRefresh] = useState(0);
   const [unterTab, setUnterTab] = useState<"uebersicht" | "mitteilungen" | "zuordnung">("uebersicht");
+  const [importStand, setImportStand] = useState<ImportStand>({});
   const [nachrichtSoftware, setNachrichtSoftware] = useState("");
 
   const [alleVertraege, setAlleVertraege] = useState<AlleVertrag[]>([]);
@@ -148,6 +152,23 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
     ladeAlleDongles();
     ladeAlleVertraege();
     ladeMailStatus();
+    ladeImportStand();
+  }
+
+  // Zeitpunkt des letzten Imports je Art (Dongle-Export / Lizenz-Export aus dem
+  // exocad-Portal), siehe import_protokoll (Abschnitt 85).
+  async function ladeImportStand() {
+    const { data } = await supabase
+      .from("import_protokoll")
+      .select("art, erstellt_am, rueckwirkend")
+      .eq("organisation_id", organisationId)
+      .order("erstellt_am", { ascending: false })
+      .limit(50);
+    const stand: typeof importStand = {};
+    for (const z of (data as { art: "dongle" | "lizenz"; erstellt_am: string; rueckwirkend: boolean }[]) ?? []) {
+      if (!stand[z.art]) stand[z.art] = { am: z.erstellt_am, rueckwirkend: z.rueckwirkend };
+    }
+    setImportStand(stand);
   }
 
   // Letzte Lizenz-Update-Einladung pro Kunde (eine Mail deckt ggf. mehrere
@@ -296,6 +317,12 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
     vertragSuchtAktiv || alleVertraegePoolAnzeigen
       ? gefilterteNichtZugeordneteVertraege
       : gefilterteNichtZugeordneteVertraege.slice(0, ANZAHL_POOL_SICHTBAR);
+
+  function kurzDatum(e: { am: string; rueckwirkend: boolean } | undefined): string {
+    if (!e) return txt.importNie;
+    const datum = new Date(e.am).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE", { day: "2-digit", month: "2-digit" });
+    return e.rueckwirkend ? `≈ ${datum}` : datum;
+  }
 
   const bald = alleVertraege.filter((v) => {
     if (!v.vertrag_ende || (v.status && v.status.toLowerCase() !== "active")) return false;
@@ -463,6 +490,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
 
       {unterTab === "zuordnung" && (
         <>
+      <ImportStandKarte stand={importStand} />
       <DongleImport organisationId={organisationId} onImportiert={alleNeuLaden} />
 
       {nichtZugeordnete.length > 0 && (
@@ -604,7 +632,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
       )}
 
       {unterTab === "uebersicht" && (
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <KennzahlKarte
             label={txt.kennzahlDongles}
             wert={alleDongles.length}
@@ -636,6 +664,29 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
             farbe={baldOffen.length > 0 ? "rot" : "gruen"}
             icon={<Wallet size={18} />}
           />
+          <div className="col-span-2 lg:col-span-1">
+            <KennzahlKarte
+              label={txt.kennzahlImport}
+              wert={
+                importStand.dongle || importStand.lizenz
+                  ? zuletztText(
+                      [importStand.dongle?.am, importStand.lizenz?.am].filter(Boolean).sort().reverse()[0] ?? null,
+                      sprache,
+                    )
+                  : txt.importNie
+              }
+              hinweis={txt.kennzahlImportHinweisTemplate
+                .replace("{d}", kurzDatum(importStand.dongle))
+                .replace("{l}", kurzDatum(importStand.lizenz))}
+              farbe={
+                importStand.dongle && importStand.lizenz
+                  ? importFarbe([importStand.dongle.am, importStand.lizenz.am].sort()[0])
+                  : "rot"
+              }
+              icon={<RefreshCw size={18} />}
+              onClick={() => setUnterTab("zuordnung")}
+            />
+          </div>
         </div>
       )}
 

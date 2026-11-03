@@ -328,6 +328,20 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
       } else {
         await dongleImportieren(vorschau);
       }
+
+      // Importprotokoll (Abschnitt 85) - fuer die Anzeige "Letzter Datenimport"
+      // in der Dongle-Uebersicht. Ein Fehler hier darf den Import nicht kippen.
+      const { data: authData } = await supabase.auth.getUser();
+      const { error: protokollFehler } = await supabase.from("import_protokoll").insert({
+        organisation_id: organisationId,
+        art: vorschau.ziel,
+        dateiname: datei?.name ?? null,
+        neu: vorschau.ziel === "lizenz" ? vorschau.neueVertraege : vorschau.neueDongles,
+        aktualisiert: vorschau.ziel === "lizenz" ? vorschau.bestehendeVertraege : vorschau.bestehendeDongles,
+        erstellt_von: authData.user?.id ?? null,
+      });
+      if (protokollFehler) console.error("[DongleImport] Protokoll fehlgeschlagen:", protokollFehler);
+
       setVorschau(null);
       onImportiert();
     } catch (err) {

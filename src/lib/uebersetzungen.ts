@@ -932,6 +932,20 @@ export interface Uebersetzung {
     kennzahlDongles: string;
     kennzahlNichtZugeordnet: string;
     kennzahlNichtZugeordnetHinweisTemplate: string;
+    kennzahlImport: string;
+    kennzahlImportHinweisTemplate: string;
+    importNie: string;
+    importGeschaetzt: string;
+    importStandTitel: string;
+    importDongleListe: string;
+    importLizenzListe: string;
+    importZuletzt: string;
+    importNochNie: string;
+    importStatusAktuell: string;
+    importStatusAelter: string;
+    importStatusVeraltet: string;
+    importStatusNie: string;
+    importHandlung: string;
     kennzahlLaeuftAb: string;
     kennzahlLaeuftAbHinweis: string;
     kennzahlRenewalOffen: string;
@@ -2507,6 +2521,20 @@ const de: Uebersetzung = {
     kennzahlDongles: "Dongles",
     kennzahlNichtZugeordnet: "Nicht zugeordnet",
     kennzahlNichtZugeordnetHinweisTemplate: "{d} Dongles · {v} Verträge",
+    kennzahlImport: "Letzter Datenimport",
+    kennzahlImportHinweisTemplate: "Dongles {d} · Lizenzen {l}",
+    importNie: "nie",
+    importGeschaetzt: "geschätzt (aus älteren Daten abgeleitet)",
+    importStandTitel: "Wie aktuell sind die Daten aus dem exocad-Portal?",
+    importDongleListe: "Dongle-Liste",
+    importLizenzListe: "Lizenzverträge (Ablaufdaten, Renewals)",
+    importZuletzt: "Zuletzt importiert am",
+    importNochNie: "Noch nie importiert",
+    importStatusAktuell: "Aktuell",
+    importStatusAelter: "Schon etwas älter",
+    importStatusVeraltet: "Veraltet – bitte neu importieren",
+    importStatusNie: "Fehlt",
+    importHandlung: "So aktualisierst du die Daten: Im exocad-Portal die Exporte neu herunterladen und weiter unten über „Dongles/Module/Lizenzen aus Portal-Export importieren“ hochladen. Gelb heißt: älter als 14 Tage, rot: älter als 30 Tage.",
     kennzahlLaeuftAb: "Läuft in 30 Tagen ab",
     kennzahlLaeuftAbHinweis: "aktive Lizenzverträge",
     kennzahlRenewalOffen: "Renewal offen",
@@ -4083,6 +4111,20 @@ const en: Uebersetzung = {
     kennzahlDongles: "Dongles",
     kennzahlNichtZugeordnet: "Not assigned",
     kennzahlNichtZugeordnetHinweisTemplate: "{d} dongles · {v} contracts",
+    kennzahlImport: "Last data import",
+    kennzahlImportHinweisTemplate: "Dongles {d} · Licenses {l}",
+    importNie: "never",
+    importGeschaetzt: "estimated (derived from older data)",
+    importStandTitel: "How up to date is the data from the exocad portal?",
+    importDongleListe: "Dongle list",
+    importLizenzListe: "License contracts (expiry dates, renewals)",
+    importZuletzt: "Last imported on",
+    importNochNie: "Never imported",
+    importStatusAktuell: "Up to date",
+    importStatusAelter: "Getting old",
+    importStatusVeraltet: "Outdated – please re-import",
+    importStatusNie: "Missing",
+    importHandlung: "How to update: download the exports again in the exocad portal and upload them below via \"Import dongles/modules/licenses from portal export\". Yellow means older than 14 days, red older than 30 days.",
     kennzahlLaeuftAb: "Expiring in 30 days",
     kennzahlLaeuftAbHinweis: "active license contracts",
     kennzahlRenewalOffen: "Renewal unpaid",

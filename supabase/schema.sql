@@ -3618,3 +3618,54 @@ $$;
 
 revoke execute on function besuche_auswertung(uuid, date) from public, anon;
 grant execute on function besuche_auswertung(uuid, date) to authenticated;
+
+-- ============================================================
+-- 85. Importprotokoll (DongleImport.tsx, DongleLizenzVerwaltung.tsx):
+-- jeder Import aus dem exocad-Portal (Dongle-Export bzw. license_history)
+-- wird mit Zeitpunkt festgehalten, damit in der Dongle-Uebersicht
+-- ("Letzter Datenimport") und im Reiter Import & Zuordnung sofort
+-- erkennbar ist, wie aktuell die Daten sind. Fuer Importe VOR Einfuehrung
+-- wurde je Firma ein geschaetzter Eintrag (rueckwirkend = true) aus dem
+-- Zeitpunkt der zuletzt neu angelegten Datensaetze abgeleitet.
+-- ============================================================
+create table import_protokoll (
+  id uuid primary key default gen_random_uuid(),
+  organisation_id uuid not null references organisationen(id),
+  art text not null check (art in ('dongle', 'lizenz')),
+  dateiname text,
+  neu integer not null default 0,
+  aktualisiert integer not null default 0,
+  rueckwirkend boolean not null default false,
+  erstellt_von uuid references profiles(id) on delete set null,
+  erstellt_am timestamptz not null default now()
+);
+create index idx_import_protokoll_org on import_protokoll(organisation_id, art, erstellt_am desc);
+alter table import_protokoll enable row level security;
+
+create policy import_protokoll_select on import_protokoll for select
+  using (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+create policy import_protokoll_insert on import_protokoll for insert
+  with check (
+    current_user_rolle() = 'super_admin'
+    or (organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(organisation_id, array['org_admin', 'techniker']::user_rolle[])
+  );
+
+-- Bisherige Importe wurden nicht protokolliert: als Naeherung gilt der
+-- Zeitpunkt, zu dem zuletzt neue Datensaetze angelegt wurden.
+insert into import_protokoll (organisation_id, art, neu, rueckwirkend, erstellt_am)
+select organisation_id, 'dongle', count(*), true, max(erstellt_am)
+from kunden_dongles
+where erstellt_am is not null
+group by organisation_id;
+
+insert into import_protokoll (organisation_id, art, neu, rueckwirkend, erstellt_am)
+select organisation_id, 'lizenz', count(*), true, max(erstellt_am)
+from lizenz_vertraege
+where erstellt_am is not null
+group by organisation_id;
