@@ -15,6 +15,7 @@ export default function KennzahlKarte({
   label,
   wert,
   hinweis,
+  hinweisUmbrechen,
   farbe,
   icon,
   onClick,
@@ -22,6 +23,7 @@ export default function KennzahlKarte({
   label: string;
   wert: number | string;
   hinweis?: string;
+  hinweisUmbrechen?: boolean;
   farbe: KennzahlFarbe;
   icon: ReactNode;
   onClick?: () => void;
@@ -38,12 +40,14 @@ export default function KennzahlKarte({
       <span className="min-w-0">
         <span className="block text-2xl font-semibold leading-tight text-[var(--text-strong)]">{wert}</span>
         <span className="block truncate text-xs font-medium text-[var(--text-soft)]">{label}</span>
-        {hinweis && <span className="block truncate text-[0.7rem] text-[var(--text-faint)]">{hinweis}</span>}
+        {hinweis && (
+          <span className={`block ${hinweisUmbrechen ? "" : "truncate"} text-[0.7rem] text-[var(--text-faint)]`}>{hinweis}</span>
+        )}
       </span>
     </>
   );
   const klasse =
-    "flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-3 text-left";
+    "flex min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-3 text-left";
   return onClick ? (
     <button onClick={onClick} className={`${klasse} transition-colors hover:border-akzent`}>
       {inhalt}

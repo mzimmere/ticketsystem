@@ -9,7 +9,7 @@ import { benachrichtigeKunde } from "../lib/benachrichtigungen";
 import { Trash2, Copy, Check, KeyRound, Link2Off, CalendarClock, Wallet, LayoutList, Send, Upload, RefreshCw } from "lucide-react";
 import KennzahlKarte from "./KennzahlKarte";
 import ImportStandKarte from "./ImportStandKarte";
-import { importFarbe, type ImportStand } from "../lib/importAlter";
+import { importFarbe, alterInTagen, type ImportStand } from "../lib/importAlter";
 import { zuletztText } from "../lib/zeitText";
 import LeerHinweis from "./LeerHinweis";
 import { softwareStil } from "../lib/softwareStil";
@@ -324,6 +324,18 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
     return e.rueckwirkend ? `≈ ${datum}` : datum;
   }
 
+  // Kurzer Wert fuer die Karte: bis 14 Tage relativ ("vor 3 Tagen"), danach
+  // ein kompaktes Datum (TT.MM.JJ), damit es in die schmale Spalte passt.
+  function importWert(iso: string | null): string {
+    if (!iso) return txt.importNie;
+    if (alterInTagen(iso) < 14) return zuletztText(iso, sprache);
+    return new Date(iso).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+    });
+  }
+
   const bald = alleVertraege.filter((v) => {
     if (!v.vertrag_ende || (v.status && v.status.toLowerCase() !== "active")) return false;
     const a = ablaufInfo(v.vertrag_ende);
@@ -370,7 +382,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
       : dongleUebersichtGefiltert.slice(0, ANZAHL_UEBERSICHT_SICHTBAR);
 
   const verfuegbareBuilds = Array.from(
-    new Set(alleVertraege.map((v) => v.aktuelle_engine_build).filter((b): b is string => !!b)),
+    new Set(alleVertraege.map((v) => v.aktuelle_engine_build).filter((b): b is string => !!b && b !== "null")),
   ).sort();
 
   const vertragUebersichtGefiltert = alleVertraege.filter((v) => {
@@ -637,6 +649,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
             label={txt.kennzahlDongles}
             wert={alleDongles.length}
             hinweis={donglesProSoftware}
+            hinweisUmbrechen
             farbe="blau"
             icon={<KeyRound size={18} />}
           />
@@ -664,20 +677,18 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
             farbe={baldOffen.length > 0 ? "rot" : "gruen"}
             icon={<Wallet size={18} />}
           />
-          <div className="col-span-2 lg:col-span-1">
+          <div className="col-span-2 min-w-0 lg:col-span-1">
             <KennzahlKarte
               label={txt.kennzahlImport}
               wert={
                 importStand.dongle || importStand.lizenz
-                  ? zuletztText(
-                      [importStand.dongle?.am, importStand.lizenz?.am].filter(Boolean).sort().reverse()[0] ?? null,
-                      sprache,
-                    )
+                  ? importWert([importStand.dongle?.am, importStand.lizenz?.am].filter(Boolean).sort().reverse()[0] ?? null)
                   : txt.importNie
               }
               hinweis={txt.kennzahlImportHinweisTemplate
                 .replace("{d}", kurzDatum(importStand.dongle))
                 .replace("{l}", kurzDatum(importStand.lizenz))}
+              hinweisUmbrechen
               farbe={
                 importStand.dongle && importStand.lizenz
                   ? importFarbe([importStand.dongle.am, importStand.lizenz.am].sort()[0])
@@ -854,67 +865,75 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
             {sichtbareVertragUebersicht.map((v) => (
               <div
                 key={v.id}
-                className="flex flex-wrap items-center gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5 text-sm"
+                className="flex flex-col gap-2 rounded bg-[var(--bg-muted)] px-3 py-2 text-sm md:flex-row md:items-center md:gap-3"
               >
-                <span className="font-mono text-xs text-[var(--text-strong)]">{v.lizenz_seriennummer}</span>
-                <span className="text-xs text-[var(--text-faint)]">· {v.produkt_name}</span>
-                {v.status && <span className="text-xs text-[var(--text-faint)]">({v.status})</span>}
-                {v.aktuelle_engine_build && (
-                  <span className="rounded bg-[var(--bg-surface)] px-1.5 py-0.5 font-mono text-[0.65rem] text-[var(--text-soft)]">
-                    {txt.buildLabel} {v.aktuelle_engine_build}
-                  </span>
-                )}
-                {v.vertrag_ende && (() => {
-                  const a = ablaufInfo(v.vertrag_ende);
-                  const datum = new Date(v.vertrag_ende).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE");
-                  const stil =
-                    a.farbe === "rot"
-                      ? { background: "var(--badge-kritisch-bg)", color: "var(--badge-kritisch-text)" }
-                      : a.farbe === "amber"
-                        ? { background: "var(--badge-hoch-bg)", color: "var(--badge-hoch-text)" }
-                        : undefined;
-                  return (
-                    <span
-                      style={stil}
-                      className={`rounded-full px-1.5 py-0.5 text-[0.65rem] ${stil ? "font-medium" : "text-[var(--text-faint)]"}`}
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                    <span className="font-mono text-xs text-[var(--text-strong)]">{v.lizenz_seriennummer}</span>
+                    <span className="text-xs text-[var(--text-faint)]">· {v.produkt_name}</span>
+                    {v.status && <span className="text-xs text-[var(--text-faint)]">({v.status})</span>}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {v.aktuelle_engine_build && v.aktuelle_engine_build !== "null" && (
+                      <span className="rounded bg-[var(--bg-surface)] px-1.5 py-0.5 font-mono text-[0.65rem] text-[var(--text-soft)]">
+                        {txt.buildLabel} {v.aktuelle_engine_build}
+                      </span>
+                    )}
+                    {v.vertrag_ende && (() => {
+                      const a = ablaufInfo(v.vertrag_ende);
+                      const datum = new Date(v.vertrag_ende).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE");
+                      const stil =
+                        a.farbe === "rot"
+                          ? { background: "var(--badge-kritisch-bg)", color: "var(--badge-kritisch-text)" }
+                          : a.farbe === "amber"
+                            ? { background: "var(--badge-hoch-bg)", color: "var(--badge-hoch-text)" }
+                            : undefined;
+                      return (
+                        <span
+                          style={stil}
+                          className={`rounded-full px-1.5 py-0.5 text-[0.65rem] ${stil ? "font-medium" : "text-[var(--text-faint)]"}`}
+                        >
+                          {txt.bisPrefix} {datum}
+                          {a.farbe === "rot" && ` · ${txt.ablaufAbgelaufen}`}
+                          {a.farbe === "amber" && ` · ${txt.ablaufInTagenTemplate.replace("{n}", String(a.tage))}`}
+                        </span>
+                      );
+                    })()}
+                    <button
+                      onClick={() => renewalBezahltUmschalten(v.id, v.renewal_bezahlt)}
+                      title={dongleTxt.renewalBezahltHinweis}
+                      className={`rounded-full px-1.5 py-0.5 text-[0.65rem] font-medium ${
+                        v.renewal_bezahlt
+                          ? "bg-[var(--status-geloest-bg)] text-[var(--status-geloest-text)]"
+                          : !v.status || v.status.toLowerCase() === "active"
+                            ? "bg-[var(--badge-kritisch-bg)] text-[var(--badge-kritisch-text)]"
+                            : "bg-[var(--bg-surface)] text-[var(--text-faint)]"
+                      }`}
                     >
-                      {txt.bisPrefix} {datum}
-                      {a.farbe === "rot" && ` · ${txt.ablaufAbgelaufen}`}
-                      {a.farbe === "amber" && ` · ${txt.ablaufInTagenTemplate.replace("{n}", String(a.tage))}`}
-                    </span>
-                  );
-                })()}
-                <button
-                  onClick={() => renewalBezahltUmschalten(v.id, v.renewal_bezahlt)}
-                  title={dongleTxt.renewalBezahltHinweis}
-                  className={`rounded-full px-1.5 py-0.5 text-[0.65rem] font-medium ${
-                    v.renewal_bezahlt
-                      ? "bg-[var(--status-geloest-bg)] text-[var(--status-geloest-text)]"
-                      : "bg-[var(--badge-kritisch-bg)] text-[var(--badge-kritisch-text)]"
-                  }`}
-                >
-                  {v.renewal_bezahlt ? dongleTxt.renewalBezahlt : dongleTxt.renewalOffen}
-                </button>
-                {v.kunde_id && mailStatusByKunde[v.kunde_id] && (
-                  <span
-                    title={`${mailTxt.mailGesendetPrefix} ${new Date(mailStatusByKunde[v.kunde_id].gesendet_am).toLocaleString(sprache === "en" ? "en-US" : "de-DE")}`}
-                    className={`rounded px-1.5 py-0.5 text-[0.65rem] font-medium ${
-                      mailStatusByKunde[v.kunde_id].geoeffnet_am
-                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-                        : "bg-[var(--bg-surface)] text-[var(--text-faint)]"
-                    }`}
-                  >
-                    📧{" "}
-                    {mailStatusByKunde[v.kunde_id].geoeffnet_am
-                      ? `${mailTxt.mailGeoeffnetPrefix} ${new Date(mailStatusByKunde[v.kunde_id].geoeffnet_am!).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")}`
-                      : mailTxt.mailNochNichtGeoeffnet}
-                  </span>
-                )}
+                      {v.renewal_bezahlt ? dongleTxt.renewalBezahlt : dongleTxt.renewalOffen}
+                    </button>
+                    {v.kunde_id && mailStatusByKunde[v.kunde_id] && (
+                      <span
+                        title={`${mailTxt.mailGesendetPrefix} ${new Date(mailStatusByKunde[v.kunde_id].gesendet_am).toLocaleString(sprache === "en" ? "en-US" : "de-DE")}`}
+                        className={`rounded px-1.5 py-0.5 text-[0.65rem] font-medium ${
+                          mailStatusByKunde[v.kunde_id].geoeffnet_am
+                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+                            : "bg-[var(--bg-surface)] text-[var(--text-faint)]"
+                        }`}
+                      >
+                        📧{" "}
+                        {mailStatusByKunde[v.kunde_id].geoeffnet_am
+                          ? `${mailTxt.mailGeoeffnetPrefix} ${new Date(mailStatusByKunde[v.kunde_id].geoeffnet_am!).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE")}`
+                          : mailTxt.mailNochNichtGeoeffnet}
+                      </span>
+                    )}
+                  </div>
+                </div>
                 <select
                   value={v.kunde_id ?? ""}
                   onChange={(e) => vertragKundeAendern(v, e.target.value)}
                   title={txt.zuordnungAendernTitle}
-                  className={`ml-auto max-w-[14rem] rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1 text-xs ${
+                  className={`w-full shrink-0 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1 text-xs md:w-56 ${
                     v.kunde_id ? "text-[var(--text-soft)]" : "italic text-[var(--text-faint)]"
                   }`}
                 >
