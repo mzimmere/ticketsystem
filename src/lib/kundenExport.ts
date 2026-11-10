@@ -214,12 +214,26 @@ export async function kundenExcelExportieren(opts: {
       spalte.width = Math.min(Math.max(max + 2, 10), 50);
       if (titel === txt.notizen) spalte.alignment = { wrapText: true, vertical: "top" };
     });
-    ws.eachRow((row, nr) => {
-      if (nr === 1) return;
-      row.eachCell((zelle) => {
+    // Anzeigespalten: hellgrau, gedaempfte Schrift und gesperrt; alle anderen
+    // Zellen (auch leere) bleiben bearbeitbar. Gesperrt wird erst durch den
+    // Blattschutz weiter unten wirksam.
+    zeilen.forEach((_, z) => {
+      const row = ws.getRow(z + 2);
+      kopf.forEach((titel, i) => {
+        const zelle = row.getCell(i + 1);
         if (zelle.value instanceof Date) zelle.numFmt = "dd.mm.yyyy";
+        if (nurAnzeige.has(titel)) {
+          zelle.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F3F5" } };
+          zelle.font = { color: { argb: "FF6B7280" } };
+          zelle.protection = { locked: true };
+        } else {
+          zelle.protection = { locked: false };
+        }
       });
     });
+    // Ohne Passwort: wer wirklich etwas aendern will, hebt den Schutz in Excel
+    // unter "Ueberpruefen" auf. Filtern und Spaltenbreite bleiben erlaubt.
+    void ws.protect("", { autoFilter: true, formatColumns: true, formatRows: true, selectLockedCells: true, selectUnlockedCells: true });
   };
   blatt(txt.blattKunden, kopfKunden, zeilenKunden);
   blatt(txt.blattLizenzen, kopfLizenzen, zeilenLizenzen);

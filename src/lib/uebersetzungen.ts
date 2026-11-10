@@ -3213,7 +3213,8 @@ const de: Uebersetzung = {
     hinweiseBlatt: "Hinweise",
     hinweise: [
       "So funktioniert der Re-Import dieser Datei (Verwaltung → Werkzeuge → Daten exportieren → Kundendaten importieren):",
-      "Blaue Spaltenüberschriften sind änderbar, graue sind nur zur Information und werden beim Import ignoriert.",
+      "Blaue Spaltenüberschriften sind änderbar, graue Spalten sind nur zur Information, gesperrt und werden beim Import ignoriert.",
+      "Das Blatt ist ohne Passwort geschützt: Filtern und Spaltenbreite gehen weiter. Zum Sortieren oder um Sperren aufzuheben: Überprüfen → Blattschutz aufheben.",
       "Die Spalte „ID“ ordnet jede Zeile einem Kunden zu – bitte nicht ändern oder löschen. Ohne ID wird ersatzweise die E-Mail (Login) verwendet.",
       "Leere Zellen ändern nichts. Um ein Feld wirklich zu leeren, „-“ eintragen.",
       "Der Name ergibt sich aus Vor- und Nachname. Die Login-E-Mail, Dongles und Lizenzverträge lassen sich hier nicht ändern.",
@@ -4903,7 +4904,8 @@ const en: Uebersetzung = {
     hinweiseBlatt: "Notes",
     hinweise: [
       "How re-importing this file works (Administration → Tools → Export data → Import customer data):",
-      "Blue column headers can be edited, grey ones are for information only and are ignored on import.",
+      "Blue column headers can be edited, grey columns are for information only, locked and ignored on import.",
+      "The sheet is protected without a password: filtering and column width still work. To sort or lift the locks: Review → Unprotect Sheet.",
       "The “ID” column assigns each row to a customer – please do not change or delete it. Without an ID the email (login) is used instead.",
       "Empty cells change nothing. To really clear a field, enter “-”.",
       "The name is derived from first and last name. Login email, dongles and license contracts cannot be changed here.",
