@@ -1529,6 +1529,46 @@ export interface Uebersetzung {
     exportSub: string;
     exportMitArchiv: string;
     exportButton: string;
+    id: string;
+    hinweiseBlatt: string;
+    hinweise: string[];
+  };
+  kundenImport: {
+    label: string;
+    sub: string;
+    dateiWaehlen: string;
+    liest: string;
+    speichert: string;
+    fehlerLesen: string;
+    fehlerKeinBlatt: string;
+    fehlerKeineZuordnung: string;
+    fehlerLaden: string;
+    sumAendern: string;
+    sumUnveraendert: string;
+    sumFehler: string;
+    leereZellenHinweis: string;
+    fehlerUebersprungen: string;
+    nichtsZuTun: string;
+    kunde: string;
+    zeile: string;
+    feld: string;
+    alt: string;
+    neu: string;
+    leer: string;
+    fehlerUnbekannterKunde: string;
+    fehlerNeuerKunde: string;
+    fehlerDoppelt: string;
+    fehlerMwst: string;
+    fehlerWartung: string;
+    fehlerSubreseller: string;
+    fehlerStatus: string;
+    fehlerLand: string;
+    fehlerSpeichern: string;
+    anwenden: string;
+    abbrechen: string;
+    ergebnisErfolg: string;
+    ergebnisFehler: string;
+    fertig: string;
   };
   mitarbeiterAuswertung: {
     titel: string;
@@ -3169,6 +3209,55 @@ const de: Uebersetzung = {
     exportSub: "Alle Kunden mit Stammdaten, Dongles und Lizenzverträgen – zwei Tabellenblätter in einer Datei.",
     exportMitArchiv: "Archivierte Kunden mit exportieren",
     exportButton: "Excel herunterladen",
+    id: "ID",
+    hinweiseBlatt: "Hinweise",
+    hinweise: [
+      "So funktioniert der Re-Import dieser Datei (Verwaltung → Werkzeuge → Daten exportieren → Kundendaten importieren):",
+      "Blaue Spaltenüberschriften sind änderbar, graue sind nur zur Information und werden beim Import ignoriert.",
+      "Die Spalte „ID“ ordnet jede Zeile einem Kunden zu – bitte nicht ändern oder löschen. Ohne ID wird ersatzweise die E-Mail (Login) verwendet.",
+      "Leere Zellen ändern nichts. Um ein Feld wirklich zu leeren, „-“ eintragen.",
+      "Der Name ergibt sich aus Vor- und Nachname. Die Login-E-Mail, Dongles und Lizenzverträge lassen sich hier nicht ändern.",
+      "Wartungsvertrag und Subreseller müssen exakt so heißen wie in der Verwaltung. Status: „Aktiv“ oder „Archiviert“.",
+      "Neue Kunden werden nicht aus Zeilen ohne ID angelegt – dafür bitte „Neuer Kunde“ (Einladung) nutzen.",
+      "Vor dem Speichern zeigt das System alle Änderungen in einer Vorschau an.",
+    ],
+  },
+  kundenImport: {
+    label: "Kundendaten importieren (Excel)",
+    sub: "Eine exportierte und in Excel ergänzte Kundenliste wieder einlesen. Du siehst vorher eine Vorschau aller Änderungen.",
+    dateiWaehlen: "Excel-Datei auswählen",
+    liest: "Datei wird geprüft…",
+    speichert: "Speichert…",
+    fehlerLesen: "Die Datei konnte nicht gelesen werden. Bitte die exportierte Excel-Datei (.xlsx) verwenden.",
+    fehlerKeinBlatt: "In der Datei wurde kein Tabellenblatt mit Kundendaten gefunden.",
+    fehlerKeineZuordnung: "Weder die Spalte „ID“ noch „E-Mail (Login)“ gefunden – bitte eine aktuelle Export-Datei verwenden.",
+    fehlerLaden: "Die aktuellen Kundendaten konnten nicht geladen werden.",
+    sumAendern: "werden geändert",
+    sumUnveraendert: "unverändert",
+    sumFehler: "Fehler / nicht unterstützt",
+    leereZellenHinweis: "Leere Zellen ändern nichts. Zum Leeren eines Feldes „-“ eintragen. Zeilen mit Fehlern werden übersprungen.",
+    fehlerUebersprungen: "Übersprungene Zeilen",
+    nichtsZuTun: "Es wurden keine Änderungen gefunden.",
+    kunde: "Kunde",
+    zeile: "Zeile",
+    feld: "Feld",
+    alt: "Bisher",
+    neu: "Neu",
+    leer: "(leer)",
+    fehlerUnbekannterKunde: "Kein Kunde zur ID bzw. E-Mail gefunden.",
+    fehlerNeuerKunde: "Neue Kunden werden nicht angelegt – bitte über „Neuer Kunde“ einladen.",
+    fehlerDoppelt: "Kunde kommt in der Datei mehrfach vor.",
+    fehlerMwst: "MwSt. ungültig:",
+    fehlerWartung: "Wartungsvertrag unbekannt:",
+    fehlerSubreseller: "Subreseller unbekannt:",
+    fehlerStatus: "Status unbekannt:",
+    fehlerLand: "Land unbekannt:",
+    fehlerSpeichern: "Speichern fehlgeschlagen",
+    anwenden: "{n} Kunden aktualisieren",
+    abbrechen: "Verwerfen",
+    ergebnisErfolg: "{n} Kunden aktualisiert.",
+    ergebnisFehler: "{n} Kunden konnten nicht gespeichert werden:",
+    fertig: "Fertig",
   },
   mitarbeiterAuswertung: {
     titel: "Mitarbeiter-Auswertung",
@@ -4810,6 +4899,55 @@ const en: Uebersetzung = {
     exportSub: "All customers with master data, dongles and license contracts – two sheets in one file.",
     exportMitArchiv: "Include archived customers",
     exportButton: "Download Excel",
+    id: "ID",
+    hinweiseBlatt: "Notes",
+    hinweise: [
+      "How re-importing this file works (Administration → Tools → Export data → Import customer data):",
+      "Blue column headers can be edited, grey ones are for information only and are ignored on import.",
+      "The “ID” column assigns each row to a customer – please do not change or delete it. Without an ID the email (login) is used instead.",
+      "Empty cells change nothing. To really clear a field, enter “-”.",
+      "The name is derived from first and last name. Login email, dongles and license contracts cannot be changed here.",
+      "Maintenance contract and subreseller must be named exactly as in the administration. Status: “Active” or “Archived”.",
+      "New customers are not created from rows without an ID – please use “New customer” (invitation) instead.",
+      "Before saving, the system shows all changes in a preview.",
+    ],
+  },
+  kundenImport: {
+    label: "Import customer data (Excel)",
+    sub: "Re-import an exported customer list after editing it in Excel. You see a preview of all changes first.",
+    dateiWaehlen: "Choose Excel file",
+    liest: "Checking file…",
+    speichert: "Saving…",
+    fehlerLesen: "The file could not be read. Please use the exported Excel file (.xlsx).",
+    fehlerKeinBlatt: "No sheet with customer data was found in the file.",
+    fehlerKeineZuordnung: "Neither the “ID” nor the “Email (login)” column was found – please use a current export file.",
+    fehlerLaden: "The current customer data could not be loaded.",
+    sumAendern: "will be changed",
+    sumUnveraendert: "unchanged",
+    sumFehler: "errors / not supported",
+    leereZellenHinweis: "Empty cells change nothing. To clear a field, enter “-”. Rows with errors are skipped.",
+    fehlerUebersprungen: "Skipped rows",
+    nichtsZuTun: "No changes were found.",
+    kunde: "Customer",
+    zeile: "Row",
+    feld: "Field",
+    alt: "Before",
+    neu: "New",
+    leer: "(empty)",
+    fehlerUnbekannterKunde: "No customer found for this ID or email.",
+    fehlerNeuerKunde: "New customers are not created – please invite them via “New customer”.",
+    fehlerDoppelt: "Customer appears more than once in the file.",
+    fehlerMwst: "Invalid VAT:",
+    fehlerWartung: "Unknown maintenance contract:",
+    fehlerSubreseller: "Unknown subreseller:",
+    fehlerStatus: "Unknown status:",
+    fehlerLand: "Unknown country:",
+    fehlerSpeichern: "Saving failed",
+    anwenden: "Update {n} customers",
+    abbrechen: "Discard",
+    ergebnisErfolg: "{n} customers updated.",
+    ergebnisFehler: "{n} customers could not be saved:",
+    fertig: "Done",
   },
   mitarbeiterAuswertung: {
     titel: "Staff overview",

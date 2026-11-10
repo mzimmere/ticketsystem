@@ -4,6 +4,7 @@ import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
 import { kundenExcelExportieren } from "../lib/kundenExport";
 import { alleKundenLaden } from "../lib/alleKundenLaden";
+import KundenImport from "./KundenImport";
 
 interface ReportingExportProps {
   organisationId: string;
@@ -275,6 +276,8 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
           </button>
           {kundenFehler && <p className="mt-1 text-xs text-red-600">{kundenFehler}</p>}
         </div>
+
+        <KundenImport organisationId={organisationId} />
 
         <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-3">
           <p className="text-sm font-medium text-[var(--text-strong)]">{txt.lizenzLabel}</p>

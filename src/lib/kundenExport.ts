@@ -126,8 +126,16 @@ export async function kundenExcelExportieren(opts: {
     txt.name, txt.firma, txt.vorname, txt.nachname, txt.emailLogin, txt.weitereEmails, txt.telefon,
     txt.strasse, txt.hausnummer, txt.plz, txt.ort, txt.land, txt.mwst, txt.ustId,
     txt.wartungsvertrag, txt.subreseller, txt.anzahlDongles, txt.anzahlLizenzen, txt.naechstesVertragsende,
-    txt.renewalOffen, txt.zuletztImPortal, txt.status, txt.notizen,
+    txt.renewalOffen, txt.zuletztImPortal, txt.status, txt.notizen, txt.id,
   ];
+  // Nur diese Spalten liest der Re-Import wieder ein (kundenImport.ts);
+  // alle anderen werden grau markiert und beim Import ignoriert.
+  const nurAnzeige = new Set([
+    txt.name, txt.emailLogin, txt.weitereEmails, txt.anzahlDongles, txt.anzahlLizenzen,
+    txt.naechstesVertragsende, txt.renewalOffen, txt.zuletztImPortal, txt.id,
+    txt.dongleSeriennummer, txt.software, txt.lizenzSeriennummer, txt.produkt,
+    txt.vertragStatus, txt.vertragsende, txt.renewalBezahlt, txt.build,
+  ]);
   const zeilenKunden: Zelle[][] = sortiert.map((k) => {
     const meineVertraege = vertraegeJeKunde.get(k.id) ?? [];
     const aktive = meineVertraege.filter((v) => v.vertrag_ende && (!v.status || v.status.toLowerCase() === "active"));
@@ -147,6 +155,7 @@ export async function kundenExcelExportieren(opts: {
       zeitpunktAlsTag(letzterBesuch.get(k.id)),
       k.deaktiviert ? txt.statusArchiviert : txt.statusAktiv,
       k.notizen,
+      k.id,
     ];
   });
 
@@ -185,7 +194,13 @@ export async function kundenExcelExportieren(opts: {
     zeilen.forEach((z) => ws.addRow(z));
     const kopfZeile = ws.getRow(1);
     kopfZeile.font = { bold: true, color: { argb: "FFFFFFFF" } };
-    kopfZeile.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0E6E8C" } };
+    kopf.forEach((titel, i) => {
+      kopfZeile.getCell(i + 1).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: nurAnzeige.has(titel) ? "FF8A949E" : "FF0E6E8C" },
+      };
+    });
     ws.views = [{ state: "frozen", ySplit: 1 }];
     ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: kopf.length } };
     kopf.forEach((titel, i) => {
@@ -208,6 +223,14 @@ export async function kundenExcelExportieren(opts: {
   };
   blatt(txt.blattKunden, kopfKunden, zeilenKunden);
   blatt(txt.blattLizenzen, kopfLizenzen, zeilenLizenzen);
+
+  const info = wb.addWorksheet(txt.hinweiseBlatt);
+  txt.hinweise.forEach((zeile, i) => {
+    const r = info.addRow([zeile]);
+    if (i === 0) r.font = { bold: true };
+  });
+  info.getColumn(1).width = 130;
+  info.getColumn(1).alignment = { wrapText: true, vertical: "top" };
 
   const buffer = await wb.xlsx.writeBuffer();
   downloadBlob(buffer, dateiname, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
