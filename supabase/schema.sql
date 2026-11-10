@@ -3669,3 +3669,39 @@ select organisation_id, 'lizenz', count(*), true, max(erstellt_am)
 from lizenz_vertraege
 where erstellt_am is not null
 group by organisation_id;
+
+-- ============================================================
+-- 86. Kunden-Excel-Export (kundenExport.ts, Kundenverwaltung +
+-- Werkzeuge -> Daten exportieren): Die Login-E-Mails der Kunden liegen in
+-- auth.users und sind nur per SECURITY DEFINER lesbar. Fuer den Export
+-- gibt es eine Sammelabfrage (statt einer Abfrage je Kunde) mit derselben
+-- Berechtigung wie get_kunde_email(): Techniker/Org-Admins der Firma und
+-- Super-Admins, sonst Fehler.
+-- ============================================================
+create or replace function kunden_emails_export(p_organisation_id uuid)
+returns table (kunde_id uuid, email text)
+language plpgsql
+stable
+security definer
+set search_path = public, auth
+as $$
+begin
+  if not coalesce(
+    current_user_rolle() = 'super_admin'
+    or (p_organisation_id = current_user_org() and current_user_rolle() in ('org_admin', 'techniker'))
+    or hat_firmenzugriff(p_organisation_id, array['org_admin', 'techniker']::user_rolle[]),
+    false
+  ) then
+    raise exception 'keine Berechtigung';
+  end if;
+
+  return query
+  select p.id, u.email::text
+  from profiles p
+  join auth.users u on u.id = p.id
+  where p.organisation_id = p_organisation_id and p.rolle = 'kunde';
+end;
+$$;
+
+revoke execute on function kunden_emails_export(uuid) from public, anon;
+grant execute on function kunden_emails_export(uuid) to authenticated;

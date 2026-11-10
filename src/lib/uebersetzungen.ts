@@ -1479,6 +1479,57 @@ export interface Uebersetzung {
     neuerNamePlatzhalter: string;
     neueEmailPlatzhalter: string;
   };
+  kundenExport: {
+    button: string;
+    buttonTitel: string;
+    laedt: string;
+    fehler: string;
+    keineKunden: string;
+    dateiAktiv: string;
+    dateiArchiv: string;
+    blattKunden: string;
+    blattLizenzen: string;
+    name: string;
+    firma: string;
+    vorname: string;
+    nachname: string;
+    emailLogin: string;
+    weitereEmails: string;
+    telefon: string;
+    strasse: string;
+    hausnummer: string;
+    plz: string;
+    ort: string;
+    land: string;
+    mwst: string;
+    ustId: string;
+    wartungsvertrag: string;
+    minutenabrechnung: string;
+    subreseller: string;
+    anzahlDongles: string;
+    anzahlLizenzen: string;
+    naechstesVertragsende: string;
+    renewalOffen: string;
+    zuletztImPortal: string;
+    status: string;
+    statusAktiv: string;
+    statusArchiviert: string;
+    notizen: string;
+    dongleSeriennummer: string;
+    software: string;
+    lizenzSeriennummer: string;
+    produkt: string;
+    vertragStatus: string;
+    vertragsende: string;
+    renewalBezahlt: string;
+    build: string;
+    ja: string;
+    nein: string;
+    exportLabel: string;
+    exportSub: string;
+    exportMitArchiv: string;
+    exportButton: string;
+  };
   mitarbeiterAuswertung: {
     titel: string;
     hinweis: string;
@@ -3067,6 +3118,57 @@ const de: Uebersetzung = {
     nochKeineSubreseller: "Noch keine Subreseller angelegt.",
     neuerNamePlatzhalter: "Name (z.B. Firma des Subresellers)",
     neueEmailPlatzhalter: "E-Mail-Adresse",
+  },
+  kundenExport: {
+    button: "Excel",
+    buttonTitel: "Die aktuell angezeigten Kunden (inkl. Suche und Filter) als Excel-Datei herunterladen",
+    laedt: "Exportiert…",
+    fehler: "Der Export ist fehlgeschlagen.",
+    keineKunden: "Keine Kunden zum Exportieren.",
+    dateiAktiv: "kunden-export",
+    dateiArchiv: "kunden-archiv-export",
+    blattKunden: "Kunden",
+    blattLizenzen: "Dongles & Lizenzen",
+    name: "Name",
+    firma: "Firma",
+    vorname: "Vorname",
+    nachname: "Nachname",
+    emailLogin: "E-Mail (Login)",
+    weitereEmails: "Weitere E-Mails",
+    telefon: "Telefon",
+    strasse: "Straße",
+    hausnummer: "Nr.",
+    plz: "PLZ",
+    ort: "Ort",
+    land: "Land",
+    mwst: "MwSt. %",
+    ustId: "USt-IdNr.",
+    wartungsvertrag: "Wartungsvertrag",
+    minutenabrechnung: "Minutenabrechnung",
+    subreseller: "Subreseller",
+    anzahlDongles: "Dongles",
+    anzahlLizenzen: "Lizenzverträge",
+    naechstesVertragsende: "Nächstes Vertragsende",
+    renewalOffen: "Renewals offen (aktive Verträge)",
+    zuletztImPortal: "Zuletzt im Portal",
+    status: "Status",
+    statusAktiv: "Aktiv",
+    statusArchiviert: "Archiviert",
+    notizen: "Notizen",
+    dongleSeriennummer: "Dongle-Seriennummer",
+    software: "Software",
+    lizenzSeriennummer: "Lizenz-Seriennummer",
+    produkt: "Produkt",
+    vertragStatus: "Vertragsstatus",
+    vertragsende: "Vertragsende",
+    renewalBezahlt: "Renewal bezahlt",
+    build: "Build",
+    ja: "Ja",
+    nein: "Nein",
+    exportLabel: "Kundendaten (Excel)",
+    exportSub: "Alle Kunden mit Stammdaten, Dongles und Lizenzverträgen – zwei Tabellenblätter in einer Datei.",
+    exportMitArchiv: "Archivierte Kunden mit exportieren",
+    exportButton: "Excel herunterladen",
   },
   mitarbeiterAuswertung: {
     titel: "Mitarbeiter-Auswertung",
@@ -4657,6 +4759,57 @@ const en: Uebersetzung = {
     nochKeineSubreseller: "No subresellers created yet.",
     neuerNamePlatzhalter: "Name (e.g. subreseller's company)",
     neueEmailPlatzhalter: "Email address",
+  },
+  kundenExport: {
+    button: "Excel",
+    buttonTitel: "Download the currently shown customers (incl. search and filters) as an Excel file",
+    laedt: "Exporting…",
+    fehler: "The export failed.",
+    keineKunden: "No customers to export.",
+    dateiAktiv: "customer-export",
+    dateiArchiv: "customer-archive-export",
+    blattKunden: "Customers",
+    blattLizenzen: "Dongles & licenses",
+    name: "Name",
+    firma: "Company",
+    vorname: "First name",
+    nachname: "Last name",
+    emailLogin: "Email (login)",
+    weitereEmails: "Additional emails",
+    telefon: "Phone",
+    strasse: "Street",
+    hausnummer: "No.",
+    plz: "ZIP",
+    ort: "City",
+    land: "Country",
+    mwst: "VAT %",
+    ustId: "VAT ID",
+    wartungsvertrag: "Maintenance contract",
+    minutenabrechnung: "Per-minute billing",
+    subreseller: "Subreseller",
+    anzahlDongles: "Dongles",
+    anzahlLizenzen: "License contracts",
+    naechstesVertragsende: "Next contract end",
+    renewalOffen: "Renewals unpaid (active contracts)",
+    zuletztImPortal: "Last in portal",
+    status: "Status",
+    statusAktiv: "Active",
+    statusArchiviert: "Archived",
+    notizen: "Notes",
+    dongleSeriennummer: "Dongle serial number",
+    software: "Software",
+    lizenzSeriennummer: "License serial number",
+    produkt: "Product",
+    vertragStatus: "Contract status",
+    vertragsende: "Contract end",
+    renewalBezahlt: "Renewal paid",
+    build: "Build",
+    ja: "Yes",
+    nein: "No",
+    exportLabel: "Customer data (Excel)",
+    exportSub: "All customers with master data, dongles and license contracts – two sheets in one file.",
+    exportMitArchiv: "Include archived customers",
+    exportButton: "Download Excel",
   },
   mitarbeiterAuswertung: {
     titel: "Staff overview",

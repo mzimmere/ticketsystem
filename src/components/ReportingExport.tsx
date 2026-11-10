@@ -2,6 +2,8 @@ import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
+import { kundenExcelExportieren } from "../lib/kundenExport";
+import { alleKundenLaden } from "../lib/alleKundenLaden";
 
 interface ReportingExportProps {
   organisationId: string;
@@ -70,6 +72,32 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
   });
   const [bis, setBis] = useState(() => new Date().toISOString().slice(0, 10));
   const [laedt, setLaedt] = useState<string | null>(null);
+  const kundenTxt = texte(sprache).kundenExport;
+  const [kundenMitArchiv, setKundenMitArchiv] = useState(false);
+  const [kundenFehler, setKundenFehler] = useState<string | null>(null);
+
+  async function exportKunden() {
+    setLaedt("kunden");
+    setKundenFehler(null);
+    try {
+      const kunden = await alleKundenLaden(organisationId, kundenMitArchiv);
+      if (kunden.length === 0) {
+        setKundenFehler(kundenTxt.keineKunden);
+        return;
+      }
+      await kundenExcelExportieren({
+        organisationId,
+        kunden,
+        txt: kundenTxt,
+        dateiname: `${kundenMitArchiv ? kundenTxt.dateiArchiv : kundenTxt.dateiAktiv}-${new Date().toLocaleDateString("sv-SE")}.xlsx`,
+      });
+    } catch (err) {
+      console.error(err);
+      setKundenFehler(kundenTxt.fehler);
+    } finally {
+      setLaedt(null);
+    }
+  }
 
   async function exportTickets() {
     setLaedt("tickets");
@@ -230,6 +258,23 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
             </span>
           </button>
         ))}
+
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-3">
+          <p className="text-sm font-medium text-[var(--text-strong)]">{kundenTxt.exportLabel}</p>
+          <p className="mb-2 text-xs text-[var(--text-faint)]">{kundenTxt.exportSub}</p>
+          <label className="mb-2 flex items-center gap-2 text-xs text-[var(--text-soft)]">
+            <input type="checkbox" checked={kundenMitArchiv} onChange={(e) => setKundenMitArchiv(e.target.checked)} />
+            {kundenTxt.exportMitArchiv}
+          </label>
+          <button
+            onClick={exportKunden}
+            disabled={laedt !== null}
+            className="w-full rounded-lg border border-[var(--border-input)] px-3 py-1.5 text-xs font-medium text-[var(--text-soft)] hover:bg-[var(--bg-muted)] disabled:opacity-50 transition-colors"
+          >
+            {laedt === "kunden" ? "⏳" : kundenTxt.exportButton}
+          </button>
+          {kundenFehler && <p className="mt-1 text-xs text-red-600">{kundenFehler}</p>}
+        </div>
 
         <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-3">
           <p className="text-sm font-medium text-[var(--text-strong)]">{txt.lizenzLabel}</p>

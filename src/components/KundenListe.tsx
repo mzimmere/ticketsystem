@@ -13,7 +13,9 @@ import KundenDokumente from "./KundenDokumente";
 import KundenAuswahl from "./KundenAuswahl";
 import LeerZustand from "./LeerZustand";
 import { zuletztText, vonDatum, alsBesuchsZeilen, type BesuchsZeile } from "../lib/zeitText";
-import { Camera, ChevronDown, ChevronLeft, Handshake, KeyRound, X } from "lucide-react";
+import { ladeSeiten } from "../lib/ladeSeiten";
+import { kundenExcelExportieren } from "../lib/kundenExport";
+import { Camera, ChevronDown, ChevronLeft, Download, Handshake, KeyRound, X } from "lucide-react";
 
 interface Kunde {
   id: string;
@@ -96,19 +98,6 @@ interface KundenKennzahl {
   renewalOffen: number;
 }
 
-// PostgREST liefert pro Anfrage maximal 1000 Zeilen - bei grossen Beständen
-// seitenweise nachladen, sonst stimmen die Zähler pro Kunde nicht.
-async function ladeSeiten<T>(
-  bauen: (von: number, bis: number) => PromiseLike<{ data: T[] | null }>,
-): Promise<T[]> {
-  const alle: T[] = [];
-  for (let von = 0; ; von += 1000) {
-    const { data } = await bauen(von, von + 999);
-    alle.push(...(data ?? []));
-    if (!data || data.length < 1000) break;
-  }
-  return alle;
-}
 
 // exocad-Lizenzen laufen ueblicherweise ein Jahr - ohne Vertragsbeginn im
 // Datenmodell dient ein 365-Tage-Referenzfenster als Naeherung fuer den
@@ -136,9 +125,11 @@ export default function KundenListe({
 }: KundenListeProps) {
   const { sprache } = useSprache();
   const txt = texte(sprache).kundenListe;
+  const exportTxt = texte(sprache).kundenExport;
   const [kunden, setKunden] = useState<Kunde[]>([]);
   const [suchbegriff, setSuchbegriff] = useState("");
   const [zeigeArchivierte, setZeigeArchivierte] = useState(false);
+  const [exportLaedt, setExportLaedt] = useState(false);
   const [offenId, setOffenId] = useState<string | null>(null);
   const [tab, setTab] = useState<DetailTab>("stammdaten");
   const [kennzahlen, setKennzahlen] = useState<Record<string, KundenKennzahl>>({});
@@ -680,6 +671,24 @@ export default function KundenListe({
     );
   }
 
+  async function excelExport() {
+    if (gefilterteKunden.length === 0) return;
+    setExportLaedt(true);
+    try {
+      await kundenExcelExportieren({
+        organisationId,
+        kunden: gefilterteKunden,
+        txt: exportTxt,
+        dateiname: `${zeigeArchivierte ? exportTxt.dateiArchiv : exportTxt.dateiAktiv}-${new Date().toLocaleDateString("sv-SE")}.xlsx`,
+      });
+    } catch (err) {
+      console.error(err);
+      setHinweis(exportTxt.fehler);
+    } finally {
+      setExportLaedt(false);
+    }
+  }
+
   const tabs: { id: DetailTab; label: string }[] = [
     { id: "stammdaten", label: txt.tabStammdaten },
     { id: "vertrag", label: txt.tabVertragPreise },
@@ -699,6 +708,15 @@ export default function KundenListe({
           placeholder={txt.suchePlatzhalter}
           className="flex-1 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]"
         />
+        <button
+          onClick={excelExport}
+          disabled={exportLaedt || gefilterteKunden.length === 0}
+          title={exportTxt.buttonTitel}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-xs font-medium text-[var(--text-soft)] hover:bg-[var(--bg-muted)] disabled:opacity-50"
+        >
+          <Download size={14} />
+          {exportLaedt ? exportTxt.laedt : `${exportTxt.button} (${gefilterteKunden.length})`}
+        </button>
         <button
           onClick={() => setZeigeArchivierte((v) => !v)}
           className="shrink-0 text-xs text-[var(--text-faint)] hover:underline"
