@@ -6,6 +6,7 @@ export const LAENDER_MWST: Record<string, number> = {
   Deutschland: 19,
   Österreich: 20,
   Schweiz: 8.1,
+  Liechtenstein: 8.1, // gehört zum Schweizer Mehrwertsteuergebiet
   Belgien: 21,
   Niederlande: 21,
   Frankreich: 20,
