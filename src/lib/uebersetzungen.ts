@@ -138,6 +138,29 @@ export interface Uebersetzung {
     bereitsBewertetJa: string;
     bereitsBewertetNein: string;
     danke: string;
+    kommentarFrage: string;
+    kommentarPlatzhalter: string;
+    kommentarSenden: string;
+    kommentarGesendet: string;
+  };
+  csatListe: {
+    titel: string;
+    schliessen: string;
+    alle: string;
+    nurNegativ: string;
+    nurPositiv: string;
+    keine: string;
+    lade: string;
+    ticket: string;
+    kunde: string;
+    bearbeiter: string;
+    nichtZugewiesen: string;
+    keinKommentar: string;
+    hinweis: string;
+    kachelHinweis: string;
+    positivLabel: string;
+    negativLabel: string;
+    ticketOeffnen: string;
   };
   meinProfil: {
     titel: string;
@@ -1818,6 +1841,29 @@ const de: Uebersetzung = {
     bereitsBewertetJa: "Du hast dieses Ticket bewertet: 👍 Hilfreich – Danke!",
     bereitsBewertetNein: "Du hast dieses Ticket bewertet: 👎 Nicht hilfreich – Danke!",
     danke: "Danke für dein Feedback! 🙏",
+    kommentarFrage: "Möchtest du uns noch etwas mitteilen? (optional)",
+    kommentarPlatzhalter: "Was hat gut funktioniert, was können wir besser machen?",
+    kommentarSenden: "Senden",
+    kommentarGesendet: "Danke, deine Nachricht ist angekommen!",
+  },
+  csatListe: {
+    titel: "Bewertungen im Zeitraum",
+    schliessen: "Schließen",
+    alle: "Alle",
+    nurNegativ: "Nur 👎",
+    nurPositiv: "Nur 👍",
+    keine: "Keine Bewertungen in dieser Auswahl.",
+    lade: "Bewertungen werden geladen…",
+    ticket: "Ticket",
+    kunde: "Kunde",
+    bearbeiter: "Bearbeiter",
+    nichtZugewiesen: "nicht zugewiesen",
+    keinKommentar: "kein Text",
+    hinweis: "👍 = hilfreich, 👎 = nicht hilfreich. Eine Bewertung zählt in dem Zeitraum, in dem sie abgegeben wurde; die Zufriedenheit ist der Anteil von 👍 an allen Bewertungen.",
+    kachelHinweis: "Details anzeigen",
+    positivLabel: "Hilfreich",
+    negativLabel: "Nicht hilfreich",
+    ticketOeffnen: "Ticket öffnen",
   },
   meinProfil: {
     titel: "Mein Profil",
@@ -2434,7 +2480,7 @@ const de: Uebersetzung = {
     lizenzPdfTitelTemplate: "Lizenz-Verlängerungen {von} – {bis}",
     csvTicketsKopf: ["Ticket-Nr", "Titel", "Status", "Priorität", "Erstellt", "Erste Antwort", "Reaktion fällig", "Lösung fällig", "CSAT", "Kunde", "Zugewiesen"],
     csvZeitKopf: ["Datum", "Minuten", "Stunden", "Beschreibung", "Art", "Ticket-Nr", "Ticket", "Techniker", "Kunde"],
-    csvCsatKopf: ["Ticket-Nr", "Titel", "Bewertung", "Bewertet am", "Kunde", "Techniker"],
+    csvCsatKopf: ["Ticket-Nr", "Titel", "Bewertung", "Bewertet am", "Kunde", "Techniker", "Kommentar"],
     csvLizenzKopf: ["Kunde", "Firmenname", "Dongle-Seriennummer", "Lizenz-Seriennummer", "Produkt", "Lizenztyp", "Vertragsende", "Status"],
     positiv: "Positiv",
     negativ: "Negativ",
@@ -3509,6 +3555,29 @@ const en: Uebersetzung = {
     bereitsBewertetJa: "You've rated this ticket: 👍 Helpful – thank you!",
     bereitsBewertetNein: "You've rated this ticket: 👎 Not helpful – thank you!",
     danke: "Thanks for your feedback! 🙏",
+    kommentarFrage: "Would you like to tell us more? (optional)",
+    kommentarPlatzhalter: "What worked well, what could we do better?",
+    kommentarSenden: "Send",
+    kommentarGesendet: "Thanks, your message has arrived!",
+  },
+  csatListe: {
+    titel: "Ratings in this period",
+    schliessen: "Close",
+    alle: "All",
+    nurNegativ: "Only 👎",
+    nurPositiv: "Only 👍",
+    keine: "No ratings in this selection.",
+    lade: "Loading ratings…",
+    ticket: "Ticket",
+    kunde: "Customer",
+    bearbeiter: "Assignee",
+    nichtZugewiesen: "not assigned",
+    keinKommentar: "no text",
+    hinweis: "👍 = helpful, 👎 = not helpful. A rating counts in the period in which it was given; satisfaction is the share of 👍 among all ratings.",
+    kachelHinweis: "Show details",
+    positivLabel: "Helpful",
+    negativLabel: "Not helpful",
+    ticketOeffnen: "Open ticket",
   },
   meinProfil: {
     titel: "My Profile",
@@ -4125,7 +4194,7 @@ const en: Uebersetzung = {
     lizenzPdfTitelTemplate: "License renewals {von} – {bis}",
     csvTicketsKopf: ["Ticket no.", "Title", "Status", "Priority", "Created", "First response", "Response due", "Resolution due", "CSAT", "Customer", "Assigned"],
     csvZeitKopf: ["Date", "Minutes", "Hours", "Description", "Type", "Ticket no.", "Ticket", "Technician", "Customer"],
-    csvCsatKopf: ["Ticket no.", "Title", "Rating", "Rated on", "Customer", "Technician"],
+    csvCsatKopf: ["Ticket no.", "Title", "Rating", "Rated on", "Customer", "Technician", "Comment"],
     csvLizenzKopf: ["Customer", "Company name", "Dongle serial number", "License serial number", "Product", "License type", "Contract end", "Status"],
     positiv: "Positive",
     negativ: "Negative",

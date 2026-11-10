@@ -158,7 +158,7 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
     setLaedt("csat");
     const { data } = await supabase
       .from("tickets")
-      .select("ticket_nr, titel, csat_bewertung, csat_am, kunde:kunde_id(name), zugewiesen:zugewiesen_an(name)")
+      .select("ticket_nr, titel, csat_bewertung, csat_am, csat_kommentar, kunde:kunde_id(name), zugewiesen:zugewiesen_an(name)")
       .eq("organisation_id", organisationId)
       .not("csat_bewertung", "is", null)
       .gte("csat_am", von)
@@ -174,6 +174,7 @@ export default function ReportingExport({ organisationId }: ReportingExportProps
       t.csat_am?.slice(0, 10),
       (t.kunde as unknown as { name: string | null } | null)?.name ?? null,
       (t.zugewiesen as unknown as { name: string | null } | null)?.name ?? null,
+      t.csat_kommentar ?? null,
     ]));
     download([kopf, ...zeilen].join("\n"), `csat-${von}-${bis}.csv`);
     setLaedt(null);

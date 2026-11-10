@@ -175,7 +175,13 @@ async function csatSignatur(ticketId: string, wert: number): Promise<string> {
 }
 
 async function csatLink(ticketId: string, wert: number): Promise<string> {
-  const basisUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/csat-bewerten`;
+  // Ueber die eigene Seite (api/csat.ts auf Vercel) statt direkt auf die Edge
+  // Function: Supabase liefert HTML nur als text/plain aus, der Kunde sah
+  // sonst Quelltext. Ohne PUBLIC_SITE_URL bleibt es beim bisherigen Link.
+  const seite = Deno.env.get("PUBLIC_SITE_URL");
+  const basisUrl = seite
+    ? `${seite.replace(/\/$/, "")}/api/csat`
+    : `${Deno.env.get("SUPABASE_URL")}/functions/v1/csat-bewerten`;
   const sig = await csatSignatur(ticketId, wert);
   return `${basisUrl}?t=${ticketId}&w=${wert}&s=${sig}`;
 }

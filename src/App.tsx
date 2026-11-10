@@ -577,7 +577,10 @@ export default function App() {
             {profil.rolle === "super_admin" && !superAdminFirma ? (
               <SuperAdminDashboard onFirmaOeffnen={(id) => { setSuperAdminFirma(id); setZeigeDashboard(false); setZeigeStartseite(true); }} />
             ) : aktiveOrgId ? (
-              <Dashboard organisationId={aktiveOrgId} />
+              <Dashboard
+                organisationId={aktiveOrgId}
+                onTicketOeffnen={(id) => { setZeigeDashboard(false); setAusgewaehltesTicket(id); }}
+              />
             ) : (
               <SuperAdminDashboard onFirmaOeffnen={(id) => { setSuperAdminFirma(id); setZeigeDashboard(false); setZeigeStartseite(true); }} />
             )}

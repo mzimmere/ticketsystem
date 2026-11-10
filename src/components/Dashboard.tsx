@@ -4,11 +4,13 @@ import { supabase } from "../lib/supabaseClient";
 import { KpiSkeleton } from "./Skeleton";
 import MitarbeiterAuswertung from "./MitarbeiterAuswertung";
 import KundenAktivitaet from "./KundenAktivitaet";
+import CsatListe from "./CsatListe";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
 
 interface DashboardProps {
   organisationId: string;
+  onTicketOeffnen?: (ticketId: string) => void;
 }
 
 interface TicketStats {
@@ -50,26 +52,47 @@ function KpiKarte({
   sub,
   farbe,
   streifen,
+  onClick,
+  aktiv,
+  klickHinweis,
 }: {
   titel: string;
   wert: string | number;
   sub?: string;
   farbe?: string;
   streifen?: string;
+  onClick?: () => void;
+  aktiv?: boolean;
+  klickHinweis?: string;
 }) {
-  return (
-    <div className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4">
+  const inhalt = (
+    <>
       <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{titel}</p>
       <p className={`mt-1.5 font-mono text-3xl font-medium tabular-nums tracking-tight ${farbe ?? "text-[var(--text-strong)]"}`}>
         {wert}
       </p>
       {sub && <p className="mt-1 text-xs text-[var(--text-faint)]">{sub}</p>}
+      {onClick && klickHinweis && <p className="mt-0.5 text-[11px] text-akzent">{klickHinweis} {aktiv ? "▴" : "▾"}</p>}
       <span
         className="absolute inset-x-0 bottom-0 h-[3px]"
         style={{ background: streifen ?? "var(--border-input)" }}
       />
-    </div>
+    </>
   );
+  const basis = "relative overflow-hidden rounded-xl border bg-[var(--bg-surface)] p-4";
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-expanded={aktiv}
+        className={`${basis} text-left transition-colors hover:bg-[var(--bg-muted)] ${aktiv ? "border-akzent" : "border-[var(--border)]"}`}
+      >
+        {inhalt}
+      </button>
+    );
+  }
+  return <div className={`${basis} border-[var(--border)]`}>{inhalt}</div>;
 }
 
 function MiniBalken({ wert, max, farbe }: { wert: number; max: number; farbe: string }) {
@@ -82,7 +105,7 @@ function MiniBalken({ wert, max, farbe }: { wert: number; max: number; farbe: st
 }
 
 
-export default function Dashboard({ organisationId }: DashboardProps) {
+export default function Dashboard({ organisationId, onTicketOeffnen }: DashboardProps) {
   const { sprache } = useSprache();
   const txt = texte(sprache).dashboard;
   const statusTxt = texte(sprache).status;
@@ -93,6 +116,7 @@ export default function Dashboard({ organisationId }: DashboardProps) {
   const [volumen, setVolumen] = useState<TagesVolumen[]>([]);
   const [zeitraum, setZeitraum] = useState<7 | 30 | 90>(30);
   const [laedt, setLaedt] = useState(true);
+  const [csatOffen, setCsatOffen] = useState(false);
 
   useEffect(() => {
     laden();
@@ -277,6 +301,9 @@ export default function Dashboard({ organisationId }: DashboardProps) {
                   sub={csatGesamt > 0 ? `${csatGesamt} ${txt.bewertungen}` : txt.nochKeineBewertungen}
                   farbe={csatRate !== null ? (csatRate >= 80 ? "text-green-600" : csatRate >= 60 ? "text-yellow-600" : "text-red-600") : undefined}
                   streifen={csatRate !== null ? (csatRate >= 80 ? "var(--status-geloest-text)" : csatRate >= 60 ? "var(--status-offen-text)" : "var(--badge-kritisch-text)") : undefined}
+                  onClick={csatGesamt > 0 ? () => setCsatOffen((o) => !o) : undefined}
+                  aktiv={csatOffen}
+                  klickHinweis={texte(sprache).csatListe.kachelHinweis}
                 />
                 <KpiKarte titel={txt.slaEinhaltung}
                   wert={slaRate !== null ? `${slaRate}%` : "—"}
@@ -287,6 +314,16 @@ export default function Dashboard({ organisationId }: DashboardProps) {
               </>
             )}
           </div>
+
+          {/* Einzelne Bewertungen (Klick auf die Kachel Kundenzufriedenheit) */}
+          {csatOffen && csatGesamt > 0 && (
+            <CsatListe
+              organisationId={organisationId}
+              zeitraum={zeitraum}
+              onSchliessen={() => setCsatOffen(false)}
+              onTicketOeffnen={onTicketOeffnen}
+            />
+          )}
 
           {/* Status-Aufschlüsselung */}
           <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-4">
