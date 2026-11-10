@@ -3705,3 +3705,96 @@ $$;
 
 revoke execute on function kunden_emails_export(uuid) from public, anon;
 grant execute on function kunden_emails_export(uuid) to authenticated;
+
+-- ============================================================
+-- 87. Automatische Verknuepfung Lizenzvertrag <-> Dongle: Die Dongle-
+-- Nummer ist der Anfang der Lizenznummer (Dongle 000003B7 <->
+-- 000003B7-0EDF-054F1690). Bisher musste jeder Vertrag von Hand mit seinem
+-- Dongle verknuepft werden, dadurch tauchten Vertraege bei zugeordneten
+-- Dongles nicht auf. Jetzt: Wird ein Vertrag einem Kunden zugeordnet (oder
+-- ein Dongle einem Kunden), wird der passende Vertrag/Dongle DESSELBEN
+-- Kunden automatisch verknuepft. Ein manuelles Loesen bleibt bestehen
+-- (die Trigger reagieren nur auf eine Aenderung von kunde_id). Bei zwei
+-- Dongle-Eintraegen (kurz und lang) gewinnt der kurze. Plus einmaliger
+-- Nachlauf fuer bestehende Vertraege.
+-- ============================================================
+-- Automatische Verknuepfung Lizenzvertrag <-> Dongle (schema.sql Abschnitt 87).
+-- Die Dongle-Nummer ist der Anfang der Lizenznummer
+-- (Dongle 000003B7 <-> Lizenz 000003B7-0EDF-054F1690) und je Firma eindeutig.
+
+create or replace function lizenz_dongle_finden(
+  p_organisation_id uuid,
+  p_kunde_id uuid,
+  p_lizenz_seriennummer text
+) returns uuid
+language sql
+stable
+set search_path = public
+as $$
+  select d.id
+  from kunden_dongles d
+  where d.organisation_id = p_organisation_id
+    and d.kunde_id = p_kunde_id
+    and upper(d.seriennummer) in (upper(split_part(p_lizenz_seriennummer, '-', 1)), upper(p_lizenz_seriennummer))
+  order by (position('-' in d.seriennummer) = 0) desc
+  limit 1;
+$$;
+
+revoke execute on function lizenz_dongle_finden(uuid, uuid, text) from public, anon;
+
+create or replace function lizenz_vertraege_dongle_verknuepfen() returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.kunde_id is null or new.dongle_id is not null then
+    return new;
+  end if;
+  if tg_op = 'UPDATE' and old.kunde_id is not distinct from new.kunde_id then
+    return new;
+  end if;
+  new.dongle_id := lizenz_dongle_finden(new.organisation_id, new.kunde_id, new.lizenz_seriennummer);
+  return new;
+end;
+$$;
+
+drop trigger if exists lizenz_vertraege_dongle_verknuepfen_trigger on lizenz_vertraege;
+create trigger lizenz_vertraege_dongle_verknuepfen_trigger
+  before insert or update of kunde_id on lizenz_vertraege
+  for each row execute function lizenz_vertraege_dongle_verknuepfen();
+
+create or replace function kunden_dongles_vertraege_verknuepfen() returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.kunde_id is null then
+    return new;
+  end if;
+  if tg_op = 'UPDATE' and old.kunde_id is not distinct from new.kunde_id then
+    return new;
+  end if;
+  update lizenz_vertraege v
+     set dongle_id = new.id
+   where v.organisation_id = new.organisation_id
+     and v.kunde_id = new.kunde_id
+     and v.dongle_id is null
+     and lizenz_dongle_finden(v.organisation_id, v.kunde_id, v.lizenz_seriennummer) = new.id;
+  return new;
+end;
+$$;
+
+drop trigger if exists kunden_dongles_vertraege_verknuepfen_trigger on kunden_dongles;
+create trigger kunden_dongles_vertraege_verknuepfen_trigger
+  after insert or update of kunde_id on kunden_dongles
+  for each row execute function kunden_dongles_vertraege_verknuepfen();
+
+-- Einmaliger Nachlauf fuer bestehende Vertraege (nur Vertrag und Dongle beim
+-- selben Kunden; abweichende Zuordnungen bleiben unangetastet).
+update lizenz_vertraege v
+   set dongle_id = lizenz_dongle_finden(v.organisation_id, v.kunde_id, v.lizenz_seriennummer)
+ where v.dongle_id is null
+   and v.kunde_id is not null
+   and lizenz_dongle_finden(v.organisation_id, v.kunde_id, v.lizenz_seriennummer) is not null;
