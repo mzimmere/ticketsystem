@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
@@ -128,6 +128,33 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   const detailTxt = texte(sprache).dongleDetail;
   const [offenerDongleId, setOffenerDongleId] = useState<string | null>(null);
   const [offenerVertragId, setOffenerVertragId] = useState<string | null>(null);
+  // Klick auf eine Kennzahl-Karte: die Vertragsliste zeigt dann genau diese
+  // Vertraege (bald ablaufend bzw. davon Renewal offen), nach Ablauf sortiert.
+  const [vertragKachel, setVertragKachel] = useState<"bald" | "renewal" | null>(null);
+  const donglesKarteRef = useRef<HTMLDivElement>(null);
+  const vertraegeKarteRef = useRef<HTMLDivElement>(null);
+
+  function zuKarteScrollen(ref: React.RefObject<HTMLDivElement | null>) {
+    setTimeout(() => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
+
+  function vertragKachelWaehlen(art: "bald" | "renewal") {
+    if (vertragKachel === art) {
+      setVertragKachel(null);
+      return;
+    }
+    setVertragKachel(art);
+    setVertragUebersichtSuche("");
+    setBuildFilter("");
+    zuKarteScrollen(vertraegeKarteRef);
+  }
+
+  function donglesKachelWaehlen() {
+    setVertragKachel(null);
+    setDongleUebersichtSuche("");
+    setSoftwareFilter("");
+    zuKarteScrollen(donglesKarteRef);
+  }
 
   // Klick auf die Zeile klappt die Details auf - ausser er trifft ein Bedien-
   // element (Kopieren, Auswahl, Loeschen, ...).
@@ -391,7 +418,12 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
     new Set(alleVertraege.map((v) => v.aktuelle_engine_build).filter((b): b is string => !!b && b !== "null")),
   ).sort();
 
-  const vertragUebersichtGefiltert = alleVertraege.filter((v) => {
+  const kachelIds = vertragKachel
+    ? new Set((vertragKachel === "bald" ? bald : baldOffen).map((v) => v.id))
+    : null;
+  const vertragUebersichtGefiltert = alleVertraege
+    .filter((v) => {
+    if (kachelIds && !kachelIds.has(v.id)) return false;
     if (buildFilter && v.aktuelle_engine_build !== buildFilter) return false;
     const begriff = vertragUebersichtSuche.trim().toLowerCase();
     if (!begriff) return true;
@@ -400,10 +432,12 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
       v.produkt_name.toLowerCase().includes(begriff) ||
       (v.kunde?.name ?? "").toLowerCase().includes(begriff)
     );
-  });
+    })
+    // Bei aktiver Kennzahl zuerst die, die am schnellsten ablaufen
+    .sort((a, b) => (kachelIds ? (a.vertrag_ende ?? "").localeCompare(b.vertrag_ende ?? "") : 0));
   const vertragUebersichtSuchtAktiv = vertragUebersichtSuche.trim() !== "";
   const sichtbareVertragUebersicht =
-    vertragUebersichtSuchtAktiv || vertragUebersichtAlleAnzeigen
+    vertragUebersichtSuchtAktiv || vertragUebersichtAlleAnzeigen || kachelIds
       ? vertragUebersichtGefiltert
       : vertragUebersichtGefiltert.slice(0, ANZAHL_UEBERSICHT_SICHTBAR);
 
@@ -658,6 +692,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
             hinweisUmbrechen
             farbe="blau"
             icon={<KeyRound size={18} />}
+            onClick={donglesKachelWaehlen}
           />
           <KennzahlKarte
             label={txt.kennzahlNichtZugeordnet}
@@ -675,6 +710,8 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
             hinweis={txt.kennzahlLaeuftAbHinweis}
             farbe={bald.length > 0 ? "amber" : "neutral"}
             icon={<CalendarClock size={18} />}
+            onClick={() => vertragKachelWaehlen("bald")}
+            aktiv={vertragKachel === "bald"}
           />
           <KennzahlKarte
             label={txt.kennzahlRenewalOffen}
@@ -682,6 +719,8 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
             hinweis={txt.kennzahlRenewalOffenHinweis}
             farbe={baldOffen.length > 0 ? "rot" : "gruen"}
             icon={<Wallet size={18} />}
+            onClick={() => vertragKachelWaehlen("renewal")}
+            aktiv={vertragKachel === "renewal"}
           />
           <div className="col-span-2 min-w-0 lg:col-span-1">
             <KennzahlKarte
@@ -708,7 +747,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
       )}
 
       {unterTab === "uebersicht" && (
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-2">
+      <div ref={donglesKarteRef} className="scroll-mt-4 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-2">
         <h3 className="text-sm font-medium text-[var(--text-strong)]">
           {txt.alleDonglesTemplate.replace("{n}", String(alleDongles.length))}
         </h3>
@@ -847,10 +886,22 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
       )}
 
       {unterTab === "uebersicht" && (
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-2">
+      <div ref={vertraegeKarteRef} className="scroll-mt-4 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-4 space-y-2">
         <h3 className="text-sm font-medium text-[var(--text-strong)]">
           {txt.alleLizenzvertraegeTemplate.replace("{n}", String(alleVertraege.length))}
         </h3>
+        {vertragKachel && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-[var(--text-faint)]">{txt.kachelFilterLabel}:</span>
+            <button
+              onClick={() => setVertragKachel(null)}
+              title={txt.filterAufheben}
+              className="inline-flex items-center gap-1.5 rounded-full border border-akzent bg-akzent-soft px-3 py-1 text-xs font-medium text-akzent"
+            >
+              {vertragKachel === "bald" ? txt.kennzahlLaeuftAb : txt.kennzahlRenewalOffen} ({vertragUebersichtGefiltert.length}) ✕
+            </button>
+          </div>
+        )}
         <input
           type="text"
           value={vertragUebersichtSuche}

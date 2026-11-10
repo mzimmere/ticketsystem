@@ -973,6 +973,8 @@ export interface Uebersetzung {
     kennzahlLaeuftAbHinweis: string;
     kennzahlRenewalOffen: string;
     kennzahlRenewalOffenHinweis: string;
+    filterAufheben: string;
+    kachelFilterLabel: string;
     ablaufAbgelaufen: string;
     ablaufInTagenTemplate: string;
     untertabUebersicht: string;
@@ -2696,6 +2698,8 @@ const de: Uebersetzung = {
     kennzahlLaeuftAbHinweis: "aktive Lizenzverträge",
     kennzahlRenewalOffen: "Renewal offen",
     kennzahlRenewalOffenHinweis: "davon noch nicht bezahlt",
+    filterAufheben: "Filter aufheben",
+    kachelFilterLabel: "Gefiltert nach Kennzahl",
     ablaufAbgelaufen: "abgelaufen",
     ablaufInTagenTemplate: "in {n} Tagen",
     untertabUebersicht: "Übersicht",
@@ -4430,6 +4434,8 @@ const en: Uebersetzung = {
     kennzahlLaeuftAbHinweis: "active license contracts",
     kennzahlRenewalOffen: "Renewal unpaid",
     kennzahlRenewalOffenHinweis: "of those, not yet paid",
+    filterAufheben: "Remove filter",
+    kachelFilterLabel: "Filtered by metric",
     ablaufAbgelaufen: "expired",
     ablaufInTagenTemplate: "in {n} days",
     untertabUebersicht: "Overview",

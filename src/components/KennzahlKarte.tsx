@@ -19,6 +19,7 @@ export default function KennzahlKarte({
   farbe,
   icon,
   onClick,
+  aktiv,
 }: {
   label: string;
   wert: number | string;
@@ -27,6 +28,7 @@ export default function KennzahlKarte({
   farbe: KennzahlFarbe;
   icon: ReactNode;
   onClick?: () => void;
+  aktiv?: boolean;
 }) {
   const f = FARBEN[farbe];
   const inhalt = (
@@ -46,10 +48,15 @@ export default function KennzahlKarte({
       </span>
     </>
   );
-  const klasse =
-    "flex min-w-0 items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-3 text-left";
+  const klasse = `flex min-w-0 items-center gap-3 rounded-xl border bg-[var(--bg-surface)] p-3 text-left ${
+    aktiv ? "border-akzent" : "border-[var(--border)]"
+  }`;
   return onClick ? (
-    <button onClick={onClick} className={`${klasse} transition-colors hover:border-akzent`}>
+    <button
+      onClick={onClick}
+      aria-pressed={aktiv}
+      className={`${klasse} transition-colors hover:border-akzent`}
+    >
       {inhalt}
     </button>
   ) : (
