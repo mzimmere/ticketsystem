@@ -6,20 +6,15 @@ import DongleImport from "./DongleImport";
 import ProduktNachricht from "./ProduktNachricht";
 import GesendeteNachrichten from "./GesendeteNachrichten";
 import { benachrichtigeKunde } from "../lib/benachrichtigungen";
-import { Trash2, Copy, Check, KeyRound, Link2Off, CalendarClock, Wallet, LayoutList, Send, Upload, RefreshCw } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2, Copy, Check, KeyRound, Link2Off, CalendarClock, Wallet, LayoutList, Send, Upload, RefreshCw } from "lucide-react";
 import KennzahlKarte from "./KennzahlKarte";
 import ImportStandKarte from "./ImportStandKarte";
 import { importFarbe, alterInTagen, type ImportStand } from "../lib/importAlter";
 import { zuletztText } from "../lib/zeitText";
 import LeerHinweis from "./LeerHinweis";
 import { softwareStil } from "../lib/softwareStil";
-
-function ablaufInfo(ende: string): { tage: number; farbe: "rot" | "amber" | "neutral" } {
-  const heute = new Date();
-  heute.setHours(0, 0, 0, 0);
-  const tage = Math.round((new Date(ende).getTime() - heute.getTime()) / 86400000);
-  return { tage, farbe: tage < 0 ? "rot" : tage <= 30 ? "amber" : "neutral" };
-}
+import { ablaufInfo } from "../lib/ablaufInfo";
+import DongleDetailPanel, { VertragDetailPanel, type DetailDongle, type DetailVertrag } from "./DongleDetailPanel";
 
 interface Vorlage {
   betreff: string;
@@ -71,7 +66,7 @@ interface AlleDongle {
   wartungsvertrag: string;
   freiminuten_pro_monat: number;
   kunde_id: string | null;
-  kunde: { name: string | null } | null;
+  kunde: { name: string | null; firmenname: string | null } | null;
 }
 
 interface AlleVertrag {
@@ -81,7 +76,8 @@ interface AlleVertrag {
   vertrag_ende: string | null;
   status: string | null;
   kunde_id: string | null;
-  kunde: { name: string | null } | null;
+  dongle_id: string | null;
+  kunde: { name: string | null; firmenname: string | null } | null;
   aktuelle_engine_build: string | null;
   max_erlaubte_engine_build: string | null;
   renewal_bezahlt: boolean;
@@ -129,6 +125,16 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   const [einladungHinweis, setEinladungHinweis] = useState<string | null>(null);
   const [mailStatusByKunde, setMailStatusByKunde] = useState<Record<string, MailStatus>>({});
   const [kopiertId, setKopiertId] = useState<string | null>(null);
+  const detailTxt = texte(sprache).dongleDetail;
+  const [offenerDongleId, setOffenerDongleId] = useState<string | null>(null);
+  const [offenerVertragId, setOffenerVertragId] = useState<string | null>(null);
+
+  // Klick auf die Zeile klappt die Details auf - ausser er trifft ein Bedien-
+  // element (Kopieren, Auswahl, Loeschen, ...).
+  function zeilenKlick(e: React.MouseEvent, umschalten: () => void) {
+    if ((e.target as HTMLElement).closest("button, select, a, input, textarea")) return;
+    umschalten();
+  }
 
   async function seriennummerKopieren(id: string, seriennummer: string) {
     try {
@@ -250,7 +256,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   async function ladeAlleDongles() {
     const { data } = await supabase
       .from("kunden_dongles")
-      .select("id, seriennummer, software, wartungsvertrag, freiminuten_pro_monat, kunde_id, kunde:kunde_id(name)")
+      .select("id, seriennummer, software, wartungsvertrag, freiminuten_pro_monat, kunde_id, kunde:kunde_id(name, firmenname)")
       .eq("organisation_id", organisationId)
       .order("seriennummer");
     setAlleDongles((data as unknown as AlleDongle[]) ?? []);
@@ -271,7 +277,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   async function ladeAlleVertraege() {
     const { data } = await supabase
       .from("lizenz_vertraege")
-      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende, status, kunde_id, kunde:kunde_id(name), aktuelle_engine_build, max_erlaubte_engine_build, renewal_bezahlt")
+      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende, status, kunde_id, dongle_id, kunde:kunde_id(name, firmenname), aktuelle_engine_build, max_erlaubte_engine_build, renewal_bezahlt")
       .eq("organisation_id", organisationId)
       .order("lizenz_seriennummer");
     setAlleVertraege((data as unknown as AlleVertrag[]) ?? []);
@@ -730,10 +736,20 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
         ) : (
           <div className="space-y-1">
             {sichtbareDongleUebersicht.map((d) => (
+              <div key={d.id}>
               <div
-                key={d.id}
-                className="flex flex-wrap items-center gap-2 rounded bg-[var(--bg-muted)] px-3 py-1.5 text-sm"
+                onClick={(e) => zeilenKlick(e, () => setOffenerDongleId((id) => (id === d.id ? null : d.id)))}
+                title={detailTxt.detailsTitel}
+                aria-expanded={offenerDongleId === d.id}
+                className={`flex cursor-pointer flex-wrap items-center gap-2 rounded px-3 py-1.5 text-sm transition-colors hover:bg-[var(--border)] ${
+                  offenerDongleId === d.id ? "bg-[var(--border)]" : "bg-[var(--bg-muted)]"
+                }`}
               >
+                {offenerDongleId === d.id ? (
+                  <ChevronDown size={14} className="text-[var(--text-faint)]" />
+                ) : (
+                  <ChevronRight size={14} className="text-[var(--text-faint)]" />
+                )}
                 <span className="font-mono text-xs text-[var(--text-strong)]">{d.seriennummer}</span>
                 <button
                   onClick={() => seriennummerKopieren(d.id, d.seriennummer)}
@@ -769,6 +785,18 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                 >
                   <Trash2 size={14} />
                 </button>
+              </div>
+              {offenerDongleId === d.id && (
+                <DongleDetailPanel
+                  dongle={d as DetailDongle}
+                  vertraege={alleVertraege.filter(
+                    (v) =>
+                      v.dongle_id === d.id ||
+                      (!v.dongle_id && v.lizenz_seriennummer.toUpperCase().startsWith(`${d.seriennummer.toUpperCase()}-`)),
+                  ) as DetailVertrag[]}
+                  onRenewalUmschalten={renewalBezahltUmschalten}
+                />
+              )}
               </div>
             ))}
           </div>
@@ -863,12 +891,22 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
         ) : (
           <div className="space-y-1">
             {sichtbareVertragUebersicht.map((v) => (
+              <div key={v.id}>
               <div
-                key={v.id}
-                className="flex flex-col gap-2 rounded bg-[var(--bg-muted)] px-3 py-2 text-sm md:flex-row md:items-center md:gap-3"
+                onClick={(e) => zeilenKlick(e, () => setOffenerVertragId((id) => (id === v.id ? null : v.id)))}
+                title={detailTxt.detailsTitel}
+                aria-expanded={offenerVertragId === v.id}
+                className={`flex cursor-pointer flex-col gap-2 rounded px-3 py-2 text-sm transition-colors hover:bg-[var(--border)] md:flex-row md:items-center md:gap-3 ${
+                  offenerVertragId === v.id ? "bg-[var(--border)]" : "bg-[var(--bg-muted)]"
+                }`}
               >
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                    {offenerVertragId === v.id ? (
+                      <ChevronDown size={14} className="self-center text-[var(--text-faint)]" />
+                    ) : (
+                      <ChevronRight size={14} className="self-center text-[var(--text-faint)]" />
+                    )}
                     <span className="font-mono text-xs text-[var(--text-strong)]">{v.lizenz_seriennummer}</span>
                     <span className="text-xs text-[var(--text-faint)]">· {v.produkt_name}</span>
                     {v.status && <span className="text-xs text-[var(--text-faint)]">({v.status})</span>}
@@ -944,6 +982,19 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                     </option>
                   ))}
                 </select>
+              </div>
+              {offenerVertragId === v.id && (() => {
+                const verknuepft = v.dongle_id ? (alleDongles.find((d) => d.id === v.dongle_id) ?? null) : null;
+                const praefix = v.lizenz_seriennummer.split("-")[0].toUpperCase();
+                const passend = verknuepft ? null : (alleDongles.find((d) => d.seriennummer.toUpperCase() === praefix) ?? null);
+                return (
+                  <VertragDetailPanel
+                    vertrag={v as DetailVertrag}
+                    dongle={verknuepft as DetailDongle | null}
+                    passenderDongle={passend as DetailDongle | null}
+                  />
+                );
+              })()}
               </div>
             ))}
           </div>

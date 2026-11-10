@@ -1556,6 +1556,26 @@ export interface Uebersetzung {
     hinweiseBlatt: string;
     hinweise: string[];
   };
+  dongleDetail: {
+    detailsTitel: string;
+    kunde: string;
+    keinKunde: string;
+    software: string;
+    wartungsvertrag: string;
+    freiminuten: string;
+    vertraege: string;
+    keinVertrag: string;
+    nichtVerknuepft: string;
+    vertragKunde: string;
+    module: string;
+    keineModule: string;
+    offeneTickets: string;
+    dongle: string;
+    dongleKunde: string;
+    passenderDongleTemplate: string;
+    keinDongle: string;
+    laedt: string;
+  };
   kundenImport: {
     label: string;
     sub: string;
@@ -3268,6 +3288,26 @@ const de: Uebersetzung = {
       "Neue Kunden werden nicht aus Zeilen ohne ID angelegt – dafür bitte „Neuer Kunde“ (Einladung) nutzen.",
       "Vor dem Speichern zeigt das System alle Änderungen in einer Vorschau an.",
     ],
+  },
+  dongleDetail: {
+    detailsTitel: "Details ein-/ausklappen",
+    kunde: "Kunde",
+    keinKunde: "Keinem Kunden zugeordnet",
+    software: "Software",
+    wartungsvertrag: "Wartungsvertrag",
+    freiminuten: "Freiminuten / Monat",
+    vertraege: "Lizenzverträge",
+    keinVertrag: "Kein Lizenzvertrag verknüpft.",
+    nichtVerknuepft: "nicht verknüpft",
+    vertragKunde: "Kunde des Vertrags",
+    module: "Module",
+    keineModule: "Keine Module erfasst.",
+    offeneTickets: "Offene Tickets",
+    dongle: "Dongle",
+    dongleKunde: "Dongle gehört zu",
+    passenderDongleTemplate: "Passender Dongle {serial} vorhanden, aber nicht mit diesem Vertrag verknüpft.",
+    keinDongle: "Kein passender Dongle gefunden.",
+    laedt: "Lädt…",
   },
   kundenImport: {
     label: "Kundendaten importieren (Excel)",
@@ -4982,6 +5022,26 @@ const en: Uebersetzung = {
       "New customers are not created from rows without an ID – please use “New customer” (invitation) instead.",
       "Before saving, the system shows all changes in a preview.",
     ],
+  },
+  dongleDetail: {
+    detailsTitel: "Expand/collapse details",
+    kunde: "Customer",
+    keinKunde: "Not assigned to a customer",
+    software: "Software",
+    wartungsvertrag: "Maintenance contract",
+    freiminuten: "Free minutes / month",
+    vertraege: "License contracts",
+    keinVertrag: "No license contract linked.",
+    nichtVerknuepft: "not linked",
+    vertragKunde: "Customer of the contract",
+    module: "Modules",
+    keineModule: "No modules recorded.",
+    offeneTickets: "Open tickets",
+    dongle: "Dongle",
+    dongleKunde: "Dongle belongs to",
+    passenderDongleTemplate: "Matching dongle {serial} exists but is not linked to this contract.",
+    keinDongle: "No matching dongle found.",
+    laedt: "Loading…",
   },
   kundenImport: {
     label: "Import customer data (Excel)",
