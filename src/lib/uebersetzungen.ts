@@ -988,6 +988,10 @@ export interface Uebersetzung {
     zuordnungAendernTitle: string;
     zuordnungAufhebenConfirmTemplate: string;
     zuordnungAendernConfirmTemplate: string;
+    dongleZuordnungAendernTitle: string;
+    dongleZuordnungAufhebenConfirmTemplate: string;
+    dongleZuordnungAendernConfirmTemplate: string;
+    fehlerDongleZuordnen: string;
     alleLizenzvertraegeTemplate: string;
     sucheSeriennummerProduktKunde: string;
     buildLabel: string;
@@ -2713,6 +2717,10 @@ const de: Uebersetzung = {
     zuordnungAendernTitle: "Kunden dieses Lizenzvertrags ändern oder Zuordnung aufheben (die Verknüpfung zum bisherigen Dongle wird dabei gelöst)",
     zuordnungAufhebenConfirmTemplate: "Zuordnung von Lizenz {seriennummer} zu {kunde} wirklich aufheben? Der Vertrag landet wieder im Pool \"Nicht zugeordnet\".",
     zuordnungAendernConfirmTemplate: "Lizenz {seriennummer} von {alt} zu {neu} umhängen?",
+    dongleZuordnungAendernTitle: "Kunden dieses Dongles zuordnen, ändern oder die Zuordnung aufheben",
+    dongleZuordnungAufhebenConfirmTemplate: "Zuordnung von Dongle {seriennummer} zu {kunde} wirklich aufheben? Der Dongle landet wieder im Pool \"Nicht zugeordnet\".",
+    dongleZuordnungAendernConfirmTemplate: "Dongle {seriennummer} von {alt} zu {neu} umhängen?",
+    fehlerDongleZuordnen: "Die Zuordnung konnte nicht gespeichert werden.",
     alleLizenzvertraegeTemplate: "Alle Lizenzverträge ({n})",
     sucheSeriennummerProduktKunde: "Suche nach Seriennummer, Produkt oder Kunde…",
     buildLabel: "Build",
@@ -4449,6 +4457,10 @@ const en: Uebersetzung = {
     zuordnungAendernTitle: "Change this license contract's customer or remove the assignment (the link to the previous dongle is cleared)",
     zuordnungAufhebenConfirmTemplate: "Really remove license {seriennummer} from {kunde}? The contract returns to the \"Not assigned\" pool.",
     zuordnungAendernConfirmTemplate: "Move license {seriennummer} from {alt} to {neu}?",
+    dongleZuordnungAendernTitle: "Assign this dongle to a customer, change it or remove the assignment",
+    dongleZuordnungAufhebenConfirmTemplate: "Really remove dongle {seriennummer} from {kunde}? The dongle returns to the \"Not assigned\" pool.",
+    dongleZuordnungAendernConfirmTemplate: "Move dongle {seriennummer} from {alt} to {neu}?",
+    fehlerDongleZuordnen: "The assignment could not be saved.",
     alleLizenzvertraegeTemplate: "All license contracts ({n})",
     sucheSeriennummerProduktKunde: "Search by serial number, product, or customer…",
     buildLabel: "Build",

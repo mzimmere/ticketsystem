@@ -289,6 +289,32 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
     setAlleDongles((data as unknown as AlleDongle[]) ?? []);
   }
 
+  // Kunde eines Dongles direkt in der Dongle-Uebersicht setzen, aendern oder
+  // aufheben (wie bei den Lizenzvertraegen). Die erste Zuordnung braucht keine
+  // Rueckfrage, ein Umhaengen oder Aufheben schon.
+  async function dongleKundeAendern(d: AlleDongle, neuerKundeId: string) {
+    const neu = neuerKundeId || null;
+    if (neu === d.kunde_id) return;
+    if (d.kunde_id) {
+      const alt = d.kunde?.name ?? txt.unbenannt;
+      const meldung = neu
+        ? txt.dongleZuordnungAendernConfirmTemplate
+            .replace("{seriennummer}", d.seriennummer)
+            .replace("{alt}", alt)
+            .replace("{neu}", kunden.find((k) => k.id === neu)?.name ?? txt.unbenannt)
+        : txt.dongleZuordnungAufhebenConfirmTemplate.replace("{seriennummer}", d.seriennummer).replace("{kunde}", alt);
+      if (!confirm(meldung)) return;
+    }
+    const { error } = await supabase.from("kunden_dongles").update({ kunde_id: neu }).eq("id", d.id);
+    if (error) {
+      console.error(error);
+      alert(txt.fehlerDongleZuordnen);
+    }
+    ladeAlleDongles();
+    ladeNichtZugeordnete();
+    ladeAlleVertraege();
+  }
+
   async function dongleLoeschen(id: string, seriennummer: string) {
     if (!confirm(dongleTxt.loeschenConfirmTemplate.replace("{seriennummer}", seriennummer))) return;
     const { error } = await supabase.from("kunden_dongles").delete().eq("id", id);
@@ -810,13 +836,24 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                     </option>
                   ))}
                 </select>
-                <span
-                  className={`ml-auto text-xs ${
-                    d.kunde?.name ? "text-[var(--text-soft)]" : "italic text-[var(--text-faint)]"
+                <select
+                  value={d.kunde_id ?? ""}
+                  onChange={(e) => dongleKundeAendern(d, e.target.value)}
+                  title={txt.dongleZuordnungAendernTitle}
+                  className={`ml-auto w-44 max-w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-2 py-1 text-xs ${
+                    d.kunde_id ? "text-[var(--text-soft)]" : "italic text-[var(--text-faint)]"
                   }`}
                 >
-                  {d.kunde?.name ?? txt.nichtZugeordnet}
-                </span>
+                  <option value="">{d.kunde_id ? txt.zuordnungAufheben : txt.nichtZugeordnet}</option>
+                  {d.kunde_id && !kunden.some((k) => k.id === d.kunde_id) && (
+                    <option value={d.kunde_id}>{d.kunde?.name ?? txt.unbenannt}</option>
+                  )}
+                  {kunden.map((k) => (
+                    <option key={k.id} value={k.id}>
+                      {k.name ?? txt.unbenannt}
+                    </option>
+                  ))}
+                </select>
                 <button
                   onClick={() => dongleLoeschen(d.id, d.seriennummer)}
                   title={dongleTxt.dongleLoeschen}
