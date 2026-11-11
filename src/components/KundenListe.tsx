@@ -15,7 +15,9 @@ import LeerZustand from "./LeerZustand";
 import { zuletztText, vonDatum, alsBesuchsZeilen, type BesuchsZeile } from "../lib/zeitText";
 import { ladeSeiten } from "../lib/ladeSeiten";
 import { kundenExcelExportieren } from "../lib/kundenExport";
-import { Camera, ChevronDown, ChevronLeft, Download, Handshake, KeyRound, X } from "lucide-react";
+import { Activity, Camera, ChevronDown, ChevronLeft, Download, Handshake, Inbox, KeyRound, Ticket as TicketIcon, UserX, Users, X } from "lucide-react";
+import KennzahlKarte from "./KennzahlKarte";
+import { ladeKundenStatistik, type KundenStat } from "../lib/kundenStatistik";
 
 interface Kunde {
   id: string;
@@ -134,6 +136,11 @@ export default function KundenListe({
   const [tab, setTab] = useState<DetailTab>("stammdaten");
   const [kennzahlen, setKennzahlen] = useState<Record<string, KundenKennzahl>>({});
   const [besuche, setBesuche] = useState<Record<string, BesuchsZeile>>({});
+  // Uebersicht ueber der Liste: Tickets/Besuche der letzten 30 Tage je Kunde.
+  // Ein Klick auf "offene Tickets" bzw. "ohne Ticket" filtert die Liste.
+  const [statistik, setStatistik] = useState<Record<string, KundenStat>>({});
+  const [kachelFilter, setKachelFilter] = useState<"offen" | "ohneTicket" | null>(null);
+  const uebersichtTxt = texte(sprache).kundenUebersicht;
   const [entwurf, setEntwurf] = useState<Partial<Kunde>>({});
   const [preise, setPreise] = useState<KundenPreis[]>([]);
   const [neuesPreisDatum, setNeuesPreisDatum] = useState("");
@@ -194,6 +201,18 @@ export default function KundenListe({
   useEffect(() => {
     ladeKennzahlen();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organisationId, refreshKey, mergeVersion]);
+
+  useEffect(() => {
+    let abgebrochen = false;
+    ladeKundenStatistik(organisationId, 30)
+      .then((s) => {
+        if (!abgebrochen) setStatistik(s);
+      })
+      .catch((err) => console.error("[KundenListe] Statistik fehlgeschlagen:", err));
+    return () => {
+      abgebrochen = true;
+    };
   }, [organisationId, refreshKey, mergeVersion]);
 
   // Zähler für die Badges in der Liste: Dongles je Kunde und aktive
@@ -550,6 +569,12 @@ export default function KundenListe({
         )
       : null;
 
+  const grenze90 = Date.now() - 90 * 86400000;
+  const kundeOhneTicket = (id: string) => {
+    const letztes = statistik[id]?.letztesTicket;
+    return !letztes || new Date(letztes).getTime() < grenze90;
+  };
+
   const gefilterteKunden = kunden.filter((k) => {
     const begriff = suchbegriff.trim().toLowerCase();
     if (begriff) {
@@ -560,9 +585,12 @@ export default function KundenListe({
       if (!treffer) return false;
     }
     if (hardwareGefilterteKundenIds && !hardwareGefilterteKundenIds.has(k.id)) return false;
+    if (kachelFilter === "offen" && !(statistik[k.id]?.offen ?? 0)) return false;
+    if (kachelFilter === "ohneTicket" && !kundeOhneTicket(k.id)) return false;
     return true;
   });
-  const kundenSuchtAktiv = suchbegriff.trim() !== "" || (filterKategorieId !== "" && filterWert !== "");
+  const kundenSuchtAktiv =
+    suchbegriff.trim() !== "" || (filterKategorieId !== "" && filterWert !== "") || kachelFilter !== null;
 
   // Kunden eines Subresellers erscheinen eingerueckt unter dessen Gruppen-
   // Karte; alle anderen ("direkte Kunden") darunter wie bisher.
@@ -575,6 +603,19 @@ export default function KundenListe({
     ? direkteKunden
     : direkteKunden.slice(0, KUNDEN_STANDARD_SICHTBAR);
 
+
+  // Kennzahlen fuer die Kachelreihe (nur die aktuell geladene Kundenliste)
+  const nachName = (a: Kunde, b: Kunde) => (a.name ?? "").localeCompare(b.name ?? "", "de");
+  const besterKunde = (wert: (s: KundenStat | undefined) => number) =>
+    kunden
+      .filter((k) => wert(statistik[k.id]) > 0)
+      .sort((a, b) => wert(statistik[b.id]) - wert(statistik[a.id]) || nachName(a, b))[0] ?? null;
+  const meisteTicketsKunde = besterKunde((s) => s?.tickets ?? 0);
+  const aktivsterKunde = besterKunde((s) => s?.besuche ?? 0);
+  const kundenMitOffenen = kunden.filter((k) => (statistik[k.id]?.offen ?? 0) > 0);
+  const offeneTicketsSumme = kundenMitOffenen.reduce((s, k) => s + (statistik[k.id]?.offen ?? 0), 0);
+  const kundenOhneTicketAnzahl = kunden.filter((k) => kundeOhneTicket(k.id)).length;
+  const kundenMitWartung = kunden.filter((k) => k.wartungsvertrag_stufe_id).length;
 
   const feld =
     "w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm text-[var(--text-strong)]";
@@ -700,6 +741,84 @@ export default function KundenListe({
 
   return (
     <div className="space-y-3">
+      {!zeigeArchivierte && kunden.length > 0 && (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <KennzahlKarte
+            label={uebersichtTxt.kunden}
+            wert={kunden.length}
+            hinweis={uebersichtTxt.kundenHinweisTemplate.replace("{n}", String(kundenMitWartung))}
+            hinweisUmbrechen
+            farbe="blau"
+            icon={<Users size={18} />}
+            onClick={() => {
+              setKachelFilter(null);
+              setSuchbegriff("");
+            }}
+          />
+          <KennzahlKarte
+            label={uebersichtTxt.meisteTickets}
+            wert={meisteTicketsKunde ? (statistik[meisteTicketsKunde.id]?.tickets ?? 0) : uebersichtTxt.keineDaten}
+            hinweis={
+              meisteTicketsKunde
+                ? uebersichtTxt.meisteHinweisTemplate.replace("{name}", meisteTicketsKunde.firmenname || meisteTicketsKunde.name || "?")
+                : undefined
+            }
+            hinweisUmbrechen
+            farbe="amber"
+            icon={<TicketIcon size={18} />}
+            onClick={meisteTicketsKunde ? () => bearbeitenOeffnen(meisteTicketsKunde) : undefined}
+          />
+          <KennzahlKarte
+            label={uebersichtTxt.aktivster}
+            wert={aktivsterKunde ? (statistik[aktivsterKunde.id]?.besuche ?? 0) : uebersichtTxt.keineDaten}
+            hinweis={
+              aktivsterKunde
+                ? uebersichtTxt.aktivsterHinweisTemplate.replace("{name}", aktivsterKunde.firmenname || aktivsterKunde.name || "?")
+                : undefined
+            }
+            hinweisUmbrechen
+            farbe="gruen"
+            icon={<Activity size={18} />}
+            onClick={aktivsterKunde ? () => bearbeitenOeffnen(aktivsterKunde) : undefined}
+          />
+          <KennzahlKarte
+            label={uebersichtTxt.offeneTickets}
+            wert={kundenMitOffenen.length}
+            hinweis={uebersichtTxt.offeneHinweisTemplate.replace("{n}", String(offeneTicketsSumme))}
+            hinweisUmbrechen
+            farbe={kundenMitOffenen.length > 0 ? "rot" : "gruen"}
+            icon={<Inbox size={18} />}
+            onClick={() => setKachelFilter((f) => (f === "offen" ? null : "offen"))}
+            aktiv={kachelFilter === "offen"}
+          />
+          <div className="col-span-2 min-w-0 lg:col-span-1">
+            <KennzahlKarte
+              label={uebersichtTxt.ohneTicket}
+              wert={kundenOhneTicketAnzahl}
+              hinweis={uebersichtTxt.ohneTicketHinweis}
+              hinweisUmbrechen
+              farbe="neutral"
+              icon={<UserX size={18} />}
+              onClick={() => setKachelFilter((f) => (f === "ohneTicket" ? null : "ohneTicket"))}
+              aktiv={kachelFilter === "ohneTicket"}
+            />
+          </div>
+        </div>
+      )}
+
+      {kachelFilter && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-[var(--text-faint)]">{uebersichtTxt.gefiltertNach}:</span>
+          <button
+            onClick={() => setKachelFilter(null)}
+            title={uebersichtTxt.filterAufheben}
+            className="inline-flex items-center gap-1.5 rounded-full border border-akzent bg-akzent-soft px-3 py-1 text-xs font-medium text-akzent"
+          >
+            {kachelFilter === "offen" ? uebersichtTxt.offeneTickets : uebersichtTxt.ohneTicket} ({gefilterteKunden.length}) ✕
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-2">
         <input
           type="text"

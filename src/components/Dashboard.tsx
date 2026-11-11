@@ -5,6 +5,7 @@ import { KpiSkeleton } from "./Skeleton";
 import MitarbeiterAuswertung from "./MitarbeiterAuswertung";
 import KundenAktivitaet from "./KundenAktivitaet";
 import CsatListe from "./CsatListe";
+import TopKunden from "./TopKunden";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
 
@@ -420,6 +421,9 @@ export default function Dashboard({ organisationId, onTicketOeffnen }: Dashboard
 
           {/* Mitarbeiter-Auswertung (nur Admins sehen das Dashboard) */}
           <MitarbeiterAuswertung organisationId={organisationId} zeitraum={zeitraum} />
+
+          {/* Top-Kunden: Tickets, erfasste Zeit, Portal-Besuche */}
+          <TopKunden organisationId={organisationId} zeitraum={zeitraum} />
 
           {/* Kunden-Aktivität im Portal */}
           <KundenAktivitaet organisationId={organisationId} zeitraum={zeitraum} />

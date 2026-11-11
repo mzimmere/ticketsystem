@@ -1562,6 +1562,36 @@ export interface Uebersetzung {
     hinweiseBlatt: string;
     hinweise: string[];
   };
+  kundenUebersicht: {
+    kunden: string;
+    kundenHinweisTemplate: string;
+    meisteTickets: string;
+    aktivster: string;
+    aktivsterHinweisTemplate: string;
+    offeneTickets: string;
+    offeneHinweisTemplate: string;
+    ohneTicket: string;
+    ohneTicketHinweis: string;
+    keineDaten: string;
+    gefiltertNach: string;
+    filterAufheben: string;
+    meisteHinweisTemplate: string;
+  };
+  topKunden: {
+    titel: string;
+    hinweis: string;
+    tabTickets: string;
+    tabZeit: string;
+    tabBesuche: string;
+    kunde: string;
+    keineDaten: string;
+    laedt: string;
+    besuchHinweis: string;
+    ticketsEinheit: string;
+    besucheEinheit: string;
+    offen: string;
+    letzterBesuch: string;
+  };
   dongleDetail: {
     detailsTitel: string;
     kunde: string;
@@ -3300,6 +3330,36 @@ const de: Uebersetzung = {
       "Neue Kunden werden nicht aus Zeilen ohne ID angelegt – dafür bitte „Neuer Kunde“ (Einladung) nutzen.",
       "Vor dem Speichern zeigt das System alle Änderungen in einer Vorschau an.",
     ],
+  },
+  kundenUebersicht: {
+    kunden: "Kunden",
+    kundenHinweisTemplate: "{n} mit Wartungsvertrag",
+    meisteTickets: "Meiste Tickets",
+    aktivster: "Aktivster Kunde",
+    aktivsterHinweisTemplate: "{name} · Besuche, 30 Tage",
+    offeneTickets: "Mit offenen Tickets",
+    offeneHinweisTemplate: "{n} Tickets offen",
+    ohneTicket: "Ohne Ticket (90 Tage)",
+    ohneTicketHinweis: "Kunden, die sich nicht gemeldet haben",
+    keineDaten: "—",
+    gefiltertNach: "Gefiltert nach",
+    filterAufheben: "Filter aufheben",
+    meisteHinweisTemplate: "{name} · Tickets, 30 Tage",
+  },
+  topKunden: {
+    titel: "Top-Kunden",
+    hinweis: "Rangliste im gewählten Zeitraum",
+    tabTickets: "Tickets",
+    tabZeit: "Erfasste Zeit",
+    tabBesuche: "Portal-Besuche",
+    kunde: "Kunde",
+    keineDaten: "Keine Daten im gewählten Zeitraum.",
+    laedt: "Wird geladen…",
+    besuchHinweis: "Portal-Besuche werden erst seit Einführung der Besuchserfassung gezählt.",
+    ticketsEinheit: "Tickets",
+    besucheEinheit: "Besuche",
+    offen: "offen",
+    letzterBesuch: "zuletzt",
   },
   dongleDetail: {
     detailsTitel: "Details ein-/ausklappen",
@@ -5040,6 +5100,36 @@ const en: Uebersetzung = {
       "New customers are not created from rows without an ID – please use “New customer” (invitation) instead.",
       "Before saving, the system shows all changes in a preview.",
     ],
+  },
+  kundenUebersicht: {
+    kunden: "Customers",
+    kundenHinweisTemplate: "{n} with maintenance contract",
+    meisteTickets: "Most tickets",
+    aktivster: "Most active customer",
+    aktivsterHinweisTemplate: "{name} · visits, 30 days",
+    offeneTickets: "With open tickets",
+    offeneHinweisTemplate: "{n} tickets open",
+    ohneTicket: "No ticket (90 days)",
+    ohneTicketHinweis: "Customers who have not been in touch",
+    keineDaten: "—",
+    gefiltertNach: "Filtered by",
+    filterAufheben: "Remove filter",
+    meisteHinweisTemplate: "{name} · tickets, 30 days",
+  },
+  topKunden: {
+    titel: "Top customers",
+    hinweis: "Ranking for the selected period",
+    tabTickets: "Tickets",
+    tabZeit: "Tracked time",
+    tabBesuche: "Portal visits",
+    kunde: "Customer",
+    keineDaten: "No data in the selected period.",
+    laedt: "Loading…",
+    besuchHinweis: "Portal visits have only been counted since visit tracking was introduced.",
+    ticketsEinheit: "Tickets",
+    besucheEinheit: "Visits",
+    offen: "open",
+    letzterBesuch: "last",
   },
   dongleDetail: {
     detailsTitel: "Expand/collapse details",
