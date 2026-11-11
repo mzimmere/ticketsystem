@@ -3,6 +3,7 @@ import { ChevronDown } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import Avatar from "./Avatar";
 import NeuesTicketIntern from "./NeuesTicketIntern";
+import TicketMassenleiste from "./TicketMassenleiste";
 import StatusBadge from "./StatusBadge";
 import { TicketZeileSkeleton } from "./Skeleton";
 import LeerZustand from "./LeerZustand";
@@ -247,6 +248,10 @@ export default function TicketUebersicht({
   const [nachrichtTrefferIds, setNachrichtTrefferIds] = useState<Set<string>>(new Set());
   const [laedt, setLaedt] = useState(true);
   const [zeigeNeuesTicket, setZeigeNeuesTicket] = useState(startMitNeuemTicket ?? false);
+  // Massenbearbeitung: angehakte Tickets (Status/Zuweisung fuer alle auf einmal)
+  const [auswahl, setAuswahl] = useState<Set<string>>(new Set());
+  const txtMassen = texte(sprache).ticketMassen;
+  const [massenMeldung, setMassenMeldung] = useState<string | null>(null);
 
   useEffect(() => {
     if (startMitNeuemTicket) onStartMitNeuemTicketKonsumiert?.();
@@ -351,6 +356,37 @@ export default function TicketUebersicht({
       );
     });
   }, [tickets, suchbegriff, tagFilter, nachrichtTrefferIds, nurSlaVerletzt]);
+
+  // Nach jedem Neuladen nur Tickets angehakt lassen, die es noch gibt; angewendet
+  // wird immer nur auf das, was gerade in der Liste sichtbar ist.
+  useEffect(() => {
+    setAuswahl((vorher) => {
+      const ids = new Set(tickets.map((t) => t.id));
+      const neu = new Set([...vorher].filter((id) => ids.has(id)));
+      return neu.size === vorher.size ? vorher : neu;
+    });
+  }, [tickets]);
+
+  const ausgewaehlteSichtbar = gefilterteTickets.filter((t) => auswahl.has(t.id));
+  const alleSichtbarGewaehlt = gefilterteTickets.length > 0 && ausgewaehlteSichtbar.length === gefilterteTickets.length;
+
+  function auswahlUmschalten(id: string) {
+    setAuswahl((vorher) => {
+      const neu = new Set(vorher);
+      if (neu.has(id)) neu.delete(id);
+      else neu.add(id);
+      return neu;
+    });
+  }
+
+  function alleSichtbarUmschalten() {
+    setAuswahl((vorher) => {
+      const neu = new Set(vorher);
+      if (alleSichtbarGewaehlt) gefilterteTickets.forEach((t) => neu.delete(t.id));
+      else gefilterteTickets.forEach((t) => neu.add(t.id));
+      return neu;
+    });
+  }
 
   return (
     <div className="space-y-4">
@@ -494,6 +530,27 @@ export default function TicketUebersicht({
         )}
       </div>
 
+      {massenMeldung && (
+        <p className="rounded-lg bg-[var(--status-geloest-bg)] px-3 py-2 text-sm font-medium text-[var(--status-geloest-text)]">
+          ✓ {massenMeldung}
+        </p>
+      )}
+
+      {organisationId && ausgewaehlteSichtbar.length > 0 && (
+        <TicketMassenleiste
+          tickets={ausgewaehlteSichtbar.map((t) => ({ id: t.id, status: t.status }))}
+          organisationId={organisationId}
+          technikerId={technikerId}
+          onFertig={(anzahl) => {
+            setAuswahl(new Set());
+            setMassenMeldung(txtMassen.erfolgTemplate.replace("{n}", String(anzahl)));
+            setTimeout(() => setMassenMeldung(null), 5000);
+            ladeTickets();
+          }}
+          onAufheben={() => setAuswahl(new Set())}
+        />
+      )}
+
       {/* Tabelle */}
       {!organisationId ? (
         <p className="text-sm text-[var(--text-faint)]">
@@ -518,7 +575,14 @@ export default function TicketUebersicht({
       ) : (
         <div className="overflow-hidden rounded-lg border border-[var(--border)]">
           <div className="hidden items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-muted)] px-4 py-1.5 text-[0.65rem] font-medium uppercase tracking-wide text-[var(--text-faint)] sm:flex">
-            <span className="w-2" />
+            <input
+              type="checkbox"
+              checked={alleSichtbarGewaehlt}
+              onChange={alleSichtbarUmschalten}
+              title={txtMassen.alleSichtbar}
+              aria-label={txtMassen.alleSichtbar}
+              className="h-4 w-4 cursor-pointer"
+            />
             <span className="w-10">{txt.spalteNr}</span>
             <span className="flex-1">{txt.spalteBetreffKunde}</span>
             <span className="w-20 text-right">{txt.spalteStatus}</span>
@@ -528,12 +592,12 @@ export default function TicketUebersicht({
           {gefilterteTickets.map((ticket) => {
             const ungelesen = istUngelesen(ticket);
             const slaVerletzt = istSlaVerletzt(ticket);
+            const angehakt = auswahl.has(ticket.id);
             return (
-            <button
+            <div
               key={ticket.id}
-              onClick={() => onAuswahl(ticket.id)}
-              className={`relative flex w-full items-center gap-3 border-b border-[var(--border)] py-3 pl-5 pr-4 text-left last:border-b-0 hover:bg-[var(--bg-muted)] ${
-                ungelesen ? "bg-amber-50/60 dark:bg-akzent/10" : "bg-[var(--bg-surface)]"
+              className={`relative flex w-full items-stretch border-b border-[var(--border)] last:border-b-0 hover:bg-[var(--bg-muted)] ${
+                angehakt ? "bg-akzent-soft" : ungelesen ? "bg-amber-50/60 dark:bg-akzent/10" : "bg-[var(--bg-surface)]"
               }`}
             >
               {/* Prioritäts-Farbstreifen */}
@@ -542,6 +606,22 @@ export default function TicketUebersicht({
                 style={{ background: PRIORITAET_AKZENT[ticket.prioritaet] }}
                 title={prioritaetTxt[ticket.prioritaet]}
               />
+              <label
+                className="flex w-11 shrink-0 cursor-pointer items-center justify-center pl-2"
+                title={txtMassen.ticketAuswaehlen}
+              >
+                <input
+                  type="checkbox"
+                  checked={angehakt}
+                  onChange={() => auswahlUmschalten(ticket.id)}
+                  aria-label={`${txtMassen.ticketAuswaehlen} #${ticket.ticket_nr}`}
+                  className="h-4 w-4 cursor-pointer"
+                />
+              </label>
+              <button
+                onClick={() => onAuswahl(ticket.id)}
+                className="flex min-w-0 flex-1 items-center gap-3 py-3 pr-4 text-left"
+              >
               <span className="hidden w-10 shrink-0 font-mono text-xs text-[var(--text-faint)] sm:inline">
                 #{ticket.ticket_nr}
               </span>
@@ -602,7 +682,8 @@ export default function TicketUebersicht({
                   {formatRelativ(ticket.erstellt_am, sprache)}
                 </span>
               </div>
-            </button>
+              </button>
+            </div>
             );
           })}
         </div>

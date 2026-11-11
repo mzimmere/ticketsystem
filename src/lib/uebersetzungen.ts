@@ -1562,6 +1562,28 @@ export interface Uebersetzung {
     hinweiseBlatt: string;
     hinweise: string[];
   };
+  ticketMassen: {
+    ausgewaehltTemplate: string;
+    statusAendern: string;
+    zuweisen: string;
+    zuweisungEntfernen: string;
+    benachrichtigen: string;
+    benachrichtigenHinweis: string;
+    anwendenTemplate: string;
+    auswahlAufheben: string;
+    ticketAuswaehlen: string;
+    alleSichtbar: string;
+    bestaetigungTemplate: string;
+    statusZeileTemplate: string;
+    zuweisungZeileTemplate: string;
+    zuweisungEntferntZeile: string;
+    benachrichtigungAn: string;
+    benachrichtigungAus: string;
+    speichert: string;
+    erfolgTemplate: string;
+    fehler: string;
+    ohneZuweisung: string;
+  };
   kundenUebersicht: {
     kunden: string;
     kundenHinweisTemplate: string;
@@ -3330,6 +3352,28 @@ const de: Uebersetzung = {
       "Neue Kunden werden nicht aus Zeilen ohne ID angelegt – dafür bitte „Neuer Kunde“ (Einladung) nutzen.",
       "Vor dem Speichern zeigt das System alle Änderungen in einer Vorschau an.",
     ],
+  },
+  ticketMassen: {
+    ausgewaehltTemplate: "{n} ausgewählt",
+    statusAendern: "Status ändern…",
+    zuweisen: "Mitarbeiter zuweisen…",
+    zuweisungEntfernen: "Zuweisung entfernen",
+    benachrichtigen: "Benachrichtigungen an Kunden und Mitarbeiter versenden",
+    benachrichtigenHinweis: "Aus = die Tickets werden still umgestellt, es gehen keine Mails raus (bei vielen Tickets empfohlen).",
+    anwendenTemplate: "Auf {n} Tickets anwenden",
+    auswahlAufheben: "Auswahl aufheben",
+    ticketAuswaehlen: "Ticket auswählen",
+    alleSichtbar: "Alle sichtbaren Tickets auswählen bzw. abwählen",
+    bestaetigungTemplate: "{n} Tickets ändern:\n{aenderungen}\n\nBenachrichtigungen: {benachrichtigung}\n\nFortfahren?",
+    statusZeileTemplate: "• Status → {status}",
+    zuweisungZeileTemplate: "• Zuständig → {name}",
+    zuweisungEntferntZeile: "• Zuweisung entfernen",
+    benachrichtigungAn: "werden versendet",
+    benachrichtigungAus: "werden nicht versendet",
+    speichert: "Wird gespeichert…",
+    erfolgTemplate: "{n} Tickets aktualisiert.",
+    fehler: "Die Änderung konnte nicht gespeichert werden.",
+    ohneZuweisung: "ohne Zuweisung",
   },
   kundenUebersicht: {
     kunden: "Kunden",
@@ -5100,6 +5144,28 @@ const en: Uebersetzung = {
       "New customers are not created from rows without an ID – please use “New customer” (invitation) instead.",
       "Before saving, the system shows all changes in a preview.",
     ],
+  },
+  ticketMassen: {
+    ausgewaehltTemplate: "{n} selected",
+    statusAendern: "Change status…",
+    zuweisen: "Assign to…",
+    zuweisungEntfernen: "Remove assignment",
+    benachrichtigen: "Send notifications to customers and staff",
+    benachrichtigenHinweis: "Off = tickets are changed silently, no emails are sent (recommended for many tickets).",
+    anwendenTemplate: "Apply to {n} tickets",
+    auswahlAufheben: "Clear selection",
+    ticketAuswaehlen: "Select ticket",
+    alleSichtbar: "Select or deselect all visible tickets",
+    bestaetigungTemplate: "Change {n} tickets:\n{aenderungen}\n\nNotifications: {benachrichtigung}\n\nContinue?",
+    statusZeileTemplate: "• Status → {status}",
+    zuweisungZeileTemplate: "• Assignee → {name}",
+    zuweisungEntferntZeile: "• Remove assignment",
+    benachrichtigungAn: "will be sent",
+    benachrichtigungAus: "will not be sent",
+    speichert: "Saving…",
+    erfolgTemplate: "{n} tickets updated.",
+    fehler: "The change could not be saved.",
+    ohneZuweisung: "unassigned",
   },
   kundenUebersicht: {
     kunden: "Customers",
