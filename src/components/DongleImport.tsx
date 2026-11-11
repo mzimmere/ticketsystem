@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { parseCsv } from "../lib/csv";
+import { ladeSeiten } from "../lib/ladeSeiten";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
 import DateiAuswahl from "./DateiAuswahl";
@@ -124,6 +125,34 @@ interface DongleImportProps {
   onImportiert: () => void;
 }
 
+// Ordnet importierte Dongle-Nummern bereits vorhandenen Dongles zu. Das exocad-
+// Portal liefert die kurze Dongle-Nummer (000003B7); von Hand angelegt ist
+// teils die volle Lizenznummer (000003B7-0EDF-054F1690). Beides ist derselbe
+// Dongle - sonst entstuende bei jedem Import ein Doppelgaenger. Exakter
+// Treffer gewinnt, sonst der Eintrag, dessen Nummer mit "<Nummer>-" beginnt.
+async function vorhandeneDongles(organisationId: string, serials: string[]): Promise<Map<string, string>> {
+  const alle = await ladeSeiten<{ id: string; seriennummer: string }>((von, bis) =>
+    supabase
+      .from("kunden_dongles")
+      .select("id, seriennummer")
+      .eq("organisation_id", organisationId)
+      .order("seriennummer")
+      .range(von, bis),
+  );
+  const exakt = new Map(alle.map((d) => [d.seriennummer.toUpperCase(), d.id]));
+  const nachPraefix = new Map<string, string>();
+  for (const d of alle) {
+    const teile = d.seriennummer.split("-");
+    if (teile.length > 1) nachPraefix.set(teile[0].toUpperCase(), d.id);
+  }
+  const ergebnis = new Map<string, string>();
+  for (const s of serials) {
+    const id = exakt.get(s.toUpperCase()) ?? nachPraefix.get(s.toUpperCase());
+    if (id) ergebnis.set(s, id);
+  }
+  return ergebnis;
+}
+
 function inChunks<T>(liste: T[], groesse: number): T[][] {
   const ergebnis: T[][] = [];
   for (let i = 0; i < liste.length; i += groesse) ergebnis.push(liste.slice(i, i + groesse));
@@ -238,15 +267,7 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
     }
 
     const alleSerials = Array.from(gruppiert.keys());
-    const existierendeSerials = new Set<string>();
-    for (const chunk of inChunks(alleSerials, 500)) {
-      const { data } = await supabase
-        .from("kunden_dongles")
-        .select("seriennummer")
-        .eq("organisation_id", organisationId)
-        .in("seriennummer", chunk);
-      (data ?? []).forEach((d) => existierendeSerials.add(d.seriennummer));
-    }
+    const existierendeSerials = new Set((await vorhandeneDongles(organisationId, alleSerials)).keys());
 
     setVorschau({
       ziel: "dongle",
@@ -377,15 +398,7 @@ export default function DongleImport({ organisationId, onImportiert }: DongleImp
 
     // Alle betroffenen Dongle-IDs (neu + bestehend) nachladen, um Module zuzuordnen
     const alleSerials = Array.from(vorschau.gruppiert.keys());
-    const serialZuId = new Map<string, string>();
-    for (const chunk of inChunks(alleSerials, 500)) {
-      const { data } = await supabase
-        .from("kunden_dongles")
-        .select("id, seriennummer")
-        .eq("organisation_id", organisationId)
-        .in("seriennummer", chunk);
-      (data ?? []).forEach((d) => serialZuId.set(d.seriennummer, d.id));
-    }
+    const serialZuId = await vorhandeneDongles(organisationId, alleSerials);
 
     const modulRows: { dongle_id: string; name: string; aktiv: boolean; activation_key: string | null; article_number: string | null; liefer_datum: string | null }[] = [];
     for (const [serial, info] of vorschau.gruppiert.entries()) {

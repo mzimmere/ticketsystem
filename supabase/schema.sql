@@ -3798,3 +3798,28 @@ update lizenz_vertraege v
  where v.dongle_id is null
    and v.kunde_id is not null
    and lizenz_dongle_finden(v.organisation_id, v.kunde_id, v.lizenz_seriennummer) is not null;
+
+-- ============================================================
+-- 88. Aufraeumen doppelter Dongle-Eintraege (einmalig am 2026-11-11, per
+-- SQL ausgefuehrt, keine Migration): Derselbe Dongle existierte teils
+-- zweimal - als kurze Dongle-Nummer aus dem exocad-Import (000003B7) und
+-- als von Hand angelegte volle Lizenznummer (000003B7-0EDF-054F1690).
+-- Der lange Eintrag blieb; Module, Vertrags- und Ticket-Verknuepfungen,
+-- Gruppe, Lieferdatum (und Kunde, falls der lange keinen hatte) wurden vom
+-- kurzen uebernommen, der kurze geloescht. Gesichert in
+-- dongle_zusammenfuehrung_backup (kurzer Dongle als JSON, seine Module,
+-- betroffene Ticket-/Vertrags-IDs). Paare mit verschiedenen Kunden blieben
+-- unangetastet. Der Dongle-Import ordnet kurze Nummern seitdem auch langen
+-- Eintraegen zu (DongleImport.tsx, vorhandeneDongles), damit keine neuen
+-- Doppelgaenger entstehen.
+-- ============================================================
+create table if not exists dongle_zusammenfuehrung_backup (
+  id bigserial primary key,
+  erstellt_am timestamptz not null default now(),
+  kurz jsonb not null,
+  lang_id uuid not null,
+  module jsonb not null default '[]',
+  ticket_ids uuid[] not null default '{}',
+  vertrag_ids uuid[] not null default '{}'
+);
+alter table dongle_zusammenfuehrung_backup enable row level security;
