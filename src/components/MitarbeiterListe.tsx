@@ -22,6 +22,7 @@ interface Mitglied {
   rolle: MitgliedRolle;
   verfuegbarkeit: Verfuegbarkeit;
   deaktiviert: boolean;
+  liest_alles_mit?: boolean;
 }
 
 interface MitarbeiterListeProps {
@@ -80,7 +81,30 @@ export default function MitarbeiterListe({
       console.error("[MitarbeiterListe] Laden fehlgeschlagen:", error);
       setHinweis(txt.fehlerLaden);
     }
-    setMitglieder((data as Mitglied[]) ?? []);
+    const team = (data as Mitglied[]) ?? [];
+    // Mitlese-Kennzeichen liegt an der Mitgliedschaft (nur Admins duerfen sie lesen).
+    let flags = new Map<string, boolean>();
+    if (darfBearbeiten && team.length > 0) {
+      const { data: mg } = await supabase
+        .from("firmen_mitgliedschaften")
+        .select("id, liest_alles_mit")
+        .eq("organisation_id", organisationId);
+      flags = new Map((mg ?? []).map((x) => [x.id as string, !!x.liest_alles_mit]));
+    }
+    setMitglieder(team.map((m) => ({ ...m, liest_alles_mit: flags.get(m.mitgliedschaft_id) ?? false })));
+  }
+
+  async function mitlesenUmschalten(m: Mitglied, an: boolean) {
+    const { error } = await supabase
+      .from("firmen_mitgliedschaften")
+      .update({ liest_alles_mit: an })
+      .eq("id", m.mitgliedschaft_id);
+    if (error) {
+      console.error(error);
+      setHinweis(txt.fehlerSpeichern);
+      return;
+    }
+    setMitglieder((liste) => liste.map((x) => (x.id === m.id ? { ...x, liest_alles_mit: an } : x)));
   }
 
   // Deaktiviert/reaktiviert nur die Mitgliedschaft bei DIESER Firma - nicht
@@ -277,7 +301,12 @@ export default function MitarbeiterListe({
                 </p>
               )}
             </div>
-            <span className="ml-auto shrink-0 text-xs text-[var(--text-soft)]">
+            {m.liest_alles_mit && (
+              <span className="ml-auto shrink-0 rounded-full bg-[var(--bg-muted)] px-2 py-0.5 text-xs text-[var(--text-soft)]">
+                {txt.mitleserBadge}
+              </span>
+            )}
+            <span className={`${m.liest_alles_mit ? "" : "ml-auto "}shrink-0 text-xs text-[var(--text-soft)]`}>
               {ROLLE_LABEL[m.rolle]}
             </span>
           </button>
@@ -371,6 +400,19 @@ export default function MitarbeiterListe({
                   </select>
                 </div>
               </div>
+
+              <label className="flex items-start gap-2 text-sm text-[var(--text-strong)]">
+                <input
+                  type="checkbox"
+                  checked={!!m.liest_alles_mit}
+                  onChange={(e) => mitlesenUmschalten(m, e.target.checked)}
+                  className="mt-0.5"
+                />
+                <span>
+                  {txt.liestAllesMit}
+                  <span className="block text-xs text-[var(--text-soft)]">{txt.liestAllesMitHinweis}</span>
+                </span>
+              </label>
 
               {hinweis && <p className="text-xs text-[var(--text-soft)]">{hinweis}</p>}
 

@@ -21,8 +21,9 @@
 // Ohne eigene Vorlage gilt der Standardtext aus STANDARD_VORLAGEN unten.
 //
 // Zusaetzlich bekommen Mitleser Kopien (Abschnitt 89, MeinProfil.tsx): der im
-// Profil des Zugewiesenen eingetragene Mitleser und alle Mitarbeiter mit
-// "liest_alles_mit" (auch bei nicht zugewiesenen Tickets). Die Aufrufer-Person
+// Profil des Zugewiesenen eingetragene Mitleser und alle Mitarbeiter, die ein
+// Admin unter Team als "liest alles mit" markiert hat (auch bei nicht
+// zugewiesenen Tickets). Die Aufrufer-Person
 // selbst bekommt nie eine Mail.
 //
 // Projektpfad: supabase/functions/benachrichtige-mitarbeiter/index.ts
@@ -136,39 +137,35 @@ function fuellePlatzhalter(vorlage: string, werte: Record<string, string>): stri
 }
 
 // Mitleser eines Tickets: (a) der im Profil des Zugewiesenen eingetragene
-// Mitleser, (b) alle Mitarbeiter der Firma mit "liest_alles_mit". Nur Personen,
-// die wirklich zur Firma gehoeren (Hauptfirma oder Mitgliedschaft, nicht
-// deaktiviert) und Techniker/Org-Admin sind.
+// Mitleser (MeinProfil), (b) alle Mitarbeiter, bei denen ein Admin unter
+// Team "liest alle Ticket-Mails mit" gesetzt hat (firmen_mitgliedschaften.
+// liest_alles_mit, gilt pro Firma). Nur aktive Techniker/Org-Admins der Firma.
 async function mitleserErmitteln(organisationId: string, zustaendigId: string | null): Promise<string[]> {
-  const kandidaten = new Set<string>();
+  const ids = new Set<string>();
 
-  if (zustaendigId) {
-    const { data } = await supabaseAdmin.from("profiles").select("mitleser_id").eq("id", zustaendigId).maybeSingle();
-    if (data?.mitleser_id) kandidaten.add(data.mitleser_id);
-  }
-  const { data: alle } = await supabaseAdmin.from("profiles").select("id").eq("liest_alles_mit", true);
-  for (const p of alle ?? []) kandidaten.add(p.id);
-  if (kandidaten.size === 0) return [];
-
-  const ids = [...kandidaten];
-  const { data: profile } = await supabaseAdmin
-    .from("profiles")
-    .select("id, organisation_id, rolle, deaktiviert")
-    .in("id", ids);
-  const { data: mitgliedschaften } = await supabaseAdmin
+  const { data: alle } = await supabaseAdmin
     .from("firmen_mitgliedschaften")
     .select("profil_id")
     .eq("organisation_id", organisationId)
-    .eq("deaktiviert", false)
-    .in("profil_id", ids);
-  const mitglieder = new Set((mitgliedschaften ?? []).map((m) => m.profil_id));
+    .eq("liest_alles_mit", true)
+    .eq("deaktiviert", false);
+  for (const m of alle ?? []) ids.add(m.profil_id);
 
-  return (profile ?? [])
-    .filter((p) => !p.deaktiviert)
-    .filter((p) =>
-      (p.organisation_id === organisationId && ["techniker", "org_admin"].includes(p.rolle)) || mitglieder.has(p.id),
-    )
-    .map((p) => p.id);
+  if (zustaendigId) {
+    const { data } = await supabaseAdmin.from("profiles").select("mitleser_id").eq("id", zustaendigId).maybeSingle();
+    if (data?.mitleser_id) {
+      // Der persoenliche Mitleser muss aktives Mitglied der Firma sein.
+      const { data: mg } = await supabaseAdmin
+        .from("firmen_mitgliedschaften")
+        .select("profil_id")
+        .eq("organisation_id", organisationId)
+        .eq("profil_id", data.mitleser_id)
+        .eq("deaktiviert", false)
+        .maybeSingle();
+      if (mg) ids.add(data.mitleser_id);
+    }
+  }
+  return [...ids];
 }
 
 Deno.serve(async (req: Request) => {

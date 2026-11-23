@@ -60,7 +60,6 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
   const [uebergabeAn, setUebergabeAn] = useState("");
   const [kollegenGeladen, setKollegenGeladen] = useState(false);
   const [mitleserId, setMitleserId] = useState("");
-  const [liestAllesMit, setLiestAllesMit] = useState(false);
   const [mitleserHinweis, setMitleserHinweis] = useState<string | null>(null);
   const [nutzung, setNutzung] = useState<NutzungsMonat[]>([]);
   const [hinweis, setHinweis] = useState<string | null>(null);
@@ -90,7 +89,7 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
   async function ladeProfil() {
     const { data } = await supabase
       .from("profiles")
-      .select("name, vorname, nachname, avatar_url, verfuegbarkeit, telefonnummer, strasse, hausnummer, plz, ort, mitleser_id, liest_alles_mit")
+      .select("name, vorname, nachname, avatar_url, verfuegbarkeit, telefonnummer, strasse, hausnummer, plz, ort, mitleser_id")
       .eq("id", profilId)
       .single();
     if (data) {
@@ -105,11 +104,10 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
       setPlz(data.plz ?? "");
       setOrt(data.ort ?? "");
       setMitleserId(data.mitleser_id ?? "");
-      setLiestAllesMit(data.liest_alles_mit ?? false);
     }
   }
 
-  async function mitleserSpeichern(felder: { mitleser_id?: string | null; liest_alles_mit?: boolean }) {
+  async function mitleserSpeichern(felder: { mitleser_id: string | null }) {
     setMitleserHinweis(null);
     const { error } = await supabase.from("profiles").update(felder).eq("id", profilId);
     if (error) {
@@ -118,8 +116,7 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
       ladeProfil();
       return;
     }
-    if ("mitleser_id" in felder) setMitleserId(felder.mitleser_id ?? "");
-    if ("liest_alles_mit" in felder) setLiestAllesMit(!!felder.liest_alles_mit);
+    setMitleserId(felder.mitleser_id ?? "");
     setMitleserHinweis(t.mitleserGespeichert);
   }
 
@@ -304,18 +301,6 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
               </option>
             ))}
           </select>
-          <label className="flex items-start gap-2 text-sm text-[var(--text-strong)]">
-            <input
-              type="checkbox"
-              checked={liestAllesMit}
-              onChange={(e) => mitleserSpeichern({ liest_alles_mit: e.target.checked })}
-              className="mt-0.5"
-            />
-            <span>
-              {t.liestAllesMit}
-              <span className="block text-xs text-[var(--text-soft)]">{t.liestAllesMitHinweis}</span>
-            </span>
-          </label>
           {kollegen.length === 0 && (
             <p className="text-xs text-[var(--text-faint)]">
               {!organisationId ? t.mitleserKeineFirma : kollegenGeladen ? t.mitleserKeineKollegen : t.mitleserLaedt}

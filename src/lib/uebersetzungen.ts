@@ -172,8 +172,6 @@ export interface Uebersetzung {
     mitleserKeiner: string;
     mitleserGespeichert: string;
     mitleserFehler: string;
-    liestAllesMit: string;
-    liestAllesMitHinweis: string;
     bildAendern: string;
     verfuegbarkeit: string;
     verfuegbar: string;
@@ -508,6 +506,9 @@ export interface Uebersetzung {
     trotzdemZuweisen: string;
   };
   mitarbeiterListe: {
+    liestAllesMit: string;
+    liestAllesMitHinweis: string;
+    mitleserBadge: string;
     superAdmin: string;
     orgAdmin: string;
     techniker: string;
@@ -1959,12 +1960,10 @@ const de: Uebersetzung = {
     mitleserKeineFirma: "Keine Firma ausgewählt – bitte oben zuerst eine Firma wählen.",
     mitleserKeineKollegen: "Keine Kollegen in dieser Firma gefunden.",
     mitleserLaedt: "Kollegen werden geladen …",
-    mitleserBeschreibung: "Mitleser für meine Tickets: Diese Person bekommt eine Kopie aller Mails zu Tickets, die mir zugewiesen sind (Zuweisung, Statusänderung, neue Kundenantwort).",
+    mitleserBeschreibung: "Mitleser für meine Tickets: Diese Person bekommt eine Kopie aller Mails zu Tickets, die mir zugewiesen sind (Zuweisung, Statusänderung, neue Kundenantwort). Wer alle Tickets der Firma mitlesen soll, wird unter Team festgelegt.",
     mitleserKeiner: "Kein Mitleser",
     mitleserGespeichert: "Gespeichert.",
     mitleserFehler: "Speichern fehlgeschlagen.",
-    liestAllesMit: "Ich lese alles mit",
-    liestAllesMitHinweis: "Ich bekomme bei allen Tickets der Firma eine Mail bei Zuweisung, Statusänderung und neuer Kundenantwort, auch wenn sie jemand anderem zugewiesen oder nicht zugewiesen sind. Eigene Aktionen ausgenommen.",
     bildAendern: "Bild ändern",
     verfuegbarkeit: "Verfügbarkeit",
     verfuegbar: "Verfügbar",
@@ -2299,6 +2298,9 @@ const de: Uebersetzung = {
     trotzdemZuweisen: "Trotzdem zuweisen?",
   },
   mitarbeiterListe: {
+    liestAllesMit: "Liest alle Ticket-Mails mit",
+    liestAllesMitHinweis: "Diese Person bekommt Mails zu allen Tickets der Firma (Zuweisung, Statusänderung, neue Kundenantwort), auch wenn sie jemand anderem zugewiesen oder nicht zugewiesen sind. Eigene Aktionen ausgenommen.",
+    mitleserBadge: "Liest mit",
     superAdmin: "Super-Admin",
     orgAdmin: "Org-Admin",
     techniker: "Techniker",
@@ -3761,12 +3763,10 @@ const en: Uebersetzung = {
     mitleserKeineFirma: "No company selected – please choose a company first.",
     mitleserKeineKollegen: "No colleagues found in this company.",
     mitleserLaedt: "Loading colleagues …",
-    mitleserBeschreibung: "Reader for my tickets: this person gets a copy of all emails about tickets assigned to me (assignment, status change, new customer reply).",
+    mitleserBeschreibung: "Reader for my tickets: this person gets a copy of all emails about tickets assigned to me (assignment, status change, new customer reply). Who reads along on all tickets of the company is set under Team.",
     mitleserKeiner: "No reader",
     mitleserGespeichert: "Saved.",
     mitleserFehler: "Saving failed.",
-    liestAllesMit: "I read everything along",
-    liestAllesMitHinweis: "I get an email for assignments, status changes and new customer replies on all tickets of the company, even if they are assigned to someone else or unassigned. My own actions are excluded.",
     bildAendern: "Change picture",
     verfuegbarkeit: "Availability",
     verfuegbar: "Available",
@@ -4101,6 +4101,9 @@ const en: Uebersetzung = {
     trotzdemZuweisen: "Assign anyway?",
   },
   mitarbeiterListe: {
+    liestAllesMit: "Reads all ticket emails",
+    liestAllesMitHinweis: "This person gets emails for all tickets of the company (assignment, status change, new customer reply), even if assigned to someone else or unassigned. Own actions are excluded.",
+    mitleserBadge: "Reads along",
     superAdmin: "Super admin",
     orgAdmin: "Org admin",
     techniker: "Technician",

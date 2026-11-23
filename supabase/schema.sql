@@ -3839,3 +3839,16 @@ alter table dongle_zusammenfuehrung_backup enable row level security;
 alter table profiles
   add column if not exists mitleser_id uuid references profiles(id) on delete set null,
   add column if not exists liest_alles_mit boolean not null default false;
+
+-- ============================================================
+-- 90. "Liest alle Ticket-Mails mit" pro Firma statt pro Person: Ein Admin
+-- legt unter Team (MitarbeiterListe.tsx) fest, wer zu allen Tickets der
+-- Firma Mails bekommt (Zuweisung, Statusaenderung, neue Kundenantwort) -
+-- unabhaengig davon, wer zustaendig ist. Das Kennzeichen liegt an der
+-- Mitgliedschaft (gilt also nur fuer diese Firma). Ersetzt
+-- profiles.liest_alles_mit aus Abschnitt 89 (Werte uebernommen, Spalte
+-- entfernt). profiles.mitleser_id (persoenlicher Mitleser, MeinProfil)
+-- bleibt.
+-- ============================================================
+alter table firmen_mitgliedschaften
+  add column if not exists liest_alles_mit boolean not null default false;
