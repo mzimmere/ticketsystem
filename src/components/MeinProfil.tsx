@@ -58,6 +58,9 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
   const [verfuegbarkeit, setVerfuegbarkeit] = useState<Verfuegbarkeit>("verfuegbar");
   const [kollegen, setKollegen] = useState<Kollege[]>([]);
   const [uebergabeAn, setUebergabeAn] = useState("");
+  const [mitleserId, setMitleserId] = useState("");
+  const [liestAllesMit, setLiestAllesMit] = useState(false);
+  const [mitleserHinweis, setMitleserHinweis] = useState<string | null>(null);
   const [nutzung, setNutzung] = useState<NutzungsMonat[]>([]);
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
@@ -86,7 +89,7 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
   async function ladeProfil() {
     const { data } = await supabase
       .from("profiles")
-      .select("name, vorname, nachname, avatar_url, verfuegbarkeit, telefonnummer, strasse, hausnummer, plz, ort")
+      .select("name, vorname, nachname, avatar_url, verfuegbarkeit, telefonnummer, strasse, hausnummer, plz, ort, mitleser_id, liest_alles_mit")
       .eq("id", profilId)
       .single();
     if (data) {
@@ -100,7 +103,23 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
       setHausnummer(data.hausnummer ?? "");
       setPlz(data.plz ?? "");
       setOrt(data.ort ?? "");
+      setMitleserId(data.mitleser_id ?? "");
+      setLiestAllesMit(data.liest_alles_mit ?? false);
     }
+  }
+
+  async function mitleserSpeichern(felder: { mitleser_id?: string | null; liest_alles_mit?: boolean }) {
+    setMitleserHinweis(null);
+    const { error } = await supabase.from("profiles").update(felder).eq("id", profilId);
+    if (error) {
+      console.error(error);
+      setMitleserHinweis(t.mitleserFehler);
+      ladeProfil();
+      return;
+    }
+    if ("mitleser_id" in felder) setMitleserId(felder.mitleser_id ?? "");
+    if ("liest_alles_mit" in felder) setLiestAllesMit(!!felder.liest_alles_mit);
+    setMitleserHinweis(t.mitleserGespeichert);
   }
 
   async function kundenProfilSpeichern() {
@@ -266,6 +285,38 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
           {passwortLaedt ? t.aendert : t.passwortAendern}
         </button>
       </div>
+
+      {istIntern && (
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3">
+          <h3 className="text-sm font-medium text-[var(--text-strong)]">{t.mitleserTitel}</h3>
+          <p className="text-xs text-[var(--text-soft)]">{t.mitleserBeschreibung}</p>
+          <select
+            value={mitleserId}
+            onChange={(e) => mitleserSpeichern({ mitleser_id: e.target.value || null })}
+            className="w-full rounded border border-[var(--border-input)] bg-[var(--bg-surface)] px-3 py-2 text-sm"
+          >
+            <option value="">{t.mitleserKeiner}</option>
+            {kollegen.map((k) => (
+              <option key={k.id} value={k.id}>
+                {k.name ?? t.unbenannt}
+              </option>
+            ))}
+          </select>
+          <label className="flex items-start gap-2 text-sm text-[var(--text-strong)]">
+            <input
+              type="checkbox"
+              checked={liestAllesMit}
+              onChange={(e) => mitleserSpeichern({ liest_alles_mit: e.target.checked })}
+              className="mt-0.5"
+            />
+            <span>
+              {t.liestAllesMit}
+              <span className="block text-xs text-[var(--text-soft)]">{t.liestAllesMitHinweis}</span>
+            </span>
+          </label>
+          {mitleserHinweis && <p className="text-xs text-[var(--text-soft)]">{mitleserHinweis}</p>}
+        </div>
+      )}
 
       {istIntern && <BuzzerSoundEinstellung profilId={profilId} />}
 

@@ -164,6 +164,13 @@ export interface Uebersetzung {
   };
   meinProfil: {
     titel: string;
+    mitleserTitel: string;
+    mitleserBeschreibung: string;
+    mitleserKeiner: string;
+    mitleserGespeichert: string;
+    mitleserFehler: string;
+    liestAllesMit: string;
+    liestAllesMitHinweis: string;
     bildAendern: string;
     verfuegbarkeit: string;
     verfuegbar: string;
@@ -1945,6 +1952,13 @@ const de: Uebersetzung = {
   },
   meinProfil: {
     titel: "Mein Profil",
+    mitleserTitel: "E-Mails mitlesen",
+    mitleserBeschreibung: "Mitleser für meine Tickets: Diese Person bekommt eine Kopie aller Mails zu Tickets, die mir zugewiesen sind (Zuweisung, Statusänderung, neue Kundenantwort).",
+    mitleserKeiner: "Kein Mitleser",
+    mitleserGespeichert: "Gespeichert.",
+    mitleserFehler: "Speichern fehlgeschlagen.",
+    liestAllesMit: "Ich lese alles mit",
+    liestAllesMitHinweis: "Ich bekomme bei allen Tickets der Firma eine Mail bei Zuweisung, Statusänderung und neuer Kundenantwort, auch wenn sie jemand anderem zugewiesen oder nicht zugewiesen sind. Eigene Aktionen ausgenommen.",
     bildAendern: "Bild ändern",
     verfuegbarkeit: "Verfügbarkeit",
     verfuegbar: "Verfügbar",
@@ -3737,6 +3751,13 @@ const en: Uebersetzung = {
   },
   meinProfil: {
     titel: "My Profile",
+    mitleserTitel: "Read along by email",
+    mitleserBeschreibung: "Reader for my tickets: this person gets a copy of all emails about tickets assigned to me (assignment, status change, new customer reply).",
+    mitleserKeiner: "No reader",
+    mitleserGespeichert: "Saved.",
+    mitleserFehler: "Saving failed.",
+    liestAllesMit: "I read everything along",
+    liestAllesMitHinweis: "I get an email for assignments, status changes and new customer replies on all tickets of the company, even if they are assigned to someone else or unassigned. My own actions are excluded.",
     bildAendern: "Change picture",
     verfuegbarkeit: "Availability",
     verfuegbar: "Available",

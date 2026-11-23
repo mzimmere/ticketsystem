@@ -3823,3 +3823,19 @@ create table if not exists dongle_zusammenfuehrung_backup (
   vertrag_ids uuid[] not null default '{}'
 );
 alter table dongle_zusammenfuehrung_backup enable row level security;
+
+-- ============================================================
+-- 89. Mitleser fuer Ticket-Mails (MeinProfil.tsx, Edge Function
+-- benachrichtige-mitarbeiter): Bisher bekam nur der zugewiesene
+-- Mitarbeiter Mails (Zuweisung durch andere, Statusaenderung durch andere,
+-- neue Kundenantwort). Jetzt kann jeder Mitarbeiter in seinem Benutzermenue
+--  - mitleser_id: einen Kollegen eintragen, der Kopien aller Mails zu den
+--    ihm zugewiesenen Tickets bekommt, und/oder
+--  - liest_alles_mit: sich selbst als Mitleser fuer ALLE Tickets der Firma
+--    eintragen (auch nicht zugewiesene).
+-- Mitleser bekommen keine Mail zu ihrer eigenen Aktion. Die Pruefung, dass
+-- der Mitleser zur Firma des Tickets gehoert, macht die Edge Function.
+-- ============================================================
+alter table profiles
+  add column if not exists mitleser_id uuid references profiles(id) on delete set null,
+  add column if not exists liest_alles_mit boolean not null default false;

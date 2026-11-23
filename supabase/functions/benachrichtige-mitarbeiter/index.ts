@@ -20,6 +20,11 @@
 // Abschnitt 65) - siehe EmailTexteVerwaltung.tsx (Verwaltung > Werkzeuge).
 // Ohne eigene Vorlage gilt der Standardtext aus STANDARD_VORLAGEN unten.
 //
+// Zusaetzlich bekommen Mitleser Kopien (Abschnitt 89, MeinProfil.tsx): der im
+// Profil des Zugewiesenen eingetragene Mitleser und alle Mitarbeiter mit
+// "liest_alles_mit" (auch bei nicht zugewiesenen Tickets). Die Aufrufer-Person
+// selbst bekommt nie eine Mail.
+//
 // Projektpfad: supabase/functions/benachrichtige-mitarbeiter/index.ts
 // Deploy: supabase functions deploy benachrichtige-mitarbeiter
 // Secrets: siehe benachrichtige-kunde (MAIL_RELAY_URL/MAIL_RELAY_SECRET,
@@ -130,6 +135,42 @@ function fuellePlatzhalter(vorlage: string, werte: Record<string, string>): stri
   return vorlage.replace(/\{\{(\w+)\}\}/g, (_, name) => werte[name] ?? "");
 }
 
+// Mitleser eines Tickets: (a) der im Profil des Zugewiesenen eingetragene
+// Mitleser, (b) alle Mitarbeiter der Firma mit "liest_alles_mit". Nur Personen,
+// die wirklich zur Firma gehoeren (Hauptfirma oder Mitgliedschaft, nicht
+// deaktiviert) und Techniker/Org-Admin sind.
+async function mitleserErmitteln(organisationId: string, zustaendigId: string | null): Promise<string[]> {
+  const kandidaten = new Set<string>();
+
+  if (zustaendigId) {
+    const { data } = await supabaseAdmin.from("profiles").select("mitleser_id").eq("id", zustaendigId).maybeSingle();
+    if (data?.mitleser_id) kandidaten.add(data.mitleser_id);
+  }
+  const { data: alle } = await supabaseAdmin.from("profiles").select("id").eq("liest_alles_mit", true);
+  for (const p of alle ?? []) kandidaten.add(p.id);
+  if (kandidaten.size === 0) return [];
+
+  const ids = [...kandidaten];
+  const { data: profile } = await supabaseAdmin
+    .from("profiles")
+    .select("id, organisation_id, rolle, deaktiviert")
+    .in("id", ids);
+  const { data: mitgliedschaften } = await supabaseAdmin
+    .from("firmen_mitgliedschaften")
+    .select("profil_id")
+    .eq("organisation_id", organisationId)
+    .eq("deaktiviert", false)
+    .in("profil_id", ids);
+  const mitglieder = new Set((mitgliedschaften ?? []).map((m) => m.profil_id));
+
+  return (profile ?? [])
+    .filter((p) => !p.deaktiviert)
+    .filter((p) =>
+      (p.organisation_id === organisationId && ["techniker", "org_admin"].includes(p.rolle)) || mitglieder.has(p.id),
+    )
+    .map((p) => p.id);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -163,28 +204,27 @@ Deno.serve(async (req: Request) => {
       .single();
     if (ticketFehler || !ticket) throw ticketFehler ?? new Error("Ticket nicht gefunden");
 
-    if (!ticket.zugewiesen_an) {
-      return new Response(JSON.stringify({ ok: false, grund: "nicht_zugewiesen" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    if (ticket.zugewiesen_an === userData.user.id) {
-      // Eigene Aktion - keine Benachrichtigung ueber sich selbst.
-      return new Response(JSON.stringify({ ok: false, grund: "selbst" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // Empfaenger: der zugewiesene Techniker (ausser er hat die Aktion selbst
+    // ausgeloest) plus Mitleser (Profil des Zugewiesenen -> mitleser_id, und
+    // alle Mitarbeiter der Firma mit liest_alles_mit). Wer die Aktion selbst
+    // ausgeloest hat, bekommt nie eine Mail darueber.
+    const aufrufer = userData.user.id;
+    const zustaendigId: string | null = ticket.zugewiesen_an;
+    const mitleserIds = await mitleserErmitteln(ticket.organisation_id, zustaendigId);
+    const mitleserOhneZustaendigen = mitleserIds.filter((id) => id !== aufrufer && id !== zustaendigId);
+    const zustaendigerBekommtMail = !!zustaendigId && zustaendigId !== aufrufer;
+
+    if (!zustaendigerBekommtMail && mitleserOhneZustaendigen.length === 0) {
+      return new Response(
+        JSON.stringify({ ok: false, grund: !zustaendigId ? "nicht_zugewiesen" : "selbst" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
-    const { data: technikerAuth } = await supabaseAdmin.auth.admin.getUserById(ticket.zugewiesen_an);
-    const technikerEmail = technikerAuth.user?.email;
-    if (!technikerEmail) {
-      return new Response(JSON.stringify({ ok: false, grund: "keine_email" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const emailVon = async (id: string): Promise<string | null> => {
+      const { data } = await supabaseAdmin.auth.admin.getUserById(id);
+      return data.user?.email ?? null;
+    };
 
     const { data: organisation } = await supabaseAdmin
       .from("organisationen")
@@ -224,11 +264,50 @@ Deno.serve(async (req: Request) => {
       werte.aenderer_name = aendererNameRoh ?? "Der Kunde";
     }
 
-    const vorlage = await vorlageLaden(ticket.organisation_id, vorlageKey);
-    const betreff = fuellePlatzhalter(vorlage.betreff, werte);
-    const text = fuellePlatzhalter(vorlage.text, werte);
+    let ergebnis: { ok: boolean; grund?: string } = { ok: false, grund: "keine_email" };
 
-    const ergebnis = await mailSenden(ticket.organisation_id, technikerEmail, betreff, text, firmenName);
+    if (zustaendigerBekommtMail) {
+      const technikerEmail = await emailVon(zustaendigId!);
+      if (technikerEmail) {
+        const vorlage = await vorlageLaden(ticket.organisation_id, vorlageKey);
+        const betreff = fuellePlatzhalter(vorlage.betreff, werte);
+        const text = fuellePlatzhalter(vorlage.text, werte);
+        ergebnis = await mailSenden(ticket.organisation_id, technikerEmail, betreff, text, firmenName);
+      }
+    }
+
+    if (mitleserOhneZustaendigen.length > 0) {
+      // Mitleser-Mails sind fest formuliert (nicht ueber die Vorlagen
+      // anpassbar), weil "dein Ticket" fuer sie nicht stimmt.
+      let zustaendigName = "nicht zugewiesen";
+      if (zustaendigId) {
+        const { data: zp } = await supabaseAdmin.from("profiles").select("name").eq("id", zustaendigId).maybeSingle();
+        zustaendigName = zp?.name?.trim() || "Kollege";
+      }
+      const ticketTeil = `"${ticket.titel}" (#${ticket.ticket_nr}, zuständig: ${zustaendigName})`;
+      const wer = werte.aenderer_name;
+      let mitleserBetreff: string;
+      let mitleserText: string;
+      if (ereignis === "zugewiesen") {
+        mitleserBetreff = `[Mitlesen] Ticket #${ticket.ticket_nr} zugewiesen an ${zustaendigName}`;
+        mitleserText = `Das Ticket ${ticketTeil} wurde von ${wer} neu zugewiesen.`;
+      } else if (ereignis === "status_geaendert") {
+        mitleserBetreff = `[Mitlesen] Ticket #${ticket.ticket_nr}: Status geändert auf "${werte.status}"`;
+        mitleserText = `Der Status des Tickets ${ticketTeil} wurde von ${wer} auf "${werte.status}" geändert.`;
+      } else {
+        mitleserBetreff = `[Mitlesen] Ticket #${ticket.ticket_nr}: Neue Kundenantwort`;
+        mitleserText = `${wer} hat auf das Ticket ${ticketTeil} geantwortet.`;
+      }
+      mitleserText += `\n\nTicket ansehen: ${seitenUrl}\n\nDu erhältst diese Mail, weil du in deinem Benutzermenü als Mitleser eingetragen bist.`;
+
+      for (const id of mitleserOhneZustaendigen) {
+        const email = await emailVon(id);
+        if (!email) continue;
+        const r = await mailSenden(ticket.organisation_id, email, mitleserBetreff, mitleserText, firmenName);
+        if (!ergebnis.ok) ergebnis = r;
+      }
+    }
+
     return new Response(JSON.stringify(ergebnis), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
