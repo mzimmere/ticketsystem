@@ -14,6 +14,7 @@ import { zuletztText } from "../lib/zeitText";
 import LeerHinweis from "./LeerHinweis";
 import { softwareStil } from "../lib/softwareStil";
 import { ablaufInfo } from "../lib/ablaufInfo";
+import { sucheTrifft } from "../lib/suche";
 import DongleDetailPanel, { VertragDetailPanel, type DetailDongle, type DetailVertrag } from "./DongleDetailPanel";
 
 interface Vorlage {
@@ -427,12 +428,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
 
   const dongleUebersichtGefiltert = alleDongles.filter((d) => {
     if (softwareFilter && d.software !== softwareFilter) return false;
-    const begriff = dongleUebersichtSuche.trim().toLowerCase();
-    if (!begriff) return true;
-    return (
-      d.seriennummer.toLowerCase().includes(begriff) ||
-      (d.kunde?.name ?? "").toLowerCase().includes(begriff)
-    );
+    return sucheTrifft(dongleUebersichtSuche, d.seriennummer, d.kunde?.name, d.kunde?.firmenname);
   });
   const dongleUebersichtSuchtAktiv = dongleUebersichtSuche.trim() !== "";
   const sichtbareDongleUebersicht =
@@ -451,13 +447,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
     .filter((v) => {
     if (kachelIds && !kachelIds.has(v.id)) return false;
     if (buildFilter && v.aktuelle_engine_build !== buildFilter) return false;
-    const begriff = vertragUebersichtSuche.trim().toLowerCase();
-    if (!begriff) return true;
-    return (
-      v.lizenz_seriennummer.toLowerCase().includes(begriff) ||
-      v.produkt_name.toLowerCase().includes(begriff) ||
-      (v.kunde?.name ?? "").toLowerCase().includes(begriff)
-    );
+    return sucheTrifft(vertragUebersichtSuche, v.lizenz_seriennummer, v.produkt_name, v.kunde?.name, v.kunde?.firmenname);
     })
     // Bei aktiver Kennzahl zuerst die, die am schnellsten ablaufen
     .sort((a, b) => (kachelIds ? (a.vertrag_ende ?? "").localeCompare(b.vertrag_ende ?? "") : 0));

@@ -17,6 +17,7 @@ import { ladeSeiten } from "../lib/ladeSeiten";
 import { kundenExcelExportieren } from "../lib/kundenExport";
 import { Activity, Camera, ChevronDown, ChevronLeft, Download, Handshake, Inbox, KeyRound, Ticket as TicketIcon, UserX, Users, X } from "lucide-react";
 import KennzahlKarte from "./KennzahlKarte";
+import { sucheTrifft } from "../lib/suche";
 import { ladeKundenStatistik, type KundenStat } from "../lib/kundenStatistik";
 
 interface Kunde {
@@ -576,13 +577,11 @@ export default function KundenListe({
   };
 
   const gefilterteKunden = kunden.filter((k) => {
-    const begriff = suchbegriff.trim().toLowerCase();
-    if (begriff) {
+    if (suchbegriff.trim()) {
       const subresellerName = subresellerListe.find((s) => s.id === k.subreseller_id)?.name;
-      const treffer = [k.name, k.firmenname, k.telefonnummer, k.strasse, k.hausnummer, k.plz, k.ort, subresellerName]
-        .filter(Boolean)
-        .some((feld) => feld!.toLowerCase().includes(begriff));
-      if (!treffer) return false;
+      if (!sucheTrifft(suchbegriff, k.name, k.firmenname, k.telefonnummer, k.strasse, k.hausnummer, k.plz, k.ort, subresellerName)) {
+        return false;
+      }
     }
     if (hardwareGefilterteKundenIds && !hardwareGefilterteKundenIds.has(k.id)) return false;
     if (kachelFilter === "offen" && !(statistik[k.id]?.offen ?? 0)) return false;

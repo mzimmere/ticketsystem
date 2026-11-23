@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabaseClient";
 import { useSprache } from "../lib/SpracheContext";
 import { texte } from "../lib/uebersetzungen";
 import ZugangsdatenBox from "./ZugangsdatenBox";
+import { sucheTrifft } from "../lib/suche";
 
 interface Kunde {
   id: string;
@@ -60,13 +61,20 @@ export default function KundenAuswahl({ organisationId, value, onChange }: Kunde
     setKunden((data as Kunde[]) ?? []);
   }
 
-  const ausgewaehlterName = kunden.find((k) => k.id === value)?.name ?? null;
+  const ausgewaehlterKunde = kunden.find((k) => k.id === value);
+  // Name und Firma, damit man nach der Auswahl sieht, welche Firma gemeint ist
+  const ausgewaehlterName = ausgewaehlterKunde
+    ? `${ausgewaehlterKunde.name ?? txt.unbenannt}${
+        ausgewaehlterKunde.firmenname && ausgewaehlterKunde.firmenname !== ausgewaehlterKunde.name
+          ? ` (${ausgewaehlterKunde.firmenname})`
+          : ""
+      }`
+    : null;
 
-  const gefiltert = useMemo(() => {
-    const begriff = suche.trim().toLowerCase();
-    if (!begriff) return kunden;
-    return kunden.filter((k) => `${k.name ?? ""} ${k.firmenname ?? ""}`.toLowerCase().includes(begriff));
-  }, [kunden, suche]);
+  const gefiltert = useMemo(
+    () => kunden.filter((k) => sucheTrifft(suche, k.name, k.firmenname)),
+    [kunden, suche],
+  );
 
   function auswaehlen(id: string) {
     onChange(id);

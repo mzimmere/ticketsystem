@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabaseClient";
 import Avatar from "./Avatar";
 import NeuesTicketIntern from "./NeuesTicketIntern";
 import TicketMassenleiste from "./TicketMassenleiste";
+import { sucheTrifft } from "../lib/suche";
 import StatusBadge from "./StatusBadge";
 import { TicketZeileSkeleton } from "./Skeleton";
 import LeerZustand from "./LeerZustand";
@@ -129,11 +130,10 @@ function KundenFilter({
   const ausgewaehlterName =
     wert === "alle" ? txt.alleKunden : kundenOptionen.find((k) => k.id === wert)?.name ?? txt.unbenannt;
 
-  const gefiltert = useMemo(() => {
-    const begriff = suche.trim().toLowerCase();
-    if (!begriff) return kundenOptionen;
-    return kundenOptionen.filter((k) => `${k.name ?? ""} ${k.firmenname ?? ""}`.toLowerCase().includes(begriff));
-  }, [kundenOptionen, suche]);
+  const gefiltert = useMemo(
+    () => kundenOptionen.filter((k) => sucheTrifft(suche, k.name, k.firmenname)),
+    [kundenOptionen, suche],
+  );
 
   function auswaehlen(id: string) {
     onChange(id);
@@ -340,18 +340,12 @@ export default function TicketUebersicht({
   }, [tickets]);
 
   const gefilterteTickets = useMemo(() => {
-    const begriff = suchbegriff.trim().toLowerCase();
     return tickets.filter((t) => {
       if (tagFilter && !t.tags?.includes(tagFilter)) return false;
       if (nurSlaVerletzt && !istSlaVerletzt(t)) return false;
-      if (!begriff) return true;
-      const ticketNrText = `#${t.ticket_nr}`;
+      if (!suchbegriff.trim()) return true;
       return (
-        t.titel.toLowerCase().includes(begriff) ||
-        t.kunde?.name?.toLowerCase().includes(begriff) ||
-        t.kunde?.firmenname?.toLowerCase().includes(begriff) ||
-        t.zugewiesen?.name?.toLowerCase().includes(begriff) ||
-        ticketNrText.includes(begriff) ||
+        sucheTrifft(suchbegriff, t.titel, t.kunde?.name, t.kunde?.firmenname, t.zugewiesen?.name, `#${t.ticket_nr}`) ||
         nachrichtTrefferIds.has(t.id)
       );
     });
