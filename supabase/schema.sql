@@ -3846,8 +3846,8 @@ alter table profiles
 -- Firma Mails bekommt (Zuweisung, Statusaenderung, neue Kundenantwort) -
 -- unabhaengig davon, wer zustaendig ist. Das Kennzeichen liegt an der
 -- Mitgliedschaft (gilt also nur fuer diese Firma). Ersetzt
--- profiles.liest_alles_mit aus Abschnitt 89 (Werte uebernommen, Spalte
--- entfernt). profiles.mitleser_id (persoenlicher Mitleser, MeinProfil)
+-- profiles.liest_alles_mit aus Abschnitt 89 (Werte uebernommen, die alte Spalte
+-- bleibt ungenutzt bestehen). profiles.mitleser_id (persoenlicher Mitleser, MeinProfil)
 -- bleibt.
 -- ============================================================
 alter table firmen_mitgliedschaften
