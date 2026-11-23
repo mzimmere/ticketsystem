@@ -58,6 +58,7 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
   const [verfuegbarkeit, setVerfuegbarkeit] = useState<Verfuegbarkeit>("verfuegbar");
   const [kollegen, setKollegen] = useState<Kollege[]>([]);
   const [uebergabeAn, setUebergabeAn] = useState("");
+  const [kollegenGeladen, setKollegenGeladen] = useState(false);
   const [mitleserId, setMitleserId] = useState("");
   const [liestAllesMit, setLiestAllesMit] = useState(false);
   const [mitleserHinweis, setMitleserHinweis] = useState<string | null>(null);
@@ -140,10 +141,11 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
   }
 
   async function ladeKollegen() {
-    const { data } = await supabase
-      .rpc("get_team_mit_email", { p_organisation_id: organisationId })
-      .neq("id", profilId);
-    setKollegen((data as Kollege[]) ?? []);
+    const { data, error } = await supabase.rpc("get_team_mit_email", { p_organisation_id: organisationId });
+    if (error) console.error("[MeinProfil] Team laden fehlgeschlagen:", error);
+    const team = (data as (Kollege & { deaktiviert?: boolean })[]) ?? [];
+    setKollegen(team.filter((k) => k.id !== profilId && !k.deaktiviert));
+    setKollegenGeladen(true);
   }
 
   async function avatarHochladen(datei: File) {
@@ -314,6 +316,11 @@ export default function MeinProfil({ profilId, organisationId, istIntern }: Mein
               <span className="block text-xs text-[var(--text-soft)]">{t.liestAllesMitHinweis}</span>
             </span>
           </label>
+          {kollegen.length === 0 && (
+            <p className="text-xs text-[var(--text-faint)]">
+              {!organisationId ? t.mitleserKeineFirma : kollegenGeladen ? t.mitleserKeineKollegen : t.mitleserLaedt}
+            </p>
+          )}
           {mitleserHinweis && <p className="text-xs text-[var(--text-soft)]">{mitleserHinweis}</p>}
         </div>
       )}

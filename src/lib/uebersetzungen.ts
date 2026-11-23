@@ -165,6 +165,9 @@ export interface Uebersetzung {
   meinProfil: {
     titel: string;
     mitleserTitel: string;
+    mitleserKeineFirma: string;
+    mitleserKeineKollegen: string;
+    mitleserLaedt: string;
     mitleserBeschreibung: string;
     mitleserKeiner: string;
     mitleserGespeichert: string;
@@ -1953,6 +1956,9 @@ const de: Uebersetzung = {
   meinProfil: {
     titel: "Mein Profil",
     mitleserTitel: "E-Mails mitlesen",
+    mitleserKeineFirma: "Keine Firma ausgewählt – bitte oben zuerst eine Firma wählen.",
+    mitleserKeineKollegen: "Keine Kollegen in dieser Firma gefunden.",
+    mitleserLaedt: "Kollegen werden geladen …",
     mitleserBeschreibung: "Mitleser für meine Tickets: Diese Person bekommt eine Kopie aller Mails zu Tickets, die mir zugewiesen sind (Zuweisung, Statusänderung, neue Kundenantwort).",
     mitleserKeiner: "Kein Mitleser",
     mitleserGespeichert: "Gespeichert.",
@@ -3752,6 +3758,9 @@ const en: Uebersetzung = {
   meinProfil: {
     titel: "My Profile",
     mitleserTitel: "Read along by email",
+    mitleserKeineFirma: "No company selected – please choose a company first.",
+    mitleserKeineKollegen: "No colleagues found in this company.",
+    mitleserLaedt: "Loading colleagues …",
     mitleserBeschreibung: "Reader for my tickets: this person gets a copy of all emails about tickets assigned to me (assignment, status change, new customer reply).",
     mitleserKeiner: "No reader",
     mitleserGespeichert: "Saved.",
