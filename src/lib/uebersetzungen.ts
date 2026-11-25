@@ -948,6 +948,24 @@ export interface Uebersetzung {
     beschreibungLizenzUpdateEinladungMitMax: string;
   };
   dongleLizenzVerwaltung: {
+    exportExcel: string;
+    exportExcelTitel: string;
+    exportFehler: string;
+    exportBlattDongles: string;
+    exportBlattVertraege: string;
+    exportDateiDongles: string;
+    exportDateiVertraege: string;
+    exportSpalteDongle: string;
+    exportSpalteSoftware: string;
+    exportSpalteGruppe: string;
+    exportSpalteLizenznummern: string;
+    exportSpalteLizenznummer: string;
+    exportSpalteProdukt: string;
+    exportSpalteVertragsende: string;
+    exportSpalteStatus: string;
+    exportSpalteDongleStatus: string;
+    exportDongleFehlt: string;
+    exportDongleOhneKunde: string;
     nichtZugeordneteLizenzenTemplate: string;
     seriennummerFilterPlatzhalter: string;
     keineTrefferFilter: string;
@@ -2740,6 +2758,24 @@ const de: Uebersetzung = {
     beschreibungLizenzUpdateEinladungMitMax: "Wie oben, aber wenn zusätzlich ein neueres bereits erlaubtes Build bekannt ist.",
   },
   dongleLizenzVerwaltung: {
+    exportExcel: "Excel",
+    exportExcelTitel: "Angezeigte Einträge als Excel-Datei herunterladen",
+    exportFehler: "Export fehlgeschlagen.",
+    exportBlattDongles: "Nicht zugeordnete Dongles",
+    exportBlattVertraege: "Nicht zugeordnete Verträge",
+    exportDateiDongles: "nicht-zugeordnete-dongles",
+    exportDateiVertraege: "nicht-zugeordnete-lizenzvertraege",
+    exportSpalteDongle: "Dongle-Nummer",
+    exportSpalteSoftware: "Software",
+    exportSpalteGruppe: "Gruppe",
+    exportSpalteLizenznummern: "Zugehörige Lizenznummern",
+    exportSpalteLizenznummer: "Lizenznummer",
+    exportSpalteProdukt: "Produkt",
+    exportSpalteVertragsende: "Vertragsende",
+    exportSpalteStatus: "Status",
+    exportSpalteDongleStatus: "Dongle",
+    exportDongleFehlt: "Kein Dongle vorhanden",
+    exportDongleOhneKunde: "Dongle ohne Kunde",
     nichtZugeordneteLizenzenTemplate: "Nicht zugeordnete Lizenzen ({gefiltert}/{gesamt})",
     seriennummerFilterPlatzhalter: "Nach Seriennummer filtern…",
     keineTrefferFilter: "Keine Treffer für diesen Filter.",
@@ -4543,6 +4579,24 @@ const en: Uebersetzung = {
     beschreibungLizenzUpdateEinladungMitMax: "Same as above, but used when a newer already-allowed build is also known.",
   },
   dongleLizenzVerwaltung: {
+    exportExcel: "Excel",
+    exportExcelTitel: "Download the listed entries as an Excel file",
+    exportFehler: "Export failed.",
+    exportBlattDongles: "Unassigned dongles",
+    exportBlattVertraege: "Unassigned contracts",
+    exportDateiDongles: "unassigned-dongles",
+    exportDateiVertraege: "unassigned-license-contracts",
+    exportSpalteDongle: "Dongle number",
+    exportSpalteSoftware: "Software",
+    exportSpalteGruppe: "Group",
+    exportSpalteLizenznummern: "Related license numbers",
+    exportSpalteLizenznummer: "License number",
+    exportSpalteProdukt: "Product",
+    exportSpalteVertragsende: "Contract end",
+    exportSpalteStatus: "Status",
+    exportSpalteDongleStatus: "Dongle",
+    exportDongleFehlt: "No dongle",
+    exportDongleOhneKunde: "Dongle without customer",
     nichtZugeordneteLizenzenTemplate: "Unassigned licenses ({gefiltert}/{gesamt})",
     seriennummerFilterPlatzhalter: "Filter by serial number…",
     keineTrefferFilter: "No matches for this filter.",

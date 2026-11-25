@@ -58,7 +58,7 @@ function zeitpunktAlsTag(iso: string | null | undefined): Date | null {
   return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
 }
 
-function downloadBlob(inhalt: BlobPart, dateiname: string, typ: string) {
+export function downloadBlob(inhalt: BlobPart, dateiname: string, typ: string) {
   const url = URL.createObjectURL(new Blob([inhalt], { type: typ }));
   const a = document.createElement("a");
   a.href = url;

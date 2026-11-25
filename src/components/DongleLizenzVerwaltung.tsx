@@ -6,7 +6,7 @@ import DongleImport from "./DongleImport";
 import ProduktNachricht from "./ProduktNachricht";
 import GesendeteNachrichten from "./GesendeteNachrichten";
 import { benachrichtigeKunde } from "../lib/benachrichtigungen";
-import { ChevronDown, ChevronRight, Trash2, Copy, Check, KeyRound, Link2Off, CalendarClock, Wallet, LayoutList, Send, Upload, RefreshCw } from "lucide-react";
+import { ChevronDown, ChevronRight, Trash2, Copy, Check, KeyRound, Link2Off, CalendarClock, Wallet, LayoutList, Send, Upload, RefreshCw, Download } from "lucide-react";
 import KennzahlKarte from "./KennzahlKarte";
 import ImportStandKarte from "./ImportStandKarte";
 import { importFarbe, alterInTagen, type ImportStand } from "../lib/importAlter";
@@ -15,6 +15,7 @@ import LeerHinweis from "./LeerHinweis";
 import { softwareStil } from "../lib/softwareStil";
 import { ablaufInfo } from "../lib/ablaufInfo";
 import { sucheTrifft } from "../lib/suche";
+import { lizenzListeExportieren, tagAlsDatumFuerExcel } from "../lib/lizenzExport";
 import DongleDetailPanel, { VertragDetailPanel, type DetailDongle, type DetailVertrag } from "./DongleDetailPanel";
 
 interface Vorlage {
@@ -58,6 +59,7 @@ interface NichtZugeordneterVertrag {
   lizenz_seriennummer: string;
   produkt_name: string;
   vertrag_ende: string | null;
+  status: string | null;
 }
 
 interface AlleDongle {
@@ -261,7 +263,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   async function ladeNichtZugeordneteVertraege() {
     const { data } = await supabase
       .from("lizenz_vertraege")
-      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende")
+      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende, status")
       .eq("organisation_id", organisationId)
       .is("kunde_id", null)
       .order("vertrag_ende", { ascending: true, nullsFirst: false });
@@ -378,6 +380,69 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   const gefilterteNichtZugeordnete = nichtZugeordnete.filter((d) =>
     sucheTrifft(filterDongleNummer, d.seriennummer, ...lizenzNummernVon(d)),
   );
+  function datumStempel() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  async function nichtZugeordneteDonglesExportieren() {
+    try {
+      await lizenzListeExportieren(
+        {
+          blatt: txt.exportBlattDongles,
+          kopf: [txt.exportSpalteDongle, txt.exportSpalteSoftware, txt.exportSpalteGruppe, txt.exportSpalteLizenznummern],
+          datei: `${txt.exportDateiDongles}-${datumStempel()}.xlsx`,
+        },
+        gefilterteNichtZugeordnete.map((d) => [
+          d.seriennummer,
+          d.software,
+          d.gruppe,
+          Array.from(new Set(lizenzNummernVon(d))).join(", "),
+        ]),
+      );
+    } catch (err) {
+      console.error(err);
+      alert(txt.exportFehler);
+    }
+  }
+
+  async function nichtZugeordneteVertraegeExportieren() {
+    // Gibt es zum Vertrag schon einen Dongle (gleiche Dongle-Nummer am Anfang)?
+    const dongleZuVertrag = (nummer: string) => {
+      const kurz = nummer.split("-")[0].toUpperCase();
+      const treffer = [...alleDongles, ...nichtZugeordnete].find((d) => d.seriennummer.split("-")[0].toUpperCase() === kurz);
+      if (!treffer) return txt.exportDongleFehlt;
+      const kundenName = "kunde" in treffer ? (treffer.kunde?.name ?? treffer.kunde?.firmenname) : null;
+      return kundenName ?? txt.exportDongleOhneKunde;
+    };
+    try {
+      await lizenzListeExportieren(
+        {
+          blatt: txt.exportBlattVertraege,
+          kopf: [
+            txt.exportSpalteLizenznummer,
+            txt.exportSpalteDongle,
+            txt.exportSpalteProdukt,
+            txt.exportSpalteVertragsende,
+            txt.exportSpalteStatus,
+            txt.exportSpalteDongleStatus,
+          ],
+          datei: `${txt.exportDateiVertraege}-${datumStempel()}.xlsx`,
+        },
+        gefilterteNichtZugeordneteVertraege.map((v) => [
+          v.lizenz_seriennummer,
+          v.lizenz_seriennummer.split("-")[0],
+          v.produkt_name,
+          tagAlsDatumFuerExcel(v.vertrag_ende),
+          v.status,
+          dongleZuVertrag(v.lizenz_seriennummer),
+        ]),
+      );
+    } catch (err) {
+      console.error(err);
+      alert(txt.exportFehler);
+    }
+  }
+
   const dongleSuchtAktiv = filterDongleNummer.trim() !== "";
   const sichtbareNichtZugeordnete =
     dongleSuchtAktiv || alleDonglesPoolAnzeigen
@@ -578,9 +643,20 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
 
       {nichtZugeordnete.length > 0 && (
         <div className="space-y-1.5 rounded-lg border border-dashed border-[var(--border-input)] p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-            {txt.nichtZugeordneteLizenzenTemplate.replace("{gefiltert}", String(gefilterteNichtZugeordnete.length)).replace("{gesamt}", String(nichtZugeordnete.length))}
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
+              {txt.nichtZugeordneteLizenzenTemplate.replace("{gefiltert}", String(gefilterteNichtZugeordnete.length)).replace("{gesamt}", String(nichtZugeordnete.length))}
+            </p>
+            <button
+              type="button"
+              onClick={nichtZugeordneteDonglesExportieren}
+              title={txt.exportExcelTitel}
+              className="inline-flex items-center gap-1 rounded border border-[var(--border-input)] px-2 py-1 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+            >
+              <Download size={12} />
+              {txt.exportExcel}
+            </button>
+          </div>
           <input
             type="text"
             value={filterDongleNummer}
@@ -651,9 +727,20 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
 
       {nichtZugeordneteVertraege.length > 0 && (
         <div className="space-y-1.5 rounded-lg border border-dashed border-[var(--border-input)] p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-            {txt.nichtZugeordneteVertraegeTemplate.replace("{gefiltert}", String(gefilterteNichtZugeordneteVertraege.length)).replace("{gesamt}", String(nichtZugeordneteVertraege.length))}
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
+              {txt.nichtZugeordneteVertraegeTemplate.replace("{gefiltert}", String(gefilterteNichtZugeordneteVertraege.length)).replace("{gesamt}", String(nichtZugeordneteVertraege.length))}
+            </p>
+            <button
+              type="button"
+              onClick={nichtZugeordneteVertraegeExportieren}
+              title={txt.exportExcelTitel}
+              className="inline-flex items-center gap-1 rounded border border-[var(--border-input)] px-2 py-1 text-xs text-[var(--text-soft)] hover:bg-[var(--bg-muted)]"
+            >
+              <Download size={12} />
+              {txt.exportExcel}
+            </button>
+          </div>
           <input
             type="text"
             value={filterVertragNummer}
