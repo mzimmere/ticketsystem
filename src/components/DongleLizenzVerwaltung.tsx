@@ -360,8 +360,23 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
     ladeAlleVertraege();
   }
 
+  // Lizenznummern je Dongle (ueber Verknuepfung oder gleiche Dongle-Nummer am
+  // Anfang): Ein Dongle kennt oft nur die kurze Nummer (5E0B21A4), im Vertrag
+  // steht die lange (5E0B21A4-DC63-897471A4). Die Suche soll beides finden.
+  const lizenzNummernNachDongle = new Map<string, string[]>();
+  const lizenzNummernNachKurz = new Map<string, string[]>();
+  for (const v of alleVertraege) {
+    if (v.dongle_id) lizenzNummernNachDongle.set(v.dongle_id, [...(lizenzNummernNachDongle.get(v.dongle_id) ?? []), v.lizenz_seriennummer]);
+    const kurz = v.lizenz_seriennummer.split("-")[0].toUpperCase();
+    lizenzNummernNachKurz.set(kurz, [...(lizenzNummernNachKurz.get(kurz) ?? []), v.lizenz_seriennummer]);
+  }
+  const lizenzNummernVon = (d: { id: string; seriennummer: string }) => [
+    ...(lizenzNummernNachDongle.get(d.id) ?? []),
+    ...(lizenzNummernNachKurz.get(d.seriennummer.split("-")[0].toUpperCase()) ?? []),
+  ];
+
   const gefilterteNichtZugeordnete = nichtZugeordnete.filter((d) =>
-    d.seriennummer.toLowerCase().includes(filterDongleNummer.trim().toLowerCase()),
+    sucheTrifft(filterDongleNummer, d.seriennummer, ...lizenzNummernVon(d)),
   );
   const dongleSuchtAktiv = filterDongleNummer.trim() !== "";
   const sichtbareNichtZugeordnete =
@@ -428,7 +443,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
 
   const dongleUebersichtGefiltert = alleDongles.filter((d) => {
     if (softwareFilter && d.software !== softwareFilter) return false;
-    return sucheTrifft(dongleUebersichtSuche, d.seriennummer, d.kunde?.name, d.kunde?.firmenname);
+    return sucheTrifft(dongleUebersichtSuche, d.seriennummer, d.kunde?.name, d.kunde?.firmenname, ...lizenzNummernVon(d));
   });
   const dongleUebersichtSuchtAktiv = dongleUebersichtSuche.trim() !== "";
   const sichtbareDongleUebersicht =
