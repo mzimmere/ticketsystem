@@ -948,6 +948,11 @@ export interface Uebersetzung {
     beschreibungLizenzUpdateEinladungMitMax: string;
   };
   dongleLizenzVerwaltung: {
+    autoRenewalBadge: string;
+    autoRenewalBadgeTitel: string;
+    keinAutoRenewal: string;
+    keinAutoRenewalTitel: string;
+    importAutoRenewalListe: string;
     exportExcel: string;
     exportExcelTitel: string;
     exportFehler: string;
@@ -1079,6 +1084,39 @@ export interface Uebersetzung {
     anlegen: string;
     abbrechen: string;
     dongleHinzufuegen: string;
+  };
+  autoRenewal: {
+    label: string;
+    sub: string;
+    dateiWaehlen: string;
+    liest: string;
+    fehlerLesen: string;
+    fehlerSpalten: string;
+    fehlerLeer: string;
+    fehlerSpeichern: string;
+    sumImReport: string;
+    sumNeu: string;
+    sumUnveraendert: string;
+    sumFehlt: string;
+    zeitraum: string;
+    fehltTitel: string;
+    fehltHinweis: string;
+    nichtImSystemTitel: string;
+    abweichungTitel: string;
+    entfernenHinweis: string;
+    uebernehmen: string;
+    speichert: string;
+    abbrechen: string;
+    fertig: string;
+    ergebnis: string;
+    ende: string;
+    start: string;
+    system: string;
+    report: string;
+    autoRenewal: string;
+    ohneKunde: string;
+    renewalBezahlt: string;
+    renewalOffen: string;
   };
   dongleImport: {
     feldSeriennummerDongle: string;
@@ -2758,6 +2796,11 @@ const de: Uebersetzung = {
     beschreibungLizenzUpdateEinladungMitMax: "Wie oben, aber wenn zusätzlich ein neueres bereits erlaubtes Build bekannt ist.",
   },
   dongleLizenzVerwaltung: {
+    autoRenewalBadge: "Auto-Renewal {datum}",
+    autoRenewalBadgeTitel: "Verlängert sich laut Auto-Renewal-Report automatisch",
+    keinAutoRenewal: "Kein Auto-Renewal",
+    keinAutoRenewalTitel: "Endet im Zeitraum des Auto-Renewal-Reports, steht aber nicht darin – verlängert sich nicht automatisch",
+    importAutoRenewalListe: "Auto-Renewal-Report",
     exportExcel: "Excel",
     exportExcelTitel: "Angezeigte Einträge als Excel-Datei herunterladen",
     exportFehler: "Export fehlgeschlagen.",
@@ -2889,6 +2932,39 @@ const de: Uebersetzung = {
     anlegen: "Anlegen",
     abbrechen: "Abbrechen",
     dongleHinzufuegen: "+ Dongle/Lizenz hinzufügen",
+  },
+  autoRenewal: {
+    label: "Auto-Renewal-Report abgleichen",
+    sub: "exocad-Portal → Auto-Renewal-Report (.xlsx). Zeigt vorab, welche Verträge sich automatisch verlängern und welche nicht.",
+    dateiWaehlen: "Report-Datei wählen …",
+    liest: "Datei wird geprüft …",
+    fehlerLesen: "Die Datei konnte nicht gelesen werden. Bitte die .xlsx aus dem exocad-Portal verwenden.",
+    fehlerSpalten: "Die Spalten „Serial Number“ und „Auto-renewal Date“ wurden nicht gefunden.",
+    fehlerLeer: "Die Datei enthält keine Zeilen mit Seriennummer und Auto-Renewal-Datum.",
+    fehlerSpeichern: "Speichern fehlgeschlagen. Bitte erneut versuchen.",
+    sumImReport: "Im Report",
+    sumNeu: "Datum wird gesetzt",
+    sumUnveraendert: "Schon aktuell",
+    sumFehlt: "Fehlen im Report",
+    zeitraum: "Der Report deckt Auto-Renewals vom {von} bis {bis} ab.",
+    fehltTitel: "Aktive Verträge ohne Auto-Renewal",
+    fehltHinweis: "Diese Verträge enden im Zeitraum des Reports, stehen aber nicht darin – sie verlängern sich nicht automatisch.",
+    nichtImSystemTitel: "Im Report, aber nicht im System (werden übersprungen)",
+    abweichungTitel: "Abweichende Vertragsdaten (werden nicht geändert)",
+    entfernenHinweis: "{n} Verträge hatten bisher ein Auto-Renewal-Datum und stehen im neuen Report nicht mehr – das Datum wird entfernt.",
+    uebernehmen: "Report übernehmen ({n} Änderungen)",
+    speichert: "Speichert …",
+    abbrechen: "Abbrechen",
+    fertig: "Fertig",
+    ergebnis: "Report übernommen: {n} Verträge aktualisiert, {f} aktive Verträge ohne Auto-Renewal markiert.",
+    ende: "Ende",
+    start: "Start",
+    system: "System",
+    report: "Report",
+    autoRenewal: "Auto-Renewal",
+    ohneKunde: "ohne Kunde",
+    renewalBezahlt: "Renewal bezahlt",
+    renewalOffen: "Renewal offen",
   },
   dongleImport: {
     feldSeriennummerDongle: "Seriennummer (Dongle)",
@@ -4579,6 +4655,11 @@ const en: Uebersetzung = {
     beschreibungLizenzUpdateEinladungMitMax: "Same as above, but used when a newer already-allowed build is also known.",
   },
   dongleLizenzVerwaltung: {
+    autoRenewalBadge: "Auto-renewal {datum}",
+    autoRenewalBadgeTitel: "Renews automatically according to the auto-renewal report",
+    keinAutoRenewal: "No auto-renewal",
+    keinAutoRenewalTitel: "Ends within the auto-renewal report period but is not listed – does not renew automatically",
+    importAutoRenewalListe: "Auto-renewal report",
     exportExcel: "Excel",
     exportExcelTitel: "Download the listed entries as an Excel file",
     exportFehler: "Export failed.",
@@ -4710,6 +4791,39 @@ const en: Uebersetzung = {
     anlegen: "Create",
     abbrechen: "Cancel",
     dongleHinzufuegen: "+ Add dongle/license",
+  },
+  autoRenewal: {
+    label: "Reconcile auto-renewal report",
+    sub: "exocad portal → auto-renewal report (.xlsx). Shows beforehand which contracts renew automatically and which do not.",
+    dateiWaehlen: "Choose report file …",
+    liest: "Checking file …",
+    fehlerLesen: "The file could not be read. Please use the .xlsx from the exocad portal.",
+    fehlerSpalten: "The columns “Serial Number” and “Auto-renewal Date” were not found.",
+    fehlerLeer: "The file has no rows with a serial number and auto-renewal date.",
+    fehlerSpeichern: "Saving failed. Please try again.",
+    sumImReport: "In report",
+    sumNeu: "Date will be set",
+    sumUnveraendert: "Already up to date",
+    sumFehlt: "Missing in report",
+    zeitraum: "The report covers auto-renewals from {von} to {bis}.",
+    fehltTitel: "Active contracts without auto-renewal",
+    fehltHinweis: "These contracts end within the report period but are not listed – they do not renew automatically.",
+    nichtImSystemTitel: "In report but not in the system (skipped)",
+    abweichungTitel: "Differing contract dates (not changed)",
+    entfernenHinweis: "{n} contracts had an auto-renewal date and are no longer in the new report – the date will be removed.",
+    uebernehmen: "Apply report ({n} changes)",
+    speichert: "Saving …",
+    abbrechen: "Cancel",
+    fertig: "Done",
+    ergebnis: "Report applied: {n} contracts updated, {f} active contracts marked without auto-renewal.",
+    ende: "End",
+    start: "Start",
+    system: "System",
+    report: "Report",
+    autoRenewal: "Auto-renewal",
+    ohneKunde: "no customer",
+    renewalBezahlt: "Renewal paid",
+    renewalOffen: "Renewal unpaid",
   },
   dongleImport: {
     feldSeriennummerDongle: "Serial number (dongle)",

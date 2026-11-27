@@ -18,9 +18,11 @@ export default function ImportStandKarte({ stand }: { stand: ImportStand }) {
   const txt = texte(sprache).dongleLizenzVerwaltung;
   const locale = sprache === "en" ? "en-US" : "de-DE";
 
-  const zeilen: { key: "dongle" | "lizenz"; label: string }[] = [
+  const zeilen: { key: "dongle" | "lizenz" | "auto_renewal"; label: string }[] = [
     { key: "dongle", label: txt.importDongleListe },
     { key: "lizenz", label: txt.importLizenzListe },
+    // Der Auto-Renewal-Report ist optional - nur anzeigen, wenn schon importiert.
+    ...(stand.auto_renewal ? [{ key: "auto_renewal" as const, label: txt.importAutoRenewalListe }] : []),
   ];
 
   return (

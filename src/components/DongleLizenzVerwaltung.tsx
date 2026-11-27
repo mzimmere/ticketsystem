@@ -14,6 +14,7 @@ import { zuletztText } from "../lib/zeitText";
 import LeerHinweis from "./LeerHinweis";
 import { softwareStil } from "../lib/softwareStil";
 import { ablaufInfo } from "../lib/ablaufInfo";
+import AutoRenewalImport from "./AutoRenewalImport";
 import { sucheTrifft } from "../lib/suche";
 import { lizenzListeExportieren, tagAlsDatumFuerExcel } from "../lib/lizenzExport";
 import DongleDetailPanel, { VertragDetailPanel, type DetailDongle, type DetailVertrag } from "./DongleDetailPanel";
@@ -84,6 +85,7 @@ interface AlleVertrag {
   aktuelle_engine_build: string | null;
   max_erlaubte_engine_build: string | null;
   renewal_bezahlt: boolean;
+  auto_renewal_datum: string | null;
 }
 
 interface MailStatus {
@@ -201,7 +203,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
       .order("erstellt_am", { ascending: false })
       .limit(50);
     const stand: typeof importStand = {};
-    for (const z of (data as { art: "dongle" | "lizenz"; erstellt_am: string; rueckwirkend: boolean }[]) ?? []) {
+    for (const z of (data as { art: "dongle" | "lizenz" | "auto_renewal"; erstellt_am: string; rueckwirkend: boolean }[]) ?? []) {
       if (!stand[z.art]) stand[z.art] = { am: z.erstellt_am, rueckwirkend: z.rueckwirkend };
     }
     setImportStand(stand);
@@ -333,7 +335,7 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
   async function ladeAlleVertraege() {
     const { data } = await supabase
       .from("lizenz_vertraege")
-      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende, status, kunde_id, dongle_id, kunde:kunde_id(name, firmenname), aktuelle_engine_build, max_erlaubte_engine_build, renewal_bezahlt")
+      .select("id, lizenz_seriennummer, produkt_name, vertrag_ende, status, kunde_id, dongle_id, kunde:kunde_id(name, firmenname), aktuelle_engine_build, max_erlaubte_engine_build, renewal_bezahlt, auto_renewal_datum")
       .eq("organisation_id", organisationId)
       .order("lizenz_seriennummer");
     setAlleVertraege((data as unknown as AlleVertrag[]) ?? []);
@@ -483,6 +485,17 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
     return ablaufInfo(v.vertrag_ende).tage <= 30;
   });
   const baldOffen = bald.filter((v) => !v.renewal_bezahlt);
+  // Letztes Auto-Renewal-Datum aus dem importierten Report: Aktive Vertraege,
+  // die bis dahin enden und kein Datum haben, verlaengern sich nicht automatisch.
+  const autoRenewalHorizont = alleVertraege.reduce<string | null>(
+    (max, v) => (v.auto_renewal_datum && (!max || v.auto_renewal_datum > max) ? v.auto_renewal_datum : max),
+    null,
+  );
+  const keinAutoRenewal = (v: AlleVertrag): boolean => {
+    if (!importStand.auto_renewal || !autoRenewalHorizont || v.auto_renewal_datum) return false;
+    if (!v.status || v.status.toLowerCase() !== "active" || !v.vertrag_ende) return false;
+    return ablaufInfo(v.vertrag_ende).tage >= -7 && v.vertrag_ende <= autoRenewalHorizont;
+  };
   const donglesProSoftware = Object.entries(
     alleDongles.reduce<Record<string, number>>((acc, d) => ({ ...acc, [d.software]: (acc[d.software] ?? 0) + 1 }), {}),
   )
@@ -641,6 +654,13 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
         <>
       <ImportStandKarte stand={importStand} />
       <DongleImport organisationId={organisationId} onImportiert={alleNeuLaden} />
+      <AutoRenewalImport
+        organisationId={organisationId}
+        onFertig={() => {
+          ladeAlleVertraege();
+          ladeImportStand();
+        }}
+      />
 
       {nichtZugeordnete.length > 0 && (
         <div className="space-y-1.5 rounded-lg border border-dashed border-[var(--border-input)] p-3">
@@ -1131,6 +1151,24 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
                     >
                       {v.renewal_bezahlt ? dongleTxt.renewalBezahlt : dongleTxt.renewalOffen}
                     </button>
+                    {v.auto_renewal_datum && (
+                      <span
+                        title={txt.autoRenewalBadgeTitel}
+                        className="rounded px-1.5 py-0.5 text-[0.65rem] font-medium"
+                        style={{ background: "var(--status-geloest-bg)", color: "var(--status-geloest-text)" }}
+                      >
+                        ↻ {txt.autoRenewalBadge.replace("{datum}", new Date(`${v.auto_renewal_datum}T00:00:00`).toLocaleDateString(sprache === "en" ? "en-US" : "de-DE"))}
+                      </span>
+                    )}
+                    {keinAutoRenewal(v) && (
+                      <span
+                        title={txt.keinAutoRenewalTitel}
+                        className="rounded px-1.5 py-0.5 text-[0.65rem] font-medium"
+                        style={{ background: "var(--badge-hoch-bg)", color: "var(--badge-hoch-text)" }}
+                      >
+                        {txt.keinAutoRenewal}
+                      </span>
+                    )}
                     {v.kunde_id && mailStatusByKunde[v.kunde_id] && (
                       <span
                         title={`${mailTxt.mailGesendetPrefix} ${new Date(mailStatusByKunde[v.kunde_id].gesendet_am).toLocaleString(sprache === "en" ? "en-US" : "de-DE")}`}

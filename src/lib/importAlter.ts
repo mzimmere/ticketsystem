@@ -3,7 +3,7 @@ export interface ImportStandEintrag {
   rueckwirkend: boolean;
 }
 
-export type ImportStand = Partial<Record<"dongle" | "lizenz", ImportStandEintrag>>;
+export type ImportStand = Partial<Record<"dongle" | "lizenz" | "auto_renewal", ImportStandEintrag>>;
 
 export type ImportFarbe = "gruen" | "amber" | "rot" | "neutral";
 

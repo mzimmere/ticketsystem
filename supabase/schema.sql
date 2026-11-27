@@ -3852,3 +3852,19 @@ alter table profiles
 -- ============================================================
 alter table firmen_mitgliedschaften
   add column if not exists liest_alles_mit boolean not null default false;
+
+-- ============================================================
+-- 91. Auto-Renewal-Report (AutoRenewalImport.tsx, lib/autoRenewalImport.ts):
+-- Der "auto_renewal_report" aus dem exocad-Portal listet die Lizenzen, die
+-- sich automatisch verlaengern (Seriennummer, Vertragsstart/-ende, Ende der
+-- Freiphase, Auto-Renewal Date). Der Import speichert das Datum je Vertrag
+-- (lizenz_vertraege.auto_renewal_datum); Vertraege, die nicht im Report
+-- stehen, werden auf NULL gesetzt (der Report ist ein Gesamtstand). Aktive
+-- Vertraege, die im Zeitraum des Reports enden, aber nicht darin stehen,
+-- werden als "kein Auto-Renewal" markiert. Das Feld renewal_bezahlt bleibt
+-- unberuehrt. Importprotokoll: art 'auto_renewal'.
+-- ============================================================
+alter table lizenz_vertraege add column if not exists auto_renewal_datum date;
+alter table import_protokoll drop constraint import_protokoll_art_check;
+alter table import_protokoll add constraint import_protokoll_art_check
+  check (art in ('dongle', 'lizenz', 'auto_renewal'));
