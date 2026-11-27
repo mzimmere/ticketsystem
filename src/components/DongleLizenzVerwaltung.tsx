@@ -478,8 +478,9 @@ export default function DongleLizenzVerwaltung({ organisationId }: { organisatio
 
   const bald = alleVertraege.filter((v) => {
     if (!v.vertrag_ende || (v.status && v.status.toLowerCase() !== "active")) return false;
-    const a = ablaufInfo(v.vertrag_ende);
-    return a.tage >= 0 && a.tage <= 30;
+    // Auch Vertraege, die laut Portal noch "Active" sind, deren Ende aber
+    // schon vorbei ist - die brauchen die Verlaengerung am dringendsten.
+    return ablaufInfo(v.vertrag_ende).tage <= 30;
   });
   const baldOffen = bald.filter((v) => !v.renewal_bezahlt);
   const donglesProSoftware = Object.entries(
